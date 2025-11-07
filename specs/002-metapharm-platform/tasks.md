@@ -158,38 +158,38 @@
 
 ### Prescription - Mobile (Patient App)
 
-- [ ] [T096] [P] [US1] Initialize Patient App in mobile/patient-app/src/App.tsx
-- [ ] [T097] [P] [US1] Create Prescription Upload screen in mobile/patient-app/src/screens/PrescriptionUploadScreen.tsx
-- [ ] [T098] [P] [US1] Implement camera integration for prescription photo in mobile/patient-app/src/components/CameraCapture.tsx
-- [ ] [T099] [P] [US1] Implement image picker for prescription upload in mobile/patient-app/src/components/ImagePicker.tsx
-- [ ] [T100] [P] [US1] Create Prescription List screen in mobile/patient-app/src/screens/PrescriptionListScreen.tsx
-- [ ] [T101] [P] [US1] Create Prescription Detail screen in mobile/patient-app/src/screens/PrescriptionDetailScreen.tsx
-- [ ] [T102] [P] [US1] Implement prescription API client in mobile/patient-app/src/services/prescriptionService.ts
-- [ ] [T103] [P] [US1] Create Redux slice for prescriptions in mobile/patient-app/src/store/prescriptionSlice.ts
-- [ ] [T104] [P] [US1] Implement prescription status badge component in mobile/patient-app/src/components/PrescriptionStatusBadge.tsx
+- [x] [T096] [P] [US1] Initialize Patient App in mobile/patient-app/src/App.tsx
+- [x] [T097] [P] [US1] Create Prescription Upload screen in mobile/patient-app/src/screens/PrescriptionUploadScreen.tsx
+- [x] [T098] [P] [US1] Implement camera integration for prescription photo in mobile/patient-app/src/components/CameraCapture.tsx
+- [x] [T099] [P] [US1] Implement image picker for prescription upload in mobile/patient-app/src/components/ImagePicker.tsx
+- [x] [T100] [P] [US1] Create Prescription List screen in mobile/patient-app/src/screens/PrescriptionListScreen.tsx
+- [x] [T101] [P] [US1] Create Prescription Detail screen in mobile/patient-app/src/screens/PrescriptionDetailScreen.tsx
+- [x] [T102] [P] [US1] Implement prescription API client in mobile/patient-app/src/services/prescriptionService.ts
+- [x] [T103] [P] [US1] Create Redux slice for prescriptions in mobile/patient-app/src/store/prescriptionSlice.ts
+- [x] [T104] [P] [US1] Implement prescription status badge component in mobile/patient-app/src/components/PrescriptionStatusBadge.tsx
 
 ### Prescription - Mobile (Pharmacist App)
 
-- [ ] [T105] [P] [US1] Initialize Pharmacist App in mobile/pharmacist-app/src/App.tsx
-- [ ] [T106] [P] [US1] Create Prescription Queue screen in mobile/pharmacist-app/src/screens/PrescriptionQueueScreen.tsx
-- [ ] [T107] [P] [US1] Create Prescription Review screen in mobile/pharmacist-app/src/screens/PrescriptionReviewScreen.tsx
-- [ ] [T108] [P] [US1] Implement AI transcription editor with confidence indicators in mobile/pharmacist-app/src/components/TranscriptionEditor.tsx
-- [ ] [T109] [P] [US1] Implement low-confidence field warnings in mobile/pharmacist-app/src/components/ConfidenceWarning.tsx
-- [ ] [T110] [P] [US1] Implement drug interaction warnings display in mobile/pharmacist-app/src/components/InteractionWarnings.tsx
-- [ ] [T111] [P] [US1] Create Approve/Reject action buttons in mobile/pharmacist-app/src/components/PrescriptionActions.tsx
-- [ ] [T112] [P] [US1] Implement messaging to doctor from prescription context in mobile/pharmacist-app/src/screens/DoctorMessageScreen.tsx
-- [ ] [T113] [P] [US1] Create prescription API client in mobile/pharmacist-app/src/services/prescriptionService.ts
-- [ ] [T114] [P] [US1] Create Redux slice for prescription queue in mobile/pharmacist-app/src/store/queueSlice.ts
+- [x] [T105] [P] [US1] Initialize Pharmacist App in mobile/pharmacist-app/src/App.tsx
+- [x] [T106] [P] [US1] Create Prescription Queue screen in mobile/pharmacist-app/src/screens/PrescriptionQueueScreen.tsx
+- [x] [T107] [P] [US1] Create Prescription Review screen in mobile/pharmacist-app/src/screens/PrescriptionReviewScreen.tsx
+- [x] [T108] [P] [US1] Implement AI transcription editor with confidence indicators in mobile/pharmacist-app/src/components/TranscriptionEditor.tsx
+- [x] [T109] [P] [US1] Implement low-confidence field warnings in mobile/pharmacist-app/src/components/ConfidenceWarning.tsx
+- [x] [T110] [P] [US1] Implement drug interaction warnings display in mobile/pharmacist-app/src/components/InteractionWarnings.tsx
+- [x] [T111] [P] [US1] Create Approve/Reject action buttons in mobile/pharmacist-app/src/components/PrescriptionActions.tsx
+- [x] [T112] [P] [US1] Implement messaging to doctor from prescription context in mobile/pharmacist-app/src/screens/DoctorMessageScreen.tsx
+- [x] [T113] [P] [US1] Create prescription API client in mobile/pharmacist-app/src/services/prescriptionService.ts
+- [x] [T114] [P] [US1] Create Redux slice for prescription queue in mobile/pharmacist-app/src/store/queueSlice.ts
 
 ### Prescription - Web (Pharmacist Portal)
 
-- [ ] [T115] [P] [US1] Create Prescription Dashboard in web/src/apps/pharmacist/pages/PrescriptionDashboard.tsx
-- [ ] [T116] [P] [US1] Create Prescription Review page in web/src/apps/pharmacist/pages/PrescriptionReview.tsx
-- [ ] [T117] [P] [US1] Implement DataGrid for prescription queue in web/src/apps/pharmacist/components/PrescriptionQueue.tsx
-- [ ] [T118] [P] [US1] Implement AI transcription editor in web/src/apps/pharmacist/components/TranscriptionEditor.tsx
-- [ ] [T119] [P] [US1] Implement safety warnings panel in web/src/apps/pharmacist/components/SafetyWarnings.tsx
-- [ ] [T120] [P] [US1] Create prescription API hooks in web/src/shared/hooks/usePrescriptions.ts
-- [ ] [T121] [P] [US1] Implement prescription status filters in web/src/apps/pharmacist/components/StatusFilters.tsx
+- [x] [T115] [P] [US1] Create Prescription Dashboard in web/src/apps/pharmacist/pages/PrescriptionDashboard.tsx
+- [x] [T116] [P] [US1] Create Prescription Review page in web/src/apps/pharmacist/pages/PrescriptionReview.tsx
+- [x] [T117] [P] [US1] Implement DataGrid for prescription queue in web/src/apps/pharmacist/components/PrescriptionQueue.tsx
+- [x] [T118] [P] [US1] Implement AI transcription editor in web/src/apps/pharmacist/components/TranscriptionEditor.tsx
+- [x] [T119] [P] [US1] Implement safety warnings panel in web/src/apps/pharmacist/components/SafetyWarnings.tsx
+- [x] [T120] [P] [US1] Create prescription API hooks in web/src/shared/hooks/usePrescriptions.ts
+- [x] [T121] [P] [US1] Implement prescription status filters in web/src/apps/pharmacist/components/StatusFilters.tsx
 
 ### Prescription - Mobile (Doctor App)
 

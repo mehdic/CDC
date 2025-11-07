@@ -1,0 +1,48 @@
+{
+  "name": "@metapharm/patient-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MetaPharm Connect - Patient Mobile Application",
+  "main": "src/App.tsx",
+  "scripts": {
+    "start": "react-native start --reset-cache",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "format": "prettier --write 'src/**/*.{ts,tsx}'",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-native": "0.73.4",
+    "@react-navigation/native": "^6.1.17",
+    "@react-navigation/stack": "^6.3.29",
+    "@react-navigation/bottom-tabs": "^6.5.20",
+    "@reduxjs/toolkit": "^2.2.1",
+    "react-redux": "^9.1.0",
+    "redux-persist": "^6.0.0",
+    "react-native-camera": "^4.2.1",
+    "react-native-image-picker": "^7.1.0",
+    "react-native-permissions": "^4.1.4",
+    "react-native-safe-area-context": "^4.9.0",
+    "react-native-screens": "^3.29.0",
+    "react-native-gesture-handler": "^2.15.0",
+    "react-native-reanimated": "^3.7.1",
+    "axios": "^1.6.7",
+    "@react-native-async-storage/async-storage": "^1.22.2",
+    "date-fns": "^3.3.1",
+    "@metapharm/api-types": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.57",
+    "@types/react-native": "^0.73.0",
+    "typescript": "^5.3.3",
+    "jest": "^29.7.0",
+    "@testing-library/react-native": "^12.4.3",
+    "@testing-library/jest-native": "^5.4.3",
+    "react-test-renderer": "18.2.0"
+  }
+}
