@@ -239,14 +239,24 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 
 ---
 
+## Clarifications
+
+### Session 2025-11-07
+
+- Q: What happens when AI prescription transcription confidence is low (< 80%)? Does it route to manual pharmacist review or block processing? → A: Route to pharmacist with warnings - AI transcription proceeds but low-confidence fields are highlighted in red/yellow, pharmacist must explicitly verify each flagged field before approval
+- Q: What is the defined SLA timeout for message escalation (FR-073)? → A: 2 hours standard, 30 minutes urgent
+- Q: How does the system handle controlled substance prescriptions that require in-person pickup vs. delivery? → A: Tiered by substance schedule - Schedule I/II narcotics require in-person pickup, Schedule III/IV/V can be delivered with signature and ID verification
+- Q: How does delivery routing handle failed deliveries across multiple attempts? At what point does the order return to pharmacy vs. get rescheduled? → A: Three attempts then return - Up to 3 automatic delivery attempts over 5 business days; after 3 failures, order returns to pharmacy and patient must reschedule or pickup in person
+- Q: Is AI teleconsultation transcript editable by pharmacist or locked? → A: Editable with audit trail - Pharmacist can edit AI transcript, but original AI version is preserved in audit log with all edits tracked (who changed what, when)
+
 ### Edge Cases
 
-- What happens when AI prescription transcription confidence is low (< 80%)? Does it route to manual pharmacist review or block processing?
+- AI prescription transcription with low confidence (< 80%) routes to pharmacist with visual warnings on low-confidence fields requiring explicit verification before approval
+- Controlled substance delivery is tiered by schedule: Schedule I/II narcotics require in-person pickup, Schedule III/IV/V can be delivered with signature and ID verification
+- Failed deliveries receive up to 3 automatic reattempts over 5 business days; after 3 failures, order returns to pharmacy and patient must reschedule or pickup in person
 - How does the system handle prescription conflicts when multiple doctors prescribe overlapping medications to the same patient?
 - What happens when a patient's insurance coverage changes mid-treatment and previously covered medications are no longer eligible?
-- How does delivery routing handle failed deliveries across multiple attempts? At what point does the order return to pharmacy vs. get rescheduled?
 - What happens when cantonal health record API is unavailable during patient record sync?
-- How does the system handle controlled substance prescriptions that require in-person pickup vs. delivery?
 - What happens when a delivery person encounters a cold chain breach (temperature monitoring failure) during transit?
 - How does teleconsultation handle poor network connectivity? What's the fallback experience?
 - What happens when a pharmacist rejects a prescription but the doctor is unavailable to respond for clarification?
@@ -277,6 +287,7 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - **FR-011**: System MUST perform automatic drug interaction checks against patient's current medications and allergies
 - **FR-012**: System MUST flag potential contraindications based on patient medical history
 - **FR-013**: Pharmacists MUST be able to review AI-transcribed prescriptions and edit/validate extracted data
+- **FR-013a**: System MUST highlight low-confidence AI transcription fields (confidence < 80%) with visual warnings (red/yellow indicators) requiring pharmacist to explicitly verify each flagged field before approval
 - **FR-014**: Pharmacists MUST be able to approve or reject prescriptions with mandatory reason codes for rejection
 - **FR-015**: Doctors MUST be able to create prescriptions with drug search, dosage selection, and duration specification
 - **FR-016**: Doctors MUST be able to send prescriptions directly to a patient's selected pharmacy
@@ -292,9 +303,10 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - **FR-023**: Video calls MUST use end-to-end encryption with visible security indicators
 - **FR-024**: Pharmacists MUST be able to access patient medical records in sidebar during active video consultations
 - **FR-025**: System MUST support AI-assisted note-taking during consultations with patient consent
+- **FR-025a**: AI teleconsultation transcripts MUST be editable by pharmacists with full audit trail: original AI version preserved in audit log, all edits tracked with user ID, timestamp, and changed content
 - **FR-026**: Consultations MUST support audio-only fallback for poor network conditions
 - **FR-027**: Pharmacists MUST be able to create prescriptions during or immediately after teleconsultations
-- **FR-028**: System MUST save consultation notes and recordings (with consent) to patient medical records
+- **FR-028**: System MUST save consultation notes (AI-generated with edit history and manual additions) and recordings (with consent) to patient medical records
 - **FR-029**: Golden MetaPharm VIP patients MUST have access to 24/7 teleconsultation booking including after-hours slots
 - **FR-030**: System MUST support rescheduling and cancellation of appointments with notification to both parties
 
@@ -319,9 +331,11 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - **FR-044**: System MUST provide GPS navigation with turn-by-turn directions for delivery routes
 - **FR-045**: Patients MUST be able to track deliveries in real-time with GPS location and estimated arrival time (ETA)
 - **FR-046**: Delivery personnel MUST capture electronic signatures for controlled substances and cold chain items
+- **FR-046a**: System MUST enforce controlled substance delivery restrictions by schedule: Schedule I/II narcotics require in-person pharmacy pickup (delivery blocked), Schedule III/IV/V can be delivered with mandatory signature and ID verification
 - **FR-047**: Delivery personnel MUST be able to photograph patient ID for regulatory compliance on controlled substance deliveries
 - **FR-048**: System MUST support delivery failure reporting with reason codes (absent, wrong address, refused)
 - **FR-049**: Failed deliveries MUST trigger automatic notifications to patient and pharmacist with rescheduling options
+- **FR-049a**: System MUST allow up to 3 automatic delivery reattempts over 5 business days; after 3 failed attempts, order returns to pharmacy and patient must manually reschedule or arrange in-person pickup
 - **FR-050**: Delivery personnel MUST be able to scan returned medications for recycling at end of route
 - **FR-051**: Cold chain deliveries MUST be prioritized in route optimization with time constraints
 - **FR-052**: System MUST track delivery performance metrics (on-time rate, completion rate) per delivery person
@@ -351,7 +365,7 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - **FR-070**: Users MUST be able to initiate video calls directly from message threads
 - **FR-071**: Messages related to prescriptions MUST include prescription context and patient information
 - **FR-072**: System MUST send notification when messages are received across all channels
-- **FR-073**: Time-sensitive messages MUST escalate if not responded to within defined SLA
+- **FR-073**: Time-sensitive messages MUST escalate if not responded to within defined SLA (2 hours for standard priority messages, 30 minutes for urgent messages)
 
 #### Medical Records
 
