@@ -247,6 +247,7 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - Q: What is the defined SLA timeout for message escalation (FR-073)? → A: 2 hours standard, 30 minutes urgent
 - Q: How does the system handle controlled substance prescriptions that require in-person pickup vs. delivery? → A: Tiered by substance schedule - Schedule I/II narcotics require in-person pickup, Schedule III/IV/V can be delivered with signature and ID verification
 - Q: How does delivery routing handle failed deliveries across multiple attempts? At what point does the order return to pharmacy vs. get rescheduled? → A: Three attempts then return - Up to 3 automatic delivery attempts over 5 business days; after 3 failures, order returns to pharmacy and patient must reschedule or pickup in person
+- Q: Is AI teleconsultation transcript editable by pharmacist or locked? → A: Editable with audit trail - Pharmacist can edit AI transcript, but original AI version is preserved in audit log with all edits tracked (who changed what, when)
 
 ### Edge Cases
 
@@ -302,9 +303,10 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - **FR-023**: Video calls MUST use end-to-end encryption with visible security indicators
 - **FR-024**: Pharmacists MUST be able to access patient medical records in sidebar during active video consultations
 - **FR-025**: System MUST support AI-assisted note-taking during consultations with patient consent
+- **FR-025a**: AI teleconsultation transcripts MUST be editable by pharmacists with full audit trail: original AI version preserved in audit log, all edits tracked with user ID, timestamp, and changed content
 - **FR-026**: Consultations MUST support audio-only fallback for poor network conditions
 - **FR-027**: Pharmacists MUST be able to create prescriptions during or immediately after teleconsultations
-- **FR-028**: System MUST save consultation notes and recordings (with consent) to patient medical records
+- **FR-028**: System MUST save consultation notes (AI-generated with edit history and manual additions) and recordings (with consent) to patient medical records
 - **FR-029**: Golden MetaPharm VIP patients MUST have access to 24/7 teleconsultation booking including after-hours slots
 - **FR-030**: System MUST support rescheduling and cancellation of appointments with notification to both parties
 
