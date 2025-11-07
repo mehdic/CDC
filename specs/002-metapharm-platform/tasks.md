@@ -153,8 +153,8 @@
 - [x] [T091] [P] [US1] Implement treatment plan generation in backend/services/prescription-service/src/utils/treatmentPlan.ts
 - [x] [T092] [P] [US1] Create GET /prescriptions endpoint with filtering in backend/services/prescription-service/src/routes/list.ts
 - [x] [T093] [P] [US1] Implement prescription state machine in backend/services/prescription-service/src/utils/stateMachine.ts
-- [ ] [T094] [P] [US1] Write unit tests for prescription validation in backend/services/prescription-service/__tests__/validate.test.ts
-- [ ] [T095] [P] [US1] Write integration tests for prescription workflow in backend/services/prescription-service/__tests__/integration/workflow.test.ts
+- [x] [T094] [P] [US1] Write unit tests for prescription validation in backend/services/prescription-service/__tests__/validate.test.ts
+- [x] [T095] [P] [US1] Write integration tests for prescription workflow in backend/services/prescription-service/__tests__/integration/workflow.test.ts
 
 ### Prescription - Mobile (Patient App)
 
