@@ -22,38 +22,38 @@
 
 ### Repository & Build Configuration
 
-- [ ] [T001] [P] [Setup] Initialize monorepo structure with npm workspaces at repository root
-- [ ] [T002] [P] [Setup] Create backend/package.json with TypeScript 5.3 and Node.js 20 LTS configuration
-- [ ] [T003] [P] [Setup] Create mobile/package.json with React Native 0.73 workspace configuration
-- [ ] [T004] [P] [Setup] Create web/package.json with React 18 workspace configuration
-- [ ] [T005] [P] [Setup] Create packages/api-types/package.json for shared TypeScript types
-- [ ] [T006] [P] [Setup] Configure TypeScript compiler in backend/tsconfig.json with strict mode
-- [ ] [T007] [P] [Setup] Configure ESLint and Prettier in .eslintrc.json for code quality
-- [ ] [T008] [P] [Setup] Create .gitignore with Node.js, React Native, and IDE patterns
-- [ ] [T009] [P] [Setup] Create .env.example files in backend/, mobile/, and web/ directories
-- [ ] [T010] [P] [Setup] Configure Jest test runner in backend/jest.config.js
-- [ ] [T011] [P] [Setup] Configure Jest for React Native in mobile/jest.config.js
-- [ ] [T012] [P] [Setup] Configure Jest for React in web/jest.config.js
+- [x] [T001] [P] [Setup] Initialize monorepo structure with npm workspaces at repository root
+- [x] [T002] [P] [Setup] Create backend/package.json with TypeScript 5.3 and Node.js 20 LTS configuration
+- [x] [T003] [P] [Setup] Create mobile/package.json with React Native 0.73 workspace configuration
+- [x] [T004] [P] [Setup] Create web/package.json with React 18 workspace configuration
+- [x] [T005] [P] [Setup] Create packages/api-types/package.json for shared TypeScript types
+- [x] [T006] [P] [Setup] Configure TypeScript compiler in backend/tsconfig.json with strict mode
+- [x] [T007] [P] [Setup] Configure ESLint and Prettier in .eslintrc.json for code quality
+- [x] [T008] [P] [Setup] Create .gitignore with Node.js, React Native, and IDE patterns
+- [x] [T009] [P] [Setup] Create .env.example files in backend/, mobile/, and web/ directories
+- [x] [T010] [P] [Setup] Configure Jest test runner in backend/jest.config.js
+- [x] [T011] [P] [Setup] Configure Jest for React Native in mobile/jest.config.js
+- [x] [T012] [P] [Setup] Configure Jest for React in web/jest.config.js
 
 ### Docker & Local Development
 
-- [ ] [T013] [P] [Setup] Create infrastructure/docker/docker-compose.yml with PostgreSQL 16, Redis 7
-- [ ] [T014] [P] [Setup] Add API Gateway container to docker-compose.yml on port 4000
-- [ ] [T015] [P] [Setup] Add Auth Service container to docker-compose.yml on port 4001
-- [ ] [T016] [P] [Setup] Add Prescription Service container to docker-compose.yml on port 4002
-- [ ] [T017] [P] [Setup] Add Teleconsultation Service container to docker-compose.yml on port 4003
-- [ ] [T018] [P] [Setup] Add Inventory Service container to docker-compose.yml on port 4004
-- [ ] [T019] [P] [Setup] Add Notification Service container to docker-compose.yml on port 4005
-- [ ] [T020] [P] [Setup] Create Dockerfile for backend services in backend/Dockerfile
-- [ ] [T021] [P] [Setup] Create docker-compose.override.yml for local development overrides
+- [x] [T013] [P] [Setup] Create infrastructure/docker/docker-compose.yml with PostgreSQL 16, Redis 7
+- [x] [T014] [P] [Setup] Add API Gateway container to docker-compose.yml on port 4000
+- [x] [T015] [P] [Setup] Add Auth Service container to docker-compose.yml on port 4001
+- [x] [T016] [P] [Setup] Add Prescription Service container to docker-compose.yml on port 4002
+- [x] [T017] [P] [Setup] Add Teleconsultation Service container to docker-compose.yml on port 4003
+- [x] [T018] [P] [Setup] Add Inventory Service container to docker-compose.yml on port 4004
+- [x] [T019] [P] [Setup] Add Notification Service container to docker-compose.yml on port 4005
+- [x] [T020] [P] [Setup] Create Dockerfile for backend services in backend/Dockerfile
+- [x] [T021] [P] [Setup] Create docker-compose.override.yml for local development overrides
 
 ### CI/CD Pipeline
 
-- [ ] [T022] [S] [Setup] Create .github/workflows/backend-tests.yml for backend CI
-- [ ] [T023] [S] [Setup] Create .github/workflows/mobile-tests.yml for mobile CI
-- [ ] [T024] [S] [Setup] Create .github/workflows/web-tests.yml for web CI
-- [ ] [T025] [C] [Setup] Create .github/workflows/deploy-staging.yml for staging deployment
-- [ ] [T026] [C] [Setup] Configure k6 load testing in .github/workflows/load-tests.yml
+- [x] [T022] [S] [Setup] Create .github/workflows/backend-tests.yml for backend CI
+- [x] [T023] [S] [Setup] Create .github/workflows/mobile-tests.yml for mobile CI
+- [x] [T024] [S] [Setup] Create .github/workflows/web-tests.yml for web CI
+- [x] [T025] [C] [Setup] Create .github/workflows/deploy-staging.yml for staging deployment
+- [x] [T026] [C] [Setup] Configure k6 load testing in .github/workflows/load-tests.yml
 
 ---
 

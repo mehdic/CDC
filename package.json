@@ -1,0 +1,58 @@
+{
+  "name": "metapharm-connect",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MetaPharm Connect Healthcare Platform - Multi-tenant platform connecting pharmacists, doctors, nurses, delivery personnel, and patients",
+  "workspaces": [
+    "backend",
+    "mobile",
+    "web",
+    "packages/*"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "clean": "npm run clean --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:mobile": "npm run dev --workspace=mobile",
+    "dev:web": "npm run dev --workspace=web",
+    "docker:up": "docker-compose -f infrastructure/docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f infrastructure/docker/docker-compose.yml down",
+    "docker:logs": "docker-compose -f infrastructure/docker/docker-compose.yml logs -f",
+    "migrate:up": "npm run migrate:up --workspace=backend",
+    "migrate:down": "npm run migrate:down --workspace=backend",
+    "seed:dev": "npm run seed:dev --workspace=backend"
+  },
+  "keywords": [
+    "healthcare",
+    "pharmacy",
+    "teleconsultation",
+    "prescription",
+    "inventory",
+    "delivery",
+    "HIPAA",
+    "GDPR",
+    "Swiss healthcare"
+  ],
+  "author": "MetaPharm Connect Team",
+  "license": "PROPRIETARY",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/metapharm/metapharm-connect.git"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3"
+  }
+}
