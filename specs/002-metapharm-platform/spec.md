@@ -239,9 +239,15 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 
 ---
 
+## Clarifications
+
+### Session 2025-11-07
+
+- Q: What happens when AI prescription transcription confidence is low (< 80%)? Does it route to manual pharmacist review or block processing? → A: Route to pharmacist with warnings - AI transcription proceeds but low-confidence fields are highlighted in red/yellow, pharmacist must explicitly verify each flagged field before approval
+
 ### Edge Cases
 
-- What happens when AI prescription transcription confidence is low (< 80%)? Does it route to manual pharmacist review or block processing?
+- AI prescription transcription with low confidence (< 80%) routes to pharmacist with visual warnings on low-confidence fields requiring explicit verification before approval
 - How does the system handle prescription conflicts when multiple doctors prescribe overlapping medications to the same patient?
 - What happens when a patient's insurance coverage changes mid-treatment and previously covered medications are no longer eligible?
 - How does delivery routing handle failed deliveries across multiple attempts? At what point does the order return to pharmacy vs. get rescheduled?
@@ -277,6 +283,7 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - **FR-011**: System MUST perform automatic drug interaction checks against patient's current medications and allergies
 - **FR-012**: System MUST flag potential contraindications based on patient medical history
 - **FR-013**: Pharmacists MUST be able to review AI-transcribed prescriptions and edit/validate extracted data
+- **FR-013a**: System MUST highlight low-confidence AI transcription fields (confidence < 80%) with visual warnings (red/yellow indicators) requiring pharmacist to explicitly verify each flagged field before approval
 - **FR-014**: Pharmacists MUST be able to approve or reject prescriptions with mandatory reason codes for rejection
 - **FR-015**: Doctors MUST be able to create prescriptions with drug search, dosage selection, and duration specification
 - **FR-016**: Doctors MUST be able to send prescriptions directly to a patient's selected pharmacy
