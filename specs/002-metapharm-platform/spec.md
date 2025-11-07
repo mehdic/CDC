@@ -246,14 +246,15 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - Q: What happens when AI prescription transcription confidence is low (< 80%)? Does it route to manual pharmacist review or block processing? → A: Route to pharmacist with warnings - AI transcription proceeds but low-confidence fields are highlighted in red/yellow, pharmacist must explicitly verify each flagged field before approval
 - Q: What is the defined SLA timeout for message escalation (FR-073)? → A: 2 hours standard, 30 minutes urgent
 - Q: How does the system handle controlled substance prescriptions that require in-person pickup vs. delivery? → A: Tiered by substance schedule - Schedule I/II narcotics require in-person pickup, Schedule III/IV/V can be delivered with signature and ID verification
+- Q: How does delivery routing handle failed deliveries across multiple attempts? At what point does the order return to pharmacy vs. get rescheduled? → A: Three attempts then return - Up to 3 automatic delivery attempts over 5 business days; after 3 failures, order returns to pharmacy and patient must reschedule or pickup in person
 
 ### Edge Cases
 
 - AI prescription transcription with low confidence (< 80%) routes to pharmacist with visual warnings on low-confidence fields requiring explicit verification before approval
 - Controlled substance delivery is tiered by schedule: Schedule I/II narcotics require in-person pickup, Schedule III/IV/V can be delivered with signature and ID verification
+- Failed deliveries receive up to 3 automatic reattempts over 5 business days; after 3 failures, order returns to pharmacy and patient must reschedule or pickup in person
 - How does the system handle prescription conflicts when multiple doctors prescribe overlapping medications to the same patient?
 - What happens when a patient's insurance coverage changes mid-treatment and previously covered medications are no longer eligible?
-- How does delivery routing handle failed deliveries across multiple attempts? At what point does the order return to pharmacy vs. get rescheduled?
 - What happens when cantonal health record API is unavailable during patient record sync?
 - What happens when a delivery person encounters a cold chain breach (temperature monitoring failure) during transit?
 - How does teleconsultation handle poor network connectivity? What's the fallback experience?
@@ -332,6 +333,7 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - **FR-047**: Delivery personnel MUST be able to photograph patient ID for regulatory compliance on controlled substance deliveries
 - **FR-048**: System MUST support delivery failure reporting with reason codes (absent, wrong address, refused)
 - **FR-049**: Failed deliveries MUST trigger automatic notifications to patient and pharmacist with rescheduling options
+- **FR-049a**: System MUST allow up to 3 automatic delivery reattempts over 5 business days; after 3 failed attempts, order returns to pharmacy and patient must manually reschedule or arrange in-person pickup
 - **FR-050**: Delivery personnel MUST be able to scan returned medications for recycling at end of route
 - **FR-051**: Cold chain deliveries MUST be prioritized in route optimization with time constraints
 - **FR-052**: System MUST track delivery performance metrics (on-time rate, completion rate) per delivery person
