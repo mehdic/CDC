@@ -245,15 +245,16 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 
 - Q: What happens when AI prescription transcription confidence is low (< 80%)? Does it route to manual pharmacist review or block processing? → A: Route to pharmacist with warnings - AI transcription proceeds but low-confidence fields are highlighted in red/yellow, pharmacist must explicitly verify each flagged field before approval
 - Q: What is the defined SLA timeout for message escalation (FR-073)? → A: 2 hours standard, 30 minutes urgent
+- Q: How does the system handle controlled substance prescriptions that require in-person pickup vs. delivery? → A: Tiered by substance schedule - Schedule I/II narcotics require in-person pickup, Schedule III/IV/V can be delivered with signature and ID verification
 
 ### Edge Cases
 
 - AI prescription transcription with low confidence (< 80%) routes to pharmacist with visual warnings on low-confidence fields requiring explicit verification before approval
+- Controlled substance delivery is tiered by schedule: Schedule I/II narcotics require in-person pickup, Schedule III/IV/V can be delivered with signature and ID verification
 - How does the system handle prescription conflicts when multiple doctors prescribe overlapping medications to the same patient?
 - What happens when a patient's insurance coverage changes mid-treatment and previously covered medications are no longer eligible?
 - How does delivery routing handle failed deliveries across multiple attempts? At what point does the order return to pharmacy vs. get rescheduled?
 - What happens when cantonal health record API is unavailable during patient record sync?
-- How does the system handle controlled substance prescriptions that require in-person pickup vs. delivery?
 - What happens when a delivery person encounters a cold chain breach (temperature monitoring failure) during transit?
 - How does teleconsultation handle poor network connectivity? What's the fallback experience?
 - What happens when a pharmacist rejects a prescription but the doctor is unavailable to respond for clarification?
@@ -327,6 +328,7 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - **FR-044**: System MUST provide GPS navigation with turn-by-turn directions for delivery routes
 - **FR-045**: Patients MUST be able to track deliveries in real-time with GPS location and estimated arrival time (ETA)
 - **FR-046**: Delivery personnel MUST capture electronic signatures for controlled substances and cold chain items
+- **FR-046a**: System MUST enforce controlled substance delivery restrictions by schedule: Schedule I/II narcotics require in-person pharmacy pickup (delivery blocked), Schedule III/IV/V can be delivered with mandatory signature and ID verification
 - **FR-047**: Delivery personnel MUST be able to photograph patient ID for regulatory compliance on controlled substance deliveries
 - **FR-048**: System MUST support delivery failure reporting with reason codes (absent, wrong address, refused)
 - **FR-049**: Failed deliveries MUST trigger automatic notifications to patient and pharmacist with rescheduling options
