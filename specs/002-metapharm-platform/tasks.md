@@ -136,23 +136,23 @@
 
 ### Prescription Service - Backend
 
-- [ ] [T077] [P] [US1] Initialize Prescription Service in backend/services/prescription-service/src/index.ts
-- [ ] [T078] [P] [US1] Create POST /prescriptions endpoint in backend/services/prescription-service/src/routes/prescriptions.ts
-- [ ] [T079] [P] [US1] Implement image upload to S3 in backend/services/prescription-service/src/controllers/uploadController.ts
-- [ ] [T080] [P] [US1] Create POST /prescriptions/:id/transcribe endpoint in backend/services/prescription-service/src/routes/transcribe.ts
-- [ ] [T081] [P] [US1] Integrate AWS Textract for OCR in backend/services/prescription-service/src/integrations/textract.ts
-- [ ] [T082] [P] [US1] Implement AI confidence scoring in backend/services/prescription-service/src/utils/aiConfidence.ts
-- [ ] [T083] [P] [US1] Implement low-confidence field highlighting (FR-013a) in backend/services/prescription-service/src/utils/confidence.ts
-- [ ] [T084] [P] [US1] Create POST /prescriptions/:id/validate endpoint in backend/services/prescription-service/src/routes/validate.ts
-- [ ] [T085] [P] [US1] Integrate FDB MedKnowledge API for drug interactions in backend/services/prescription-service/src/integrations/fdb.ts
-- [ ] [T086] [P] [US1] Implement allergy checking against patient record in backend/services/prescription-service/src/utils/allergyCheck.ts
-- [ ] [T087] [P] [US1] Implement contraindication checking in backend/services/prescription-service/src/utils/contraindications.ts
-- [ ] [T088] [P] [US1] Create PUT /prescriptions/:id/approve endpoint in backend/services/prescription-service/src/routes/approve.ts
-- [ ] [T089] [P] [US1] Implement pharmacist approval logic in backend/services/prescription-service/src/controllers/approveController.ts
-- [ ] [T090] [P] [US1] Create PUT /prescriptions/:id/reject endpoint in backend/services/prescription-service/src/routes/reject.ts
-- [ ] [T091] [P] [US1] Implement treatment plan generation in backend/services/prescription-service/src/utils/treatmentPlan.ts
-- [ ] [T092] [P] [US1] Create GET /prescriptions endpoint with filtering in backend/services/prescription-service/src/routes/list.ts
-- [ ] [T093] [P] [US1] Implement prescription state machine in backend/services/prescription-service/src/utils/stateMachine.ts
+- [x] [T077] [P] [US1] Initialize Prescription Service in backend/services/prescription-service/src/index.ts
+- [x] [T078] [P] [US1] Create POST /prescriptions endpoint in backend/services/prescription-service/src/routes/prescriptions.ts
+- [x] [T079] [P] [US1] Implement image upload to S3 in backend/services/prescription-service/src/controllers/uploadController.ts
+- [x] [T080] [P] [US1] Create POST /prescriptions/:id/transcribe endpoint in backend/services/prescription-service/src/routes/transcribe.ts
+- [x] [T081] [P] [US1] Integrate AWS Textract for OCR in backend/services/prescription-service/src/integrations/textract.ts
+- [x] [T082] [P] [US1] Implement AI confidence scoring in backend/services/prescription-service/src/utils/aiConfidence.ts
+- [x] [T083] [P] [US1] Implement low-confidence field highlighting (FR-013a) in backend/services/prescription-service/src/utils/confidence.ts
+- [x] [T084] [P] [US1] Create POST /prescriptions/:id/validate endpoint in backend/services/prescription-service/src/routes/validate.ts
+- [x] [T085] [P] [US1] Integrate FDB MedKnowledge API for drug interactions in backend/services/prescription-service/src/integrations/fdb.ts
+- [x] [T086] [P] [US1] Implement allergy checking against patient record in backend/services/prescription-service/src/utils/allergyCheck.ts
+- [x] [T087] [P] [US1] Implement contraindication checking in backend/services/prescription-service/src/utils/contraindications.ts
+- [x] [T088] [P] [US1] Create PUT /prescriptions/:id/approve endpoint in backend/services/prescription-service/src/routes/approve.ts
+- [x] [T089] [P] [US1] Implement pharmacist approval logic in backend/services/prescription-service/src/controllers/approveController.ts
+- [x] [T090] [P] [US1] Create PUT /prescriptions/:id/reject endpoint in backend/services/prescription-service/src/routes/reject.ts
+- [x] [T091] [P] [US1] Implement treatment plan generation in backend/services/prescription-service/src/utils/treatmentPlan.ts
+- [x] [T092] [P] [US1] Create GET /prescriptions endpoint with filtering in backend/services/prescription-service/src/routes/list.ts
+- [x] [T093] [P] [US1] Implement prescription state machine in backend/services/prescription-service/src/utils/stateMachine.ts
 - [ ] [T094] [P] [US1] Write unit tests for prescription validation in backend/services/prescription-service/__tests__/validate.test.ts
 - [ ] [T095] [P] [US1] Write integration tests for prescription workflow in backend/services/prescription-service/__tests__/integration/workflow.test.ts
 

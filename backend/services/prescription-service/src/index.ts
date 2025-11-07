@@ -5,7 +5,7 @@
  * Phase 3 - US1: Prescription Processing & Validation
  */
 
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -13,8 +13,14 @@ import { DataSource } from 'typeorm';
 import { Prescription } from '../../../shared/models/Prescription';
 import { PrescriptionItem } from '../../../shared/models/PrescriptionItem';
 import { TreatmentPlan } from '../../../shared/models/TreatmentPlan';
+import { authenticateJWT } from '../../../shared/middleware/auth';
+import { requirePermission, Permission } from '../../../shared/middleware/rbac';
 import prescriptionsRouter from './routes/prescriptions';
 import transcribeRouter from './routes/transcribe';
+import validateRouter from './routes/validate';
+import approveRouter from './routes/approve';
+import rejectRouter from './routes/reject';
+import listRouter from './routes/list';
 
 dotenv.config();
 
@@ -72,9 +78,32 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// Prescription routes
-app.use('/prescriptions', prescriptionsRouter);
-app.use('/prescriptions', transcribeRouter);
+// ============================================================================
+// Prescription Routes with Authentication & Authorization
+// ============================================================================
+//
+// Security Requirements (FR-006, FR-007, FR-112):
+// - All prescription endpoints require JWT authentication
+// - RBAC enforced based on user role and permissions
+// - Audit logging handled by auth middleware
+
+// List prescriptions - Requires authentication (filtering by role in controller)
+app.use('/prescriptions', authenticateJWT as RequestHandler, listRouter);
+
+// Upload prescription - Requires UPLOAD_PRESCRIPTION permission (patients)
+app.use('/prescriptions', authenticateJWT as RequestHandler, requirePermission(Permission.UPLOAD_PRESCRIPTION) as RequestHandler, prescriptionsRouter);
+
+// Transcribe prescription - Requires REVIEW_PRESCRIPTION permission (pharmacists)
+app.use('/prescriptions/:id/transcribe', authenticateJWT as RequestHandler, requirePermission(Permission.REVIEW_PRESCRIPTION) as RequestHandler, transcribeRouter);
+
+// Validate prescription - Requires REVIEW_PRESCRIPTION permission (pharmacists)
+app.use('/prescriptions/:id/validate', authenticateJWT as RequestHandler, requirePermission(Permission.REVIEW_PRESCRIPTION) as RequestHandler, validateRouter);
+
+// Approve prescription - Requires APPROVE_PRESCRIPTION permission (pharmacists only)
+app.use('/prescriptions/:id/approve', authenticateJWT as RequestHandler, requirePermission(Permission.APPROVE_PRESCRIPTION) as RequestHandler, approveRouter);
+
+// Reject prescription - Requires APPROVE_PRESCRIPTION permission (pharmacists only)
+app.use('/prescriptions/:id/reject', authenticateJWT as RequestHandler, requirePermission(Permission.APPROVE_PRESCRIPTION) as RequestHandler, rejectRouter);
 
 // ============================================================================
 // Error Handling
