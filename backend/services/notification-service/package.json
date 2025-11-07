@@ -1,0 +1,25 @@
+{
+  "name": "@metapharm/notification-service",
+  "version": "1.0.0",
+  "description": "Notification service for MetaPharm Connect (Email, SMS, Push)",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^7.7.0",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "redis": "^4.6.10",
+    "twilio": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}

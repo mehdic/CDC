@@ -3,17 +3,14 @@ module.exports = {
   // Test environment for Node.js backend
   testEnvironment: 'node',
 
-  // TypeScript transformation using ts-jest
-  preset: 'ts-jest',
-
   // Root directories for tests
   roots: [
-    '<rootDir>/src',
     '<rootDir>/shared',
     '<rootDir>/services'
   ],
 
   // Transform TypeScript files using ts-jest
+  // Note: Removed preset for workspace compatibility - configure directly instead
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       tsconfig: {
@@ -43,7 +40,6 @@ module.exports = {
 
   // Coverage configuration
   collectCoverageFrom: [
-    'src/**/*.ts',
     'shared/**/*.ts',
     'services/**/*.ts',
     '!**/*.test.ts',

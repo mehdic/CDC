@@ -61,65 +61,65 @@
 
 ### Database Setup
 
-- [ ] [T027] [P] [Foundation] Create database migration tool in backend/shared/db/migrate.ts using node-pg-migrate
-- [ ] [T028] [P] [Foundation] Create initial migration backend/shared/db/migrations/001_create_users.sql with User table
-- [ ] [T029] [P] [Foundation] Create migration backend/shared/db/migrations/002_create_pharmacies.sql with Pharmacy table
-- [ ] [T030] [P] [Foundation] Create migration backend/shared/db/migrations/003_create_audit_trail.sql with AuditTrailEntry table
-- [ ] [T031] [P] [Foundation] Implement Row-Level Security policies in backend/shared/db/migrations/004_enable_rls.sql
-- [ ] [T032] [P] [Foundation] Create seed script backend/shared/db/seeds/dev-seed.ts with test users and pharmacies
-- [ ] [T033] [P] [Foundation] Create TypeORM entities in backend/shared/models/User.ts matching schema
-- [ ] [T034] [P] [Foundation] Create TypeORM entity in backend/shared/models/Pharmacy.ts
-- [ ] [T035] [P] [Foundation] Create TypeORM entity in backend/shared/models/AuditTrailEntry.ts
+- [x] [T027] [P] [Foundation] Create database migration tool in backend/shared/db/migrate.ts using node-pg-migrate
+- [x] [T028] [P] [Foundation] Create initial migration backend/shared/db/migrations/001_create_users.sql with User table
+- [x] [T029] [P] [Foundation] Create migration backend/shared/db/migrations/002_create_pharmacies.sql with Pharmacy table
+- [x] [T030] [P] [Foundation] Create migration backend/shared/db/migrations/003_create_audit_trail.sql with AuditTrailEntry table
+- [x] [T031] [P] [Foundation] Implement Row-Level Security policies in backend/shared/db/migrations/004_enable_rls.sql
+- [x] [T032] [P] [Foundation] Create seed script backend/shared/db/seeds/dev-seed.ts with test users and pharmacies
+- [x] [T033] [P] [Foundation] Create TypeORM entities in backend/shared/models/User.ts matching schema
+- [x] [T034] [P] [Foundation] Create TypeORM entity in backend/shared/models/Pharmacy.ts
+- [x] [T035] [P] [Foundation] Create TypeORM entity in backend/shared/models/AuditTrailEntry.ts
 
 ### Encryption & Security
 
-- [ ] [T036] [P] [Foundation] Implement AWS KMS encryption utility in backend/shared/utils/encryption.ts
-- [ ] [T037] [P] [Foundation] Create encryptField() function with data key caching in backend/shared/utils/encryption.ts
-- [ ] [T038] [P] [Foundation] Create decryptField() function in backend/shared/utils/encryption.ts
-- [ ] [T039] [P] [Foundation] Implement password hashing with bcrypt in backend/shared/utils/auth.ts
-- [ ] [T040] [P] [Foundation] Create JWT token generation function in backend/shared/utils/jwt.ts
-- [ ] [T041] [P] [Foundation] Create JWT token validation middleware in backend/shared/middleware/auth.ts
-- [ ] [T042] [P] [Foundation] Implement RBAC permission checking in backend/shared/middleware/rbac.ts
+- [x] [T036] [P] [Foundation] Implement AWS KMS encryption utility in backend/shared/utils/encryption.ts
+- [x] [T037] [P] [Foundation] Create encryptField() function with data key caching in backend/shared/utils/encryption.ts
+- [x] [T038] [P] [Foundation] Create decryptField() function in backend/shared/utils/encryption.ts
+- [x] [T039] [P] [Foundation] Implement password hashing with bcrypt in backend/shared/utils/auth.ts
+- [x] [T040] [P] [Foundation] Create JWT token generation function in backend/shared/utils/jwt.ts
+- [x] [T041] [P] [Foundation] Create JWT token validation middleware in backend/shared/middleware/auth.ts
+- [x] [T042] [P] [Foundation] Implement RBAC permission checking in backend/shared/middleware/rbac.ts
 
 ### Auth Service
 
-- [ ] [T043] [P] [Foundation] Initialize Auth Service in backend/services/auth-service/src/index.ts
-- [ ] [T044] [P] [Foundation] Create POST /auth/login endpoint in backend/services/auth-service/src/routes/login.ts
-- [ ] [T045] [P] [Foundation] Implement email/password authentication in backend/services/auth-service/src/controllers/loginController.ts
-- [ ] [T046] [P] [Foundation] Create POST /auth/mfa/verify endpoint in backend/services/auth-service/src/routes/mfa.ts
-- [ ] [T047] [P] [Foundation] Implement TOTP MFA verification in backend/services/auth-service/src/controllers/mfaController.ts
-- [ ] [T048] [S] [Foundation] Integrate HIN e-ID OAuth in backend/services/auth-service/src/integrations/hin-eid.ts
-- [ ] [T049] [P] [Foundation] Create GET /auth/sessions endpoint in backend/services/auth-service/src/routes/sessions.ts
-- [ ] [T050] [P] [Foundation] Create DELETE /auth/logout endpoint in backend/services/auth-service/src/routes/logout.ts
-- [ ] [T051] [P] [Foundation] Write unit tests for Auth Service in backend/services/auth-service/__tests__/
+- [x] [T043] [P] [Foundation] Initialize Auth Service in backend/services/auth-service/src/index.ts
+- [x] [T044] [P] [Foundation] Create POST /auth/login endpoint in backend/services/auth-service/src/routes/login.ts
+- [x] [T045] [P] [Foundation] Implement email/password authentication in backend/services/auth-service/src/controllers/loginController.ts
+- [x] [T046] [P] [Foundation] Create POST /auth/mfa/verify endpoint in backend/services/auth-service/src/routes/mfa.ts
+- [x] [T047] [P] [Foundation] Implement TOTP MFA verification in backend/services/auth-service/src/controllers/mfaController.ts
+- [x] [T048] [S] [Foundation] Integrate HIN e-ID OAuth in backend/services/auth-service/src/integrations/hin-eid.ts
+- [x] [T049] [P] [Foundation] Create GET /auth/sessions endpoint in backend/services/auth-service/src/routes/sessions.ts
+- [x] [T050] [P] [Foundation] Create DELETE /auth/logout endpoint in backend/services/auth-service/src/routes/logout.ts
+- [x] [T051] [P] [Foundation] Write unit tests for Auth Service in backend/services/auth-service/__tests__/
 
 ### API Gateway
 
-- [ ] [T052] [P] [Foundation] Initialize API Gateway in backend/services/api-gateway/src/index.ts with Express
-- [ ] [T053] [P] [Foundation] Implement rate limiting middleware in backend/services/api-gateway/src/middleware/rateLimiter.ts
-- [ ] [T054] [P] [Foundation] Implement request routing to microservices in backend/services/api-gateway/src/routes/proxy.ts
-- [ ] [T055] [P] [Foundation] Add JWT validation middleware to API Gateway in backend/services/api-gateway/src/middleware/auth.ts
-- [ ] [T056] [P] [Foundation] Implement CORS configuration in backend/services/api-gateway/src/middleware/cors.ts
-- [ ] [T057] [P] [Foundation] Add request logging middleware in backend/services/api-gateway/src/middleware/logger.ts
-- [ ] [T058] [P] [Foundation] Create health check endpoint GET /health in backend/services/api-gateway/src/routes/health.ts
+- [x] [T052] [P] [Foundation] Initialize API Gateway in backend/services/api-gateway/src/index.ts with Express
+- [x] [T053] [P] [Foundation] Implement rate limiting middleware in backend/services/api-gateway/src/middleware/rateLimiter.ts
+- [x] [T054] [P] [Foundation] Implement request routing to microservices in backend/services/api-gateway/src/routes/proxy.ts
+- [x] [T055] [P] [Foundation] Add JWT validation middleware to API Gateway in backend/services/api-gateway/src/middleware/auth.ts
+- [x] [T056] [P] [Foundation] Implement CORS configuration in backend/services/api-gateway/src/middleware/cors.ts
+- [x] [T057] [P] [Foundation] Add request logging middleware in backend/services/api-gateway/src/middleware/logger.ts
+- [x] [T058] [P] [Foundation] Create health check endpoint GET /health in backend/services/api-gateway/src/routes/health.ts
 
 ### Audit Trail Service
 
-- [ ] [T059] [P] [Foundation] Create audit trail logging utility in backend/shared/utils/audit.ts
-- [ ] [T060] [P] [Foundation] Implement logAuditEvent() function with immutable insert in backend/shared/utils/audit.ts
-- [ ] [T061] [P] [Foundation] Create database trigger for Prescription auditing in backend/shared/db/migrations/005_audit_triggers.sql
-- [ ] [T062] [P] [Foundation] Create database trigger for Teleconsultation auditing in backend/shared/db/migrations/005_audit_triggers.sql
-- [ ] [T063] [P] [Foundation] Create GET /audit/entries endpoint in backend/services/api-gateway/src/routes/audit.ts
+- [x] [T059] [P] [Foundation] Create audit trail logging utility in backend/shared/utils/audit.ts
+- [x] [T060] [P] [Foundation] Implement logAuditEvent() function with immutable insert in backend/shared/utils/audit.ts
+- [x] [T061] [P] [Foundation] Create database trigger for Prescription auditing in backend/shared/db/migrations/005_audit_triggers.sql
+- [x] [T062] [P] [Foundation] Create database trigger for Teleconsultation auditing in backend/shared/db/migrations/005_audit_triggers.sql
+- [x] [T063] [P] [Foundation] Create GET /audit/entries endpoint in backend/services/api-gateway/src/routes/audit.ts
 
 ### Notification Service
 
-- [ ] [T064] [P] [Foundation] Initialize Notification Service in backend/services/notification-service/src/index.ts
-- [ ] [T065] [P] [Foundation] Integrate Twilio SendGrid for email in backend/services/notification-service/src/integrations/email.ts
-- [ ] [T066] [P] [Foundation] Integrate Twilio SMS API in backend/services/notification-service/src/integrations/sms.ts
-- [ ] [T067] [P] [Foundation] Create sendEmail() function in backend/services/notification-service/src/controllers/emailController.ts
-- [ ] [T068] [P] [Foundation] Create sendSMS() function in backend/services/notification-service/src/controllers/smsController.ts
-- [ ] [T069] [P] [Foundation] Implement push notification queue consumer in backend/services/notification-service/src/workers/pushWorker.ts
-- [ ] [T070] [S] [Foundation] Integrate Firebase Cloud Messaging for mobile push in backend/services/notification-service/src/integrations/fcm.ts
+- [x] [T064] [P] [Foundation] Initialize Notification Service in backend/services/notification-service/src/index.ts
+- [x] [T065] [P] [Foundation] Integrate Twilio SendGrid for email in backend/services/notification-service/src/integrations/email.ts
+- [x] [T066] [P] [Foundation] Integrate Twilio SMS API in backend/services/notification-service/src/integrations/sms.ts
+- [x] [T067] [P] [Foundation] Create sendEmail() function in backend/services/notification-service/src/controllers/emailController.ts
+- [x] [T068] [P] [Foundation] Create sendSMS() function in backend/services/notification-service/src/controllers/smsController.ts
+- [x] [T069] [P] [Foundation] Implement push notification queue consumer in backend/services/notification-service/src/workers/pushWorker.ts
+- [x] [T070] [S] [Foundation] Integrate Firebase Cloud Messaging for mobile push in backend/services/notification-service/src/integrations/fcm.ts
 
 ---
 
