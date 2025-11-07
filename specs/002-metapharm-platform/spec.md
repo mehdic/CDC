@@ -244,6 +244,7 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 ### Session 2025-11-07
 
 - Q: What happens when AI prescription transcription confidence is low (< 80%)? Does it route to manual pharmacist review or block processing? → A: Route to pharmacist with warnings - AI transcription proceeds but low-confidence fields are highlighted in red/yellow, pharmacist must explicitly verify each flagged field before approval
+- Q: What is the defined SLA timeout for message escalation (FR-073)? → A: 2 hours standard, 30 minutes urgent
 
 ### Edge Cases
 
@@ -358,7 +359,7 @@ As a high-value patient, I need access to premium services including 24/7 teleco
 - **FR-070**: Users MUST be able to initiate video calls directly from message threads
 - **FR-071**: Messages related to prescriptions MUST include prescription context and patient information
 - **FR-072**: System MUST send notification when messages are received across all channels
-- **FR-073**: Time-sensitive messages MUST escalate if not responded to within defined SLA
+- **FR-073**: Time-sensitive messages MUST escalate if not responded to within defined SLA (2 hours for standard priority messages, 30 minutes for urgent messages)
 
 #### Medical Records
 
