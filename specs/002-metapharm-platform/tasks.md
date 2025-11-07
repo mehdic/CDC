@@ -127,12 +127,12 @@
 
 ### Database Schema
 
-- [ ] [T071] [P] [US1] Create migration backend/shared/db/migrations/010_create_prescriptions.sql with Prescription table
-- [ ] [T072] [P] [US1] Create migration backend/shared/db/migrations/011_create_prescription_items.sql with PrescriptionItem table
-- [ ] [T073] [P] [US1] Create migration backend/shared/db/migrations/012_create_treatment_plans.sql with TreatmentPlan table
-- [ ] [T074] [P] [US1] Create TypeORM entity in backend/shared/models/Prescription.ts with RLS policy
-- [ ] [T075] [P] [US1] Create TypeORM entity in backend/shared/models/PrescriptionItem.ts
-- [ ] [T076] [P] [US1] Create TypeORM entity in backend/shared/models/TreatmentPlan.ts
+- [x] [T071] [P] [US1] Create migration backend/shared/db/migrations/010_create_prescriptions.sql with Prescription table
+- [x] [T072] [P] [US1] Create migration backend/shared/db/migrations/011_create_prescription_items.sql with PrescriptionItem table
+- [x] [T073] [P] [US1] Create migration backend/shared/db/migrations/012_create_treatment_plans.sql with TreatmentPlan table
+- [x] [T074] [P] [US1] Create TypeORM entity in backend/shared/models/Prescription.ts with RLS policy
+- [x] [T075] [P] [US1] Create TypeORM entity in backend/shared/models/PrescriptionItem.ts
+- [x] [T076] [P] [US1] Create TypeORM entity in backend/shared/models/TreatmentPlan.ts
 
 ### Prescription Service - Backend
 
