@@ -193,13 +193,13 @@
 
 ### Prescription - Mobile (Doctor App)
 
-- [ ] [T122] [S] [US1] Initialize Doctor App in mobile/doctor-app/src/App.tsx
-- [ ] [T123] [S] [US1] Create Prescription Creation screen in mobile/doctor-app/src/screens/CreatePrescriptionScreen.tsx
-- [ ] [T124] [S] [US1] Implement drug search with AI suggestions in mobile/doctor-app/src/components/DrugSearch.tsx
-- [ ] [T125] [S] [US1] Implement dosage picker in mobile/doctor-app/src/components/DosagePicker.tsx
-- [ ] [T126] [S] [US1] Create patient selector in mobile/doctor-app/src/components/PatientSelector.tsx
-- [ ] [T127] [S] [US1] Create pharmacy selector in mobile/doctor-app/src/components/PharmacySelector.tsx
-- [ ] [T128] [S] [US1] Implement prescription send confirmation in mobile/doctor-app/src/screens/SendConfirmationScreen.tsx
+- [x] [T122] [S] [US1] Initialize Doctor App in mobile/doctor-app/src/App.tsx
+- [x] [T123] [S] [US1] Create Prescription Creation screen in mobile/doctor-app/src/screens/CreatePrescriptionScreen.tsx
+- [x] [T124] [S] [US1] Implement drug search with AI suggestions in mobile/doctor-app/src/components/DrugSearch.tsx
+- [x] [T125] [S] [US1] Implement dosage picker in mobile/doctor-app/src/components/DosagePicker.tsx
+- [x] [T126] [S] [US1] Create patient selector in mobile/doctor-app/src/components/PatientSelector.tsx
+- [x] [T127] [S] [US1] Create pharmacy selector in mobile/doctor-app/src/components/PharmacySelector.tsx
+- [x] [T128] [S] [US1] Implement prescription send confirmation in mobile/doctor-app/src/screens/SendConfirmationScreen.tsx
 
 ### Testing & QA
 
@@ -214,40 +214,40 @@
 
 ### Database Schema
 
-- [ ] [T133] [P] [US2] Create migration backend/shared/db/migrations/020_create_teleconsultations.sql with Teleconsultation table
-- [ ] [T134] [P] [US2] Create migration backend/shared/db/migrations/021_create_consultation_notes.sql with ConsultationNote table
-- [ ] [T135] [P] [US2] Create TypeORM entity in backend/shared/models/Teleconsultation.ts with RLS
-- [ ] [T136] [P] [US2] Create TypeORM entity in backend/shared/models/ConsultationNote.ts
+- [x] [T133] [P] [US2] Create migration backend/shared/db/migrations/020_create_teleconsultations.sql with Teleconsultation table
+- [x] [T134] [P] [US2] Create migration backend/shared/db/migrations/021_create_consultation_notes.sql with ConsultationNote table
+- [x] [T135] [P] [US2] Create TypeORM entity in backend/shared/models/Teleconsultation.ts with RLS
+- [x] [T136] [P] [US2] Create TypeORM entity in backend/shared/models/ConsultationNote.ts
 
 ### Teleconsultation Service - Backend
 
-- [ ] [T137] [P] [US2] Initialize Teleconsultation Service in backend/services/teleconsultation-service/src/index.ts
-- [ ] [T138] [P] [US2] Create GET /teleconsultations/availability endpoint in backend/services/teleconsultation-service/src/routes/availability.ts
-- [ ] [T139] [P] [US2] Implement pharmacist availability checking in backend/services/teleconsultation-service/src/controllers/availabilityController.ts
-- [ ] [T140] [P] [US2] Create POST /teleconsultations endpoint in backend/services/teleconsultation-service/src/routes/book.ts
-- [ ] [T141] [P] [US2] Implement booking validation and conflict checking in backend/services/teleconsultation-service/src/controllers/bookController.ts
-- [ ] [T142] [P] [US2] Integrate Twilio Video Rooms API in backend/services/teleconsultation-service/src/integrations/twilio.ts
-- [ ] [T143] [P] [US2] Create GET /teleconsultations/:id/join endpoint in backend/services/teleconsultation-service/src/routes/join.ts
-- [ ] [T144] [P] [US2] Implement Twilio access token generation in backend/services/teleconsultation-service/src/controllers/joinController.ts
-- [ ] [T145] [P] [US2] Create POST /teleconsultations/:id/notes endpoint in backend/services/teleconsultation-service/src/routes/notes.ts
-- [ ] [T146] [P] [US2] Implement AI transcription with Twilio speech-to-text in backend/services/teleconsultation-service/src/integrations/transcription.ts
-- [ ] [T147] [P] [US2] Implement consultation note editing with audit trail (FR-025a) in backend/services/teleconsultation-service/src/controllers/notesController.ts
-- [ ] [T148] [P] [US2] Implement recording consent management in backend/services/teleconsultation-service/src/utils/consent.ts
-- [ ] [T149] [P] [US2] Create teleconsultation state machine in backend/services/teleconsultation-service/src/utils/stateMachine.ts
-- [ ] [T150] [P] [US2] Implement appointment reminder notifications in backend/services/teleconsultation-service/src/workers/reminderWorker.ts
-- [ ] [T151] [P] [US2] Write unit tests for booking logic in backend/services/teleconsultation-service/__tests__/booking.test.ts
+- [x] [T137] [P] [US2] Initialize Teleconsultation Service in backend/services/teleconsultation-service/src/index.ts
+- [x] [T138] [P] [US2] Create GET /teleconsultations/availability endpoint in backend/services/teleconsultation-service/src/routes/availability.ts
+- [x] [T139] [P] [US2] Implement pharmacist availability checking in backend/services/teleconsultation-service/src/controllers/availabilityController.ts
+- [x] [T140] [P] [US2] Create POST /teleconsultations endpoint in backend/services/teleconsultation-service/src/routes/book.ts
+- [x] [T141] [P] [US2] Implement booking validation and conflict checking in backend/services/teleconsultation-service/src/controllers/bookController.ts
+- [x] [T142] [P] [US2] Integrate Twilio Video Rooms API in backend/services/teleconsultation-service/src/integrations/twilio.ts
+- [x] [T143] [P] [US2] Create GET /teleconsultations/:id/join endpoint in backend/services/teleconsultation-service/src/routes/join.ts
+- [x] [T144] [P] [US2] Implement Twilio access token generation in backend/services/teleconsultation-service/src/controllers/joinController.ts
+- [x] [T145] [P] [US2] Create POST /teleconsultations/:id/notes endpoint in backend/services/teleconsultation-service/src/routes/notes.ts
+- [x] [T146] [P] [US2] Implement AI transcription with Twilio speech-to-text in backend/services/teleconsultation-service/src/integrations/transcription.ts
+- [x] [T147] [P] [US2] Implement consultation note editing with audit trail (FR-025a) in backend/services/teleconsultation-service/src/controllers/notesController.ts
+- [x] [T148] [P] [US2] Implement recording consent management in backend/services/teleconsultation-service/src/utils/consent.ts
+- [x] [T149] [P] [US2] Create teleconsultation state machine in backend/services/teleconsultation-service/src/utils/stateMachine.ts
+- [x] [T150] [P] [US2] Implement appointment reminder notifications in backend/services/teleconsultation-service/src/workers/reminderWorker.ts
+- [x] [T151] [P] [US2] Write unit tests for booking logic in backend/services/teleconsultation-service/__tests__/booking.test.ts
 
 ### Teleconsultation - Mobile (Patient App)
 
-- [ ] [T152] [P] [US2] Create Teleconsultation Booking screen in mobile/patient-app/src/screens/BookTeleconsultationScreen.tsx
+- [x] [T152] [P] [US2] Create Teleconsultation Booking screen in mobile/patient-app/src/screens/BookTeleconsultationScreen.tsx
 - [ ] [T153] [P] [US2] Implement availability calendar in mobile/patient-app/src/components/AvailabilityCalendar.tsx
-- [ ] [T154] [P] [US2] Create Video Call screen in mobile/patient-app/src/screens/VideoCallScreen.tsx
+- [x] [T154] [P] [US2] Create Video Call screen in mobile/patient-app/src/screens/VideoCallScreen.tsx
 - [ ] [T155] [P] [US2] Integrate Twilio Video SDK in mobile/patient-app/src/components/TwilioVideo.tsx
 - [ ] [T156] [P] [US2] Implement video controls (mute, video on/off, end call) in mobile/patient-app/src/components/VideoControls.tsx
 - [ ] [T157] [P] [US2] Implement audio-only fallback in mobile/patient-app/src/components/AudioFallback.tsx
 - [ ] [T158] [P] [US2] Create recording consent prompt in mobile/patient-app/src/components/RecordingConsent.tsx
 - [ ] [T159] [P] [US2] Create Upcoming Consultations list in mobile/patient-app/src/screens/UpcomingConsultationsScreen.tsx
-- [ ] [T160] [P] [US2] Implement teleconsultation API client in mobile/patient-app/src/services/teleconsultationService.ts
+- [x] [T160] [P] [US2] Implement teleconsultation API client in mobile/patient-app/src/services/teleconsultationService.ts
 - [ ] [T161] [P] [US2] Create Redux slice for teleconsultations in mobile/patient-app/src/store/teleconsultationSlice.ts
 
 ### Teleconsultation - Mobile (Pharmacist App)
@@ -282,61 +282,61 @@
 
 ### Database Schema
 
-- [ ] [T179] [P] [US3] Create migration backend/shared/db/migrations/030_create_inventory_items.sql with InventoryItem table
-- [ ] [T180] [P] [US3] Create migration backend/shared/db/migrations/031_create_inventory_transactions.sql with InventoryTransaction table
-- [ ] [T181] [P] [US3] Create migration backend/shared/db/migrations/032_create_inventory_alerts.sql with InventoryAlert table
-- [ ] [T182] [P] [US3] Create TypeORM entity in backend/shared/models/InventoryItem.ts with RLS
-- [ ] [T183] [P] [US3] Create TypeORM entity in backend/shared/models/InventoryTransaction.ts
-- [ ] [T184] [P] [US3] Create TypeORM entity in backend/shared/models/InventoryAlert.ts
+- [x] [T179] [P] [US3] Create migration backend/shared/db/migrations/030_create_inventory_items.sql with InventoryItem table
+- [x] [T180] [P] [US3] Create migration backend/shared/db/migrations/031_create_inventory_transactions.sql with InventoryTransaction table
+- [x] [T181] [P] [US3] Create migration backend/shared/db/migrations/032_create_inventory_alerts.sql with InventoryAlert table
+- [x] [T182] [P] [US3] Create TypeORM entity in backend/shared/models/InventoryItem.ts with RLS
+- [x] [T183] [P] [US3] Create TypeORM entity in backend/shared/models/InventoryTransaction.ts
+- [x] [T184] [P] [US3] Create TypeORM entity in backend/shared/models/InventoryAlert.ts
 
 ### Inventory Service - Backend
 
-- [ ] [T185] [P] [US3] Initialize Inventory Service in backend/services/inventory-service/src/index.ts
-- [ ] [T186] [P] [US3] Create POST /inventory/scan endpoint in backend/services/inventory-service/src/routes/scan.ts
-- [ ] [T187] [P] [US3] Implement QR code parsing in backend/services/inventory-service/src/utils/qrParser.ts
-- [ ] [T188] [P] [US3] Implement stock update logic in backend/services/inventory-service/src/controllers/scanController.ts
-- [ ] [T189] [P] [US3] Create inventory transaction recording in backend/services/inventory-service/src/controllers/transactionController.ts
-- [ ] [T190] [P] [US3] Create GET /inventory/items endpoint in backend/services/inventory-service/src/routes/items.ts
-- [ ] [T191] [P] [US3] Create PUT /inventory/items/:id endpoint in backend/services/inventory-service/src/routes/update.ts
-- [ ] [T192] [P] [US3] Create GET /inventory/alerts endpoint in backend/services/inventory-service/src/routes/alerts.ts
-- [ ] [T193] [P] [US3] Implement low stock alert generation in backend/services/inventory-service/src/workers/alertWorker.ts
-- [ ] [T194] [P] [US3] Implement expiration alert generation in backend/services/inventory-service/src/workers/expirationWorker.ts
-- [ ] [T195] [P] [US3] Integrate AWS Forecast for demand prediction in backend/services/inventory-service/src/integrations/forecast.ts
-- [ ] [T196] [P] [US3] Implement AI-suggested reorder quantities in backend/services/inventory-service/src/utils/reorderSuggestion.ts
-- [ ] [T197] [P] [US3] Implement controlled substance tracking in backend/services/inventory-service/src/utils/controlledSubstance.ts
-- [ ] [T198] [P] [US3] Create inventory analytics endpoint GET /inventory/analytics in backend/services/inventory-service/src/routes/analytics.ts
-- [ ] [T199] [P] [US3] Write unit tests for stock calculations in backend/services/inventory-service/__tests__/stock.test.ts
+- [x] [T185] [P] [US3] Initialize Inventory Service in backend/services/inventory-service/src/index.ts
+- [x] [T186] [P] [US3] Create POST /inventory/scan endpoint in backend/services/inventory-service/src/routes/scan.ts
+- [x] [T187] [P] [US3] Implement QR code parsing in backend/services/inventory-service/src/utils/qrParser.ts
+- [x] [T188] [P] [US3] Implement stock update logic in backend/services/inventory-service/src/controllers/scanController.ts
+- [x] [T189] [P] [US3] Create inventory transaction recording in backend/services/inventory-service/src/controllers/transactionController.ts
+- [x] [T190] [P] [US3] Create GET /inventory/items endpoint in backend/services/inventory-service/src/routes/items.ts
+- [x] [T191] [P] [US3] Create PUT /inventory/items/:id endpoint in backend/services/inventory-service/src/routes/update.ts
+- [x] [T192] [P] [US3] Create GET /inventory/alerts endpoint in backend/services/inventory-service/src/routes/alerts.ts
+- [x] [T193] [P] [US3] Implement low stock alert generation in backend/services/inventory-service/src/workers/alertWorker.ts
+- [x] [T194] [P] [US3] Implement expiration alert generation in backend/services/inventory-service/src/workers/expirationWorker.ts
+- [x] [T195] [P] [US3] Integrate AWS Forecast for demand prediction in backend/services/inventory-service/src/integrations/forecast.ts
+- [x] [T196] [P] [US3] Implement AI-suggested reorder quantities in backend/services/inventory-service/src/utils/reorderSuggestion.ts
+- [x] [T197] [P] [US3] Implement controlled substance tracking in backend/services/inventory-service/src/utils/controlledSubstance.ts
+- [x] [T198] [P] [US3] Create inventory analytics endpoint GET /inventory/analytics in backend/services/inventory-service/src/routes/analytics.ts
+- [x] [T199] [P] [US3] Write unit tests for stock calculations in backend/services/inventory-service/__tests__/stock.test.ts
 
 ### Inventory - Mobile (Pharmacist App)
 
-- [ ] [T200] [P] [US3] Create Inventory Dashboard in mobile/pharmacist-app/src/screens/InventoryDashboardScreen.tsx
-- [ ] [T201] [P] [US3] Create QR Scanner screen in mobile/pharmacist-app/src/screens/QRScannerScreen.tsx
-- [ ] [T202] [P] [US3] Integrate React Native Camera for QR scanning in mobile/pharmacist-app/src/components/QRScanner.tsx
-- [ ] [T203] [P] [US3] Create Inventory Alerts screen in mobile/pharmacist-app/src/screens/InventoryAlertsScreen.tsx
-- [ ] [T204] [P] [US3] Create Inventory Item Detail screen in mobile/pharmacist-app/src/screens/InventoryItemScreen.tsx
-- [ ] [T205] [P] [US3] Implement stock level indicators in mobile/pharmacist-app/src/components/StockLevelBadge.tsx
-- [ ] [T206] [P] [US3] Create Restock Suggestions panel in mobile/pharmacist-app/src/components/RestockSuggestions.tsx
-- [ ] [T207] [P] [US3] Implement batch info editor in mobile/pharmacist-app/src/components/BatchInfoEditor.tsx
-- [ ] [T208] [P] [US3] Create inventory API client in mobile/pharmacist-app/src/services/inventoryService.ts
-- [ ] [T209] [P] [US3] Create Redux slice for inventory in mobile/pharmacist-app/src/store/inventorySlice.ts
+- [x] [T200] [P] [US3] Create Inventory Dashboard in mobile/pharmacist-app/src/screens/InventoryDashboardScreen.tsx
+- [x] [T201] [P] [US3] Create QR Scanner screen in mobile/pharmacist-app/src/screens/QRScannerScreen.tsx
+- [x] [T202] [P] [US3] Integrate React Native Camera for QR scanning in mobile/pharmacist-app/src/components/QRScanner.tsx
+- [x] [T203] [P] [US3] Create Inventory Alerts screen in mobile/pharmacist-app/src/screens/InventoryAlertsScreen.tsx
+- [x] [T204] [P] [US3] Create Inventory Item Detail screen in mobile/pharmacist-app/src/screens/InventoryItemScreen.tsx
+- [x] [T205] [P] [US3] Implement stock level indicators in mobile/pharmacist-app/src/components/StockLevelBadge.tsx
+- [x] [T206] [P] [US3] Create Restock Suggestions panel in mobile/pharmacist-app/src/components/RestockSuggestions.tsx
+- [x] [T207] [P] [US3] Implement batch info editor in mobile/pharmacist-app/src/components/BatchInfoEditor.tsx
+- [x] [T208] [P] [US3] Create inventory API client in mobile/pharmacist-app/src/services/inventoryService.ts
+- [x] [T209] [P] [US3] Create Redux slice for inventory in mobile/pharmacist-app/src/store/inventorySlice.ts
 
 ### Inventory - Web (Pharmacist Portal)
 
-- [ ] [T210] [P] [US3] Create Inventory Management page in web/src/apps/pharmacist/pages/InventoryManagement.tsx
-- [ ] [T211] [P] [US3] Create Inventory DataGrid in web/src/apps/pharmacist/components/InventoryTable.tsx
-- [ ] [T212] [P] [US3] Implement inventory search and filters in web/src/apps/pharmacist/components/InventoryFilters.tsx
-- [ ] [T213] [P] [US3] Create Alerts Dashboard in web/src/apps/pharmacist/pages/InventoryAlerts.tsx
-- [ ] [T214] [P] [US3] Create Batch Management modal in web/src/apps/pharmacist/components/BatchModal.tsx
-- [ ] [T215] [P] [US3] Implement multi-location inventory view in web/src/apps/pharmacist/components/MultiLocationInventory.tsx
-- [ ] [T216] [P] [US3] Create inventory analytics charts in web/src/apps/pharmacist/components/InventoryCharts.tsx
-- [ ] [T217] [P] [US3] Create inventory hooks in web/src/shared/hooks/useInventory.ts
+- [x] [T210] [P] [US3] Create Inventory Management page in web/src/apps/pharmacist/pages/InventoryManagement.tsx
+- [x] [T211] [P] [US3] Create Inventory DataGrid in web/src/apps/pharmacist/components/InventoryTable.tsx
+- [x] [T212] [P] [US3] Implement inventory search and filters in web/src/apps/pharmacist/components/InventoryFilters.tsx
+- [x] [T213] [P] [US3] Create Alerts Dashboard in web/src/apps/pharmacist/pages/InventoryAlerts.tsx
+- [x] [T214] [P] [US3] Create Batch Management modal in web/src/apps/pharmacist/components/BatchModal.tsx
+- [x] [T215] [P] [US3] Implement multi-location inventory view in web/src/apps/pharmacist/components/MultiLocationInventory.tsx
+- [x] [T216] [P] [US3] Create inventory analytics charts in web/src/apps/pharmacist/components/InventoryCharts.tsx
+- [x] [T217] [P] [US3] Create inventory hooks in web/src/shared/hooks/useInventory.ts
 
 ### Testing & QA
 
-- [ ] [T218] [P] [US3] Write E2E test for QR scanning workflow in backend/tests/e2e/inventory-scanning.test.ts
-- [ ] [T219] [P] [US3] Write E2E test for alert generation in backend/tests/e2e/inventory-alerts.test.ts
-- [ ] [T220] [P] [US3] Write integration test for forecast integration in backend/services/inventory-service/__tests__/forecast.test.ts
-- [ ] [T221] [P] [US3] Perform load test for inventory updates (target: 5000 scans/hour) using k6
+- [x] [T218] [P] [US3] Write E2E test for QR scanning workflow in backend/tests/e2e/inventory-scanning.test.ts
+- [x] [T219] [P] [US3] Write E2E test for alert generation in backend/tests/e2e/inventory-alerts.test.ts
+- [x] [T220] [P] [US3] Write integration test for forecast integration in backend/services/inventory-service/__tests__/forecast.test.ts
+- [x] [T221] [P] [US3] Perform load test for inventory updates (target: 5000 scans/hour) using k6
 
 ---
 

@@ -108,7 +108,7 @@ const SendConfirmationScreen: React.FC<Props> = ({ navigation, route }) => {
               {/* In production, fetch patient name */}
               Patient #{prescription.patient_id.substring(0, 8)}
             </Text>
-            <Text style={styles.cardLabel} style={{ marginTop: theme.spacing.sm }}>
+            <Text style={[styles.cardLabel, { marginTop: theme.spacing.sm }]}>
               Patient ID
             </Text>
             <Text style={styles.cardValue}>{prescription.patient_id}</Text>
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   medicationName: {
     ...theme.typography.body1,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: theme.colors.text,
     flex: 1,
   },
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   medicationBadgeText: {
     ...theme.typography.caption,
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
   medicationDetail: {
     flexDirection: 'row',
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     ...theme.typography.body2,
     color: theme.colors.text,
     flex: 1,
-    fontWeight: '500',
+    fontWeight: '500' as const,
   },
   notesText: {
     ...theme.typography.body1,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   editButtonText: {
     ...theme.typography.body1,
     color: theme.colors.text,
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
   sendButton: {
     flex: 2,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   sendButtonText: {
     ...theme.typography.body1,
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
   disclaimer: {
     marginTop: theme.spacing.lg,
