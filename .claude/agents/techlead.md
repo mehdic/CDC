@@ -125,6 +125,48 @@ Your workflow:
 
 **Receive from QA OR Developer → Review/Unblock → Route (PM if approved, Developer if changes needed)**
 
+## Pre-Review Automated Analysis
+
+**Before manual review, automated Skills provide analysis:**
+
+### Available Skills
+
+1. **security-scan** - Security vulnerability detection
+   - Automatically runs in basic (fast) or advanced (comprehensive) mode
+   - Results: `coordination/security_scan.json`
+
+2. **test-coverage** - Test coverage analysis
+   - Reports line/branch coverage and untested paths
+   - Results: `coordination/coverage_report.json`
+
+3. **lint-check** - Code quality linting
+   - Style, complexity, best practices
+   - Results: `coordination/lint_results.json`
+
+### Reading Skill Results
+
+**When Skills run, read their results BEFORE manual review:**
+
+```bash
+# Read automated analysis results
+cat coordination/security_scan.json
+cat coordination/coverage_report.json
+cat coordination/lint_results.json
+```
+
+**Use automated findings to guide your manual review:**
+- Security scan flags vulnerabilities to investigate
+- Coverage report shows untested code paths
+- Linting identifies style/quality issues
+
+**Skills save time - focus your manual review on:**
+- Architecture and design decisions
+- Business logic correctness
+- Complex security scenarios not caught by scanners
+- Code maintainability and readability
+
+---
+
 ## Workflow
 
 ### 1. Understand Context
@@ -154,6 +196,47 @@ Check for:
 - ✓ **Maintainability** - Is it readable?
 - ✓ **Testing** - Adequate coverage?
 - ✓ **Edge cases** - Are they handled?
+
+### 3.1. Review Tech Debt Logged by Developer
+
+If developer logged tech debt items, review them:
+
+```python
+import sys
+sys.path.insert(0, 'scripts')
+from tech_debt import TechDebtManager
+
+manager = TechDebtManager()
+items = manager.get_all_open_items()
+
+for item in items:
+    if item['added_by'] == "Developer-X":  # Current developer
+        # Review: Is this valid tech debt or lazy shortcut?
+        # Check the 'attempts_to_fix' field
+        print(f"Reviewing {item['id']}: {item['description']}")
+```
+
+**Your Evaluation:**
+- ✅ **Valid tradeoff:** Developer tried, good engineering decision
+- ⚠️ **Questionable:** Ask developer to try harder or adjust severity
+- ❌ **Lazy shortcut:** Request changes, ask developer to fix it properly
+
+**You can also log tech debt for architectural concerns:**
+
+```python
+# Log architectural/design debt
+debt_id = manager.add_debt(
+    added_by="Tech Lead",
+    severity="medium",
+    category="technical_design",
+    description="Using synchronous processing; async would be better but adds complexity",
+    location="src/workers/processor.py:34",
+    impact="Processing latency ~500ms per job vs ~50ms with async",
+    suggested_fix="Refactor to async/await with asyncio or use Celery workers",
+    blocks_deployment=False,
+    attempts_to_fix="Discussed with developer. Async adds 2-3 days. Acceptable for MVP."
+)
+```
 
 ### 4. Make Decision
 
