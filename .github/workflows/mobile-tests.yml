@@ -1,0 +1,61 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - 'package.json'
+      - '.github/workflows/mobile-tests.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - 'package.json'
+
+jobs:
+  test:
+    name: Mobile Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Run linter
+        working-directory: mobile
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: mobile
+        run: npm run test
+        env:
+          NODE_ENV: test
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./mobile/coverage/coverage-final.json
+          flags: mobile
+          name: mobile-coverage
+        if: always()
+
+      - name: Archive test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-test-results
+          path: mobile/coverage
+        if: always()

@@ -1,0 +1,245 @@
+name: Load Testing
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - qa
+      duration:
+        description: 'Test duration (e.g., 5m, 10m)'
+        required: true
+        default: '5m'
+      vus:
+        description: 'Number of virtual users'
+        required: true
+        default: '50'
+  schedule:
+    # Run load tests weekly on Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+jobs:
+  load-test:
+    name: k6 Load Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: 'latest'
+
+      - name: Create load test directory
+        run: mkdir -p tests/load
+
+      - name: Create k6 test script for API Gateway
+        run: |
+          cat > tests/load/api-gateway.js << 'EOF'
+          import http from 'k6/http';
+          import { check, sleep } from 'k6';
+          import { Rate } from 'k6/metrics';
+
+          // Custom metrics
+          const errorRate = new Rate('errors');
+
+          // Test configuration
+          export const options = {
+            stages: [
+              { duration: '2m', target: 50 },  // Ramp up to 50 users
+              { duration: '5m', target: 50 },  // Stay at 50 users
+              { duration: '2m', target: 100 }, // Ramp up to 100 users
+              { duration: '5m', target: 100 }, // Stay at 100 users
+              { duration: '2m', target: 0 },   // Ramp down to 0 users
+            ],
+            thresholds: {
+              http_req_duration: ['p(95)<500', 'p(99)<1000'], // 95% of requests under 500ms, 99% under 1s
+              http_req_failed: ['rate<0.01'],                 // Error rate under 1%
+              errors: ['rate<0.1'],                           // Custom error rate under 10%
+            },
+          };
+
+          const BASE_URL = __ENV.BASE_URL || 'https://staging.metapharm-connect.com';
+
+          export default function () {
+            // Health check endpoint
+            const healthRes = http.get(`${BASE_URL}/health`);
+            check(healthRes, {
+              'health check status is 200': (r) => r.status === 200,
+            }) || errorRate.add(1);
+
+            sleep(1);
+          }
+          EOF
+
+      - name: Create k6 test script for Auth Service
+        run: |
+          cat > tests/load/auth-service.js << 'EOF'
+          import http from 'k6/http';
+          import { check, sleep } from 'k6';
+          import { Rate } from 'k6/metrics';
+
+          const errorRate = new Rate('errors');
+
+          export const options = {
+            stages: [
+              { duration: '1m', target: 20 },
+              { duration: '3m', target: 20 },
+              { duration: '1m', target: 0 },
+            ],
+            thresholds: {
+              http_req_duration: ['p(95)<1000'],
+              http_req_failed: ['rate<0.05'],
+            },
+          };
+
+          const BASE_URL = __ENV.BASE_URL || 'https://staging.metapharm-connect.com';
+
+          export default function () {
+            const payload = JSON.stringify({
+              email: 'load-test@example.com',
+              password: 'TestPassword123!',
+            });
+
+            const params = {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            };
+
+            // Attempt login (this will likely fail without valid credentials, but tests the endpoint)
+            const loginRes = http.post(`${BASE_URL}/api/auth/login`, payload, params);
+            check(loginRes, {
+              'login endpoint responds': (r) => r.status !== 0,
+              'response time OK': (r) => r.timings.duration < 1000,
+            }) || errorRate.add(1);
+
+            sleep(2);
+          }
+          EOF
+
+      - name: Create k6 test script for Prescription Service
+        run: |
+          cat > tests/load/prescription-service.js << 'EOF'
+          import http from 'k6/http';
+          import { check, sleep } from 'k6';
+          import { Rate } from 'k6/metrics';
+
+          const errorRate = new Rate('errors');
+
+          export const options = {
+            stages: [
+              { duration: '1m', target: 30 },
+              { duration: '3m', target: 30 },
+              { duration: '1m', target: 0 },
+            ],
+            thresholds: {
+              http_req_duration: ['p(95)<800'],
+              http_req_failed: ['rate<0.05'],
+            },
+          };
+
+          const BASE_URL = __ENV.BASE_URL || 'https://staging.metapharm-connect.com';
+
+          export default function () {
+            // Test prescription health endpoint
+            const healthRes = http.get(`${BASE_URL}/api/prescriptions/health`);
+            check(healthRes, {
+              'prescription service responds': (r) => r.status !== 0,
+            }) || errorRate.add(1);
+
+            sleep(1);
+          }
+          EOF
+
+      - name: Run k6 load test - API Gateway
+        env:
+          BASE_URL: ${{ github.event.inputs.environment == 'staging' && 'https://staging.metapharm-connect.com' || 'https://qa.metapharm-connect.com' }}
+        run: |
+          echo "Running load tests against: $BASE_URL"
+          k6 run \
+            --out json=results-api-gateway.json \
+            --summary-export=summary-api-gateway.json \
+            tests/load/api-gateway.js || true
+
+      - name: Run k6 load test - Auth Service
+        env:
+          BASE_URL: ${{ github.event.inputs.environment == 'staging' && 'https://staging.metapharm-connect.com' || 'https://qa.metapharm-connect.com' }}
+        run: |
+          k6 run \
+            --out json=results-auth-service.json \
+            --summary-export=summary-auth-service.json \
+            tests/load/auth-service.js || true
+
+      - name: Run k6 load test - Prescription Service
+        env:
+          BASE_URL: ${{ github.event.inputs.environment == 'staging' && 'https://staging.metapharm-connect.com' || 'https://qa.metapharm-connect.com' }}
+        run: |
+          k6 run \
+            --out json=results-prescription-service.json \
+            --summary-export=summary-prescription-service.json \
+            tests/load/prescription-service.js || true
+
+      - name: Upload k6 results
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-load-test-results
+          path: |
+            results-*.json
+            summary-*.json
+          retention-days: 30
+        if: always()
+
+      - name: Generate performance report
+        run: |
+          echo "# Load Testing Report" > performance-report.md
+          echo "" >> performance-report.md
+          echo "**Environment**: ${{ github.event.inputs.environment || 'staging' }}" >> performance-report.md
+          echo "**Date**: $(date)" >> performance-report.md
+          echo "" >> performance-report.md
+          echo "## Summary" >> performance-report.md
+          echo "" >> performance-report.md
+          if [ -f summary-api-gateway.json ]; then
+            echo "### API Gateway" >> performance-report.md
+            cat summary-api-gateway.json >> performance-report.md
+            echo "" >> performance-report.md
+          fi
+          if [ -f summary-auth-service.json ]; then
+            echo "### Auth Service" >> performance-report.md
+            cat summary-auth-service.json >> performance-report.md
+            echo "" >> performance-report.md
+          fi
+          if [ -f summary-prescription-service.json ]; then
+            echo "### Prescription Service" >> performance-report.md
+            cat summary-prescription-service.json >> performance-report.md
+            echo "" >> performance-report.md
+          fi
+
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report
+          path: performance-report.md
+          retention-days: 30
+        if: always()
+
+      - name: Comment results on PR (if triggered from PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('performance-report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

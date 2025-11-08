@@ -1,0 +1,161 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production builds
+dist/
+build/
+out/
+.next/
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Cache directories
+.cache/
+.parcel-cache/
+.npm/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# TypeScript
+*.tsbuildinfo
+*.d.ts.map
+
+# TypeScript compiled files in source (should be in dist/)
+**/src/**/*.js
+**/src/**/*.js.map
+**/src/**/*.d.ts
+!**/src/**/*.test.js
+!**/src/**/*.spec.js
+
+# Editor directories and files
+.vscode/
+.vscode-test/
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.history/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# React Native
+# Android
+android/app/build/
+android/app/release/
+android/build/
+android/.gradle/
+android/local.properties
+android/*.iml
+android/*.hprof
+android/.cxx/
+android/app/debug/
+android/app/profile/
+android/.externalNativeBuild/
+
+# iOS
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+ios/*.xcuserstate
+ios/*.pbxuser
+ios/*.mode1v3
+ios/*.mode2v3
+ios/*.perspectivev3
+ios/DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# React Native misc
+.expo/
+.expo-shared/
+metro-cache/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
+# AWS
+.aws/
+
+# Secrets (critical for security)
+*.pem
+*.key
+*.cert
+*.crt
+secrets/
+credentials/
+.secrets/
+
+# Backup files
+*.bak
+*.backup
+
+# Package manager locks (keep package-lock.json, but ignore others)
+yarn.lock
+pnpm-lock.yaml
+
+# Misc
+.git-blame-ignore-revs

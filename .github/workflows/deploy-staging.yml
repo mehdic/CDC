@@ -1,0 +1,148 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - qa
+
+jobs:
+  build:
+    name: Build All Workspaces
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all workspaces
+        run: npm run build
+
+      - name: Archive backend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: backend/dist
+          retention-days: 7
+
+      - name: Archive web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: web/dist
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Staging Environment
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: staging
+      url: https://staging.metapharm-connect.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download backend build
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build
+          path: backend/dist
+
+      - name: Download web build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: web/dist
+
+      # Placeholder for deployment steps
+      # TODO: Replace with actual deployment to your staging environment
+      # Examples:
+      # - Deploy to AWS ECS/EKS
+      # - Deploy to Azure App Service
+      # - Deploy to Google Cloud Run
+      # - Deploy to Kubernetes cluster
+      # - Deploy to Heroku
+      # - Deploy to custom VPS
+
+      - name: Deploy Backend Services (Placeholder)
+        run: |
+          echo "Deploying backend services to staging..."
+          echo "Backend build ready at: backend/dist"
+          # Add your deployment commands here
+          # Example: aws ecs update-service --cluster staging --service backend --force-new-deployment
+
+      - name: Deploy Web Application (Placeholder)
+        run: |
+          echo "Deploying web application to staging..."
+          echo "Web build ready at: web/dist"
+          # Add your deployment commands here
+          # Example: aws s3 sync web/dist s3://staging-bucket --delete
+
+      - name: Apply Database Migrations
+        run: |
+          echo "Running database migrations on staging..."
+          # Add your migration commands here
+          # Example: npm run migrate:up --workspace=backend
+
+  smoke-tests:
+    name: Run Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deploy
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run smoke tests (Placeholder)
+        run: |
+          echo "Running smoke tests against staging environment..."
+          # Add your smoke test commands here
+          # Examples:
+          # - Check if API endpoints respond
+          # - Verify database connections
+          # - Test authentication flow
+          # - Check service health endpoints
+
+      - name: Health Check - API Gateway
+        run: |
+          echo "Checking API Gateway health..."
+          # curl -f https://staging.metapharm-connect.com/health || exit 1
+
+      - name: Health Check - Auth Service
+        run: |
+          echo "Checking Auth Service health..."
+          # curl -f https://staging.metapharm-connect.com/api/auth/health || exit 1
+
+      - name: Health Check - Web Application
+        run: |
+          echo "Checking Web Application..."
+          # curl -f https://staging.metapharm-connect.com || exit 1
+
+      - name: Notify deployment success
+        run: |
+          echo "Deployment to staging completed successfully!"
+          # Add notification commands here (Slack, Discord, email, etc.)

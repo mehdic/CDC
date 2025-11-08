@@ -22,38 +22,38 @@
 
 ### Repository & Build Configuration
 
-- [ ] [T001] [P] [Setup] Initialize monorepo structure with npm workspaces at repository root
-- [ ] [T002] [P] [Setup] Create backend/package.json with TypeScript 5.3 and Node.js 20 LTS configuration
-- [ ] [T003] [P] [Setup] Create mobile/package.json with React Native 0.73 workspace configuration
-- [ ] [T004] [P] [Setup] Create web/package.json with React 18 workspace configuration
-- [ ] [T005] [P] [Setup] Create packages/api-types/package.json for shared TypeScript types
-- [ ] [T006] [P] [Setup] Configure TypeScript compiler in backend/tsconfig.json with strict mode
-- [ ] [T007] [P] [Setup] Configure ESLint and Prettier in .eslintrc.json for code quality
-- [ ] [T008] [P] [Setup] Create .gitignore with Node.js, React Native, and IDE patterns
-- [ ] [T009] [P] [Setup] Create .env.example files in backend/, mobile/, and web/ directories
-- [ ] [T010] [P] [Setup] Configure Jest test runner in backend/jest.config.js
-- [ ] [T011] [P] [Setup] Configure Jest for React Native in mobile/jest.config.js
-- [ ] [T012] [P] [Setup] Configure Jest for React in web/jest.config.js
+- [x] [T001] [P] [Setup] Initialize monorepo structure with npm workspaces at repository root
+- [x] [T002] [P] [Setup] Create backend/package.json with TypeScript 5.3 and Node.js 20 LTS configuration
+- [x] [T003] [P] [Setup] Create mobile/package.json with React Native 0.73 workspace configuration
+- [x] [T004] [P] [Setup] Create web/package.json with React 18 workspace configuration
+- [x] [T005] [P] [Setup] Create packages/api-types/package.json for shared TypeScript types
+- [x] [T006] [P] [Setup] Configure TypeScript compiler in backend/tsconfig.json with strict mode
+- [x] [T007] [P] [Setup] Configure ESLint and Prettier in .eslintrc.json for code quality
+- [x] [T008] [P] [Setup] Create .gitignore with Node.js, React Native, and IDE patterns
+- [x] [T009] [P] [Setup] Create .env.example files in backend/, mobile/, and web/ directories
+- [x] [T010] [P] [Setup] Configure Jest test runner in backend/jest.config.js
+- [x] [T011] [P] [Setup] Configure Jest for React Native in mobile/jest.config.js
+- [x] [T012] [P] [Setup] Configure Jest for React in web/jest.config.js
 
 ### Docker & Local Development
 
-- [ ] [T013] [P] [Setup] Create infrastructure/docker/docker-compose.yml with PostgreSQL 16, Redis 7
-- [ ] [T014] [P] [Setup] Add API Gateway container to docker-compose.yml on port 4000
-- [ ] [T015] [P] [Setup] Add Auth Service container to docker-compose.yml on port 4001
-- [ ] [T016] [P] [Setup] Add Prescription Service container to docker-compose.yml on port 4002
-- [ ] [T017] [P] [Setup] Add Teleconsultation Service container to docker-compose.yml on port 4003
-- [ ] [T018] [P] [Setup] Add Inventory Service container to docker-compose.yml on port 4004
-- [ ] [T019] [P] [Setup] Add Notification Service container to docker-compose.yml on port 4005
-- [ ] [T020] [P] [Setup] Create Dockerfile for backend services in backend/Dockerfile
-- [ ] [T021] [P] [Setup] Create docker-compose.override.yml for local development overrides
+- [x] [T013] [P] [Setup] Create infrastructure/docker/docker-compose.yml with PostgreSQL 16, Redis 7
+- [x] [T014] [P] [Setup] Add API Gateway container to docker-compose.yml on port 4000
+- [x] [T015] [P] [Setup] Add Auth Service container to docker-compose.yml on port 4001
+- [x] [T016] [P] [Setup] Add Prescription Service container to docker-compose.yml on port 4002
+- [x] [T017] [P] [Setup] Add Teleconsultation Service container to docker-compose.yml on port 4003
+- [x] [T018] [P] [Setup] Add Inventory Service container to docker-compose.yml on port 4004
+- [x] [T019] [P] [Setup] Add Notification Service container to docker-compose.yml on port 4005
+- [x] [T020] [P] [Setup] Create Dockerfile for backend services in backend/Dockerfile
+- [x] [T021] [P] [Setup] Create docker-compose.override.yml for local development overrides
 
 ### CI/CD Pipeline
 
-- [ ] [T022] [S] [Setup] Create .github/workflows/backend-tests.yml for backend CI
-- [ ] [T023] [S] [Setup] Create .github/workflows/mobile-tests.yml for mobile CI
-- [ ] [T024] [S] [Setup] Create .github/workflows/web-tests.yml for web CI
-- [ ] [T025] [C] [Setup] Create .github/workflows/deploy-staging.yml for staging deployment
-- [ ] [T026] [C] [Setup] Configure k6 load testing in .github/workflows/load-tests.yml
+- [x] [T022] [S] [Setup] Create .github/workflows/backend-tests.yml for backend CI
+- [x] [T023] [S] [Setup] Create .github/workflows/mobile-tests.yml for mobile CI
+- [x] [T024] [S] [Setup] Create .github/workflows/web-tests.yml for web CI
+- [x] [T025] [C] [Setup] Create .github/workflows/deploy-staging.yml for staging deployment
+- [x] [T026] [C] [Setup] Configure k6 load testing in .github/workflows/load-tests.yml
 
 ---
 
@@ -61,65 +61,65 @@
 
 ### Database Setup
 
-- [ ] [T027] [P] [Foundation] Create database migration tool in backend/shared/db/migrate.ts using node-pg-migrate
-- [ ] [T028] [P] [Foundation] Create initial migration backend/shared/db/migrations/001_create_users.sql with User table
-- [ ] [T029] [P] [Foundation] Create migration backend/shared/db/migrations/002_create_pharmacies.sql with Pharmacy table
-- [ ] [T030] [P] [Foundation] Create migration backend/shared/db/migrations/003_create_audit_trail.sql with AuditTrailEntry table
-- [ ] [T031] [P] [Foundation] Implement Row-Level Security policies in backend/shared/db/migrations/004_enable_rls.sql
-- [ ] [T032] [P] [Foundation] Create seed script backend/shared/db/seeds/dev-seed.ts with test users and pharmacies
-- [ ] [T033] [P] [Foundation] Create TypeORM entities in backend/shared/models/User.ts matching schema
-- [ ] [T034] [P] [Foundation] Create TypeORM entity in backend/shared/models/Pharmacy.ts
-- [ ] [T035] [P] [Foundation] Create TypeORM entity in backend/shared/models/AuditTrailEntry.ts
+- [x] [T027] [P] [Foundation] Create database migration tool in backend/shared/db/migrate.ts using node-pg-migrate
+- [x] [T028] [P] [Foundation] Create initial migration backend/shared/db/migrations/001_create_users.sql with User table
+- [x] [T029] [P] [Foundation] Create migration backend/shared/db/migrations/002_create_pharmacies.sql with Pharmacy table
+- [x] [T030] [P] [Foundation] Create migration backend/shared/db/migrations/003_create_audit_trail.sql with AuditTrailEntry table
+- [x] [T031] [P] [Foundation] Implement Row-Level Security policies in backend/shared/db/migrations/004_enable_rls.sql
+- [x] [T032] [P] [Foundation] Create seed script backend/shared/db/seeds/dev-seed.ts with test users and pharmacies
+- [x] [T033] [P] [Foundation] Create TypeORM entities in backend/shared/models/User.ts matching schema
+- [x] [T034] [P] [Foundation] Create TypeORM entity in backend/shared/models/Pharmacy.ts
+- [x] [T035] [P] [Foundation] Create TypeORM entity in backend/shared/models/AuditTrailEntry.ts
 
 ### Encryption & Security
 
-- [ ] [T036] [P] [Foundation] Implement AWS KMS encryption utility in backend/shared/utils/encryption.ts
-- [ ] [T037] [P] [Foundation] Create encryptField() function with data key caching in backend/shared/utils/encryption.ts
-- [ ] [T038] [P] [Foundation] Create decryptField() function in backend/shared/utils/encryption.ts
-- [ ] [T039] [P] [Foundation] Implement password hashing with bcrypt in backend/shared/utils/auth.ts
-- [ ] [T040] [P] [Foundation] Create JWT token generation function in backend/shared/utils/jwt.ts
-- [ ] [T041] [P] [Foundation] Create JWT token validation middleware in backend/shared/middleware/auth.ts
-- [ ] [T042] [P] [Foundation] Implement RBAC permission checking in backend/shared/middleware/rbac.ts
+- [x] [T036] [P] [Foundation] Implement AWS KMS encryption utility in backend/shared/utils/encryption.ts
+- [x] [T037] [P] [Foundation] Create encryptField() function with data key caching in backend/shared/utils/encryption.ts
+- [x] [T038] [P] [Foundation] Create decryptField() function in backend/shared/utils/encryption.ts
+- [x] [T039] [P] [Foundation] Implement password hashing with bcrypt in backend/shared/utils/auth.ts
+- [x] [T040] [P] [Foundation] Create JWT token generation function in backend/shared/utils/jwt.ts
+- [x] [T041] [P] [Foundation] Create JWT token validation middleware in backend/shared/middleware/auth.ts
+- [x] [T042] [P] [Foundation] Implement RBAC permission checking in backend/shared/middleware/rbac.ts
 
 ### Auth Service
 
-- [ ] [T043] [P] [Foundation] Initialize Auth Service in backend/services/auth-service/src/index.ts
-- [ ] [T044] [P] [Foundation] Create POST /auth/login endpoint in backend/services/auth-service/src/routes/login.ts
-- [ ] [T045] [P] [Foundation] Implement email/password authentication in backend/services/auth-service/src/controllers/loginController.ts
-- [ ] [T046] [P] [Foundation] Create POST /auth/mfa/verify endpoint in backend/services/auth-service/src/routes/mfa.ts
-- [ ] [T047] [P] [Foundation] Implement TOTP MFA verification in backend/services/auth-service/src/controllers/mfaController.ts
-- [ ] [T048] [S] [Foundation] Integrate HIN e-ID OAuth in backend/services/auth-service/src/integrations/hin-eid.ts
-- [ ] [T049] [P] [Foundation] Create GET /auth/sessions endpoint in backend/services/auth-service/src/routes/sessions.ts
-- [ ] [T050] [P] [Foundation] Create DELETE /auth/logout endpoint in backend/services/auth-service/src/routes/logout.ts
-- [ ] [T051] [P] [Foundation] Write unit tests for Auth Service in backend/services/auth-service/__tests__/
+- [x] [T043] [P] [Foundation] Initialize Auth Service in backend/services/auth-service/src/index.ts
+- [x] [T044] [P] [Foundation] Create POST /auth/login endpoint in backend/services/auth-service/src/routes/login.ts
+- [x] [T045] [P] [Foundation] Implement email/password authentication in backend/services/auth-service/src/controllers/loginController.ts
+- [x] [T046] [P] [Foundation] Create POST /auth/mfa/verify endpoint in backend/services/auth-service/src/routes/mfa.ts
+- [x] [T047] [P] [Foundation] Implement TOTP MFA verification in backend/services/auth-service/src/controllers/mfaController.ts
+- [x] [T048] [S] [Foundation] Integrate HIN e-ID OAuth in backend/services/auth-service/src/integrations/hin-eid.ts
+- [x] [T049] [P] [Foundation] Create GET /auth/sessions endpoint in backend/services/auth-service/src/routes/sessions.ts
+- [x] [T050] [P] [Foundation] Create DELETE /auth/logout endpoint in backend/services/auth-service/src/routes/logout.ts
+- [x] [T051] [P] [Foundation] Write unit tests for Auth Service in backend/services/auth-service/__tests__/
 
 ### API Gateway
 
-- [ ] [T052] [P] [Foundation] Initialize API Gateway in backend/services/api-gateway/src/index.ts with Express
-- [ ] [T053] [P] [Foundation] Implement rate limiting middleware in backend/services/api-gateway/src/middleware/rateLimiter.ts
-- [ ] [T054] [P] [Foundation] Implement request routing to microservices in backend/services/api-gateway/src/routes/proxy.ts
-- [ ] [T055] [P] [Foundation] Add JWT validation middleware to API Gateway in backend/services/api-gateway/src/middleware/auth.ts
-- [ ] [T056] [P] [Foundation] Implement CORS configuration in backend/services/api-gateway/src/middleware/cors.ts
-- [ ] [T057] [P] [Foundation] Add request logging middleware in backend/services/api-gateway/src/middleware/logger.ts
-- [ ] [T058] [P] [Foundation] Create health check endpoint GET /health in backend/services/api-gateway/src/routes/health.ts
+- [x] [T052] [P] [Foundation] Initialize API Gateway in backend/services/api-gateway/src/index.ts with Express
+- [x] [T053] [P] [Foundation] Implement rate limiting middleware in backend/services/api-gateway/src/middleware/rateLimiter.ts
+- [x] [T054] [P] [Foundation] Implement request routing to microservices in backend/services/api-gateway/src/routes/proxy.ts
+- [x] [T055] [P] [Foundation] Add JWT validation middleware to API Gateway in backend/services/api-gateway/src/middleware/auth.ts
+- [x] [T056] [P] [Foundation] Implement CORS configuration in backend/services/api-gateway/src/middleware/cors.ts
+- [x] [T057] [P] [Foundation] Add request logging middleware in backend/services/api-gateway/src/middleware/logger.ts
+- [x] [T058] [P] [Foundation] Create health check endpoint GET /health in backend/services/api-gateway/src/routes/health.ts
 
 ### Audit Trail Service
 
-- [ ] [T059] [P] [Foundation] Create audit trail logging utility in backend/shared/utils/audit.ts
-- [ ] [T060] [P] [Foundation] Implement logAuditEvent() function with immutable insert in backend/shared/utils/audit.ts
-- [ ] [T061] [P] [Foundation] Create database trigger for Prescription auditing in backend/shared/db/migrations/005_audit_triggers.sql
-- [ ] [T062] [P] [Foundation] Create database trigger for Teleconsultation auditing in backend/shared/db/migrations/005_audit_triggers.sql
-- [ ] [T063] [P] [Foundation] Create GET /audit/entries endpoint in backend/services/api-gateway/src/routes/audit.ts
+- [x] [T059] [P] [Foundation] Create audit trail logging utility in backend/shared/utils/audit.ts
+- [x] [T060] [P] [Foundation] Implement logAuditEvent() function with immutable insert in backend/shared/utils/audit.ts
+- [x] [T061] [P] [Foundation] Create database trigger for Prescription auditing in backend/shared/db/migrations/005_audit_triggers.sql
+- [x] [T062] [P] [Foundation] Create database trigger for Teleconsultation auditing in backend/shared/db/migrations/005_audit_triggers.sql
+- [x] [T063] [P] [Foundation] Create GET /audit/entries endpoint in backend/services/api-gateway/src/routes/audit.ts
 
 ### Notification Service
 
-- [ ] [T064] [P] [Foundation] Initialize Notification Service in backend/services/notification-service/src/index.ts
-- [ ] [T065] [P] [Foundation] Integrate Twilio SendGrid for email in backend/services/notification-service/src/integrations/email.ts
-- [ ] [T066] [P] [Foundation] Integrate Twilio SMS API in backend/services/notification-service/src/integrations/sms.ts
-- [ ] [T067] [P] [Foundation] Create sendEmail() function in backend/services/notification-service/src/controllers/emailController.ts
-- [ ] [T068] [P] [Foundation] Create sendSMS() function in backend/services/notification-service/src/controllers/smsController.ts
-- [ ] [T069] [P] [Foundation] Implement push notification queue consumer in backend/services/notification-service/src/workers/pushWorker.ts
-- [ ] [T070] [S] [Foundation] Integrate Firebase Cloud Messaging for mobile push in backend/services/notification-service/src/integrations/fcm.ts
+- [x] [T064] [P] [Foundation] Initialize Notification Service in backend/services/notification-service/src/index.ts
+- [x] [T065] [P] [Foundation] Integrate Twilio SendGrid for email in backend/services/notification-service/src/integrations/email.ts
+- [x] [T066] [P] [Foundation] Integrate Twilio SMS API in backend/services/notification-service/src/integrations/sms.ts
+- [x] [T067] [P] [Foundation] Create sendEmail() function in backend/services/notification-service/src/controllers/emailController.ts
+- [x] [T068] [P] [Foundation] Create sendSMS() function in backend/services/notification-service/src/controllers/smsController.ts
+- [x] [T069] [P] [Foundation] Implement push notification queue consumer in backend/services/notification-service/src/workers/pushWorker.ts
+- [x] [T070] [S] [Foundation] Integrate Firebase Cloud Messaging for mobile push in backend/services/notification-service/src/integrations/fcm.ts
 
 ---
 
@@ -127,69 +127,69 @@
 
 ### Database Schema
 
-- [ ] [T071] [P] [US1] Create migration backend/shared/db/migrations/010_create_prescriptions.sql with Prescription table
-- [ ] [T072] [P] [US1] Create migration backend/shared/db/migrations/011_create_prescription_items.sql with PrescriptionItem table
-- [ ] [T073] [P] [US1] Create migration backend/shared/db/migrations/012_create_treatment_plans.sql with TreatmentPlan table
-- [ ] [T074] [P] [US1] Create TypeORM entity in backend/shared/models/Prescription.ts with RLS policy
-- [ ] [T075] [P] [US1] Create TypeORM entity in backend/shared/models/PrescriptionItem.ts
-- [ ] [T076] [P] [US1] Create TypeORM entity in backend/shared/models/TreatmentPlan.ts
+- [x] [T071] [P] [US1] Create migration backend/shared/db/migrations/010_create_prescriptions.sql with Prescription table
+- [x] [T072] [P] [US1] Create migration backend/shared/db/migrations/011_create_prescription_items.sql with PrescriptionItem table
+- [x] [T073] [P] [US1] Create migration backend/shared/db/migrations/012_create_treatment_plans.sql with TreatmentPlan table
+- [x] [T074] [P] [US1] Create TypeORM entity in backend/shared/models/Prescription.ts with RLS policy
+- [x] [T075] [P] [US1] Create TypeORM entity in backend/shared/models/PrescriptionItem.ts
+- [x] [T076] [P] [US1] Create TypeORM entity in backend/shared/models/TreatmentPlan.ts
 
 ### Prescription Service - Backend
 
-- [ ] [T077] [P] [US1] Initialize Prescription Service in backend/services/prescription-service/src/index.ts
-- [ ] [T078] [P] [US1] Create POST /prescriptions endpoint in backend/services/prescription-service/src/routes/prescriptions.ts
-- [ ] [T079] [P] [US1] Implement image upload to S3 in backend/services/prescription-service/src/controllers/uploadController.ts
-- [ ] [T080] [P] [US1] Create POST /prescriptions/:id/transcribe endpoint in backend/services/prescription-service/src/routes/transcribe.ts
-- [ ] [T081] [P] [US1] Integrate AWS Textract for OCR in backend/services/prescription-service/src/integrations/textract.ts
-- [ ] [T082] [P] [US1] Implement AI confidence scoring in backend/services/prescription-service/src/utils/aiConfidence.ts
-- [ ] [T083] [P] [US1] Implement low-confidence field highlighting (FR-013a) in backend/services/prescription-service/src/utils/confidence.ts
-- [ ] [T084] [P] [US1] Create POST /prescriptions/:id/validate endpoint in backend/services/prescription-service/src/routes/validate.ts
-- [ ] [T085] [P] [US1] Integrate FDB MedKnowledge API for drug interactions in backend/services/prescription-service/src/integrations/fdb.ts
-- [ ] [T086] [P] [US1] Implement allergy checking against patient record in backend/services/prescription-service/src/utils/allergyCheck.ts
-- [ ] [T087] [P] [US1] Implement contraindication checking in backend/services/prescription-service/src/utils/contraindications.ts
-- [ ] [T088] [P] [US1] Create PUT /prescriptions/:id/approve endpoint in backend/services/prescription-service/src/routes/approve.ts
-- [ ] [T089] [P] [US1] Implement pharmacist approval logic in backend/services/prescription-service/src/controllers/approveController.ts
-- [ ] [T090] [P] [US1] Create PUT /prescriptions/:id/reject endpoint in backend/services/prescription-service/src/routes/reject.ts
-- [ ] [T091] [P] [US1] Implement treatment plan generation in backend/services/prescription-service/src/utils/treatmentPlan.ts
-- [ ] [T092] [P] [US1] Create GET /prescriptions endpoint with filtering in backend/services/prescription-service/src/routes/list.ts
-- [ ] [T093] [P] [US1] Implement prescription state machine in backend/services/prescription-service/src/utils/stateMachine.ts
-- [ ] [T094] [P] [US1] Write unit tests for prescription validation in backend/services/prescription-service/__tests__/validate.test.ts
-- [ ] [T095] [P] [US1] Write integration tests for prescription workflow in backend/services/prescription-service/__tests__/integration/workflow.test.ts
+- [x] [T077] [P] [US1] Initialize Prescription Service in backend/services/prescription-service/src/index.ts
+- [x] [T078] [P] [US1] Create POST /prescriptions endpoint in backend/services/prescription-service/src/routes/prescriptions.ts
+- [x] [T079] [P] [US1] Implement image upload to S3 in backend/services/prescription-service/src/controllers/uploadController.ts
+- [x] [T080] [P] [US1] Create POST /prescriptions/:id/transcribe endpoint in backend/services/prescription-service/src/routes/transcribe.ts
+- [x] [T081] [P] [US1] Integrate AWS Textract for OCR in backend/services/prescription-service/src/integrations/textract.ts
+- [x] [T082] [P] [US1] Implement AI confidence scoring in backend/services/prescription-service/src/utils/aiConfidence.ts
+- [x] [T083] [P] [US1] Implement low-confidence field highlighting (FR-013a) in backend/services/prescription-service/src/utils/confidence.ts
+- [x] [T084] [P] [US1] Create POST /prescriptions/:id/validate endpoint in backend/services/prescription-service/src/routes/validate.ts
+- [x] [T085] [P] [US1] Integrate FDB MedKnowledge API for drug interactions in backend/services/prescription-service/src/integrations/fdb.ts
+- [x] [T086] [P] [US1] Implement allergy checking against patient record in backend/services/prescription-service/src/utils/allergyCheck.ts
+- [x] [T087] [P] [US1] Implement contraindication checking in backend/services/prescription-service/src/utils/contraindications.ts
+- [x] [T088] [P] [US1] Create PUT /prescriptions/:id/approve endpoint in backend/services/prescription-service/src/routes/approve.ts
+- [x] [T089] [P] [US1] Implement pharmacist approval logic in backend/services/prescription-service/src/controllers/approveController.ts
+- [x] [T090] [P] [US1] Create PUT /prescriptions/:id/reject endpoint in backend/services/prescription-service/src/routes/reject.ts
+- [x] [T091] [P] [US1] Implement treatment plan generation in backend/services/prescription-service/src/utils/treatmentPlan.ts
+- [x] [T092] [P] [US1] Create GET /prescriptions endpoint with filtering in backend/services/prescription-service/src/routes/list.ts
+- [x] [T093] [P] [US1] Implement prescription state machine in backend/services/prescription-service/src/utils/stateMachine.ts
+- [x] [T094] [P] [US1] Write unit tests for prescription validation in backend/services/prescription-service/__tests__/validate.test.ts
+- [x] [T095] [P] [US1] Write integration tests for prescription workflow in backend/services/prescription-service/__tests__/integration/workflow.test.ts
 
 ### Prescription - Mobile (Patient App)
 
-- [ ] [T096] [P] [US1] Initialize Patient App in mobile/patient-app/src/App.tsx
-- [ ] [T097] [P] [US1] Create Prescription Upload screen in mobile/patient-app/src/screens/PrescriptionUploadScreen.tsx
-- [ ] [T098] [P] [US1] Implement camera integration for prescription photo in mobile/patient-app/src/components/CameraCapture.tsx
-- [ ] [T099] [P] [US1] Implement image picker for prescription upload in mobile/patient-app/src/components/ImagePicker.tsx
-- [ ] [T100] [P] [US1] Create Prescription List screen in mobile/patient-app/src/screens/PrescriptionListScreen.tsx
-- [ ] [T101] [P] [US1] Create Prescription Detail screen in mobile/patient-app/src/screens/PrescriptionDetailScreen.tsx
-- [ ] [T102] [P] [US1] Implement prescription API client in mobile/patient-app/src/services/prescriptionService.ts
-- [ ] [T103] [P] [US1] Create Redux slice for prescriptions in mobile/patient-app/src/store/prescriptionSlice.ts
-- [ ] [T104] [P] [US1] Implement prescription status badge component in mobile/patient-app/src/components/PrescriptionStatusBadge.tsx
+- [x] [T096] [P] [US1] Initialize Patient App in mobile/patient-app/src/App.tsx
+- [x] [T097] [P] [US1] Create Prescription Upload screen in mobile/patient-app/src/screens/PrescriptionUploadScreen.tsx
+- [x] [T098] [P] [US1] Implement camera integration for prescription photo in mobile/patient-app/src/components/CameraCapture.tsx
+- [x] [T099] [P] [US1] Implement image picker for prescription upload in mobile/patient-app/src/components/ImagePicker.tsx
+- [x] [T100] [P] [US1] Create Prescription List screen in mobile/patient-app/src/screens/PrescriptionListScreen.tsx
+- [x] [T101] [P] [US1] Create Prescription Detail screen in mobile/patient-app/src/screens/PrescriptionDetailScreen.tsx
+- [x] [T102] [P] [US1] Implement prescription API client in mobile/patient-app/src/services/prescriptionService.ts
+- [x] [T103] [P] [US1] Create Redux slice for prescriptions in mobile/patient-app/src/store/prescriptionSlice.ts
+- [x] [T104] [P] [US1] Implement prescription status badge component in mobile/patient-app/src/components/PrescriptionStatusBadge.tsx
 
 ### Prescription - Mobile (Pharmacist App)
 
-- [ ] [T105] [P] [US1] Initialize Pharmacist App in mobile/pharmacist-app/src/App.tsx
-- [ ] [T106] [P] [US1] Create Prescription Queue screen in mobile/pharmacist-app/src/screens/PrescriptionQueueScreen.tsx
-- [ ] [T107] [P] [US1] Create Prescription Review screen in mobile/pharmacist-app/src/screens/PrescriptionReviewScreen.tsx
-- [ ] [T108] [P] [US1] Implement AI transcription editor with confidence indicators in mobile/pharmacist-app/src/components/TranscriptionEditor.tsx
-- [ ] [T109] [P] [US1] Implement low-confidence field warnings in mobile/pharmacist-app/src/components/ConfidenceWarning.tsx
-- [ ] [T110] [P] [US1] Implement drug interaction warnings display in mobile/pharmacist-app/src/components/InteractionWarnings.tsx
-- [ ] [T111] [P] [US1] Create Approve/Reject action buttons in mobile/pharmacist-app/src/components/PrescriptionActions.tsx
-- [ ] [T112] [P] [US1] Implement messaging to doctor from prescription context in mobile/pharmacist-app/src/screens/DoctorMessageScreen.tsx
-- [ ] [T113] [P] [US1] Create prescription API client in mobile/pharmacist-app/src/services/prescriptionService.ts
-- [ ] [T114] [P] [US1] Create Redux slice for prescription queue in mobile/pharmacist-app/src/store/queueSlice.ts
+- [x] [T105] [P] [US1] Initialize Pharmacist App in mobile/pharmacist-app/src/App.tsx
+- [x] [T106] [P] [US1] Create Prescription Queue screen in mobile/pharmacist-app/src/screens/PrescriptionQueueScreen.tsx
+- [x] [T107] [P] [US1] Create Prescription Review screen in mobile/pharmacist-app/src/screens/PrescriptionReviewScreen.tsx
+- [x] [T108] [P] [US1] Implement AI transcription editor with confidence indicators in mobile/pharmacist-app/src/components/TranscriptionEditor.tsx
+- [x] [T109] [P] [US1] Implement low-confidence field warnings in mobile/pharmacist-app/src/components/ConfidenceWarning.tsx
+- [x] [T110] [P] [US1] Implement drug interaction warnings display in mobile/pharmacist-app/src/components/InteractionWarnings.tsx
+- [x] [T111] [P] [US1] Create Approve/Reject action buttons in mobile/pharmacist-app/src/components/PrescriptionActions.tsx
+- [x] [T112] [P] [US1] Implement messaging to doctor from prescription context in mobile/pharmacist-app/src/screens/DoctorMessageScreen.tsx
+- [x] [T113] [P] [US1] Create prescription API client in mobile/pharmacist-app/src/services/prescriptionService.ts
+- [x] [T114] [P] [US1] Create Redux slice for prescription queue in mobile/pharmacist-app/src/store/queueSlice.ts
 
 ### Prescription - Web (Pharmacist Portal)
 
-- [ ] [T115] [P] [US1] Create Prescription Dashboard in web/src/apps/pharmacist/pages/PrescriptionDashboard.tsx
-- [ ] [T116] [P] [US1] Create Prescription Review page in web/src/apps/pharmacist/pages/PrescriptionReview.tsx
-- [ ] [T117] [P] [US1] Implement DataGrid for prescription queue in web/src/apps/pharmacist/components/PrescriptionQueue.tsx
-- [ ] [T118] [P] [US1] Implement AI transcription editor in web/src/apps/pharmacist/components/TranscriptionEditor.tsx
-- [ ] [T119] [P] [US1] Implement safety warnings panel in web/src/apps/pharmacist/components/SafetyWarnings.tsx
-- [ ] [T120] [P] [US1] Create prescription API hooks in web/src/shared/hooks/usePrescriptions.ts
-- [ ] [T121] [P] [US1] Implement prescription status filters in web/src/apps/pharmacist/components/StatusFilters.tsx
+- [x] [T115] [P] [US1] Create Prescription Dashboard in web/src/apps/pharmacist/pages/PrescriptionDashboard.tsx
+- [x] [T116] [P] [US1] Create Prescription Review page in web/src/apps/pharmacist/pages/PrescriptionReview.tsx
+- [x] [T117] [P] [US1] Implement DataGrid for prescription queue in web/src/apps/pharmacist/components/PrescriptionQueue.tsx
+- [x] [T118] [P] [US1] Implement AI transcription editor in web/src/apps/pharmacist/components/TranscriptionEditor.tsx
+- [x] [T119] [P] [US1] Implement safety warnings panel in web/src/apps/pharmacist/components/SafetyWarnings.tsx
+- [x] [T120] [P] [US1] Create prescription API hooks in web/src/shared/hooks/usePrescriptions.ts
+- [x] [T121] [P] [US1] Implement prescription status filters in web/src/apps/pharmacist/components/StatusFilters.tsx
 
 ### Prescription - Mobile (Doctor App)
 
@@ -203,10 +203,10 @@
 
 ### Testing & QA
 
-- [ ] [T129] [P] [US1] Write E2E test for patient prescription upload workflow in backend/tests/e2e/prescription-upload.test.ts
-- [ ] [T130] [P] [US1] Write E2E test for pharmacist prescription review workflow in backend/tests/e2e/prescription-review.test.ts
-- [ ] [T131] [P] [US1] Write contract test for Prescription API in backend/tests/contract/prescription-api.test.ts
-- [ ] [T132] [P] [US1] Perform load test for prescription submission (target: 1000/hour) using k6
+- [x] [T129] [P] [US1] Write E2E test for patient prescription upload workflow in backend/tests/e2e/prescription-upload.test.ts
+- [x] [T130] [P] [US1] Write E2E test for pharmacist prescription review workflow in backend/tests/e2e/prescription-review.test.ts
+- [x] [T131] [P] [US1] Write contract test for Prescription API in backend/tests/contract/prescription-api.test.ts
+- [x] [T132] [P] [US1] Perform load test for prescription submission (target: 1000/hour) using k6
 
 ---
 

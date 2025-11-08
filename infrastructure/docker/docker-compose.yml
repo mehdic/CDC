@@ -1,0 +1,308 @@
+version: '3.9'
+
+services:
+  # ========================================
+  # Database Services
+  # ========================================
+
+  postgres:
+    image: postgres:16
+    container_name: metapharm-postgres
+    environment:
+      POSTGRES_DB: metapharm_connect
+      POSTGRES_USER: metapharm_user
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-your_password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metapharm_user -d metapharm_connect"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: metapharm-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # ========================================
+  # Microservices
+  # ========================================
+
+  api-gateway:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: api-gateway
+    container_name: metapharm-api-gateway
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=4000
+      - SERVICE_NAME=api-gateway
+      - DATABASE_URL=postgresql://metapharm_user:${DATABASE_PASSWORD:-your_password}@postgres:5432/metapharm_connect
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=metapharm_connect
+      - DATABASE_USER=metapharm_user
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-your_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-key-change-this-in-production}
+      - JWT_EXPIRES_IN=1h
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-token-secret-change-this}
+      - REFRESH_TOKEN_EXPIRES_IN=7d
+      - SESSION_SECRET=${SESSION_SECRET:-your-session-secret-change-this}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../../backend:/app
+      - /app/node_modules
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: auth-service
+    container_name: metapharm-auth-service
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=4001
+      - SERVICE_NAME=auth-service
+      - DATABASE_URL=postgresql://metapharm_user:${DATABASE_PASSWORD:-your_password}@postgres:5432/metapharm_connect
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=metapharm_connect
+      - DATABASE_USER=metapharm_user
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-your_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-key-change-this-in-production}
+      - JWT_EXPIRES_IN=1h
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-token-secret-change-this}
+      - REFRESH_TOKEN_EXPIRES_IN=7d
+      - SESSION_SECRET=${SESSION_SECRET:-your-session-secret-change-this}
+      - MFA_ISSUER=MetaPharm Connect
+      - HIN_CLIENT_ID=${HIN_CLIENT_ID:-your-hin-client-id}
+      - HIN_CLIENT_SECRET=${HIN_CLIENT_SECRET:-your-hin-client-secret}
+      - HIN_REDIRECT_URI=${HIN_REDIRECT_URI:-http://localhost:4000/api/v1/auth/hin/callback}
+    ports:
+      - "4001:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../../backend:/app
+      - /app/node_modules
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+
+  prescription-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: prescription-service
+    container_name: metapharm-prescription-service
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=4002
+      - SERVICE_NAME=prescription-service
+      - DATABASE_URL=postgresql://metapharm_user:${DATABASE_PASSWORD:-your_password}@postgres:5432/metapharm_connect
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=metapharm_connect
+      - DATABASE_USER=metapharm_user
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-your_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - AWS_REGION=${AWS_REGION:-eu-central-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-your-aws-access-key-id}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-your-aws-secret-access-key}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-metapharm-prescriptions}
+      - AWS_TEXTRACT_REGION=${AWS_TEXTRACT_REGION:-eu-central-1}
+      - FDB_API_KEY=${FDB_API_KEY:-your-fdb-api-key}
+      - FDB_API_URL=${FDB_API_URL:-https://api.fdbhealth.com}
+      - ENABLE_PRESCRIPTION_OCR=${ENABLE_PRESCRIPTION_OCR:-true}
+    ports:
+      - "4002:4002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../../backend:/app
+      - /app/node_modules
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+
+  teleconsultation-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: teleconsultation-service
+    container_name: metapharm-teleconsultation-service
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=4003
+      - SERVICE_NAME=teleconsultation-service
+      - DATABASE_URL=postgresql://metapharm_user:${DATABASE_PASSWORD:-your_password}@postgres:5432/metapharm_connect
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=metapharm_connect
+      - DATABASE_USER=metapharm_user
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-your_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-your-twilio-account-sid}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-your-twilio-auth-token}
+      - TWILIO_VIDEO_API_KEY=${TWILIO_VIDEO_API_KEY:-your-twilio-video-api-key}
+      - TWILIO_VIDEO_API_SECRET=${TWILIO_VIDEO_API_SECRET:-your-twilio-video-api-secret}
+      - ENABLE_TELECONSULTATION=${ENABLE_TELECONSULTATION:-true}
+    ports:
+      - "4003:4003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../../backend:/app
+      - /app/node_modules
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+
+  inventory-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: inventory-service
+    container_name: metapharm-inventory-service
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=4004
+      - SERVICE_NAME=inventory-service
+      - DATABASE_URL=postgresql://metapharm_user:${DATABASE_PASSWORD:-your_password}@postgres:5432/metapharm_connect
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=metapharm_connect
+      - DATABASE_USER=metapharm_user
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-your_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "4004:4004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../../backend:/app
+      - /app/node_modules
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: notification-service
+    container_name: metapharm-notification-service
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=4005
+      - SERVICE_NAME=notification-service
+      - DATABASE_URL=postgresql://metapharm_user:${DATABASE_PASSWORD:-your_password}@postgres:5432/metapharm_connect
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=metapharm_connect
+      - DATABASE_USER=metapharm_user
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-your_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-your-twilio-account-sid}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-your-twilio-auth-token}
+      - TWILIO_SMS_FROM=${TWILIO_SMS_FROM:-+41123456789}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-your-sendgrid-api-key}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-noreply@metapharm-connect.ch}
+      - SENDGRID_FROM_NAME=${SENDGRID_FROM_NAME:-MetaPharm Connect}
+      - FCM_SERVER_KEY=${FCM_SERVER_KEY:-your-fcm-server-key}
+      - FCM_PROJECT_ID=${FCM_PROJECT_ID:-metapharm-mobile}
+    ports:
+      - "4005:4005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../../backend:/app
+      - /app/node_modules
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+
+# ========================================
+# Networks
+# ========================================
+
+networks:
+  metapharm-network:
+    driver: bridge
+    name: metapharm-network
+
+# ========================================
+# Volumes
+# ========================================
+
+volumes:
+  postgres_data:
+    name: metapharm-postgres-data
+  redis_data:
+    name: metapharm-redis-data

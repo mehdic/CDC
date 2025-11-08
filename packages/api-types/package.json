@@ -1,0 +1,94 @@
+{
+  "name": "@metapharm/api-types",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MetaPharm Connect - Shared TypeScript type definitions for API contracts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "watch": "tsc --watch --project tsconfig.json",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "eslint 'src/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' --fix",
+    "format": "prettier --write 'src/**/*.{ts,json}'",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.19",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./auth": {
+      "import": "./dist/auth/index.js",
+      "require": "./dist/auth/index.js",
+      "types": "./dist/auth/index.d.ts"
+    },
+    "./prescription": {
+      "import": "./dist/prescription/index.js",
+      "require": "./dist/prescription/index.js",
+      "types": "./dist/prescription/index.d.ts"
+    },
+    "./teleconsultation": {
+      "import": "./dist/teleconsultation/index.js",
+      "require": "./dist/teleconsultation/index.js",
+      "types": "./dist/teleconsultation/index.d.ts"
+    },
+    "./inventory": {
+      "import": "./dist/inventory/index.js",
+      "require": "./dist/inventory/index.js",
+      "types": "./dist/inventory/index.d.ts"
+    },
+    "./delivery": {
+      "import": "./dist/delivery/index.js",
+      "require": "./dist/delivery/index.js",
+      "types": "./dist/delivery/index.d.ts"
+    },
+    "./ecommerce": {
+      "import": "./dist/ecommerce/index.js",
+      "require": "./dist/ecommerce/index.js",
+      "types": "./dist/ecommerce/index.d.ts"
+    },
+    "./messaging": {
+      "import": "./dist/messaging/index.js",
+      "require": "./dist/messaging/index.js",
+      "types": "./dist/messaging/index.d.ts"
+    },
+    "./records": {
+      "import": "./dist/records/index.js",
+      "require": "./dist/records/index.js",
+      "types": "./dist/records/index.d.ts"
+    },
+    "./analytics": {
+      "import": "./dist/analytics/index.js",
+      "require": "./dist/analytics/index.js",
+      "types": "./dist/analytics/index.d.ts"
+    },
+    "./common": {
+      "import": "./dist/common/index.js",
+      "require": "./dist/common/index.js",
+      "types": "./dist/common/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

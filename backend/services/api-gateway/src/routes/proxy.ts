@@ -1,0 +1,171 @@
+/**
+ * Request Routing & Proxying (T054)
+ * Routes requests to appropriate microservices
+ * Based on: /specs/002-metapharm-platform/plan.md
+ *
+ * Microservices:
+ * - Auth Service: /auth/* → http://localhost:4001
+ * - Prescription Service: /prescriptions/* → http://localhost:4002
+ * - Teleconsultation Service: /teleconsultations/* → http://localhost:4003
+ * - Inventory Service: /inventory/* → http://localhost:4004
+ * - Notification Service: /notifications/* → http://localhost:4005
+ */
+
+import { createProxyMiddleware, Options } from 'http-proxy-middleware';
+import { Request, Response } from 'express';
+
+// Service URLs from environment
+const AUTH_SERVICE_URL = process.env['AUTH_SERVICE_URL'] || 'http://localhost:4001';
+const PRESCRIPTION_SERVICE_URL = process.env['PRESCRIPTION_SERVICE_URL'] || 'http://localhost:4002';
+const TELECONSULTATION_SERVICE_URL = process.env['TELECONSULTATION_SERVICE_URL'] || 'http://localhost:4003';
+const INVENTORY_SERVICE_URL = process.env['INVENTORY_SERVICE_URL'] || 'http://localhost:4004';
+const NOTIFICATION_SERVICE_URL = process.env['NOTIFICATION_SERVICE_URL'] || 'http://localhost:4005';
+
+console.info('Proxy Configuration:', {
+  authService: AUTH_SERVICE_URL,
+  prescriptionService: PRESCRIPTION_SERVICE_URL,
+  teleconsultationService: TELECONSULTATION_SERVICE_URL,
+  inventoryService: INVENTORY_SERVICE_URL,
+  notificationService: NOTIFICATION_SERVICE_URL,
+});
+
+/**
+ * Common proxy options
+ */
+const commonProxyOptions = {
+  changeOrigin: true,
+  // logLevel removed - not available in current http-proxy-middleware version
+
+  /**
+   * Preserve original headers (Authorization, etc.)
+   */
+  onProxyReq: (proxyReq: any, req: any) => {
+    // Forward authentication header
+    if (req.headers.authorization) {
+      proxyReq.setHeader('Authorization', req.headers.authorization);
+    }
+
+    // Forward user context headers
+    if (req.user) {
+      proxyReq.setHeader('X-User-ID', req.user.userId);
+      proxyReq.setHeader('X-User-Role', req.user.role);
+      if (req.user.pharmacyId) {
+        proxyReq.setHeader('X-Pharmacy-ID', req.user.pharmacyId);
+      }
+    }
+
+    // Forward request ID for tracing
+    if (req.headers['x-request-id']) {
+      proxyReq.setHeader('X-Request-ID', req.headers['x-request-id'] as string);
+    }
+
+    console.debug('Proxying request:', {
+      path: req.path,
+      method: req.method,
+      target: proxyReq.path,
+      userId: req.user?.userId || 'anonymous',
+    });
+  },
+
+  /**
+   * Handle proxy errors gracefully
+   */
+  onError: (err: Error, req: Request, res: Response) => {
+    console.error('Proxy error:', {
+      error: err.message,
+      path: req.path,
+      method: req.method,
+      stack: err.stack,
+    });
+
+    res.status(503).json({
+      error: 'Service Unavailable',
+      message: 'The requested service is temporarily unavailable. Please try again later.',
+      code: 'SERVICE_UNAVAILABLE',
+    });
+  },
+
+  /**
+   * Log proxy responses
+   */
+  onProxyRes: (proxyRes: any, req: any) => {
+    console.debug('Proxy response:', {
+      path: req.path,
+      method: req.method,
+      statusCode: proxyRes.statusCode,
+      userId: (req as any).user?.userId || 'anonymous',
+    });
+  },
+};
+
+/**
+ * Auth Service Proxy
+ * Routes: /auth/*
+ */
+export const authProxy = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: AUTH_SERVICE_URL,
+  pathRewrite: {
+    '^/auth': '', // Remove /auth prefix
+  },
+});
+
+/**
+ * Prescription Service Proxy
+ * Routes: /prescriptions/*
+ */
+export const prescriptionProxy = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: PRESCRIPTION_SERVICE_URL,
+  pathRewrite: {
+    '^/prescriptions': '', // Remove /prescriptions prefix
+  },
+});
+
+/**
+ * Teleconsultation Service Proxy
+ * Routes: /teleconsultations/*
+ */
+export const teleconsultationProxy = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: TELECONSULTATION_SERVICE_URL,
+  pathRewrite: {
+    '^/teleconsultations': '', // Remove /teleconsultations prefix
+  },
+});
+
+/**
+ * Inventory Service Proxy
+ * Routes: /inventory/*
+ */
+export const inventoryProxy = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: INVENTORY_SERVICE_URL,
+  pathRewrite: {
+    '^/inventory': '', // Remove /inventory prefix
+  },
+});
+
+/**
+ * Notification Service Proxy
+ * Routes: /notifications/*
+ */
+export const notificationProxy = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: NOTIFICATION_SERVICE_URL,
+  pathRewrite: {
+    '^/notifications': '', // Remove /notifications prefix
+  },
+});
+
+/**
+ * Service health status cache
+ * Used by health check endpoint
+ */
+export const serviceEndpoints = [
+  { name: 'auth', url: AUTH_SERVICE_URL },
+  { name: 'prescription', url: PRESCRIPTION_SERVICE_URL },
+  { name: 'teleconsultation', url: TELECONSULTATION_SERVICE_URL },
+  { name: 'inventory', url: INVENTORY_SERVICE_URL },
+  { name: 'notification', url: NOTIFICATION_SERVICE_URL },
+];
