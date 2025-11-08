@@ -5,10 +5,7 @@ module.exports = {
 
   // Transform configuration for React Native
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['@react-native/babel-preset', {
-      // Enable TypeScript transformation
-      presets: ['module:metro-react-native-babel-preset']
-    }]
+    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest'
   },
 
   // Module name mapper for mocking assets and native modules
@@ -45,7 +42,6 @@ module.exports = {
 
   // Setup files to run after environment setup
   setupFilesAfterEnv: [
-    '@testing-library/react-native/cleanup-after-each',
     '<rootDir>/jest-setup.js'
   ],
 

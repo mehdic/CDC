@@ -240,34 +240,34 @@
 ### Teleconsultation - Mobile (Patient App)
 
 - [x] [T152] [P] [US2] Create Teleconsultation Booking screen in mobile/patient-app/src/screens/BookTeleconsultationScreen.tsx
-- [ ] [T153] [P] [US2] Implement availability calendar in mobile/patient-app/src/components/AvailabilityCalendar.tsx
+- [x] [T153] [P] [US2] Implement availability calendar in mobile/patient-app/src/components/AvailabilityCalendar.tsx
 - [x] [T154] [P] [US2] Create Video Call screen in mobile/patient-app/src/screens/VideoCallScreen.tsx
-- [ ] [T155] [P] [US2] Integrate Twilio Video SDK in mobile/patient-app/src/components/TwilioVideo.tsx
-- [ ] [T156] [P] [US2] Implement video controls (mute, video on/off, end call) in mobile/patient-app/src/components/VideoControls.tsx
-- [ ] [T157] [P] [US2] Implement audio-only fallback in mobile/patient-app/src/components/AudioFallback.tsx
-- [ ] [T158] [P] [US2] Create recording consent prompt in mobile/patient-app/src/components/RecordingConsent.tsx
-- [ ] [T159] [P] [US2] Create Upcoming Consultations list in mobile/patient-app/src/screens/UpcomingConsultationsScreen.tsx
+- [x] [T155] [P] [US2] Integrate Twilio Video SDK in mobile/patient-app/src/components/TwilioVideo.tsx
+- [x] [T156] [P] [US2] Implement video controls (mute, video on/off, end call) in mobile/patient-app/src/components/VideoControls.tsx
+- [x] [T157] [P] [US2] Implement audio-only fallback in mobile/patient-app/src/components/AudioFallback.tsx
+- [x] [T158] [P] [US2] Create recording consent prompt in mobile/patient-app/src/components/RecordingConsent.tsx
+- [x] [T159] [P] [US2] Create Upcoming Consultations list in mobile/patient-app/src/screens/UpcomingConsultationsScreen.tsx
 - [x] [T160] [P] [US2] Implement teleconsultation API client in mobile/patient-app/src/services/teleconsultationService.ts
-- [ ] [T161] [P] [US2] Create Redux slice for teleconsultations in mobile/patient-app/src/store/teleconsultationSlice.ts
+- [x] [T161] [P] [US2] Create Redux slice for teleconsultations in mobile/patient-app/src/store/teleconsultationSlice.ts
 
 ### Teleconsultation - Mobile (Pharmacist App)
 
-- [ ] [T162] [P] [US2] Create Consultation Dashboard in mobile/pharmacist-app/src/screens/ConsultationDashboardScreen.tsx
-- [ ] [T163] [P] [US2] Create Video Call screen in mobile/pharmacist-app/src/screens/PharmacistVideoCallScreen.tsx
-- [ ] [T164] [P] [US2] Implement patient medical record sidebar in mobile/pharmacist-app/src/components/PatientRecordSidebar.tsx
-- [ ] [T165] [P] [US2] Implement AI-assisted note-taking in mobile/pharmacist-app/src/components/ConsultationNotes.tsx
-- [ ] [T166] [P] [US2] Implement transcript editing with audit trail in mobile/pharmacist-app/src/components/TranscriptEditor.tsx
-- [ ] [T167] [P] [US2] Create prescription creation from consultation in mobile/pharmacist-app/src/screens/ConsultationPrescriptionScreen.tsx
-- [ ] [T168] [P] [US2] Implement consultation status tracking in mobile/pharmacist-app/src/components/ConsultationStatus.tsx
+- [x] [T162] [P] [US2] Create Consultation Dashboard in mobile/pharmacist-app/src/screens/ConsultationDashboardScreen.tsx
+- [x] [T163] [P] [US2] Create Video Call screen in mobile/pharmacist-app/src/screens/PharmacistVideoCallScreen.tsx
+- [x] [T164] [P] [US2] Implement patient medical record sidebar in mobile/pharmacist-app/src/components/PatientRecordSidebar.tsx
+- [x] [T165] [P] [US2] Implement AI-assisted note-taking in mobile/pharmacist-app/src/components/ConsultationNotes.tsx
+- [x] [T166] [P] [US2] Implement transcript editing with audit trail in mobile/pharmacist-app/src/components/TranscriptEditor.tsx
+- [x] [T167] [P] [US2] Create prescription creation from consultation in mobile/pharmacist-app/src/screens/ConsultationPrescriptionScreen.tsx
+- [x] [T168] [P] [US2] Implement consultation status tracking in mobile/pharmacist-app/src/components/ConsultationStatus.tsx
 
 ### Teleconsultation - Web (Pharmacist/Patient Portals)
 
-- [ ] [T169] [P] [US2] Create Teleconsultation Calendar in web/src/apps/pharmacist/pages/ConsultationCalendar.tsx
-- [ ] [T170] [P] [US2] Create Video Call page in web/src/apps/pharmacist/pages/VideoCall.tsx
-- [ ] [T171] [P] [US2] Integrate Twilio Video in web/src/shared/components/TwilioVideoRoom.tsx
-- [ ] [T172] [P] [US2] Implement patient record sidebar in web/src/apps/pharmacist/components/PatientRecordPanel.tsx
-- [ ] [T173] [P] [US2] Create consultation notes editor in web/src/apps/pharmacist/components/NotesEditor.tsx
-- [ ] [T174] [P] [US2] Create teleconsultation hooks in web/src/shared/hooks/useTeleconsultation.ts
+- [x] [T169] [P] [US2] Create Teleconsultation Calendar in web/src/apps/pharmacist/pages/ConsultationCalendar.tsx
+- [x] [T170] [P] [US2] Create Video Call page in web/src/apps/pharmacist/pages/VideoCall.tsx
+- [x] [T171] [P] [US2] Integrate Twilio Video in web/src/shared/components/TwilioVideoRoom.tsx
+- [x] [T172] [P] [US2] Implement patient record sidebar in web/src/apps/pharmacist/components/PatientRecordPanel.tsx
+- [x] [T173] [P] [US2] Create consultation notes editor in web/src/apps/pharmacist/components/NotesEditor.tsx
+- [x] [T174] [P] [US2] Create teleconsultation hooks in web/src/shared/hooks/useTeleconsultation.ts
 
 ### Testing & QA
 
