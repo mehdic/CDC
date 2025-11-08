@@ -9,7 +9,7 @@
 
 import { Router, Request, Response } from 'express';
 import { DataSource, FindOptionsWhere, Between, In } from 'typeorm';
-import { AuditTrailEntry, AuditAction } from '../../../shared/models/AuditTrailEntry';
+import { AuditTrailEntry, AuditAction } from '@models/AuditTrailEntry';
 
 const router = Router();
 

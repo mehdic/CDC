@@ -12,6 +12,7 @@
  */
 
 import * as jwt from 'jsonwebtoken';
+import { SignOptions } from 'jsonwebtoken';
 import { UserRole } from '../models/User';
 
 // ============================================================================
@@ -101,7 +102,7 @@ export function generateAccessToken(
       expiresIn: JWT_EXPIRES_IN,
       issuer: 'metapharm-connect',
       audience: 'metapharm-api',
-    });
+    } as SignOptions);
 
     return token;
   } catch (error) {
@@ -140,7 +141,7 @@ export function generateRefreshToken(
       expiresIn: REFRESH_TOKEN_EXPIRES_IN,
       issuer: 'metapharm-connect',
       audience: 'metapharm-api',
-    });
+    } as SignOptions);
 
     return token;
   } catch (error) {

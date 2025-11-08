@@ -4,7 +4,7 @@
  * FR-077: AI-powered OCR with confidence scoring
  */
 
-import { TextractClient, DetectDocumentTextCommand, Block } from '@aws-sdk/client-textract';
+import { TextractClient, DetectDocumentTextCommand, DetectDocumentTextCommandOutput, Block } from '@aws-sdk/client-textract';
 
 // ============================================================================
 // Textract Client Configuration
@@ -67,7 +67,7 @@ export async function extractTextFromPrescription(imageUrl: string): Promise<Tex
       },
     });
 
-    const response = await textractClient.send(command);
+    const response: DetectDocumentTextCommandOutput = await textractClient.send(command);
 
     if (!response.Blocks || response.Blocks.length === 0) {
       throw new Error('No text detected in image');

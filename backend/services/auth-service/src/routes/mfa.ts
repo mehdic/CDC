@@ -13,12 +13,12 @@ import { Router, Request, Response } from 'express';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 import { AppDataSource } from '../index';
-import { User } from '../../../shared/models/User';
-import { AuditTrailEntry } from '../../../shared/models/AuditTrailEntry';
-import { verifyAccessToken } from '../../../shared/utils/jwt';
-import { generateTokenPair } from '../../../shared/utils/jwt';
-import { comparePassword } from '../../../shared/utils/auth';
-import { encryptField, decryptField } from '../../../shared/utils/encryption';
+import { User } from '@models/User';
+import { AuditTrailEntry, AuditAction } from '@models/AuditTrailEntry';
+import { verifyAccessToken } from '@utils/jwt';
+import { generateTokenPair } from '@utils/jwt';
+import { comparePassword } from '@utils/auth';
+import { encryptField, decryptField } from '@utils/encryption';
 
 const router = Router();
 
@@ -461,18 +461,19 @@ async function createAuditEntry(
     const auditRepository = AppDataSource.getRepository(AuditTrailEntry);
 
     const auditEntry = auditRepository.create({
+      pharmacy_id: null,
       user_id: userId,
       event_type: eventType,
-      action: 'create',
+      action: AuditAction.CREATE,
       resource_type: 'authentication',
       resource_id: userId,
-      changes: { description },
+      changes: { description } as any,
       ip_address: req.ip || req.socket.remoteAddress || 'unknown',
       user_agent: req.headers['user-agent'] || 'unknown',
       device_info: {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
-      },
+      } as any,
     });
 
     await auditRepository.save(auditEntry);

@@ -8,7 +8,7 @@
 
 import { Router, Request, Response } from 'express';
 import { AppDataSource } from '../index';
-import { verifyAccessToken, decodeTokenUnsafe, isTokenExpired } from '../../../shared/utils/jwt';
+import { verifyAccessToken, decodeTokenUnsafe, isTokenExpired } from '@utils/jwt';
 
 const router = Router();
 

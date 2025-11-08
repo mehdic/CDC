@@ -18,9 +18,9 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import { AppDataSource } from '../index';
-import { User, UserRole } from '../../../shared/models/User';
-import { AuditTrailEntry } from '../../../shared/models/AuditTrailEntry';
-import { generateTokenPair } from '../../../shared/utils/jwt';
+import { User, UserRole, UserStatus } from '@models/User';
+import { AuditTrailEntry, AuditAction } from '@models/AuditTrailEntry';
+import { generateTokenPair } from '@utils/jwt';
 
 const router = Router();
 
@@ -234,7 +234,7 @@ router.get('/callback', async (req: Request, res: Response) => {
         email_verified: true,
         hin_id: hinId,
         role,
-        status: 'active',
+        status: UserStatus.ACTIVE,
         first_name_encrypted: Buffer.from(givenName || 'Unknown'),
         last_name_encrypted: Buffer.from(familyName || 'Unknown'),
         phone_encrypted: null,
@@ -369,18 +369,19 @@ async function createAuditEntry(
     const auditRepository = AppDataSource.getRepository(AuditTrailEntry);
 
     const auditEntry = auditRepository.create({
+      pharmacy_id: null,
       user_id: userId,
       event_type: eventType,
-      action: 'create',
+      action: AuditAction.CREATE,
       resource_type: 'authentication',
       resource_id: userId,
-      changes: { description },
+      changes: { description } as any,
       ip_address: req.ip || req.socket.remoteAddress || 'unknown',
       user_agent: req.headers['user-agent'] || 'unknown',
       device_info: {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
-      },
+      } as any,
     });
 
     await auditRepository.save(auditEntry);

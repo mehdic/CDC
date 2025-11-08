@@ -10,8 +10,8 @@
 
 import { Router, Request, Response } from 'express';
 import { AppDataSource } from '../index';
-import { AuditTrailEntry } from '../../../shared/models/AuditTrailEntry';
-import { verifyAccessToken } from '../../../shared/utils/jwt';
+import { AuditTrailEntry, AuditAction } from '@models/AuditTrailEntry';
+import { verifyAccessToken } from '@utils/jwt';
 
 const router = Router();
 
@@ -69,20 +69,21 @@ router.delete('/logout', async (req: Request, res: Response) => {
     const auditRepository = AppDataSource.getRepository(AuditTrailEntry);
 
     const auditEntry = auditRepository.create({
+      pharmacy_id: null,
       user_id: decoded.userId,
       event_type: 'logout.success',
-      action: 'create',
+      action: AuditAction.CREATE,
       resource_type: 'authentication',
       resource_id: decoded.userId,
       changes: {
         description: 'User logged out successfully',
-      },
+      } as any,
       ip_address: req.ip || req.socket.remoteAddress || 'unknown',
       user_agent: req.headers['user-agent'] || 'unknown',
       device_info: {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
-      },
+      } as any,
     });
 
     await auditRepository.save(auditEntry);
@@ -150,20 +151,21 @@ router.post('/logout-all', async (req: Request, res: Response) => {
     const auditRepository = AppDataSource.getRepository(AuditTrailEntry);
 
     const auditEntry = auditRepository.create({
+      pharmacy_id: null,
       user_id: decoded.userId,
       event_type: 'logout.all_devices',
-      action: 'create',
+      action: AuditAction.CREATE,
       resource_type: 'authentication',
       resource_id: decoded.userId,
       changes: {
         description: 'User logged out from all devices',
-      },
+      } as any,
       ip_address: req.ip || req.socket.remoteAddress || 'unknown',
       user_agent: req.headers['user-agent'] || 'unknown',
       device_info: {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
-      },
+      } as any,
     });
 
     await auditRepository.save(auditEntry);

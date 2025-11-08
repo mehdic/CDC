@@ -23,7 +23,7 @@ export interface SMSParams {
   body: string;
   from?: string;
   statusCallback?: string;
-  maxPrice?: string;
+  maxPrice?: number;
   validityPeriod?: number;
 }
 
@@ -170,7 +170,7 @@ class TwilioSMSClient {
         from: string;
         to: string;
         statusCallback?: string;
-        maxPrice?: string;
+        maxPrice?: number;
         validityPeriod?: number;
       } = {
         body: params.body,

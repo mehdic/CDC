@@ -32,9 +32,9 @@ console.info('Proxy Configuration:', {
 /**
  * Common proxy options
  */
-const commonProxyOptions: Partial<Options> = {
+const commonProxyOptions = {
   changeOrigin: true,
-  logLevel: process.env['NODE_ENV'] === 'production' ? 'warn' : 'info',
+  // logLevel removed - not available in current http-proxy-middleware version
 
   /**
    * Preserve original headers (Authorization, etc.)

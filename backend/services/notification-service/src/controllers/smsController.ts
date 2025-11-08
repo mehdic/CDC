@@ -61,7 +61,7 @@ export async function sendSMS(req: Request, res: Response): Promise<void> {
       body: smsRequest.body,
       from: smsRequest.from,
       statusCallback: smsRequest.statusCallback,
-      maxPrice: smsRequest.maxPrice,
+      maxPrice: smsRequest.maxPrice ? parseFloat(smsRequest.maxPrice) : undefined,
       validityPeriod: smsRequest.validityPeriod,
     };
 
@@ -165,7 +165,7 @@ export async function sendBulkSMS(req: Request, res: Response): Promise<void> {
       body: msg.body,
       from: msg.from,
       statusCallback: msg.statusCallback,
-      maxPrice: msg.maxPrice,
+      maxPrice: msg.maxPrice ? parseFloat(msg.maxPrice) : undefined,
       validityPeriod: msg.validityPeriod,
     }));
 
