@@ -48,6 +48,13 @@ pids/
 *.tsbuildinfo
 *.d.ts.map
 
+# TypeScript compiled files in source (should be in dist/)
+**/src/**/*.js
+**/src/**/*.js.map
+**/src/**/*.d.ts
+!**/src/**/*.test.js
+!**/src/**/*.spec.js
+
 # Editor directories and files
 .vscode/
 .vscode-test/
