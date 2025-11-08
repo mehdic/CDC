@@ -41,6 +41,7 @@ export interface DeviceInfo {
 }
 
 @Entity('audit_trail_entries')
+@Index('idx_audit_trail_resource', ['resource_type', 'resource_id'])
 export class AuditTrailEntry {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -84,10 +85,6 @@ export class AuditTrailEntry {
 
   @Column({ type: 'uuid' })
   resource_id: string;
-
-  // Composite index for resource lookups
-  @Index('idx_audit_trail_resource', ['resource_type', 'resource_id'])
-  _resourceIndex?: void; // TypeORM composite index marker
 
   // ============================================================================
   // Changes (for UPDATE actions)

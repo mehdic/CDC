@@ -15,8 +15,12 @@
  * - GET /health - Health check
  */
 
-import express, { Express, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
+
+// Load environment variables FIRST (before any imports that depend on them)
+dotenv.config();
+
+import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { DataSource } from 'typeorm';
@@ -28,9 +32,6 @@ import mfaRouter from './routes/mfa';
 import sessionsRouter from './routes/sessions';
 import logoutRouter from './routes/logout';
 import hinRouter from './integrations/hin-eid';
-
-// Load environment variables
-dotenv.config();
 
 // ============================================================================
 // Configuration

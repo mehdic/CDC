@@ -5,14 +5,21 @@
  * Phase 3 - US1: Prescription Processing & Validation
  */
 
+import dotenv from 'dotenv';
+
+// Load environment variables FIRST (before any imports that depend on them)
+dotenv.config();
+
 import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { DataSource } from 'typeorm';
 import { Prescription } from '../../../shared/models/Prescription';
 import { PrescriptionItem } from '../../../shared/models/PrescriptionItem';
 import { TreatmentPlan } from '../../../shared/models/TreatmentPlan';
+import { User } from '../../../shared/models/User';
+import { Pharmacy } from '../../../shared/models/Pharmacy';
+import { AuditTrailEntry } from '../../../shared/models/AuditTrailEntry';
 import { authenticateJWT } from '../../../shared/middleware/auth';
 import { requirePermission, Permission } from '../../../shared/middleware/rbac';
 import prescriptionsRouter from './routes/prescriptions';
@@ -21,8 +28,6 @@ import validateRouter from './routes/validate';
 import approveRouter from './routes/approve';
 import rejectRouter from './routes/reject';
 import listRouter from './routes/list';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4002;
@@ -42,7 +47,7 @@ app.use(express.json());
 const dataSource = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
-  entities: [Prescription, PrescriptionItem, TreatmentPlan],
+  entities: [Prescription, PrescriptionItem, TreatmentPlan, User, Pharmacy, AuditTrailEntry],
   synchronize: false, // Use migrations instead in production
   logging: process.env.NODE_ENV === 'development',
 });
