@@ -203,10 +203,10 @@
 
 ### Testing & QA
 
-- [ ] [T129] [P] [US1] Write E2E test for patient prescription upload workflow in backend/tests/e2e/prescription-upload.test.ts
-- [ ] [T130] [P] [US1] Write E2E test for pharmacist prescription review workflow in backend/tests/e2e/prescription-review.test.ts
-- [ ] [T131] [P] [US1] Write contract test for Prescription API in backend/tests/contract/prescription-api.test.ts
-- [ ] [T132] [P] [US1] Perform load test for prescription submission (target: 1000/hour) using k6
+- [x] [T129] [P] [US1] Write E2E test for patient prescription upload workflow in backend/tests/e2e/prescription-upload.test.ts
+- [x] [T130] [P] [US1] Write E2E test for pharmacist prescription review workflow in backend/tests/e2e/prescription-review.test.ts
+- [x] [T131] [P] [US1] Write contract test for Prescription API in backend/tests/contract/prescription-api.test.ts
+- [x] [T132] [P] [US1] Perform load test for prescription submission (target: 1000/hour) using k6
 
 ---
 
