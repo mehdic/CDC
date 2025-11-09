@@ -100,14 +100,14 @@ app.get('/health', (req: Request, res: Response) => {
 // Availability checking - Requires authentication (patients)
 app.use('/teleconsultations/availability', authenticateJWT as RequestHandler, availabilityRouter);
 
-// Booking endpoint - Requires BOOK_TELECONSULTATION permission (patients)
-app.use('/teleconsultations', authenticateJWT as RequestHandler, requirePermission(Permission.BOOK_TELECONSULTATION) as RequestHandler, bookRouter);
+// Booking endpoint - Requires BOOK_CONSULTATION permission (patients)
+app.use('/teleconsultations', authenticateJWT as RequestHandler, requirePermission(Permission.BOOK_CONSULTATION) as RequestHandler, bookRouter);
 
 // Join video call - Requires authentication (patient or pharmacist)
 app.use('/teleconsultations/:id/join', authenticateJWT as RequestHandler, joinRouter);
 
-// Consultation notes - Requires EDIT_CONSULTATION_NOTES permission (pharmacists)
-app.use('/teleconsultations/:id/notes', authenticateJWT as RequestHandler, requirePermission(Permission.EDIT_CONSULTATION_NOTES) as RequestHandler, notesRouter);
+// Consultation notes - Requires CONDUCT_CONSULTATION permission (pharmacists)
+app.use('/teleconsultations/:id/notes', authenticateJWT as RequestHandler, requirePermission(Permission.CONDUCT_CONSULTATION) as RequestHandler, notesRouter);
 
 // ============================================================================
 // Error Handling

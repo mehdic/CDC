@@ -72,7 +72,7 @@ router.get('/', async (req: Request, res: Response) => {
 
       return {
         pharmacist_id: pharmacist.id,
-        pharmacist_name: `${pharmacist.first_name} ${pharmacist.last_name}`, // Note: These would be decrypted in production
+        pharmacist_name: `Pharmacist (ID: ${pharmacist.id.substring(0, 8)})`, // Encrypted fields - use placeholder
         available_slots: slots,
       };
     });
