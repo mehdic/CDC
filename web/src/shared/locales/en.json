@@ -1,0 +1,134 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "next": "Next",
+    "previous": "Previous",
+    "skip": "Skip",
+    "done": "Done",
+    "contactSupport": "Contact Support",
+    "goBack": "Go Back"
+  },
+  "loading": {
+    "pleaseWait": "Please wait...",
+    "loadingData": "Loading data...",
+    "processing": "Processing...",
+    "almostThere": "Almost there...",
+    "loadingPrescriptions": "Loading prescriptions...",
+    "loadingPatientRecords": "Loading patient records...",
+    "syncingInventory": "Syncing inventory...",
+    "connectingToCall": "Connecting to teleconsultation..."
+  },
+  "errors": {
+    "networkError": "Unable to connect to server. Please check your internet connection.",
+    "serverError": "A server error occurred. Please try again in a few moments.",
+    "notFound": "The requested information was not found.",
+    "unauthorized": "You are not authorized to access this resource.",
+    "forbidden": "Access denied. You do not have the necessary permissions.",
+    "validationError": "Please check the information you entered.",
+    "timeout": "The request took too long. Please try again.",
+    "unknownError": "An unexpected error occurred.",
+    "prescriptionLoadError": "We cannot load your prescriptions. Please try again.",
+    "patientRecordError": "Unable to load patient record.",
+    "inventoryError": "Error syncing inventory.",
+    "uploadError": "File upload failed.",
+    "cameraError": "Unable to access camera.",
+    "locationError": "Unable to access your location."
+  },
+  "success": {
+    "saved": "Saved successfully",
+    "deleted": "Deleted successfully",
+    "updated": "Updated successfully",
+    "sent": "Sent successfully",
+    "prescriptionSent": "Prescription sent successfully",
+    "appointmentBooked": "Appointment booked successfully",
+    "profileUpdated": "Profile updated successfully",
+    "messageSent": "Message sent",
+    "prescriptionProcessed": "Prescription processed",
+    "deliveryConfirmed": "Delivery confirmed",
+    "paymentCompleted": "Payment completed successfully"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "invalidPhone": "Invalid phone number. Format: +41 XX XXX XX XX",
+    "passwordTooShort": "Password must contain at least 12 characters",
+    "passwordWeak": "Password must contain uppercase, lowercase, numbers and special characters",
+    "passwordMismatch": "Passwords do not match",
+    "invalidPrescriptionNumber": "Invalid prescription number",
+    "invalidInsuranceId": "Invalid insurance ID",
+    "invalidDate": "Invalid date",
+    "minLength": "Minimum {{count}} characters required",
+    "maxLength": "Maximum {{count}} characters allowed",
+    "invalidFormat": "Invalid format"
+  },
+  "onboarding": {
+    "welcome": "Welcome to MetaPharm Connect",
+    "dontShowAgain": "Don't show again",
+    "getStarted": "Get Started",
+    "patient": {
+      "title": "Your health, simplified",
+      "step1Title": "Easy teleconsultations",
+      "step1Description": "Consult your pharmacist via video in just a few clicks",
+      "step2Title": "Your prescriptions",
+      "step2Description": "Access all your prescriptions in one place",
+      "step3Title": "Delivery tracking",
+      "step3Description": "Track your medications in real-time",
+      "step4Title": "VIP Program",
+      "step4Description": "Enjoy exclusive benefits with Golden MetaPharm"
+    },
+    "pharmacist": {
+      "title": "Manage your pharmacy efficiently",
+      "step1Title": "Prescription processing",
+      "step1Description": "Scan and validate prescriptions with AI",
+      "step2Title": "Inventory management",
+      "step2Description": "Sync your stock in real-time",
+      "step3Title": "Teleconsultations",
+      "step3Description": "Offer video consultations to your patients",
+      "step4Title": "Analytics",
+      "step4Description": "Visualize your pharmacy's performance"
+    },
+    "doctor": {
+      "title": "Secure and fast prescriptions",
+      "step1Title": "Create prescriptions",
+      "step1Description": "Write and send electronic prescriptions",
+      "step2Title": "Secure communication",
+      "step2Description": "Communicate with pharmacists securely",
+      "step3Title": "Record access",
+      "step3Description": "Access patient records securely"
+    },
+    "nurse": {
+      "title": "Order for your patients",
+      "step1Title": "Order medications",
+      "step1Description": "Place orders for your hospitalized patients",
+      "step2Title": "Delivery tracking",
+      "step2Description": "Track your order status in real-time",
+      "step3Title": "Record access",
+      "step3Description": "Access necessary patient information"
+    },
+    "delivery": {
+      "title": "Optimized deliveries",
+      "step1Title": "Accept deliveries",
+      "step1Description": "Receive and accept delivery requests",
+      "step2Title": "GPS navigation",
+      "step2Description": "Optimized routes for your deliveries",
+      "step3Title": "Scan QR",
+      "step3Description": "Confirm deliveries with QR code"
+    }
+  },
+  "accessibility": {
+    "loading": "Loading",
+    "error": "Error",
+    "success": "Success",
+    "button": "Button",
+    "closeButton": "Close button",
+    "menuButton": "Menu button",
+    "backButton": "Back button"
+  }
+}

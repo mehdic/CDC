@@ -1,0 +1,134 @@
+{
+  "common": {
+    "loading": "Laden...",
+    "retry": "Erneut versuchen",
+    "cancel": "Abbrechen",
+    "ok": "OK",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "close": "Schließen",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "skip": "Überspringen",
+    "done": "Fertig",
+    "contactSupport": "Support kontaktieren",
+    "goBack": "Zurück"
+  },
+  "loading": {
+    "pleaseWait": "Bitte warten...",
+    "loadingData": "Daten werden geladen...",
+    "processing": "Verarbeitung läuft...",
+    "almostThere": "Fast fertig...",
+    "loadingPrescriptions": "Rezepte werden geladen...",
+    "loadingPatientRecords": "Patientenakten werden geladen...",
+    "syncingInventory": "Inventar wird synchronisiert...",
+    "connectingToCall": "Verbindung zur Telekonsultation wird hergestellt..."
+  },
+  "errors": {
+    "networkError": "Verbindung zum Server nicht möglich. Bitte überprüfen Sie Ihre Internetverbindung.",
+    "serverError": "Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es in einigen Augenblicken erneut.",
+    "notFound": "Die angeforderten Informationen wurden nicht gefunden.",
+    "unauthorized": "Sie sind nicht berechtigt, auf diese Ressource zuzugreifen.",
+    "forbidden": "Zugriff verweigert. Sie haben nicht die erforderlichen Berechtigungen.",
+    "validationError": "Bitte überprüfen Sie die eingegebenen Informationen.",
+    "timeout": "Die Anfrage hat zu lange gedauert. Bitte versuchen Sie es erneut.",
+    "unknownError": "Ein unerwarteter Fehler ist aufgetreten.",
+    "prescriptionLoadError": "Wir können Ihre Rezepte nicht laden. Bitte versuchen Sie es erneut.",
+    "patientRecordError": "Patientenakte kann nicht geladen werden.",
+    "inventoryError": "Fehler bei der Synchronisierung des Inventars.",
+    "uploadError": "Datei-Upload fehlgeschlagen.",
+    "cameraError": "Kein Zugriff auf die Kamera möglich.",
+    "locationError": "Standort kann nicht ermittelt werden."
+  },
+  "success": {
+    "saved": "Erfolgreich gespeichert",
+    "deleted": "Erfolgreich gelöscht",
+    "updated": "Erfolgreich aktualisiert",
+    "sent": "Erfolgreich gesendet",
+    "prescriptionSent": "Rezept erfolgreich gesendet",
+    "appointmentBooked": "Termin erfolgreich gebucht",
+    "profileUpdated": "Profil erfolgreich aktualisiert",
+    "messageSent": "Nachricht gesendet",
+    "prescriptionProcessed": "Rezept verarbeitet",
+    "deliveryConfirmed": "Lieferung bestätigt",
+    "paymentCompleted": "Zahlung erfolgreich abgeschlossen"
+  },
+  "validation": {
+    "required": "Dieses Feld ist erforderlich",
+    "invalidEmail": "Ungültige E-Mail-Adresse",
+    "invalidPhone": "Ungültige Telefonnummer. Format: +41 XX XXX XX XX",
+    "passwordTooShort": "Das Passwort muss mindestens 12 Zeichen enthalten",
+    "passwordWeak": "Das Passwort muss Großbuchstaben, Kleinbuchstaben, Zahlen und Sonderzeichen enthalten",
+    "passwordMismatch": "Die Passwörter stimmen nicht überein",
+    "invalidPrescriptionNumber": "Ungültige Rezeptnummer",
+    "invalidInsuranceId": "Ungültige Versicherungsnummer",
+    "invalidDate": "Ungültiges Datum",
+    "minLength": "Mindestens {{count}} Zeichen erforderlich",
+    "maxLength": "Maximal {{count}} Zeichen erlaubt",
+    "invalidFormat": "Ungültiges Format"
+  },
+  "onboarding": {
+    "welcome": "Willkommen bei MetaPharm Connect",
+    "dontShowAgain": "Nicht mehr anzeigen",
+    "getStarted": "Erste Schritte",
+    "patient": {
+      "title": "Ihre Gesundheit, vereinfacht",
+      "step1Title": "Einfache Telekonsultationen",
+      "step1Description": "Konsultieren Sie Ihren Apotheker per Video mit wenigen Klicks",
+      "step2Title": "Ihre Rezepte",
+      "step2Description": "Greifen Sie auf alle Ihre Rezepte an einem Ort zu",
+      "step3Title": "Lieferverfolgung",
+      "step3Description": "Verfolgen Sie Ihre Medikamente in Echtzeit",
+      "step4Title": "VIP-Programm",
+      "step4Description": "Profitieren Sie von exklusiven Vorteilen mit Golden MetaPharm"
+    },
+    "pharmacist": {
+      "title": "Verwalten Sie Ihre Apotheke effizient",
+      "step1Title": "Rezeptverarbeitung",
+      "step1Description": "Scannen und validieren Sie Rezepte mit KI",
+      "step2Title": "Bestandsverwaltung",
+      "step2Description": "Synchronisieren Sie Ihren Bestand in Echtzeit",
+      "step3Title": "Telekonsultationen",
+      "step3Description": "Bieten Sie Ihren Patienten Videokonsultationen an",
+      "step4Title": "Analytik",
+      "step4Description": "Visualisieren Sie die Leistung Ihrer Apotheke"
+    },
+    "doctor": {
+      "title": "Sichere und schnelle Rezepte",
+      "step1Title": "Rezepte erstellen",
+      "step1Description": "Erstellen und senden Sie elektronische Rezepte",
+      "step2Title": "Sichere Kommunikation",
+      "step2Description": "Kommunizieren Sie verschlüsselt mit Apothekern",
+      "step3Title": "Aktenzugriff",
+      "step3Description": "Greifen Sie sicher auf Patientenakten zu"
+    },
+    "nurse": {
+      "title": "Bestellen Sie für Ihre Patienten",
+      "step1Title": "Medikamente bestellen",
+      "step1Description": "Geben Sie Bestellungen für Ihre stationären Patienten auf",
+      "step2Title": "Lieferverfolgung",
+      "step2Description": "Verfolgen Sie den Status Ihrer Bestellungen in Echtzeit",
+      "step3Title": "Aktenzugriff",
+      "step3Description": "Greifen Sie auf notwendige Patienteninformationen zu"
+    },
+    "delivery": {
+      "title": "Optimierte Lieferungen",
+      "step1Title": "Lieferungen annehmen",
+      "step1Description": "Empfangen und akzeptieren Sie Lieferanfragen",
+      "step2Title": "GPS-Navigation",
+      "step2Description": "Optimierte Routen für Ihre Lieferungen",
+      "step3Title": "QR-Code scannen",
+      "step3Description": "Bestätigen Sie Lieferungen mit QR-Code"
+    }
+  },
+  "accessibility": {
+    "loading": "Wird geladen",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "button": "Schaltfläche",
+    "closeButton": "Schaltfläche schließen",
+    "menuButton": "Menü-Schaltfläche",
+    "backButton": "Zurück-Schaltfläche"
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "ok": "OK",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "skip": "Passer",
+    "done": "Terminé",
+    "contactSupport": "Contacter le support",
+    "goBack": "Retour"
+  },
+  "loading": {
+    "pleaseWait": "Veuillez patienter...",
+    "loadingData": "Chargement des données...",
+    "processing": "Traitement en cours...",
+    "almostThere": "Presque terminé...",
+    "loadingPrescriptions": "Chargement des prescriptions...",
+    "loadingPatientRecords": "Chargement des dossiers patients...",
+    "syncingInventory": "Synchronisation de l'inventaire...",
+    "connectingToCall": "Connexion à la téléconsultation..."
+  },
+  "errors": {
+    "networkError": "Impossible de se connecter au serveur. Veuillez vérifier votre connexion internet.",
+    "serverError": "Une erreur s'est produite sur le serveur. Veuillez réessayer dans quelques instants.",
+    "notFound": "Les informations demandées n'ont pas été trouvées.",
+    "unauthorized": "Vous n'êtes pas autorisé à accéder à cette ressource.",
+    "forbidden": "Accès refusé. Vous n'avez pas les permissions nécessaires.",
+    "validationError": "Veuillez vérifier les informations saisies.",
+    "timeout": "La requête a pris trop de temps. Veuillez réessayer.",
+    "unknownError": "Une erreur inattendue s'est produite.",
+    "prescriptionLoadError": "Nous ne pouvons pas charger vos prescriptions. Veuillez réessayer.",
+    "patientRecordError": "Impossible de charger le dossier patient.",
+    "inventoryError": "Erreur lors de la synchronisation de l'inventoire.",
+    "uploadError": "Échec du téléchargement du fichier.",
+    "cameraError": "Impossible d'accéder à la caméra.",
+    "locationError": "Impossible d'accéder à votre position."
+  },
+  "success": {
+    "saved": "Enregistré avec succès",
+    "deleted": "Supprimé avec succès",
+    "updated": "Mis à jour avec succès",
+    "sent": "Envoyé avec succès",
+    "prescriptionSent": "Prescription envoyée avec succès",
+    "appointmentBooked": "Rendez-vous réservé avec succès",
+    "profileUpdated": "Profil mis à jour avec succès",
+    "messageSent": "Message envoyé",
+    "prescriptionProcessed": "Prescription traitée",
+    "deliveryConfirmed": "Livraison confirmée",
+    "paymentCompleted": "Paiement effectué avec succès"
+  },
+  "validation": {
+    "required": "Ce champ est obligatoire",
+    "invalidEmail": "Adresse e-mail invalide",
+    "invalidPhone": "Numéro de téléphone invalide. Format: +41 XX XXX XX XX",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 12 caractères",
+    "passwordWeak": "Le mot de passe doit contenir des majuscules, minuscules, chiffres et caractères spéciaux",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "invalidPrescriptionNumber": "Numéro de prescription invalide",
+    "invalidInsuranceId": "Numéro d'assurance invalide",
+    "invalidDate": "Date invalide",
+    "minLength": "Minimum {{count}} caractères requis",
+    "maxLength": "Maximum {{count}} caractères autorisés",
+    "invalidFormat": "Format invalide"
+  },
+  "onboarding": {
+    "welcome": "Bienvenue sur MetaPharm Connect",
+    "dontShowAgain": "Ne plus afficher",
+    "getStarted": "Commencer",
+    "patient": {
+      "title": "Votre santé, simplifiée",
+      "step1Title": "Téléconsultations faciles",
+      "step1Description": "Consultez votre pharmacien par vidéo en quelques clics",
+      "step2Title": "Vos prescriptions",
+      "step2Description": "Accédez à toutes vos prescriptions en un seul endroit",
+      "step3Title": "Suivi de livraison",
+      "step3Description": "Suivez vos médicaments en temps réel",
+      "step4Title": "Programme VIP",
+      "step4Description": "Profitez d'avantages exclusifs avec Golden MetaPharm"
+    },
+    "pharmacist": {
+      "title": "Gérez votre pharmacie efficacement",
+      "step1Title": "Traitement des prescriptions",
+      "step1Description": "Scannez et validez les prescriptions avec l'IA",
+      "step2Title": "Gestion de l'inventaire",
+      "step2Description": "Synchronisez votre stock en temps réel",
+      "step3Title": "Téléconsultations",
+      "step3Description": "Offrez des consultations vidéo à vos patients",
+      "step4Title": "Analytique",
+      "step4Description": "Visualisez les performances de votre pharmacie"
+    },
+    "doctor": {
+      "title": "Prescriptions sécurisées et rapides",
+      "step1Title": "Créer des prescriptions",
+      "step1Description": "Rédigez et envoyez des prescriptions électroniques",
+      "step2Title": "Communication sécurisée",
+      "step2Description": "Communiquez avec les pharmaciens de manière chiffrée",
+      "step3Title": "Accès aux dossiers",
+      "step3Description": "Consultez les dossiers patients en toute sécurité"
+    },
+    "nurse": {
+      "title": "Commandez pour vos patients",
+      "step1Title": "Commander des médicaments",
+      "step1Description": "Passez des commandes pour vos patients hospitalisés",
+      "step2Title": "Suivi des livraisons",
+      "step2Description": "Suivez l'état de vos commandes en temps réel",
+      "step3Title": "Accès aux dossiers",
+      "step3Description": "Consultez les informations patients nécessaires"
+    },
+    "delivery": {
+      "title": "Livraisons optimisées",
+      "step1Title": "Accepter les livraisons",
+      "step1Description": "Recevez et acceptez les demandes de livraison",
+      "step2Title": "Navigation GPS",
+      "step2Description": "Itinéraires optimisés pour vos livraisons",
+      "step3Title": "Scanner QR",
+      "step3Description": "Confirmez les livraisons avec le code QR"
+    }
+  },
+  "accessibility": {
+    "loading": "Chargement en cours",
+    "error": "Erreur",
+    "success": "Succès",
+    "button": "Bouton",
+    "closeButton": "Bouton fermer",
+    "menuButton": "Bouton menu",
+    "backButton": "Bouton retour"
+  }
+}
