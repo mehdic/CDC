@@ -20,7 +20,6 @@
 
 import { Router, Request, Response } from 'express';
 import { DataSource } from 'typeorm';
-import * as redis from 'redis';
 import { logger } from '../utils/logger';
 import { getMetrics } from '../utils/metrics';
 
@@ -60,12 +59,15 @@ interface MetricsResponse {
   };
 }
 
+// Redis client type (flexible for different versions)
+type RedisClientType = any; // Support both redis v3 and v4+
+
 // ============================================================================
 // Configuration
 // ============================================================================
 
 let appDataSource: DataSource | null = null;
-let redisClient: redis.RedisClient | null = null;
+let redisClient: RedisClientType | null = null;
 const startTime = Date.now();
 
 /**
@@ -73,7 +75,7 @@ const startTime = Date.now();
  */
 export function initializeHealthCheck(
   dataSource: DataSource,
-  redis?: redis.RedisClient
+  redis?: RedisClientType
 ): void {
   appDataSource = dataSource;
   redisClient = redis || null;

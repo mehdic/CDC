@@ -167,7 +167,7 @@ export function errorHandler(
 
   // Default error properties
   let statusCode = 500;
-  let code = ErrorCodes.INTERNAL_SERVER_ERROR;
+  let code: string = ErrorCodes.INTERNAL_SERVER_ERROR;
   let message = 'Internal Server Error';
   let stack: string | undefined;
 

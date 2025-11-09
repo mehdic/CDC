@@ -43,7 +43,7 @@ export interface MetricValue {
 // ============================================================================
 
 // Enable Prometheus default metrics (nodejs_* metrics)
-promClient.collectDefaultMetrics({ timeout: 5000 });
+promClient.collectDefaultMetrics();
 
 // ============================================================================
 // Metrics Definitions
@@ -210,12 +210,13 @@ export function recordRequestDuration(
   duration: number,
   statusCode: number
 ): void {
-  httpRequestsTotal.labels(method, path, statusCode).inc();
-  httpRequestDurationMs.labels(method, path, statusCode).observe(duration);
-  httpResponseStatus.labels(statusCode).inc();
+  const statusCodeStr = String(statusCode);
+  httpRequestsTotal.labels(method, path, statusCodeStr).inc();
+  httpRequestDurationMs.labels(method, path, statusCodeStr).observe(duration);
+  httpResponseStatus.labels(statusCodeStr).inc();
 
   if (statusCode >= 400) {
-    httpErrors.labels(method, path, statusCode).inc();
+    httpErrors.labels(method, path, statusCodeStr).inc();
   }
 }
 

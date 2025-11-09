@@ -32,12 +32,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 import * as api from '@opentelemetry/api';
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { BasicTracerProvider, BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
-import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { logger } from '../utils/logger';
 
 // ============================================================================
@@ -80,29 +76,30 @@ export function initializeTracing(options?: {
   const enableConsoleExporter = options?.enableConsoleExporter ?? environment === 'development';
 
   try {
-    // Create resource
-    const resource = Resource.default().merge(
-      new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
-        [SemanticResourceAttributes.SERVICE_VERSION]: process.env.APP_VERSION || '0.1.0',
-        environment,
-      })
-    );
-
     // Create tracer provider
-    const tracerProvider = new BasicTracerProvider({ resource });
+    const tracerProvider = new BasicTracerProvider();
 
     // Add OTLP exporter for production
     if (environment !== 'development') {
-      const otlpExporter = new OTLPTraceExporter({
-        url: exporterUrl,
-      });
-      tracerProvider.addSpanProcessor(new BatchSpanProcessor(otlpExporter));
+      try {
+        const otlpExporter = new OTLPTraceExporter({
+          url: exporterUrl,
+        });
+        const processor = new BatchSpanProcessor(otlpExporter);
+        (tracerProvider as any).addSpanProcessor(processor);
+      } catch (exporterError) {
+        logger.warn('Failed to initialize OTLP exporter', exporterError as Error);
+      }
     }
 
     // Add console exporter for development
     if (enableConsoleExporter) {
-      tracerProvider.addSpanProcessor(new ConsoleSpanExporter());
+      try {
+        const consoleExporter = new ConsoleSpanExporter();
+        (tracerProvider as any).addSpanProcessor(consoleExporter);
+      } catch (consoleError) {
+        logger.warn('Failed to initialize console exporter', consoleError as Error);
+      }
     }
 
     // Set global tracer provider
