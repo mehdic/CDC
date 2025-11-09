@@ -1,0 +1,130 @@
+name: Playwright E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'web/**'
+      - 'package.json'
+      - '.github/workflows/playwright-tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'web/**'
+      - 'package.json'
+
+jobs:
+  playwright-tests:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: web
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run Playwright tests (${{ matrix.browser }})
+        working-directory: web
+        run: npm run test:e2e -- --project=${{ matrix.browser }}
+        env:
+          CI: true
+          PLAYWRIGHT_BASE_URL: http://localhost:5173
+          PLAYWRIGHT_HEADLESS: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: web/playwright-report/
+          retention-days: 30
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-results-${{ matrix.browser }}
+          path: |
+            web/playwright-report/results.json
+            web/playwright-report/junit.xml
+          retention-days: 30
+
+  playwright-all-tests:
+    name: All Playwright Tests (Combined Report)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: web
+        run: npx playwright install --with-deps
+
+      - name: Run all Playwright tests
+        working-directory: web
+        run: npm run test:e2e
+        env:
+          CI: true
+          PLAYWRIGHT_BASE_URL: http://localhost:5173
+          PLAYWRIGHT_HEADLESS: true
+
+      - name: Upload combined Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-combined
+          path: web/playwright-report/
+          retention-days: 30
+
+      - name: Upload combined test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-results-combined
+          path: |
+            web/playwright-report/results.json
+            web/playwright-report/junit.xml
+          retention-days: 30
+
+      - name: Comment PR with test results
+        uses: daun/playwright-report-comment@v3
+        if: always() && github.event_name == 'pull_request'
+        with:
+          report-path: web/playwright-report/results.json
