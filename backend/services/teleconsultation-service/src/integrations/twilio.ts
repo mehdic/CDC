@@ -5,8 +5,7 @@
  */
 
 import twilio, { Twilio } from 'twilio';
-import { AccessToken } from 'twilio/lib/jwt/AccessToken';
-import VideoGrant from 'twilio/lib/jwt/AccessToken/VideoGrant';
+import AccessToken = require('twilio/lib/jwt/AccessToken');
 
 // Twilio configuration from environment variables
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
@@ -88,7 +87,7 @@ export function generateAccessToken(params: {
   );
 
   // Create video grant with room access
-  const videoGrant = new VideoGrant({
+  const videoGrant = new AccessToken.VideoGrant({
     room: params.roomName,
   });
 
@@ -135,7 +134,7 @@ export async function getRoomRecordings(
       .rooms(roomSid)
       .recordings.list();
 
-    return recordings.map((recording) => recording.uri);
+    return recordings.map((recording) => recording.url);
   } catch (error: any) {
     console.error('[Twilio] Failed to fetch recordings:', error);
     throw new Error(`Failed to fetch recordings: ${error.message}`);
