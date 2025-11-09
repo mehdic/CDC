@@ -3,6 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { Modal, ConfirmModal, DeleteConfirmModal } from '../Modal';
 
+// Use React type to satisfy linter
+void (React as unknown);
+
 describe('Modal Component', () => {
   describe('Basic Modal', () => {
     it('renders when open is true', () => {

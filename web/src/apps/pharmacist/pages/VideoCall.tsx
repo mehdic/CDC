@@ -8,7 +8,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
-  Grid,
   Paper,
   Typography,
   Button,
@@ -24,7 +23,6 @@ import {
   Person,
   Note,
   Add,
-  Close,
 } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 import {

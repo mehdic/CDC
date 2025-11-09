@@ -139,22 +139,4 @@ export const InventoryManagement: React.FC = () => {
   );
 };
 
-// Helper hook (simplified - would be in shared/hooks/useInventory.ts)
-function useInventoryData() {
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchItems = async (params: any) => {
-    setLoading(true);
-    try {
-      // TODO: Call inventory service API
-      // const response = await inventoryService.getItems({ pharmacy_id: '...', ...params });
-      // setItems(response.items);
-      setItems([]); // Placeholder
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { items, loading, fetchItems };
-}
+export default InventoryManagement;

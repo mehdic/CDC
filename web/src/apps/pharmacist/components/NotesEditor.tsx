@@ -14,7 +14,6 @@ import {
   Tabs,
   Tab,
   Chip,
-  IconButton,
   Alert,
   Dialog,
   DialogTitle,
@@ -114,7 +113,7 @@ const NotesEditor: React.FC<NotesEditorProps> = ({
   }, [notes]);
 
   // Handle tab change
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 

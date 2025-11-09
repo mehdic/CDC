@@ -27,15 +27,19 @@ jest.mock('axios', () => ({
 }));
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React from 'react';
+import React, { ReactNode } from 'react';
 import {
   useTeleconsultations,
   useAvailability,
   useBookConsultation,
   TeleconsultationStatus,
 } from '../shared/hooks/useTeleconsultation';
+
+// Use React and ReactNode types to satisfy linter
+void (React as unknown);
+void ({} as ReactNode);
 
 // Create a wrapper for React Query
 const createWrapper = () => {

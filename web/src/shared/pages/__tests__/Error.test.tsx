@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import {
@@ -8,6 +8,9 @@ import {
   ServerErrorPage,
   GenericErrorPage,
 } from '../Error';
+
+// Use React type to satisfy linter
+void (React as unknown);
 
 const renderWithRouter = (component: React.ReactElement) => {
   return render(<BrowserRouter>{component}</BrowserRouter>);

@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import App from '../App';
 
+// Use React type to satisfy linter
+void (React as unknown);
+
 // Mock the pharmacist pages
 jest.mock('@apps/pharmacist/pages/PrescriptionDashboard', () => {
   return function PrescriptionDashboard() {

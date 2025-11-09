@@ -1,8 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DataGrid } from '../DataGrid';
 import { GridColDef } from '@mui/x-data-grid';
+
+// Use React type to satisfy linter
+void (React as unknown);
 
 describe('DataGrid Component', () => {
   const mockColumns: GridColDef[] = [

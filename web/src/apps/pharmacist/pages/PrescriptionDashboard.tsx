@@ -65,7 +65,7 @@ export const PrescriptionDashboard: React.FC = () => {
   }, [selectedStatuses]);
 
   // Fetch prescriptions
-  const { data, isLoading, error, refetch } = usePrescriptions(filters);
+  const { data, isLoading, error } = usePrescriptions(filters);
 
   // Calculate statistics
   const stats: DashboardStat[] = useMemo(() => {

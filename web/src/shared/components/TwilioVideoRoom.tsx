@@ -306,7 +306,6 @@ const TwilioVideoRoom: React.FC<TwilioVideoRoomProps> = ({
         const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
         const screenTrack = stream.getVideoTracks()[0];
 
-        // @ts-expect-error - Twilio accepts MediaStreamTrack
         const twilioScreenTrack = new Video.LocalVideoTrack(screenTrack);
 
         const localVideoPublication = Array.from(room.localParticipant.videoTracks.values())[0];

@@ -23,7 +23,7 @@ jest.mock('axios', () => {
 });
 
 import React, { ReactNode } from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   useFetchList,
@@ -32,6 +32,9 @@ import {
   useUpdateItem,
   useDeleteItem,
 } from '../useApi';
+
+// Use React type to satisfy linter
+void (React as unknown);
 
 // Create a wrapper with QueryClient
 const createWrapper = () => {

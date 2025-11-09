@@ -8,6 +8,9 @@ import {
   SkeletonLoader,
 } from '../Loading';
 
+// Use React type to satisfy linter
+void (React as unknown);
+
 describe('Loading Component', () => {
   describe('Fullscreen variant', () => {
     it('renders fullscreen loading with default message', () => {

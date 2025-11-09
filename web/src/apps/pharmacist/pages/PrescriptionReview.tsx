@@ -30,7 +30,6 @@ import {
   ArrowBack as BackIcon,
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
-  Help as ClarificationIcon,
   Refresh as ValidateIcon,
   Person as PersonIcon,
   MedicalServices as DoctorIcon,

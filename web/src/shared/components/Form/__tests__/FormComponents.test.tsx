@@ -3,6 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { TextField, Select, Checkbox, RadioGroup } from '../index';
 
+// Use React type to satisfy linter
+void (React as unknown);
+
 describe('Form Components', () => {
   describe('TextField', () => {
     it('renders with label and name', () => {

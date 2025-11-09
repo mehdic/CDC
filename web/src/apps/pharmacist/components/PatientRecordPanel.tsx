@@ -29,7 +29,6 @@ import {
   Medication,
   Warning,
   LocalHospital,
-  Description,
   History,
   Phone,
   Email,
@@ -142,7 +141,7 @@ const PatientRecordPanel: React.FC<PatientRecordPanelProps> = ({
 }) => {
   const [expandedSection, setExpandedSection] = useState<string | false>('demographics');
 
-  const handleAccordionChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+  const handleAccordionChange = (panel: string) => (_: React.SyntheticEvent, isExpanded: boolean) => {
     setExpandedSection(isExpanded ? panel : false);
   };
 
