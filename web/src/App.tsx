@@ -200,6 +200,16 @@ const App: React.FC = () => {
             }
           />
 
+          {/* Dashboard route - alias for root */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <PrescriptionDashboard />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Login route (no authentication required) */}
           <Route path="/login" element={<LoginPage />} />
 

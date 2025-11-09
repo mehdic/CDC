@@ -124,9 +124,8 @@ export class LoginPage {
    * Get validation error for email field
    */
   async getEmailError(): Promise<string | null> {
-    const helperText = this.page.locator(
-      'input[name="email"] ~ p[class*="MuiFormHelperText"]'
-    );
+    // MUI TextField structure: the helper text is adjacent to the input wrapper div
+    const helperText = this.page.locator('#email-helper-text');
     if (await helperText.isVisible()) {
       return helperText.textContent();
     }
@@ -137,9 +136,8 @@ export class LoginPage {
    * Get validation error for password field
    */
   async getPasswordError(): Promise<string | null> {
-    const helperText = this.page.locator(
-      'input[name="password"] ~ p[class*="MuiFormHelperText"]'
-    );
+    // MUI TextField structure: the helper text is adjacent to the input wrapper div
+    const helperText = this.page.locator('#password-helper-text');
     if (await helperText.isVisible()) {
       return helperText.textContent();
     }

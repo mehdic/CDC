@@ -1,7 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../page-objects/LoginPage';
-import { mockLoginSuccess } from '../utils/api-mock';
+import { mockLoginSuccess, mockApiResponse } from '../utils/api-mock';
 import { testUsers } from '../fixtures/auth.fixture';
+import {
+  generateTestEmail,
+  generateMockPrescription,
+} from '../utils/test-data';
+import { createMockAuthState } from '../utils/auth-helpers';
 
 /**
  * Smoke Tests
@@ -200,11 +205,7 @@ test.describe('Smoke Tests - Infrastructure Verification', () => {
 
 test.describe('Infrastructure Components Verification', () => {
   test('should have access to test utilities', async () => {
-    // Verify utilities are importable and functional
-    const { generateTestEmail, generateMockPrescription } = await import(
-      '../utils/test-data'
-    );
-
+    // Verify utilities are importable and functional (using static imports)
     const email = generateTestEmail('test');
     expect(email).toContain('@test.metapharm.ch');
 
@@ -214,9 +215,7 @@ test.describe('Infrastructure Components Verification', () => {
   });
 
   test('should have access to API mocking utilities', async ({ page }) => {
-    const { mockApiResponse } = await import('../utils/api-mock');
-
-    // Mock an API endpoint
+    // Mock an API endpoint (using static imports)
     await mockApiResponse(page, '**/test-endpoint', {
       status: 200,
       body: { success: true, data: 'test' },
@@ -230,8 +229,7 @@ test.describe('Infrastructure Components Verification', () => {
   });
 
   test('should have access to authentication helpers', async () => {
-    const { createMockAuthState } = await import('../utils/auth-helpers');
-
+    // Use static imports from top of file
     const authState = createMockAuthState(testUsers.pharmacist);
 
     expect(authState).toHaveProperty('accessToken');

@@ -99,7 +99,7 @@ export const LoginPage: React.FC = () => {
         }
 
         // Login successful - redirect to dashboard
-        navigate('/', { replace: true });
+        navigate('/dashboard', { replace: true });
       }
     } catch (error) {
       const authError = error as AuthError;
@@ -132,6 +132,36 @@ export const LoginPage: React.FC = () => {
     setPassword(e.target.value);
     if (errors.password) {
       setErrors((prev) => ({ ...prev, password: undefined }));
+    }
+  };
+
+  /**
+   * Validate email field on blur
+   */
+  const handleEmailBlur = () => {
+    if (!email.trim()) {
+      return; // Don't validate empty field on blur
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrors((prev) => ({ ...prev, email: "Format d'email invalide" }));
+    }
+  };
+
+  /**
+   * Validate password field on blur
+   */
+  const handlePasswordBlur = () => {
+    if (!password) {
+      return; // Don't validate empty field on blur
+    }
+
+    if (password.length < 6) {
+      setErrors((prev) => ({
+        ...prev,
+        password: 'Le mot de passe doit contenir au moins 6 caractères',
+      }));
     }
   };
 
@@ -173,6 +203,7 @@ export const LoginPage: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={handleEmailChange}
+                onBlur={handleEmailBlur}
                 error={!!errors.email}
                 helperText={errors.email}
                 disabled={loading}
@@ -186,6 +217,7 @@ export const LoginPage: React.FC = () => {
                 type="password"
                 value={password}
                 onChange={handlePasswordChange}
+                onBlur={handlePasswordBlur}
                 error={!!errors.password}
                 helperText={errors.password}
                 disabled={loading}
