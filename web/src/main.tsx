@@ -4,9 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-// Import pharmacist pages
-import PrescriptionDashboard from '@apps/pharmacist/pages/PrescriptionDashboard';
+import App from './App';
 
 // Create Material-UI theme
 const theme = createTheme({
@@ -86,23 +84,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-// Simple App component - will be expanded with proper routing later
-const App: React.FC = () => {
-  return (
-    <div style={{ padding: '20px' }}>
-      <h1>MetaPharm Connect - Web Application</h1>
-      <p style={{ marginTop: '20px', color: '#666' }}>
-        Plateforme de santé connectant pharmaciens, médecins, infirmiers, livreurs et patients
-      </p>
-
-      <div style={{ marginTop: '40px' }}>
-        <h2>Tableau de bord Pharmacien</h2>
-        <PrescriptionDashboard />
-      </div>
-    </div>
-  );
-};
 
 // Render the app
 const rootElement = document.getElementById('root');
