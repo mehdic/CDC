@@ -381,12 +381,60 @@ sudo apt-get install k6
 2. ✅ **T130**: E2E test for pharmacist prescription review workflow - COMPLETE
 3. ✅ **T131**: Contract test for Prescription API - COMPLETE
 4. ✅ **T132**: Load test for prescription submission using k6 - COMPLETE
+5. ✅ **T175**: E2E test for patient teleconsultation booking workflow - COMPLETE
+6. ✅ **T176**: E2E test for video call session - COMPLETE
+7. ✅ **T177**: Integration test for Twilio Video integration - COMPLETE
+8. ✅ **T178**: Load test for concurrent video calls (100 concurrent) - COMPLETE
+
+### Phase 4 Testing Complete (US2 - Teleconsultation)
+
+**Teleconsultation E2E Tests**: `tests/e2e/teleconsultation-booking.test.ts` (32+ scenarios)
+- Patient booking workflow (search availability, book, confirm)
+- Double booking prevention and conflict detection
+- Time validation and pharmacist availability
+- UX enhancements: loading states, error messages
+- i18n: French/German language support
+- Authorization: role-based access control
+- Multi-tenancy: pharmacy data isolation
+
+**Video Call E2E Tests**: `tests/e2e/video-call.test.ts` (40+ scenarios)
+- Patient/pharmacist join flow with Twilio tokens
+- Video streaming with E2E encryption (peer-to-peer)
+- Recording with consent (FR-028)
+- Pharmacist notes during call
+- End call workflow and post-call summary
+- Authorization: only participants can join (FR-112)
+- Error handling: network errors, permissions, timeouts
+
+**Twilio Integration Tests**: `backend/services/teleconsultation-service/__tests__/twilio.test.ts` (35+ tests)
+- Room creation with peer-to-peer encryption
+- Access token generation with 1-hour expiry
+- Recording management (fetch recordings)
+- Room cleanup and completion
+- Error handling: API errors, rate limiting, network failures
+- Performance validation
+
+**Load Test**: `tests/load/video-calls.k6.js`
+- Target: 100 concurrent video calls
+- Stages: 2m ramp-up, 5m sustained, 1m ramp-down
+- Metrics: p50/p95/p99 latency, error rate, throughput
+- Performance targets: p95 < 150ms, error rate < 1%
+- HTML report generation
+
+**Run Teleconsultation Tests**:
+```bash
+# E2E tests
+npm test tests/e2e/teleconsultation-booking.test.ts
+npm test tests/e2e/video-call.test.ts
+
+# Integration tests
+npm test backend/services/teleconsultation-service/__tests__/twilio.test.ts
+
+# Load test (requires k6 installed)
+k6 run backend/tests/load/video-calls.k6.js
+```
 
 ### Future Testing Phases
-
-**Phase 4 (US2 - Teleconsultation)**:
-- E2E tests for video call booking and session
-- Load tests for concurrent video calls (target: 100 concurrent)
 
 **Phase 5 (US3 - Inventory Management)**:
 - E2E tests for QR scanning workflow
@@ -416,6 +464,6 @@ sudo apt-get install k6
 
 ---
 
-**Last Updated**: 2025-11-08
+**Last Updated**: 2025-11-09
 **Author**: MetaPharm Development Team
-**User Story**: US1 - Prescription Processing & Validation
+**User Stories**: US1 (Prescription Processing), US2 (Teleconsultation)
