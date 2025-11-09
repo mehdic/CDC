@@ -1,8 +1,10 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useMemo } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from '@shared/components/AppShell';
 import { FullScreenLoading } from '@shared/pages/Loading';
 import { NotFoundPage } from '@shared/pages/Error';
+import { LoginPage } from '@shared/pages/Login';
+import { logout, getUserData } from '@shared/services/authService';
 
 // Lazy load pages for code splitting
 const PrescriptionDashboard = lazy(
@@ -40,15 +42,26 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
  * Main App component with routing
  */
 const App: React.FC = () => {
-  // TODO: Replace with actual user data from auth context
-  const mockUser = {
-    name: 'Dr. Martin Dupont',
-    email: 'martin.dupont@metapharm.ch',
-    role: 'pharmacist',
-  };
+  // Get user data from localStorage or use mock data
+  const user = useMemo(() => {
+    const userData = getUserData();
+    if (userData) {
+      return {
+        name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email,
+        email: userData.email,
+        role: userData.role,
+      };
+    }
+    // Fallback mock user for development
+    return {
+      name: 'Dr. Martin Dupont',
+      email: 'martin.dupont@metapharm.ch',
+      role: 'pharmacist',
+    };
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('auth_token');
+    logout();
     window.location.href = '/login';
   };
 
@@ -64,7 +77,7 @@ const App: React.FC = () => {
 
   return (
     <AppShell
-      user={mockUser}
+      user={user}
       onLogout={handleLogout}
       onProfileClick={handleProfile}
       onSettingsClick={handleSettings}
@@ -187,16 +200,8 @@ const App: React.FC = () => {
             }
           />
 
-          {/* Login route (placeholder - no authentication required) */}
-          <Route
-            path="/login"
-            element={
-              <div style={{ padding: '20px', textAlign: 'center' }}>
-                <h2>Connexion</h2>
-                <p>Page de connexion - À implémenter</p>
-              </div>
-            }
-          />
+          {/* Login route (no authentication required) */}
+          <Route path="/login" element={<LoginPage />} />
 
           {/* 404 Not Found */}
           <Route path="*" element={<NotFoundPage />} />
