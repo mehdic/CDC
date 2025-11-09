@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   suggestionsHeader: {
     ...theme.typography.caption,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: theme.colors.textSecondary,
     padding: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
   },
   suggestionName: {
     ...theme.typography.body1,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: theme.colors.text,
     flex: 1,
   },
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   confidenceBadgeText: {
     ...theme.typography.caption,
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '600' as const,
     fontSize: 10,
   },
   suggestionGeneric: {

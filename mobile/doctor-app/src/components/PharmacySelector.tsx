@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...theme.typography.body1,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
   },
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   suggestionName: {
     ...theme.typography.body1,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: theme.colors.text,
   },
   suggestionAddress: {
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     ...theme.typography.caption,
     color: theme.colors.primary,
     marginTop: theme.spacing.xs,
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
   selectedContainer: {
     flexDirection: 'row',
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   },
   selectedName: {
     ...theme.typography.body1,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: theme.colors.text,
   },
   selectedAddress: {
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   },
   nearbyLabel: {
     ...theme.typography.body2,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.sm,
   },

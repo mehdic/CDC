@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...theme.typography.body1,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
     marginTop: theme.spacing.md,
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   },
   formButtonTextActive: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
   optionsGrid: {
     flexDirection: 'row',
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   },
   optionButtonTextActive: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
 });
 

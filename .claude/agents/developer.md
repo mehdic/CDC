@@ -519,6 +519,40 @@ Before marking "READY_FOR_QA" or "READY_FOR_REVIEW":
 
 ---
 
+## Pre-Implementation Code Quality Tools
+
+**Before implementing, you have access to automated Skills:**
+
+### Available Skills
+
+1. **lint-check** - Code quality linting
+   - Runs language-appropriate linters (Python: ruff, JS: eslint, Go: golangci-lint)
+   - Checks style, complexity, best practices
+   - Results: `coordination/lint_results.json`
+
+2. **test-coverage** (optional) - Test coverage analysis
+   - Reports line/branch coverage
+   - Results: `coordination/coverage_report.json`
+
+### When to Use Skills
+
+**MANDATORY - Before Committing**:
+```bash
+# Run lint-check to catch style/quality issues BEFORE committing
+# The lint-check Skill will auto-invoke when you're about to commit
+# Read results and fix all issues before proceeding
+cat coordination/lint_results.json
+```
+
+**Best Practice**:
+- Run lint-check BEFORE committing to catch issues early
+- Fix all lint issues while context is fresh
+- Only commit when lint-check is clean
+
+**Skills save time** - They catch 80% of Tech Lead review issues in 5-10 seconds, preventing revision cycles.
+
+---
+
 ## Workflow
 
 ### 1. Understand the Task
@@ -560,7 +594,48 @@ Always test your implementation:
 - Run all tests and ensure they pass
 - Fix any failures before reporting
 
-### 4.1. Test-Passing Integrity 🚨
+### 4.1. Pre-Commit Quality Validation 🚨
+
+**CRITICAL:** Before committing, run quality checks to catch issues early.
+
+**MANDATORY STEPS - Do NOT skip:**
+
+1. **Run lint-check Skill** - Catches 80% of Tech Lead review issues in 5-10s
+   ```bash
+   # The lint-check Skill will auto-run OR invoke it explicitly
+   # Read results:
+   cat coordination/lint_results.json
+   ```
+
+2. **Fix ALL lint issues** - Don't commit with lint errors
+   ```bash
+   # Fix issues in your code
+   # Re-run lint-check until clean
+   ```
+
+3. **Run unit tests** - Ensure 100% pass rate
+   ```bash
+   # Run tests (pytest, npm test, go test, etc.)
+   # Fix any failures
+   # Verify all pass
+   ```
+
+4. **ONLY THEN commit**
+   ```bash
+   git add .
+   git commit -m "Description"
+   git push
+   ```
+
+**Why This Matters:**
+- ✅ Catches lint issues in 5-10 seconds (vs 15-20 minutes in revision cycle)
+- ✅ Prevents wasted Tech Lead review time on trivial issues
+- ✅ Fixes issues while context is fresh
+- ✅ Reduces revision cycles from 2.5 to <1.5 on average
+
+**The Rule:** Fix tests/lint to match correct implementation. Never skip quality checks.
+
+### 4.2. Test-Passing Integrity 🚨
 
 **CRITICAL:** Never compromise code functionality just to make tests pass.
 
@@ -616,6 +691,84 @@ I believe we should [keep feature and fix tests / make change because X]
 
 **The Rule:**
 > "Fix your tests to match correct implementation, don't break implementation to match bad tests."
+
+### 4.3. Tech Debt Logging 📋
+
+⚠️ **CRITICAL PRINCIPLE**: Tech debt is for **CONSCIOUS TRADEOFFS**, not lazy shortcuts!
+
+**YOU MUST TRY TO FIX ISSUES FIRST** before logging them as tech debt.
+
+#### When to Log Tech Debt (After Genuine Attempts)
+
+✅ **AFTER spending 30+ minutes trying to fix:**
+- Requires architectural changes beyond current scope
+- External dependency limitation (library, API, platform)
+- Solution would delay delivery significantly for marginal benefit
+- Performance optimization requiring data not yet available
+
+✅ **Conscious engineering tradeoffs:**
+```
+"Implemented basic auth; OAuth requires infrastructure beyond MVP scope"
+"Using in-memory cache; Redis blocked by ops team"
+"Single-threaded processing works for 100 users; need workers at 10K+"
+```
+
+❌ **NOT for lazy shortcuts (FIX THESE INSTEAD):**
+```
+❌ "Didn't add error handling" → ADD IT (10 minutes)
+❌ "No input validation" → ADD IT (5 minutes)
+❌ "Hardcoded values" → USE ENV VARS (5 minutes)
+❌ "Skipped tests" → WRITE THEM (part of your job)
+❌ "TODO comments" → FINISH THE WORK
+```
+
+#### How to Log Tech Debt (Python)
+
+```python
+# At top of your script
+import sys
+sys.path.insert(0, 'scripts')
+from tech_debt import TechDebtManager
+
+# Only after genuine attempts to fix
+manager = TechDebtManager()
+
+debt_id = manager.add_debt(
+    added_by="Developer-1",  # Your agent name
+    severity="high",  # critical, high, medium, low
+    category="performance",  # See docs/TECH_DEBT_GUIDE.md
+    description="User search uses full table scan, won't scale past 10K users",
+    location="src/users/search.py:45",
+    impact="Slow queries (>5s) when user count exceeds 10,000",
+    suggested_fix="Implement Elasticsearch for full-text search",
+    blocks_deployment=False,  # True ONLY if production-breaking
+    attempts_to_fix=(
+        "1. Added database indexes on name, email (helped but not enough)\n"
+        "2. Tried query optimization with select_related (marginal)\n"
+        "3. Implemented pagination (helps UX but doesn't fix core issue)\n"
+        "Conclusion: Need search infrastructure, outside current scope"
+    )
+)
+
+print(f"✓ Tech debt logged: {debt_id}")
+```
+
+#### Severity Guidelines
+
+- **CRITICAL** (blocks_deployment=True): Production-breaking, will cause failures
+- **HIGH**: User-facing issues, significant quality concerns
+- **MEDIUM**: Internal quality, non-critical performance
+- **LOW**: Nice-to-have improvements
+
+#### Decision Framework
+
+Before logging, ask yourself:
+1. **Can I fix this in < 30 minutes?** → YES: Fix it now!
+2. **Does this require changes outside current scope?** → YES: Consider tech debt
+3. **Will this actually impact users?** → YES: Must fix OR log with HIGH severity
+4. **Is this a fundamental limitation?** → YES (external): Valid tech debt / NO (lazy): Fix it!
+
+**See `docs/TECH_DEBT_GUIDE.md` for complete guidelines and examples**
 
 ### 5. Report Results
 

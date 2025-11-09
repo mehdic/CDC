@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   },
   itemName: {
     ...theme.typography.body1,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: theme.colors.text,
   },
   itemDetails: {
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     ...theme.typography.body1,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
   },
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   selectedMedicationLabel: {
     ...theme.typography.body1,
     color: theme.colors.primary,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     marginBottom: theme.spacing.md,
   },
   notesInput: {
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     ...theme.typography.body1,
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
   validationHints: {
     marginTop: theme.spacing.md,

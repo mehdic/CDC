@@ -59,12 +59,12 @@ const theme = {
     xl: 32,
   },
   typography: {
-    h1: { fontSize: 28, fontWeight: 'bold' },
-    h2: { fontSize: 24, fontWeight: 'bold' },
-    h3: { fontSize: 20, fontWeight: '600' },
-    body1: { fontSize: 16, fontWeight: 'normal' },
-    body2: { fontSize: 14, fontWeight: 'normal' },
-    caption: { fontSize: 12, fontWeight: 'normal' },
+    h1: { fontSize: 28, fontWeight: 'bold' as const },
+    h2: { fontSize: 24, fontWeight: 'bold' as const },
+    h3: { fontSize: 20, fontWeight: '600' as const },
+    body1: { fontSize: 16, fontWeight: 'normal' as const },
+    body2: { fontSize: 14, fontWeight: 'normal' as const },
+    caption: { fontSize: 12, fontWeight: 'normal' as const },
   },
 };
 
@@ -194,7 +194,7 @@ const App: React.FC = () => {
             },
             headerTintColor: '#FFFFFF',
             headerTitleStyle: {
-              fontWeight: 'bold',
+              fontWeight: 'bold' as const,
             },
           }}
         >

@@ -271,7 +271,7 @@ const columns: GridColDef[] = [
     align: 'center',
     headerAlign: 'center',
     sortable: false,
-    renderCell: (params: GridRenderCellParams<Prescription>) => {
+    renderCell: (_: GridRenderCellParams<Prescription>) => {
       return (
         <Tooltip title="View Details">
           <IconButton size="small" color="primary">
