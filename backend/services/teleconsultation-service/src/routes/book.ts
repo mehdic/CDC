@@ -8,7 +8,7 @@
 import { Router, Request, Response } from 'express';
 import { DataSource, Between } from 'typeorm';
 import { Teleconsultation, TeleconsultationStatus } from '../../../../shared/models/Teleconsultation';
-import { User } from '../../../../shared/models/User';
+import { User, UserRole, UserStatus } from '../../../../shared/models/User';
 import { Pharmacy } from '../../../../shared/models/Pharmacy';
 import { addMinutes, subMinutes } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
@@ -66,8 +66,8 @@ router.post('/', async (req: Request, res: Response) => {
     const pharmacist = await userRepo.findOne({
       where: {
         id: body.pharmacist_id,
-        role: 'pharmacist',
-        status: 'active',
+        role: UserRole.PHARMACIST,
+        status: UserStatus.ACTIVE,
       },
     });
 
@@ -79,6 +79,13 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Get pharmacist's pharmacy for multi-tenant isolation
+    if (!pharmacist.primary_pharmacy_id) {
+      return res.status(400).json({
+        error: 'Pharmacist has no associated pharmacy',
+        code: 'NO_PHARMACY_ASSOCIATION',
+      });
+    }
+
     const pharmacy = await pharmacyRepo.findOne({
       where: { id: pharmacist.primary_pharmacy_id },
     });
