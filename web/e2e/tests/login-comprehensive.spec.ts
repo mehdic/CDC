@@ -145,6 +145,12 @@ test.describe('Login Comprehensive E2E Tests', () => {
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
       await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
+      // CRITICAL: Wait for authentication tokens to be stored
+      await page.waitForFunction(
+        () => localStorage.getItem('auth_token') !== null,
+        { timeout: 10000 }
+      );
+
       // Debug: Check localStorage after login
       const tokensAfterLogin = await page.evaluate(() => {
         return {
