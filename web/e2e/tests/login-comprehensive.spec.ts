@@ -43,7 +43,9 @@ test.describe('Login Comprehensive E2E Tests', () => {
       await page.waitForURL(/(dashboard|prescriptions|inventory)/, {
         timeout: 10000,
       });
-      await page.waitForLoadState('networkidle', { timeout: 5000 });
+
+      // Wait for page load - use domcontentloaded which is more reliable than networkidle
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Verify we're authenticated
       const authenticated = await isAuthenticated(page);
@@ -73,7 +75,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
-      await page.waitForLoadState('networkidle', { timeout: 5000 });
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Wait for authentication token to be stored in localStorage
       await page.waitForFunction(
@@ -94,7 +96,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
-      await page.waitForLoadState('networkidle', { timeout: 5000 });
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Wait for authentication token to be stored in localStorage
       await page.waitForFunction(
@@ -117,7 +119,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
 
       // Wait for navigation
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
-      await page.waitForLoadState('networkidle', { timeout: 5000 });
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Get auth token
       const token = await getAuthToken(page);
@@ -144,7 +146,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
-      await page.waitForLoadState('networkidle', { timeout: 5000 });
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Debug: Check localStorage after login
       const tokensAfterLogin = await page.evaluate(() => {
@@ -270,7 +272,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
-      await page.waitForLoadState('networkidle', { timeout: 5000 });
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Get token before refresh
       const tokenBefore = await getAuthToken(page);
@@ -302,7 +304,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
-      await page.waitForLoadState('networkidle', { timeout: 5000 });
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Open new tab
       const newPage = await context.newPage();
@@ -330,7 +332,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
-      await page.waitForLoadState('networkidle', { timeout: 5000 });
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Verify authenticated before logout
       let authenticated = await isAuthenticated(page);
@@ -373,7 +375,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
-      await page.waitForLoadState('networkidle', { timeout: 5000 });
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Logout by clearing auth (simulating session end)
       await clearAuth(page);
@@ -473,7 +475,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
-      await page.waitForLoadState('networkidle', { timeout: 5000 });
+      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
       // Get token
       const token = await getAuthToken(page);
