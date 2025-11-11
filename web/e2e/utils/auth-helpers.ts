@@ -112,6 +112,15 @@ export async function clearAuth(page: Page): Promise<void> {
  * @returns Access token or null
  */
 export async function getAuthToken(page: Page): Promise<string | null> {
+  // Wait for token to be available (handles async storage timing)
+  await page.waitForFunction(
+    () => localStorage.getItem('auth_token') !== null,
+    { timeout: 10000 }
+  ).catch(() => {
+    // If timeout, token doesn't exist - return null
+    return null;
+  });
+
   return page.evaluate(() => localStorage.getItem('auth_token'));
 }
 
