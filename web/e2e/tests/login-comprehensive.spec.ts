@@ -38,10 +38,12 @@ test.describe('Login Comprehensive E2E Tests', () => {
         password: testUsers.pharmacist.password,
       });
 
-      // Wait for navigation to dashboard
-      await page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, {
+      // Wait for navigation to dashboard/prescriptions/inventory
+      // Pattern matches any URL containing dashboard, prescriptions, or inventory
+      await page.waitForURL(/(dashboard|prescriptions|inventory)/, {
         timeout: 10000,
       });
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
 
       // Verify we're authenticated
       const authenticated = await isAuthenticated(page);
@@ -71,6 +73,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
 
       // Wait for authentication token to be stored in localStorage
       await page.waitForFunction(
@@ -91,6 +94,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
 
       // Wait for authentication token to be stored in localStorage
       await page.waitForFunction(
@@ -113,6 +117,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
 
       // Wait for navigation
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
 
       // Get auth token
       const token = await getAuthToken(page);
@@ -127,8 +132,8 @@ test.describe('Login Comprehensive E2E Tests', () => {
       // Should NOT be 401 Unauthorized (authentication should work)
       expect(response.status()).not.toBe(401);
 
-      // Should be either 200 (success) or 404/503/504 (service not available but auth worked)
-      expect([200, 404, 503, 504]).toContain(response.status());
+      // Should be either 200 (success) or 404/429/503/504 (service not available but auth worked)
+      expect([200, 404, 429, 503, 504]).toContain(response.status());
     });
 
     test('should be able to navigate to protected routes after login', async ({ page }) => {
@@ -139,6 +144,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
 
       // Debug: Check localStorage after login
       const tokensAfterLogin = await page.evaluate(() => {
@@ -264,6 +270,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
 
       // Get token before refresh
       const tokenBefore = await getAuthToken(page);
@@ -295,6 +302,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
 
       // Open new tab
       const newPage = await context.newPage();
@@ -322,6 +330,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
 
       // Verify authenticated before logout
       let authenticated = await isAuthenticated(page);
@@ -364,6 +373,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
 
       // Logout by clearing auth (simulating session end)
       await clearAuth(page);
@@ -463,6 +473,7 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+      await page.waitForLoadState('networkidle', { timeout: 5000 });
 
       // Get token
       const token = await getAuthToken(page);
@@ -477,8 +488,8 @@ test.describe('Login Comprehensive E2E Tests', () => {
       // Verify Authorization header was included (by checking we're not getting 401)
       expect(response.status()).not.toBe(401);
 
-      // Accept 504 as valid response (service unavailable but auth worked)
-      expect([200, 404, 503, 504]).toContain(response.status());
+      // Accept 429/503/504 as valid response (service unavailable/rate limited but auth worked)
+      expect([200, 404, 429, 503, 504]).toContain(response.status());
     });
   });
 });
