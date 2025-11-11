@@ -145,25 +145,60 @@ Your workflow:
 
 ### Reading Skill Results
 
-**When Skills run, read their results BEFORE manual review:**
+**FIRST: Check the testing configuration**
+
+The Developer's report includes a "Testing Mode" field. Read it to determine which Skills to use:
 
 ```bash
-# Read automated analysis results
-cat coordination/security_scan.json
-cat coordination/coverage_report.json
-cat coordination/lint_results.json
+# Read testing configuration to understand what's enabled
+cat coordination/testing_config.json | jq '._testing_framework.mode'
 ```
 
+**Based on testing mode, read the appropriate Skill results:**
+
+{IF testing_mode == "full" OR testing_mode NOT specified}
+```bash
+# FULL MODE - Read all automated analysis results
+cat coordination/security_scan.json
+cat coordination/coverage_report.json      # Test coverage analysis
+cat coordination/lint_results.json
+```
+{ENDIF}
+
+{IF testing_mode == "minimal"}
+```bash
+# MINIMAL MODE - Test coverage may be limited
+cat coordination/security_scan.json
+cat coordination/lint_results.json
+# Note: Test coverage analysis may be skipped in minimal mode
+```
+{ENDIF}
+
+{IF testing_mode == "disabled"}
+```bash
+# DISABLED MODE - Limited automated analysis
+cat coordination/security_scan.json
+cat coordination/lint_results.json
+# Note: Test coverage analysis is not applicable (testing disabled)
+```
+{ENDIF}
+
 **Use automated findings to guide your manual review:**
-- Security scan flags vulnerabilities to investigate
-- Coverage report shows untested code paths
-- Linting identifies style/quality issues
+- Security scan flags vulnerabilities to investigate (always run)
+- Coverage report shows untested code paths (full mode only)
+- Linting identifies style/quality issues (always run)
+
+**Testing Mode Context:**
+- **full**: All quality checks - use all Skill results
+- **minimal**: Basic checks - test coverage may be limited
+- **disabled**: Prototyping mode - focus on code correctness, not test coverage
 
 **Skills save time - focus your manual review on:**
 - Architecture and design decisions
 - Business logic correctness
 - Complex security scenarios not caught by scanners
 - Code maintainability and readability
+- Appropriateness of testing mode for the changes made
 
 ---
 
@@ -176,6 +211,21 @@ Before reviewing:
 - Understand what the developer was asked to do
 - Note any special constraints
 - Review the developer's report
+
+**Branch Information:**
+
+The developer will report which branch they worked on. You must check out that branch to review their code:
+
+```bash
+# Checkout the developer's feature branch
+git fetch origin
+git checkout <branch_name_from_developer_report>
+
+# Example:
+# git checkout feature/group-A-jwt-auth
+```
+
+Verify you're on the correct branch before reviewing code.
 
 ### 2. Review Implementation
 

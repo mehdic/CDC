@@ -85,12 +85,24 @@ export async function logout(page: Page): Promise<void> {
  * @param page - Playwright page object
  */
 export async function clearAuth(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_data');
-    sessionStorage.clear();
-  });
+  try {
+    // Navigate to app first to ensure localStorage is accessible
+    const currentUrl = page.url();
+    if (currentUrl === 'about:blank' || !currentUrl.startsWith('http')) {
+      await page.goto('/');
+    }
+
+    await page.evaluate(() => {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user_data');
+      sessionStorage.clear();
+    });
+  } catch (error) {
+    // If localStorage is not accessible, just navigate to ensure clean state
+    console.log('clearAuth: localStorage not accessible, navigating to clean state');
+    await page.goto('/');
+  }
 }
 
 /**

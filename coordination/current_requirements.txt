@@ -1,0 +1,23 @@
+Fix Playwright E2E Tests - Make Them Pass
+
+CONTEXT:
+- Previous orchestration completed: Login investigation with 5 root causes fixed
+- Backend authentication verified working via curl
+- 20 Playwright E2E tests created
+- Current status: Only 1/20 tests passing
+
+ISSUES IDENTIFIED:
+1. Base URL not configured in Playwright config
+2. Tests trying to navigate to relative URLs without base
+3. Frontend configuration issues  
+4. Some tests showing frontend stuck in loading state
+
+REQUIREMENT:
+Playwright tests MUST pass to verify full login workflow works end-to-end, including accessing protected functionality after login. This is not optional - tests must actually pass and verify real app functionality.
+
+SUCCESS CRITERIA:
+- All 20 Playwright tests passing
+- Tests verify real authenticated app functionality
+- No frontend stuck in loading state
+- Proper base URL configuration
+- Tests can access protected resources after login

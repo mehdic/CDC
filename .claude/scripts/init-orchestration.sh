@@ -1,19 +1,19 @@
 #!/bin/bash
 #
-# V4 Orchestration Initialization Script
+# BAZINGA Orchestration Initialization Script
 #
 # This script creates the required folder structure and state files
-# for V4 orchestration. Safe to run multiple times (idempotent).
+# for orchestration. Safe to run multiple times (idempotent).
 #
 # Usage: ./.claude/scripts/init-orchestration.sh
 
 set -e  # Exit on error
 
 # Generate session ID with timestamp
-SESSION_ID="v4_$(date +%Y%m%d_%H%M%S)"
+SESSION_ID="bazinga_$(date +%Y%m%d_%H%M%S)"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-echo "🔄 Initializing V4 orchestration system..."
+echo "🔄 Initializing BAZINGA Claude Code Multi-Agent Development Team..."
 echo "📅 Session ID: $SESSION_ID"
 
 # Ensure all required directories exist (mkdir -p is idempotent - safe to run multiple times)
@@ -92,6 +92,109 @@ else
     echo "✓ orchestrator_state.json already exists"
 fi
 
+# Initialize skills_config.json (Lite Profile by default)
+if [ ! -f "coordination/skills_config.json" ]; then
+    echo "📝 Creating skills_config.json (lite profile)..."
+    cat > coordination/skills_config.json <<EOF
+{
+  "_metadata": {
+    "profile": "lite",
+    "version": "2.0",
+    "description": "Lite profile - core skills only for fast development",
+    "created": "$TIMESTAMP",
+    "last_updated": "$TIMESTAMP",
+    "configuration_notes": [
+      "MANDATORY: Skill will be automatically invoked by the agent",
+      "DISABLED: Skill will not be invoked",
+      "Use /bazinga.configure-skills to modify this configuration interactively",
+      "LITE PROFILE: 3 core skills (security-scan, lint-check, test-coverage)",
+      "ADVANCED PROFILE: All 10 skills enabled - use --profile advanced during init"
+    ]
+  },
+  "developer": {
+    "lint-check": "mandatory",
+    "codebase-analysis": "disabled",
+    "test-pattern-analysis": "disabled",
+    "api-contract-validation": "disabled",
+    "db-migration-check": "disabled"
+  },
+  "tech_lead": {
+    "security-scan": "mandatory",
+    "lint-check": "mandatory",
+    "test-coverage": "mandatory"
+  },
+  "qa_expert": {
+    "pattern-miner": "disabled",
+    "quality-dashboard": "disabled"
+  },
+  "pm": {
+    "velocity-tracker": "disabled"
+  },
+  "dashboard": {
+    "dashboard_ai_diagram_enabled": false
+  }
+}
+EOF
+else
+    echo "✓ skills_config.json already exists"
+fi
+
+# Initialize testing_config.json
+if [ ! -f "coordination/testing_config.json" ]; then
+    echo "📝 Creating testing_config.json..."
+    cat > coordination/testing_config.json <<EOF
+{
+  "_testing_framework": {
+    "enabled": true,
+    "mode": "minimal",
+    "_mode_options": ["full", "minimal", "disabled"],
+
+    "pre_commit_validation": {
+      "lint_check": true,
+      "unit_tests": true,
+      "build_check": true,
+      "_note": "lint_check should always be true for code quality"
+    },
+
+    "test_requirements": {
+      "require_integration_tests": false,
+      "require_contract_tests": false,
+      "require_e2e_tests": false,
+      "coverage_threshold": 0,
+      "_note": "These only apply when mode=full"
+    },
+
+    "qa_workflow": {
+      "enable_qa_expert": false,
+      "auto_route_to_qa": false,
+      "qa_skills_enabled": false,
+      "_note": "Disable enable_qa_expert to skip QA workflow entirely"
+    }
+  },
+
+  "_metadata": {
+    "description": "Testing framework configuration for BAZINGA",
+    "created": "$TIMESTAMP",
+    "last_updated": "$TIMESTAMP",
+    "version": "1.0",
+    "presets": {
+      "full": "All testing enabled - complete QA workflow",
+      "minimal": "Lint + unit tests only, skip QA Expert (DEFAULT)",
+      "disabled": "Only lint checks - fastest iteration"
+    },
+    "notes": [
+      "Use /bazinga.configure-testing to modify this configuration interactively",
+      "Mode 'minimal' is the default - balances speed and quality (current BAZINGA default)",
+      "Mode 'full' enables complete QA workflow for production-critical code",
+      "Mode 'disabled' is for rapid prototyping only (lint checks still run)"
+    ]
+  }
+}
+EOF
+else
+    echo "✓ testing_config.json already exists"
+fi
+
 # Initialize message files
 MESSAGE_FILES=(
     "coordination/messages/dev_to_qa.json"
@@ -116,12 +219,12 @@ done
 if [ ! -f "docs/orchestration-log.md" ]; then
     echo "📝 Creating orchestration log..."
     cat > docs/orchestration-log.md <<EOF
-# V4 Orchestration Log
+# BAZINGA Orchestration Log
 
 **Session:** $SESSION_ID
 **Started:** $TIMESTAMP
 
-This file tracks all agent interactions during V4 orchestration.
+This file tracks all agent interactions during orchestration.
 
 ---
 
@@ -136,7 +239,10 @@ if [ ! -f "coordination/.gitignore" ]; then
     cat > coordination/.gitignore <<EOF
 # Coordination state files are temporary and should not be committed
 *.json
-orchestration-log.md
+
+# EXCEPT these files - they are permanent configuration
+!skills_config.json
+!testing_config.json
 
 # Reports are ephemeral - generated per session
 reports/
@@ -156,6 +262,7 @@ echo "   coordination/"
 echo "   ├── pm_state.json"
 echo "   ├── group_status.json"
 echo "   ├── orchestrator_state.json"
+echo "   ├── skills_config.json"
 echo "   ├── messages/"
 echo "   │   ├── dev_to_qa.json"
 echo "   │   ├── qa_to_techlead.json"
@@ -166,3 +273,62 @@ echo "   docs/"
 echo "   └── orchestration-log.md"
 echo ""
 echo "🚀 Ready for orchestration!"
+echo ""
+
+# Check if dashboard server is running and start if needed
+echo "🖥️  Checking dashboard server status..."
+DASHBOARD_PORT="${DASHBOARD_PORT:-53124}"
+DASHBOARD_PID_FILE="/tmp/bazinga-dashboard.pid"
+
+# Check if server is already running
+if [ -f "$DASHBOARD_PID_FILE" ] && kill -0 $(cat "$DASHBOARD_PID_FILE") 2>/dev/null; then
+    echo "✓ Dashboard server already running (PID: $(cat $DASHBOARD_PID_FILE))"
+    echo "🌐 Dashboard: http://localhost:$DASHBOARD_PORT"
+else
+    # Check if port is in use by another process
+    if lsof -Pi :$DASHBOARD_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
+        echo "⚠️  Port $DASHBOARD_PORT is already in use by another process"
+        echo "   Dashboard server not started. You can manually start it with:"
+        echo "   cd dashboard && python3 server.py"
+    else
+        # Start dashboard server in background
+        echo "🚀 Starting dashboard server on port $DASHBOARD_PORT..."
+
+        # Check if Python dependencies are installed
+        if ! python3 -c "import flask, flask_sock, watchdog, anthropic" 2>/dev/null; then
+            echo "⚠️  Dashboard dependencies not installed. Installing..."
+            pip3 install -q -r dashboard/requirements.txt
+        fi
+
+        # Start server in background
+        cd dashboard && python3 server.py > /tmp/bazinga-dashboard.log 2>&1 &
+        DASHBOARD_PID=$!
+        echo $DASHBOARD_PID > "$DASHBOARD_PID_FILE"
+        cd ..
+
+        # Wait a moment for server to start
+        sleep 2
+
+        # Check if server started successfully
+        if kill -0 $DASHBOARD_PID 2>/dev/null; then
+            echo "✅ Dashboard server started (PID: $DASHBOARD_PID)"
+            echo "🌐 Dashboard: http://localhost:$DASHBOARD_PORT"
+            echo "📋 View logs: tail -f /tmp/bazinga-dashboard.log"
+            echo ""
+            echo "💡 Tip: The dashboard provides real-time monitoring of orchestration progress"
+            echo "   - Workflow visualization (Mermaid diagrams)"
+            echo "   - Agent status and communications"
+            echo "   - Task group progress"
+            echo "   - Quality metrics (when available)"
+            echo ""
+            echo "🤖 AI Diagram Feature: Disabled by default"
+            echo "   To enable: Edit coordination/skills_config.json and set"
+            echo "   \"dashboard_ai_diagram_enabled\": true"
+        else
+            echo "❌ Failed to start dashboard server"
+            echo "   Check logs: cat /tmp/bazinga-dashboard.log"
+            rm -f "$DASHBOARD_PID_FILE"
+        fi
+    fi
+fi
+echo ""

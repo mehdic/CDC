@@ -161,29 +161,41 @@ async function seedUsers(client: Client, pharmacyIds: { [key: string]: string })
   console.log('👥 Seeding users...');
 
   const users = [
-    // Pharmacist
+    // Pharmacist (matches E2E test expectations)
     {
-      email: 'pharmacist@test.com',
-      password: 'Test123!',
+      email: 'pharmacist@test.metapharm.ch',
+      password: 'TestPass123!',
       role: 'pharmacist',
       first_name: 'Marie',
-      last_name: 'Dubois',
+      last_name: 'Dupont',
       phone: '+41 79 123 4567',
       hin_id: 'HIN-CH-12345',
-      mfa_enabled: true,
+      mfa_enabled: false, // Disabled for E2E tests
       primary_pharmacy_id: pharmacyIds['Pharmacie du Lac'],
     },
-    // Doctor
+    // Doctor (matches E2E test expectations)
     {
-      email: 'doctor@test.com',
-      password: 'Test123!',
+      email: 'doctor@test.metapharm.ch',
+      password: 'TestPass123!',
       role: 'doctor',
       first_name: 'Jean',
       last_name: 'Martin',
       phone: '+41 79 234 5678',
       hin_id: 'HIN-CH-67890',
-      mfa_enabled: true,
+      mfa_enabled: false, // Disabled for E2E tests
       primary_pharmacy_id: null,
+    },
+    // Patient (matches E2E test expectations)
+    {
+      email: 'patient@test.metapharm.ch',
+      password: 'TestPass123!',
+      role: 'patient',
+      first_name: 'Sophie',
+      last_name: 'Bernard',
+      phone: '+41 79 345 6789',
+      hin_id: null,
+      mfa_enabled: false,
+      primary_pharmacy_id: pharmacyIds['Pharmacie du Lac'],
     },
     // Nurse
     {
@@ -242,7 +254,7 @@ async function seedUsers(client: Client, pharmacyIds: { [key: string]: string })
       last_name: 'Rousseau',
       phone: '+41 79 789 0123',
       hin_id: 'HIN-CH-11223',
-      mfa_enabled: true,
+      mfa_enabled: false, // Disabled for testing
       primary_pharmacy_id: pharmacyIds['Pharmacie Centrale'],
     },
   ];
@@ -297,13 +309,16 @@ async function seed(): Promise<void> {
     await client.query('COMMIT');
 
     console.log('\n✅ Seed data created successfully!');
-    console.log('\n📋 Test Credentials:');
-    console.log('  Pharmacist: pharmacist@test.com / Test123!');
-    console.log('  Doctor: doctor@test.com / Test123!');
+    console.log('\n📋 Test Credentials (E2E Tests):');
+    console.log('  Pharmacist: pharmacist@test.metapharm.ch / TestPass123!');
+    console.log('  Doctor: doctor@test.metapharm.ch / TestPass123!');
+    console.log('  Patient: patient@test.metapharm.ch / TestPass123!');
+    console.log('\n📋 Additional Test Credentials:');
     console.log('  Nurse: nurse@test.com / Test123!');
     console.log('  Delivery: delivery@test.com / Test123!');
     console.log('  Patient 1: patient1@test.com / Test123!');
     console.log('  Patient 2: patient2@test.com / Test123!');
+    console.log('  Pharmacist 2: pharmacist2@test.com / Test123!');
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('❌ Seed failed:', error);

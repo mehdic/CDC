@@ -86,7 +86,7 @@ export function initializeTracing(options?: {
           url: exporterUrl,
         });
         const processor = new BatchSpanProcessor(otlpExporter);
-        (tracerProvider as any).addSpanProcessor(processor);
+        tracerProvider.addSpanProcessor(processor);
       } catch (exporterError) {
         logger.warn('Failed to initialize OTLP exporter', exporterError as Error);
       }
@@ -96,7 +96,8 @@ export function initializeTracing(options?: {
     if (enableConsoleExporter) {
       try {
         const consoleExporter = new ConsoleSpanExporter();
-        (tracerProvider as any).addSpanProcessor(consoleExporter);
+        const consoleProcessor = new BatchSpanProcessor(consoleExporter);
+        tracerProvider.addSpanProcessor(consoleProcessor);
       } catch (consoleError) {
         logger.warn('Failed to initialize console exporter', consoleError as Error);
       }

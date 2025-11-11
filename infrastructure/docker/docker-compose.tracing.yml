@@ -1,0 +1,116 @@
+version: '3.9'
+
+services:
+  # ========================================
+  # Jaeger - Distributed Tracing Platform
+  # ========================================
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: metapharm-jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - SPAN_STORAGE_TYPE=memory
+      - MEMORY_MAX_TRACES=10000
+    ports:
+      # Jaeger UI
+      - "16686:16686"
+      # Jaeger collector OTLP gRPC
+      - "4317:4317"
+      # Jaeger collector OTLP HTTP
+      - "4318:4318"
+      # Jaeger collector HTTP (Thrift)
+      - "14268:14268"
+      # Jaeger collector gRPC
+      - "14250:14250"
+      # Jaeger query service
+      - "16685:16685"
+      # Jaeger agent compact thrift
+      - "6831:6831/udp"
+      # Jaeger agent binary thrift
+      - "6832:6832/udp"
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:14269/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ========================================
+  # OpenTelemetry Collector (Optional - for advanced routing)
+  # ========================================
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: metapharm-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      # OTLP gRPC receiver
+      - "4319:4317"
+      # OTLP HTTP receiver
+      - "4320:4318"
+      # Metrics port
+      - "8888:8888"
+      # Health check
+      - "13133:13133"
+      # Prometheus metrics
+      - "9090:9090"
+    depends_on:
+      jaeger:
+        condition: service_healthy
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+
+  # ========================================
+  # Prometheus (for metrics)
+  # ========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: metapharm-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9091:9090"
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+
+  # ========================================
+  # Grafana (for metrics visualization)
+  # ========================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: metapharm-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - jaeger
+    networks:
+      - metapharm-network
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  metapharm-network:
+    external: true

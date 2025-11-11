@@ -191,6 +191,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                   onClick={handleMenuOpen}
                   color="inherit"
                   aria-label="profil utilisateur"
+                  data-testid="user-menu"
                 >
                   {user.avatar ? (
                     <Avatar src={user.avatar} alt={user.name} />

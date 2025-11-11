@@ -101,12 +101,49 @@ const commonProxyOptions = {
 /**
  * Auth Service Proxy
  * Routes: /auth/*
+ * Note: Express app.use('/auth', authProxy) strips /auth prefix before passing to middleware
+ * So: Request /auth/login becomes /login in middleware
+ * We need to add /auth back for the auth service
  */
+// http-proxy-middleware v2 for auth service
 export const authProxy = createProxyMiddleware({
-  ...commonProxyOptions,
   target: AUTH_SERVICE_URL,
-  pathRewrite: {
-    '^/auth': '', // Remove /auth prefix
+  changeOrigin: true,
+  pathRewrite: (path: string) => {
+    const newPath = path.replace(/^\//, '/auth/');
+    console.log('[AUTH PROXY] Path rewrite:', path, '→', newPath);
+    return newPath;
+  },
+  onProxyReq: (proxyReq: any, req: any) => {
+    console.log('[AUTH PROXY] Proxying:', req.method, req.url, '→', proxyReq.path);
+
+    // Forward authentication header
+    if (req.headers.authorization) {
+      proxyReq.setHeader('Authorization', req.headers.authorization);
+    }
+
+    // Forward user context headers
+    if (req.user) {
+      proxyReq.setHeader('X-User-ID', req.user.userId);
+      proxyReq.setHeader('X-User-Role', req.user.role);
+      if (req.user.pharmacyId) {
+        proxyReq.setHeader('X-Pharmacy-ID', req.user.pharmacyId);
+      }
+    }
+
+    // Forward request ID for tracing
+    if (req.headers['x-request-id']) {
+      proxyReq.setHeader('X-Request-ID', req.headers['x-request-id'] as string);
+    }
+  },
+  onError: (err: Error, req: any, res: any) => {
+    console.error('[AUTH PROXY] Error:', err.message);
+    if (!res.headersSent) {
+      res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'The auth service is temporarily unavailable',
+      });
+    }
   },
 });
 

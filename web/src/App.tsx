@@ -27,14 +27,21 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  // TODO: Replace with actual auth check
   const isAuthenticated = localStorage.getItem('auth_token') !== null;
 
+  // Debug logging
+  console.log('[ProtectedRoute] Checking authentication:', {
+    hasToken: isAuthenticated,
+    token: localStorage.getItem('auth_token')?.substring(0, 20) + '...',
+    timestamp: new Date().toISOString()
+  });
+
   if (!isAuthenticated) {
-    // Redirect to login page (to be implemented)
+    console.log('[ProtectedRoute] Redirecting to login - no auth token found');
     return <Navigate to="/login" replace />;
   }
 
+  console.log('[ProtectedRoute] Authenticated - rendering protected content');
   return <>{children}</>;
 };
 
@@ -75,89 +82,38 @@ const App: React.FC = () => {
     console.log('Navigate to settings');
   };
 
-  return (
-    <AppShell
-      user={user}
-      onLogout={handleLogout}
-      onProfileClick={handleProfile}
-      onSettingsClick={handleSettings}
-    >
-      <Suspense fallback={<FullScreenLoading message="Chargement de la page..." />}>
+  const ProtectedLayout: React.FC = () => {
+    return (
+      <AppShell
+        user={user}
+        onLogout={handleLogout}
+        onProfileClick={handleProfile}
+        onSettingsClick={handleSettings}
+      >
         <Routes>
           {/* Dashboard - Default route */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <PrescriptionDashboard />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/" element={<PrescriptionDashboard />} />
 
           {/* Prescription routes */}
-          <Route
-            path="/prescriptions"
-            element={
-              <ProtectedRoute>
-                <PrescriptionDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/prescriptions/review"
-            element={
-              <ProtectedRoute>
-                <PrescriptionReview />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/prescriptions/review/:id"
-            element={
-              <ProtectedRoute>
-                <PrescriptionReview />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/prescriptions" element={<PrescriptionDashboard />} />
+          <Route path="/prescriptions/review" element={<PrescriptionReview />} />
+          <Route path="/prescriptions/review/:id" element={<PrescriptionReview />} />
 
           {/* Inventory route */}
-          <Route
-            path="/inventory"
-            element={
-              <ProtectedRoute>
-                <InventoryManagement />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/inventory" element={<InventoryManagement />} />
 
           {/* Teleconsultation route */}
-          <Route
-            path="/teleconsultation"
-            element={
-              <ProtectedRoute>
-                <VideoCall />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/teleconsultation/:sessionId"
-            element={
-              <ProtectedRoute>
-                <VideoCall />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/teleconsultation" element={<VideoCall />} />
+          <Route path="/teleconsultation/:sessionId" element={<VideoCall />} />
 
           {/* Analytics route (placeholder) */}
           <Route
             path="/analytics"
             element={
-              <ProtectedRoute>
-                <div style={{ padding: '20px' }}>
-                  <h2>Analyses</h2>
-                  <p>Page d'analyses - À implémenter</p>
-                </div>
-              </ProtectedRoute>
+              <div style={{ padding: '20px' }}>
+                <h2>Analyses</h2>
+                <p>Page d'analyses - À implémenter</p>
+              </div>
             }
           />
 
@@ -165,12 +121,10 @@ const App: React.FC = () => {
           <Route
             path="/marketing"
             element={
-              <ProtectedRoute>
-                <div style={{ padding: '20px' }}>
-                  <h2>Marketing</h2>
-                  <p>Page marketing - À implémenter</p>
-                </div>
-              </ProtectedRoute>
+              <div style={{ padding: '20px' }}>
+                <h2>Marketing</h2>
+                <p>Page marketing - À implémenter</p>
+              </div>
             }
           />
 
@@ -178,12 +132,10 @@ const App: React.FC = () => {
           <Route
             path="/delivery"
             element={
-              <ProtectedRoute>
-                <div style={{ padding: '20px' }}>
-                  <h2>Livraisons</h2>
-                  <p>Page de gestion des livraisons - À implémenter</p>
-                </div>
-              </ProtectedRoute>
+              <div style={{ padding: '20px' }}>
+                <h2>Livraisons</h2>
+                <p>Page de gestion des livraisons - À implémenter</p>
+              </div>
             }
           />
 
@@ -191,33 +143,40 @@ const App: React.FC = () => {
           <Route
             path="/settings"
             element={
-              <ProtectedRoute>
-                <div style={{ padding: '20px' }}>
-                  <h2>Paramètres</h2>
-                  <p>Page de paramètres - À implémenter</p>
-                </div>
-              </ProtectedRoute>
+              <div style={{ padding: '20px' }}>
+                <h2>Paramètres</h2>
+                <p>Page de paramètres - À implémenter</p>
+              </div>
             }
           />
 
           {/* Dashboard route - alias for root */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <PrescriptionDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Login route (no authentication required) */}
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/dashboard" element={<PrescriptionDashboard />} />
 
           {/* 404 Not Found */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </Suspense>
-    </AppShell>
+      </AppShell>
+    );
+  };
+
+  return (
+    <Suspense fallback={<FullScreenLoading message="Chargement de la page..." />}>
+      <Routes>
+        {/* Login route (no authentication required, no AppShell) */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* All other routes wrapped in AppShell and ProtectedRoute */}
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <ProtectedLayout />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Suspense>
   );
 };
 
