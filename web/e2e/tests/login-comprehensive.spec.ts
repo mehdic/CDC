@@ -39,13 +39,10 @@ test.describe('Login Comprehensive E2E Tests', () => {
       });
 
       // Wait for navigation to dashboard/prescriptions/inventory
-      // Pattern matches any URL containing dashboard, prescriptions, or inventory
       await page.waitForURL(/(dashboard|prescriptions|inventory)/, {
         timeout: 10000,
       });
-
-      // Wait for page load - use domcontentloaded which is more reliable than networkidle
-      await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
+      await page.waitForLoadState('domcontentloaded');
 
       // Verify we're authenticated
       const authenticated = await isAuthenticated(page);
