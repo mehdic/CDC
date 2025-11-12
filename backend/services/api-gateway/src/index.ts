@@ -18,6 +18,17 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+// Import and initialize tracing BEFORE other imports
+import { initializeTracing, tracingMiddleware } from '../../../shared/middleware/tracing';
+
+// Initialize tracing
+initializeTracing({
+  serviceName: 'api-gateway',
+  environment: process.env['NODE_ENV'] || 'development',
+  exporterUrl: process.env['OTLP_EXPORTER_URL'] || 'http://localhost:4318/v1/traces',
+  enableConsoleExporter: (process.env['NODE_ENV'] || 'development') === 'development'
+});
+
 // Middleware imports
 import { corsMiddleware, additionalCorsHeaders } from './middleware/cors';
 import { requestLoggerWithSkip } from './middleware/logger';
@@ -37,6 +48,7 @@ import {
 // Configuration
 const PORT = process.env['PORT'] || 4000;
 const NODE_ENV = process.env['NODE_ENV'] || 'development';
+const AUTH_SERVICE_URL = process.env['AUTH_SERVICE_URL'] || 'http://localhost:4001';
 
 // ============================================================================
 // Express App Setup
@@ -55,15 +67,18 @@ app.set('trust proxy', 1);
 app.use(corsMiddleware);
 app.use(additionalCorsHeaders);
 
-// 2. Request Logging - Log all incoming requests
-app.use(requestLoggerWithSkip);
+// 2. Tracing - Create spans for all requests
+app.use(tracingMiddleware);
 
-// 3. Body Parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// 3. Request Logging - Log all incoming requests
+app.use(requestLoggerWithSkip);
 
 // 4. General Rate Limiting - Apply to all routes
 app.use(generalLimiter);
+
+// 5. Body Parsing - Must be BEFORE routes that need it
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ============================================================================
 // Public Routes (No Authentication Required)
@@ -85,10 +100,43 @@ app.get('/', (_req: Request, res: Response) => {
 
 // ============================================================================
 // Authentication Routes (Stricter Rate Limiting, No JWT)
+// NOTE: Proxy routes should not have body parsing middleware
 // ============================================================================
 
 // Auth routes: login, register, MFA - stricter rate limiting
-app.use('/auth', authLimiter, authProxy);
+console.log('Registering /auth proxy to', AUTH_SERVICE_URL);
+
+// TEMPORARY: Direct forwarding instead of proxy middleware
+// TODO: Fix http-proxy-middleware configuration issue
+app.use('/auth', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const axios = require('axios');
+    const targetUrl = `${AUTH_SERVICE_URL}/auth${req.path}`;
+    console.log('[AUTH FORWARD] Forwarding', req.method, req.url, 'to', targetUrl);
+
+    const response = await axios({
+      method: req.method,
+      url: targetUrl,
+      data: req.body,
+      headers: {
+        ...req.headers,
+        host: new URL(AUTH_SERVICE_URL).host,
+      },
+    });
+
+    res.status(response.status).json(response.data);
+  } catch (error: any) {
+    if (error.response) {
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      console.error('[AUTH FORWARD] Error:', error.message);
+      res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'The auth service is temporarily unavailable',
+      });
+    }
+  }
+});
 
 // ============================================================================
 // Protected Routes (JWT Authentication Required)

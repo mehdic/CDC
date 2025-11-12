@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -11,7 +11,7 @@ import {
   Container,
 } from '@mui/material';
 import { TextField } from '@shared/components/Form/TextField';
-import { login, type AuthError } from '@shared/services/authService';
+import { login, type AuthError, isAuthenticated } from '@shared/services/authService';
 
 /**
  * Form validation errors
@@ -36,6 +36,13 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
 
   /**
    * Validate form fields
@@ -99,6 +106,7 @@ export const LoginPage: React.FC = () => {
         }
 
         // Login successful - redirect to dashboard
+        // Note: Don't set loading to false here as we're navigating away
         navigate('/dashboard', { replace: true });
       }
     } catch (error) {
