@@ -70,9 +70,6 @@ export class Pharmacy {
   @Column({ type: 'varchar', length: 10 })
   postal_code: string;
 
-  @Column({ type: 'varchar', length: 100, default: 'Switzerland' })
-  country: string; // Default to Switzerland
-
   @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
   latitude: number | null; // For delivery routing
 
