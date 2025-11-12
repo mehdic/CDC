@@ -1,15 +1,22 @@
 "use strict";
+/**
+ * Unit Tests for Audit Trail Logging Utility
+ * Tests logAuditEvent(), extractRequestContext(), and helper functions
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 const audit_1 = require("../audit");
 const AuditTrailEntry_1 = require("../../models/AuditTrailEntry");
+// Mock TypeORM
 jest.mock('typeorm');
 describe('Audit Trail Utility', () => {
     let mockDataSource;
     let mockRepository;
     beforeEach(() => {
+        // Create mock repository
         mockRepository = {
             save: jest.fn(),
         };
+        // Create mock DataSource
         mockDataSource = {
             getRepository: jest.fn().mockReturnValue(mockRepository),
         };
@@ -109,7 +116,7 @@ describe('Audit Trail Utility', () => {
                 socket: { remoteAddress: '127.0.0.1' },
             };
             const context = (0, audit_1.extractRequestContext)(req);
-            expect(context.ipAddress).toBe('203.0.113.195');
+            expect(context.ipAddress).toBe('203.0.113.195'); // First IP in chain
             expect(context.userAgent).toBe('Mozilla/5.0');
         });
         it('should extract IP address from x-real-ip header if x-forwarded-for is missing', () => {
@@ -239,9 +246,9 @@ describe('Audit Trail Utility', () => {
                 pharmacist_id: '123e4567',
             };
             const newRecord = {
-                status: 'approved',
-                approved_at: new Date('2025-11-07T10:00:00Z'),
-                pharmacist_id: '987fcdeb',
+                status: 'approved', // Not changed
+                approved_at: new Date('2025-11-07T10:00:00Z'), // Not changed
+                pharmacist_id: '987fcdeb', // Changed
             };
             const changes = (0, audit_1.createChangesObject)(oldRecord, newRecord, ['status', 'approved_at', 'pharmacist_id']);
             expect(changes).toEqual({
@@ -298,6 +305,7 @@ describe('Audit Trail Utility', () => {
             const result = await (0, audit_1.logAuditEventFromRequest)(mockDataSource, req, params);
             expect(mockRepository.save).toHaveBeenCalledTimes(1);
             expect(result).toEqual(mockSavedEntry);
+            // Verify context was extracted
             const savedAuditEntry = mockRepository.save.mock.calls[0][0];
             expect(savedAuditEntry.ip_address).toBe('203.0.113.195');
             expect(savedAuditEntry.user_agent).toBe('MetaPharmApp/1.2.3 (iOS 14.0)');

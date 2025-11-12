@@ -114,6 +114,15 @@ export class User {
   @JoinColumn({ name: 'primary_pharmacy_id' })
   primary_pharmacy: Pharmacy | null;
 
+  // Master account (for sub-accounts created by pharmacist master account)
+  @Column({ type: 'uuid', nullable: true })
+  @Index('idx_users_master_account')
+  master_account_id: string | null;
+
+  // Permission overrides (JSONB array, overrides role defaults)
+  @Column({ type: 'jsonb', nullable: true })
+  permissions_override: string[] | null;
+
   // ============================================================================
   // Relationships
   // ============================================================================

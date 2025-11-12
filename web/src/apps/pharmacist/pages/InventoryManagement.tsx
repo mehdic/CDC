@@ -45,8 +45,12 @@ import { QRScannerDialog } from '../components/inventory/QRScannerDialog';
 import { LowStockAlerts } from '../components/inventory/LowStockAlerts';
 import { ExpirationAlerts } from '../components/inventory/ExpirationAlerts';
 import { ReorderSuggestions } from '../components/inventory/ReorderSuggestions';
+import { getUserData } from '../../../shared/services/authService';
 
 export const InventoryManagement: React.FC = () => {
+  // Get pharmacy_id from user data for API calls
+  const userData = getUserData();
+  const pharmacyId = userData?.pharmacyId;
   const { items, loading, fetchItems } = useInventoryData();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'low_stock' | 'expiring' | 'controlled'>('all');
@@ -164,13 +168,20 @@ export const InventoryManagement: React.FC = () => {
 
   const handleUpdateItem = async (updatedData: any) => {
     try {
-      const response = await fetch(`/api/inventory/${editingItem.id}/update`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedData),
-      });
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(
+        `${
+          import.meta.env?.VITE_API_BASE_URL || 'http://localhost:4000'
+        }/api/inventory/items/${editingItem.id}?pharmacy_id=${pharmacyId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+          body: JSON.stringify(updatedData),
+        }
+      );
 
       if (response.ok) {
         setEditingItem(null);
@@ -188,9 +199,18 @@ export const InventoryManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`/api/inventory/${itemId}`, {
-        method: 'DELETE',
-      });
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(
+        `${
+          import.meta.env?.VITE_API_BASE_URL || 'http://localhost:4000'
+        }/api/inventory/items/${itemId}?pharmacy_id=${pharmacyId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+        }
+      );
 
       if (response.ok) {
         fetchItems({ filter });
@@ -213,7 +233,17 @@ export const InventoryManagement: React.FC = () => {
     handleReportsMenuClose();
 
     try {
-      const response = await fetch(`/api/inventory/reports/${reportType}`);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(
+        `${
+          import.meta.env?.VITE_API_BASE_URL || 'http://localhost:4000'
+        }/api/inventory/items/reports/${reportType}?pharmacy_id=${pharmacyId}`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+        }
+      );
       if (response.ok) {
         const data = await response.json();
         setCurrentReport({ type: reportType, data: data.report });

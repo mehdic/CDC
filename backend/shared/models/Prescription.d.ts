@@ -1,3 +1,9 @@
+/**
+ * Prescription Entity
+ * Medication orders from patients (upload) or doctors (direct send) with AI-powered validation
+ * Based on: /specs/002-metapharm-platform/data-model.md
+ * User Story 1 (P1): Prescription Processing & Validation (FR-008 to FR-020)
+ */
 import { User } from './User';
 import { Pharmacy } from './Pharmacy';
 import { PrescriptionItem } from './PrescriptionItem';
@@ -8,11 +14,11 @@ export declare enum PrescriptionSource {
     TELECONSULTATION = "teleconsultation"
 }
 export declare enum PrescriptionStatus {
-    PENDING = "pending",
-    IN_REVIEW = "in_review",
-    CLARIFICATION_NEEDED = "clarification_needed",
-    APPROVED = "approved",
-    REJECTED = "rejected",
+    PENDING = "pending",// Awaiting pharmacist review
+    IN_REVIEW = "in_review",// Pharmacist reviewing
+    CLARIFICATION_NEEDED = "clarification_needed",// Waiting for doctor response
+    APPROVED = "approved",// Validated and approved
+    REJECTED = "rejected",// Rejected with reason
     EXPIRED = "expired"
 }
 export declare class Prescription {
@@ -44,20 +50,67 @@ export declare class Prescription {
     approved_at: Date | null;
     approved_by_pharmacist_id: string | null;
     approved_by_pharmacist: User | null;
+    /**
+     * Check if prescription is pending
+     */
     isPending(): boolean;
+    /**
+     * Check if prescription is in review
+     */
     isInReview(): boolean;
+    /**
+     * Check if prescription is approved
+     */
     isApproved(): boolean;
+    /**
+     * Check if prescription is rejected
+     */
     isRejected(): boolean;
+    /**
+     * Check if prescription is expired
+     */
     isExpired(): boolean;
+    /**
+     * Check if prescription can be edited (not in immutable state)
+     * Immutable states: approved, rejected, expired
+     */
     canBeEdited(): boolean;
+    /**
+     * Check if AI confidence is low (< 80%) requiring manual verification
+     * FR-013a: Low-confidence fields must be highlighted with visual warnings
+     */
     hasLowConfidence(): boolean;
+    /**
+     * Check if prescription has safety warnings
+     */
     hasSafetyWarnings(): boolean;
+    /**
+     * Check if prescription requires clarification from doctor
+     */
     needsClarification(): boolean;
+    /**
+     * Check if prescription is from doctor (not patient upload)
+     */
     isFromDoctor(): boolean;
+    /**
+     * Check if prescription is from patient upload
+     */
     isFromPatientUpload(): boolean;
+    /**
+     * Check if prescription validity has expired (based on expiry_date)
+     */
     isPastExpiryDate(): boolean;
+    /**
+     * Mark prescription as approved
+     */
     approve(pharmacistId: string): void;
+    /**
+     * Mark prescription as rejected
+     */
     reject(reason: string): void;
+    /**
+     * Mark prescription as needing clarification
+     */
     requestClarification(reason: string): void;
 }
 //# sourceMappingURL=Prescription.d.ts.map

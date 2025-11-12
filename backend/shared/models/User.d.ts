@@ -1,3 +1,8 @@
+/**
+ * User Entity
+ * All platform users across 5 roles: Pharmacist, Doctor, Nurse, Delivery Personnel, Patient
+ * Based on: /specs/002-metapharm-platform/data-model.md
+ */
 import { Pharmacy } from './Pharmacy';
 import { AuditTrailEntry } from './AuditTrailEntry';
 export declare enum UserRole {
@@ -33,12 +38,33 @@ export declare class User {
     updated_at: Date;
     last_login_at: Date | null;
     deleted_at: Date | null;
+    /**
+     * Check if user is soft deleted
+     */
     isDeleted(): boolean;
+    /**
+     * Check if user is active
+     */
     isActive(): boolean;
+    /**
+     * Check if user has MFA enabled
+     */
     hasMFA(): boolean;
+    /**
+     * Check if user is a healthcare professional (requires MFA)
+     */
     isHealthcareProfessional(): boolean;
+    /**
+     * Check if user has HIN e-ID authentication
+     */
     hasHINAuth(): boolean;
+    /**
+     * Soft delete user
+     */
     softDelete(): void;
+    /**
+     * Update last login timestamp
+     */
     updateLastLogin(): void;
 }
 //# sourceMappingURL=User.d.ts.map

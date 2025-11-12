@@ -100,18 +100,13 @@ export const test = base.extend<AuthFixtures>({
    * Uses storageState if available, otherwise falls back to manual login
    */
   pharmacistPage: async ({ page }, use) => {
-    // Check if storageState was loaded
-    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null);
+    // Always login manually to ensure authentication
+    await login(page, testUsers.pharmacist);
 
-    if (!hasAuth) {
-      // Fallback: Login manually if storageState not available
-      await login(page, testUsers.pharmacist);
-
-      // Wait for pharmacist dashboard
-      await page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, {
-        timeout: 10000,
-      });
-    }
+    // Wait for pharmacist dashboard
+    await page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, {
+      timeout: 10000,
+    });
 
     await use(page);
 
