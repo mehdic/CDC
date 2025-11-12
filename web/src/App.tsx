@@ -17,6 +17,12 @@ const InventoryManagement = lazy(
   () => import('@apps/pharmacist/pages/InventoryManagement')
 );
 const VideoCall = lazy(() => import('@apps/pharmacist/pages/VideoCall'));
+const PharmacyProfileManager = lazy(
+  () => import('@apps/pharmacist/pages/pharmacy-profile/PharmacyProfileManager')
+);
+const MasterAccountPage = lazy(
+  () => import('@apps/pharmacist/pages/MasterAccountPage')
+);
 
 /**
  * Protected route component
@@ -105,6 +111,12 @@ const App: React.FC = () => {
           {/* Teleconsultation route */}
           <Route path="/teleconsultation" element={<VideoCall />} />
           <Route path="/teleconsultation/:sessionId" element={<VideoCall />} />
+
+          {/* Master Account Management */}
+          <Route path="/account/master" element={<MasterAccountPage />} />
+
+          {/* Pharmacy Profile Management */}
+          <Route path="/pharmacy/manage" element={<PharmacyProfileManager />} />
 
           {/* Analytics route (placeholder) */}
           <Route
