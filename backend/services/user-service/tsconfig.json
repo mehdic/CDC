@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": "../../",
+    "paths": {
+      "@shared/*": ["shared/*"],
+      "@models/*": ["shared/models/*"],
+      "@utils/*": ["shared/utils/*"],
+      "@controllers/*": ["services/user-service/src/controllers/*"]
+    }
+  },
+  "include": ["src/**/*", "../../backend/shared/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "**/__tests__/**", "../../shared/__tests__/**"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    "transpileOnly": true,
+    "files": true
+  }
+}
