@@ -17,6 +17,8 @@ const InventoryManagement = lazy(
   () => import('@apps/pharmacist/pages/InventoryManagement')
 );
 const VideoCall = lazy(() => import('@apps/pharmacist/pages/VideoCall'));
+const MasterAccountPage = lazy(() => import('@apps/pharmacist/pages/master-account/MasterAccountPage'));
+const PharmacyProfileManager = lazy(() => import('@apps/pharmacist/pages/pharmacy-profile/PharmacyProfileManager'));
 
 /**
  * Protected route component
@@ -149,6 +151,12 @@ const App: React.FC = () => {
               </div>
             }
           />
+
+          {/* Master Account Management */}
+          <Route path="/account/master" element={<MasterAccountPage />} />
+
+          {/* Pharmacy Profile Management */}
+          <Route path="/pharmacy/manage" element={<PharmacyProfileManager />} />
 
           {/* Dashboard route - alias for root */}
           <Route path="/dashboard" element={<PrescriptionDashboard />} />
