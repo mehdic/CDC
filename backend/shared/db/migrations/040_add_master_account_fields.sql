@@ -15,11 +15,17 @@ CREATE INDEX idx_users_master_account ON users(master_account_id)
 WHERE master_account_id IS NOT NULL;
 
 -- Add foreign key constraint (master_account_id references users.id)
+-- Using RESTRICT to comply with healthcare data retention requirements (HIPAA/GDPR)
 ALTER TABLE users
 ADD CONSTRAINT fk_users_master_account
 FOREIGN KEY (master_account_id)
 REFERENCES users(id)
-ON DELETE CASCADE;
+ON DELETE RESTRICT;
+
+-- Prevent circular references (user cannot be their own master)
+ALTER TABLE users
+ADD CONSTRAINT chk_no_self_master
+CHECK (master_account_id IS NULL OR master_account_id != id);
 
 -- Comments for documentation
 COMMENT ON COLUMN users.master_account_id IS 'Reference to master account user (for sub-accounts)';

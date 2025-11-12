@@ -39,16 +39,30 @@ export class AddMasterAccountFields1762971101000 implements MigrationInterface {
 
     // Add foreign key constraint (master_account_id references users.id)
     // Note: Using raw SQL as TypeORM's TableForeignKey doesn't support partial indexes
+    // Using RESTRICT to comply with healthcare data retention requirements (HIPAA/GDPR)
     await queryRunner.query(`
       ALTER TABLE users
       ADD CONSTRAINT fk_users_master_account
       FOREIGN KEY (master_account_id)
       REFERENCES users(id)
-      ON DELETE CASCADE
+      ON DELETE RESTRICT
+    `);
+
+    // Add CHECK constraint to prevent circular references (user cannot be their own master)
+    await queryRunner.query(`
+      ALTER TABLE users
+      ADD CONSTRAINT chk_no_self_master
+      CHECK (master_account_id IS NULL OR master_account_id != id)
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    // Remove CHECK constraint
+    await queryRunner.query(`
+      ALTER TABLE users
+      DROP CONSTRAINT IF EXISTS chk_no_self_master
+    `);
+
     // Remove foreign key constraint
     await queryRunner.query(`
       ALTER TABLE users
