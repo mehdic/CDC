@@ -18,40 +18,35 @@ app.get('/health', (req, res) => {
 
 // Proxy routes using http-proxy-middleware (handles body parsing correctly)
 // By default, the matched path is stripped. We need to preserve it.
-// Solution: Use pathFilter to match, but proxy to the full path
-app.use(createProxyMiddleware({
+// Solution: Pass path as first argument to match and proxy
+app.use('/auth', createProxyMiddleware({
   target: 'http://localhost:4001',
   changeOrigin: true,
-  logLevel: 'debug',
-  pathFilter: '/auth/**'  // Match /auth/* but don't strip it
+  logLevel: 'debug'
 }));
 
-app.use(createProxyMiddleware({
+app.use('/prescriptions', createProxyMiddleware({
   target: 'http://localhost:4002',
   changeOrigin: true,
-  logLevel: 'debug',
-  pathFilter: '/prescriptions/**'
+  logLevel: 'debug'
 }));
 
-app.use(createProxyMiddleware({
+app.use('/teleconsultations', createProxyMiddleware({
   target: 'http://localhost:4003',
   changeOrigin: true,
-  logLevel: 'debug',
-  pathFilter: '/teleconsultations/**'
+  logLevel: 'debug'
 }));
 
-app.use(createProxyMiddleware({
+app.use('/inventory', createProxyMiddleware({
   target: 'http://localhost:4004',
   changeOrigin: true,
-  logLevel: 'debug',
-  pathFilter: '/inventory/**'
+  logLevel: 'debug'
 }));
 
-app.use(createProxyMiddleware({
+app.use('/notifications', createProxyMiddleware({
   target: 'http://localhost:4005',
   changeOrigin: true,
-  logLevel: 'debug',
-  pathFilter: '/notifications/**'
+  logLevel: 'debug'
 }));
 
 // Return 404 for unmatched routes
