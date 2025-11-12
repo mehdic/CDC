@@ -55,7 +55,7 @@ describe('Audit Trail Utility', () => {
         deviceInfo: { os: 'iOS', browser: 'Safari', platform: 'mobile' },
       };
 
-      const mockSavedEntry = { id: 'saved-entry-id', ...params } as AuditTrailEntry;
+      const mockSavedEntry = { id: 'saved-entry-id', ...params } as unknown as AuditTrailEntry;
       mockRepository.save.mockResolvedValue(mockSavedEntry);
 
       const result = await logAuditEvent(mockDataSource, params);
@@ -74,7 +74,7 @@ describe('Audit Trail Utility', () => {
         resourceId: 'abc12345-e89b-12d3-a456-426614174222',
       };
 
-      const mockSavedEntry = { id: 'saved-entry-id', ...params } as AuditTrailEntry;
+      const mockSavedEntry = { id: 'saved-entry-id', ...params } as unknown as AuditTrailEntry;
       mockRepository.save.mockResolvedValue(mockSavedEntry);
 
       const result = await logAuditEvent(mockDataSource, params);

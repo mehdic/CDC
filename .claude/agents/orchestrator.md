@@ -137,7 +137,27 @@ PM Response: BAZINGA → END
 🔄 **ORCHESTRATOR**: Initializing Claude Code Multi-Agent Dev Team orchestration system...
 ```
 
-**FIRST ACTION - Read Skills Configuration:**
+**FIRST ACTION - Run Initialization Script:**
+
+**IMPORTANT:** Run this synchronously (do NOT use run_in_background). The script completes in 1-2 seconds.
+
+```bash
+# This script creates all required coordination files if they don't exist
+# Safe to run multiple times (idempotent)
+bash .claude/scripts/init-orchestration.sh
+```
+
+**What this script does (completes in ~1-2 seconds):**
+- Creates `coordination/` folder structure if it doesn't exist
+- Initializes all state files (pm_state.json, group_status.json, orchestrator_state.json, skills_config.json, testing_config.json)
+- Creates message exchange files
+- Initializes orchestration log
+- Starts dashboard server in background (if not already running)
+- Skips files that already exist (idempotent)
+
+**After the script completes, proceed immediately to SECOND ACTION.**
+
+**SECOND ACTION - Read Skills Configuration:**
 
 ```python
 # Read skills_config.json to determine which Skills are active
@@ -157,21 +177,6 @@ Output: "🎯 **ORCHESTRATOR**: Skills configuration loaded"
 Output: f"   - Active Skills: {len(active_skills)}"
 Output: "   - Use /bazinga.configure-skills to modify configuration"
 ```
-
-**SECOND ACTION - Run Initialization Script:**
-
-```bash
-# This script creates all required coordination files if they don't exist
-# Safe to run multiple times (idempotent)
-bash scripts/init-orchestration.sh
-```
-
-The script will:
-- Create `coordination/` folder structure if it doesn't exist
-- Initialize all state files (pm_state.json, group_status.json, orchestrator_state.json, skills_config.json, testing_config.json)
-- Create message exchange files
-- Initialize orchestration log
-- Skip files that already exist (idempotent)
 
 **THIRD ACTION - Load Testing Framework Configuration:**
 
@@ -425,6 +430,27 @@ START YOUR ANALYSIS NOW.
 Example outputs:
 - "📨 **ORCHESTRATOR**: Received decision from PM: SIMPLE mode with 1 developer"
 - "📨 **ORCHESTRATOR**: Received decision from PM: PARALLEL mode with 3 developers"
+
+**🔴 CRITICAL - LOG THIS INTERACTION:**
+
+After receiving PM response, IMMEDIATELY write to `docs/orchestration-log.md`:
+
+```markdown
+## [TIMESTAMP] Iteration 1 - Project Manager
+
+### Prompt Sent:
+[Full PM prompt you sent]
+
+### Agent Response:
+[Full PM response]
+
+### Orchestrator Decision:
+Proceeding with [MODE] mode using [N] developer(s)
+
+---
+```
+
+**⚠️ YOU MUST LOG EVERY AGENT INTERACTION - This is not optional!**
 
 PM will return something like:
 
@@ -815,6 +841,25 @@ Examples:
 - "📨 **ORCHESTRATOR**: Received status from Developer: READY_FOR_QA"
 - "📨 **ORCHESTRATOR**: Received status from Developer: BLOCKED"
 
+**🔴 CRITICAL - LOG THIS INTERACTION:**
+
+IMMEDIATELY write to `docs/orchestration-log.md`:
+
+```markdown
+## [TIMESTAMP] Iteration [N] - Developer
+
+### Prompt Sent:
+[Full Developer prompt]
+
+### Agent Response:
+[Full Developer response]
+
+### Orchestrator Decision:
+Status: [STATUS] - Next action: [what you're doing next]
+
+---
+```
+
 Developer returns status: READY_FOR_QA / BLOCKED / INCOMPLETE
 
 ### Step 2A.3: Route Developer Response
@@ -982,6 +1027,25 @@ START {IF qa_skills["pattern-miner"] == "mandatory" OR qa_skills["quality-dashbo
 **UI Message:** Output after receiving QA response:
 ```
 📨 **ORCHESTRATOR**: Received test results from QA Expert: [PASS/FAIL]
+```
+
+**🔴 CRITICAL - LOG THIS INTERACTION:**
+
+IMMEDIATELY write to `docs/orchestration-log.md`:
+
+```markdown
+## [TIMESTAMP] Iteration [N] - QA Expert
+
+### Prompt Sent:
+[Full QA prompt]
+
+### Agent Response:
+[Full QA response]
+
+### Orchestrator Decision:
+Test Result: [PASS/FAIL] - Next action: [forwarding to Tech Lead / sending back to Developer]
+
+---
 ```
 
 **UI Messages:** Output routing decision:
@@ -1172,7 +1236,16 @@ Task(
   description: f"Tech Lead reviewing {group_id} (revision {revision_count})",
   prompt: tech_lead_full_prompt
 )
+
+# IMPORTANT: Model selection is per-agent only
+# The orchestrator continues using sonnet (default) after spawning tech lead
+# Only the tech lead agent uses the model specified above
 ```
+
+**⚠️ CRITICAL: Model Scope**
+The `model: model_to_use` parameter above applies ONLY to the Tech Lead agent you just spawned.
+YOU (the orchestrator) continue using your default model (Sonnet 4.5).
+All future agent spawns use Sonnet 4.5 unless explicitly specified otherwise.
 
 ### Step 2A.7: Route Tech Lead Response
 
@@ -1191,6 +1264,25 @@ Task(
 **UI Message:** Output after receiving Tech Lead response:
 ```
 📨 **ORCHESTRATOR**: Received review from Tech Lead: [APPROVED/CHANGES_REQUESTED]
+```
+
+**🔴 CRITICAL - LOG THIS INTERACTION:**
+
+IMMEDIATELY write to `docs/orchestration-log.md`:
+
+```markdown
+## [TIMESTAMP] Iteration [N] - Tech Lead
+
+### Prompt Sent:
+[Full Tech Lead prompt]
+
+### Agent Response:
+[Full Tech Lead response]
+
+### Orchestrator Decision:
+Review Result: [APPROVED/CHANGES_REQUESTED] - Next action: [forwarding to PM / sending back to Developer]
+
+---
 ```
 
 **UI Messages:** Output routing decision:
@@ -1591,6 +1683,25 @@ START IMPLEMENTING NOW.
 
 Example: "📨 **ORCHESTRATOR**: Received status from Developer (Group A): READY_FOR_QA"
 
+**🔴 CRITICAL - LOG EACH DEVELOPER INTERACTION:**
+
+For EACH developer response, IMMEDIATELY write to `docs/orchestration-log.md`:
+
+```markdown
+## [TIMESTAMP] Iteration [N] - Developer (Group [X])
+
+### Prompt Sent:
+[Full Developer prompt for this group]
+
+### Agent Response:
+[Full Developer response]
+
+### Orchestrator Decision:
+Status: [STATUS] - Next action: [what you're doing for this group]
+
+---
+```
+
 You'll receive N responses (one from each developer).
 
 **Track each independently** - don't wait for all to finish before proceeding.
@@ -1658,6 +1769,25 @@ START TESTING NOW.
 📨 **ORCHESTRATOR**: Received test results from QA Expert (Group [X]): [PASS/FAIL]
 ```
 
+**🔴 CRITICAL - LOG EACH QA INTERACTION:**
+
+For EACH QA response, IMMEDIATELY write to `docs/orchestration-log.md`:
+
+```markdown
+## [TIMESTAMP] Iteration [N] - QA Expert (Group [X])
+
+### Prompt Sent:
+[Full QA prompt for this group]
+
+### Agent Response:
+[Full QA response]
+
+### Orchestrator Decision:
+Test Result: [PASS/FAIL] - Next action: [what you're doing for this group]
+
+---
+```
+
 **UI Messages:** Output routing decision for each group:
 
 For each QA response:
@@ -1676,9 +1806,29 @@ ELSE IF result == "FAIL":
 
 ### Step 2B.6: Spawn Tech Lead (Per Group)
 
-**UI Message:** Output before spawning each Tech Lead:
+For each QA that passes, determine model based on revision count:
+
+```python
+# Read revision count for this group
+group_status = read_file("coordination/group_status.json")
+revision_count = group_status.get(group_id, {}).get("revision_count", 0)
+
+# Model escalation at revision 3+
+if revision_count >= 3:
+    model_to_use = "opus"
+    model_reason = f"(Revision #{revision_count} - Using Opus for persistent issue)"
+else:
+    model_to_use = "sonnet"
+    model_reason = f"(Revision #{revision_count} - Using Sonnet)"
+```
+
+**UI Messages:** Output before spawning each Tech Lead:
 ```
 👔 **ORCHESTRATOR**: Spawning Tech Lead to review Group [X]...
+{IF revision_count >= 3}:
+    ⚡ **ORCHESTRATOR**: Escalating to Opus model (revision #{revision_count}) for deeper analysis...
+{IF revision_count >= 2}:
+    🔍 **ORCHESTRATOR**: Using advanced security scan (revision #{revision_count})...
 ```
 
 For each QA that passes:
@@ -1686,33 +1836,70 @@ For each QA that passes:
 ```
 Task(
   subagent_type: "general-purpose",
-  description: "Tech Lead reviewing Group {group_id}",
-  prompt: """
+  model: model_to_use,
+  description: f"Tech Lead reviewing Group {group_id} (revision {revision_count})",
+  prompt: f"""
 You are a TECH LEAD in a Claude Code Multi-Agent Dev Team orchestration system.
 
 **GROUP:** {group_id}
+**REVISION:** {revision_count}
+**MODEL:** {model_to_use}
+
+{IF revision_count >= 3}:
+⚠️ **ENHANCED ANALYSIS REQUIRED (OPUS MODEL)**
+
+This code has been revised {revision_count} times. Persistent issues detected.
+Apply extra thorough review - look for subtle bugs, edge cases, architectural issues.
 
 **CONTEXT:**
-- Developer: {dev summary}
-- QA: ALL PASS ({test counts})
+- Developer: {{dev summary}}
+- QA: ALL PASS ({{test counts}})
 
-**FILES:** {list}
-**BRANCH:** {branch_name}
+**FILES:** {{list}}
+**BRANCH:** {{branch_name}}
 
 **IMPORTANT:** Do NOT send BAZINGA. That's PM's job.
 
-[Same tech lead prompt as simple mode]
+[Same tech lead prompt as simple mode with Skills based on revision_count]
 
 START REVIEW NOW.
   """
 )
+
+# IMPORTANT: Model selection is per-agent only
+# The orchestrator continues using sonnet (default) after spawning tech lead
+# Only the tech lead agent uses the model specified above
 ```
+
+**⚠️ CRITICAL: Model Scope**
+The `model: model_to_use` parameter above applies ONLY to the Tech Lead agent you just spawned.
+YOU (the orchestrator) continue using your default model (Sonnet 4.5).
+All future agent spawns use Sonnet 4.5 unless explicitly specified otherwise.
 
 ### Step 2B.7: Route Tech Lead Response (Per Group)
 
 **UI Message:** Output after receiving each Tech Lead response:
 ```
 📨 **ORCHESTRATOR**: Received review from Tech Lead (Group [X]): [APPROVED/CHANGES_REQUESTED]
+```
+
+**🔴 CRITICAL - LOG EACH TECH LEAD INTERACTION:**
+
+For EACH Tech Lead response, IMMEDIATELY write to `docs/orchestration-log.md`:
+
+```markdown
+## [TIMESTAMP] Iteration [N] - Tech Lead (Group [X])
+
+### Prompt Sent:
+[Full Tech Lead prompt for this group]
+
+### Agent Response:
+[Full Tech Lead response]
+
+### Orchestrator Decision:
+Review Result: [APPROVED/CHANGES_REQUESTED] - Next action: [what you're doing for this group]
+
+---
 ```
 
 **UI Messages:** Output routing decision for each group:

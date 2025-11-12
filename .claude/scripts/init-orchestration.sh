@@ -5,22 +5,63 @@
 # This script creates the required folder structure and state files
 # for orchestration. Safe to run multiple times (idempotent).
 #
-# Usage: ./.claude/scripts/init-orchestration.sh
+# Usage:
+#   ./.claude/scripts/init-orchestration.sh           # Resume existing or create new
+#   ./.claude/scripts/init-orchestration.sh --new     # Force new session
+#
 
 set -e  # Exit on error
 
-# Generate session ID with timestamp
-SESSION_ID="bazinga_$(date +%Y%m%d_%H%M%S)"
-TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-echo "🔄 Initializing BAZINGA Claude Code Multi-Agent Development Team..."
-echo "📅 Session ID: $SESSION_ID"
+# Check for --new flag to force new session
+FORCE_NEW=false
+if [ "$1" = "--new" ]; then
+    FORCE_NEW=true
+fi
 
 # Ensure all required directories exist (mkdir -p is idempotent - safe to run multiple times)
-echo "📁 Ensuring directory structure exists..."
+echo "🔄 Initializing BAZINGA Claude Code Multi-Agent Development Team..."
 mkdir -p coordination/messages
 mkdir -p coordination/reports
 mkdir -p docs
+
+# Check if this is an existing session or new session
+if [ "$FORCE_NEW" = true ]; then
+    # Force new session - archive old one first
+    if [ -f "coordination/orchestrator_state.json" ]; then
+        OLD_SESSION=$(python3 -c "import json; print(json.load(open('coordination/orchestrator_state.json')).get('session_id', 'unknown'))" 2>/dev/null || echo "unknown")
+        echo "🗂️  Archiving old session: $OLD_SESSION"
+        ARCHIVE_DIR="coordination/archive/$OLD_SESSION"
+        mkdir -p "$ARCHIVE_DIR"
+
+        # Archive coordination state files
+        mv coordination/*.json "$ARCHIVE_DIR/" 2>/dev/null || true
+        mv coordination/messages/*.json "$ARCHIVE_DIR/" 2>/dev/null || true
+
+        # Archive old log file
+        if [ -f "docs/orchestration-log.md" ]; then
+            mv docs/orchestration-log.md "$ARCHIVE_DIR/orchestration-log.md"
+            echo "   Archived old log file"
+        fi
+    fi
+    SESSION_ID="bazinga_$(date +%Y%m%d_%H%M%S)"
+    echo "📅 Starting new session: $SESSION_ID"
+elif [ -f "coordination/orchestrator_state.json" ]; then
+    # Existing session - read the session ID from existing file
+    SESSION_ID=$(python3 -c "import json; print(json.load(open('coordination/orchestrator_state.json')).get('session_id', 'unknown'))" 2>/dev/null || echo "unknown")
+    if [ "$SESSION_ID" = "unknown" ]; then
+        # File exists but no session_id, generate one
+        SESSION_ID="bazinga_$(date +%Y%m%d_%H%M%S)"
+        echo "📅 Creating new session ID: $SESSION_ID"
+    else
+        echo "📂 Resuming existing session: $SESSION_ID"
+    fi
+else
+    # New session - generate fresh session ID
+    SESSION_ID="bazinga_$(date +%Y%m%d_%H%M%S)"
+    echo "📅 Creating new session: $SESSION_ID"
+fi
+
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Initialize pm_state.json
 if [ ! -f "coordination/pm_state.json" ]; then
@@ -233,6 +274,62 @@ else
     echo "✓ orchestration-log.md already exists"
 fi
 
+# Update sessions history
+echo "📝 Updating sessions history..."
+SESSIONS_HISTORY="coordination/sessions_history.json"
+
+# Initialize history file if it doesn't exist
+if [ ! -f "$SESSIONS_HISTORY" ]; then
+    cat > "$SESSIONS_HISTORY" <<EOF
+{
+  "_metadata": {
+    "description": "Historical record of all orchestration sessions",
+    "version": "1.0"
+  },
+  "sessions": []
+}
+EOF
+fi
+
+# Add current session to history (using Python for JSON manipulation)
+python3 - <<PYTHON_SCRIPT
+import json
+from pathlib import Path
+from datetime import datetime
+
+history_file = Path("$SESSIONS_HISTORY")
+session_id = "$SESSION_ID"
+timestamp = "$TIMESTAMP"
+
+# Load existing history
+with open(history_file, 'r') as f:
+    history = json.load(f)
+
+# Check if this session already exists
+session_exists = any(s.get('session_id') == session_id for s in history.get('sessions', []))
+
+if not session_exists:
+    # Add new session
+    history['sessions'].append({
+        'session_id': session_id,
+        'start_time': timestamp,
+        'status': 'started',
+        'end_time': None
+    })
+
+    # Keep only last 50 sessions to prevent file from growing too large
+    if len(history['sessions']) > 50:
+        history['sessions'] = history['sessions'][-50:]
+
+    # Save updated history
+    with open(history_file, 'w') as f:
+        json.dump(history, f, indent=2)
+
+    print(f"✅ Session {session_id} added to history")
+else:
+    print(f"✓ Session {session_id} already in history")
+PYTHON_SCRIPT
+
 # Create .gitignore for coordination folder if it doesn't exist
 if [ ! -f "coordination/.gitignore" ]; then
     echo "📝 Creating coordination/.gitignore..."
@@ -240,9 +337,10 @@ if [ ! -f "coordination/.gitignore" ]; then
 # Coordination state files are temporary and should not be committed
 *.json
 
-# EXCEPT these files - they are permanent configuration
+# EXCEPT these files - they are permanent configuration or historical data
 !skills_config.json
 !testing_config.json
+!sessions_history.json
 
 # Reports are ephemeral - generated per session
 reports/
@@ -291,44 +389,13 @@ else
         echo "   Dashboard server not started. You can manually start it with:"
         echo "   cd dashboard && python3 server.py"
     else
-        # Start dashboard server in background
-        echo "🚀 Starting dashboard server on port $DASHBOARD_PORT..."
-
-        # Check if Python dependencies are installed
-        if ! python3 -c "import flask, flask_sock, watchdog, anthropic" 2>/dev/null; then
-            echo "⚠️  Dashboard dependencies not installed. Installing..."
-            pip3 install -q -r dashboard/requirements.txt
-        fi
-
-        # Start server in background
-        cd dashboard && python3 server.py > /tmp/bazinga-dashboard.log 2>&1 &
-        DASHBOARD_PID=$!
-        echo $DASHBOARD_PID > "$DASHBOARD_PID_FILE"
-        cd ..
-
-        # Wait a moment for server to start
-        sleep 2
-
-        # Check if server started successfully
-        if kill -0 $DASHBOARD_PID 2>/dev/null; then
-            echo "✅ Dashboard server started (PID: $DASHBOARD_PID)"
-            echo "🌐 Dashboard: http://localhost:$DASHBOARD_PORT"
-            echo "📋 View logs: tail -f /tmp/bazinga-dashboard.log"
-            echo ""
-            echo "💡 Tip: The dashboard provides real-time monitoring of orchestration progress"
-            echo "   - Workflow visualization (Mermaid diagrams)"
-            echo "   - Agent status and communications"
-            echo "   - Task group progress"
-            echo "   - Quality metrics (when available)"
-            echo ""
-            echo "🤖 AI Diagram Feature: Disabled by default"
-            echo "   To enable: Edit coordination/skills_config.json and set"
-            echo "   \"dashboard_ai_diagram_enabled\": true"
-        else
-            echo "❌ Failed to start dashboard server"
-            echo "   Check logs: cat /tmp/bazinga-dashboard.log"
-            rm -f "$DASHBOARD_PID_FILE"
-        fi
+        # Launch dashboard startup script in background
+        # This script handles dependency installation and server startup asynchronously
+        echo "🚀 Starting dashboard server (background process)..."
+        bash .claude/scripts/start-dashboard.sh &
+        echo "   Dashboard will be available at http://localhost:$DASHBOARD_PORT"
+        echo "   (Installation may take a moment if dependencies need to be installed)"
+        echo "   View logs: tail -f /tmp/bazinga-dashboard.log"
     fi
 fi
 echo ""

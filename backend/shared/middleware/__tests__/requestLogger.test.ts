@@ -137,7 +137,10 @@ describe('Request Logger Middleware', () => {
     it('should skip logging for health check paths', () => {
       const { logger } = require('../../utils/logger');
 
-      mockRequest.path = '/health';
+      mockRequest = {
+        ...mockRequest,
+        path: '/health',
+      };
 
       requestLogger(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -148,7 +151,10 @@ describe('Request Logger Middleware', () => {
     it('should skip logging for metrics paths', () => {
       const { logger } = require('../../utils/logger');
 
-      mockRequest.path = '/metrics';
+      mockRequest = {
+        ...mockRequest,
+        path: '/metrics',
+      };
 
       requestLogger(mockRequest as Request, mockResponse as Response, mockNext);
 
