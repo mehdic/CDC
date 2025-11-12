@@ -1,4 +1,5 @@
 import { useFetchList } from './useApi';
+import { getUserData } from '../services/authService';
 
 /**
  * Inventory item type
@@ -21,22 +22,35 @@ export interface InventoryItem {
  * Uses the useApi hook pattern for consistent data management
  */
 export const useInventoryData = () => {
-  const { data, isLoading, error } = useFetchList<InventoryItem[]>(
-    'inventory',
-    {},
+  // Get pharmacy_id from user data
+  const userData = getUserData();
+  const pharmacyId = userData?.pharmacyId;
+
+  // Build query params with pharmacy_id
+  const queryParams = {
+    pharmacy_id: pharmacyId || '',
+  };
+
+  const { data, isLoading, error, refetch } = useFetchList<InventoryItem[]>(
+    'inventory/items',
+    queryParams,
     {
       staleTime: 5 * 60 * 1000, // 5 minutes
+      enabled: !!pharmacyId, // Only fetch if we have a pharmacy_id
     }
   );
 
+  // Handle both array and paginated response formats
+  const items = Array.isArray(data) ? data : (data as any)?.items || [];
+
   return {
-    items: data || [],
+    items,
     loading: isLoading,
     error,
     fetchItems: async (_params?: Record<string, any>) => {
-      // Note: React Query handles refetching automatically
-      // This function is provided for API compatibility
-      return data || [];
+      // Re-fetch with current params
+      refetch();
+      return items;
     },
   };
 };
