@@ -70,15 +70,23 @@ export const test = base.extend<AuthFixtures>({
   /**
    * Authenticated page - logs in with default pharmacist user
    * before each test and logs out after
+   *
+   * Uses storageState if available, otherwise falls back to manual login
    */
   authenticatedPage: async ({ page }, use) => {
-    // Login with default pharmacist user
-    await login(page, testUsers.pharmacist);
+    // Check if storageState was loaded (from playwright.config.ts)
+    // If yes, tokens are already available. If no, login manually.
+    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null);
 
-    // Wait for navigation to complete
-    await page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, {
-      timeout: 10000,
-    });
+    if (!hasAuth) {
+      // Fallback: Login manually if storageState not available
+      await login(page, testUsers.pharmacist);
+
+      // Wait for navigation to complete
+      await page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, {
+        timeout: 10000,
+      });
+    }
 
     await use(page);
 
@@ -88,15 +96,22 @@ export const test = base.extend<AuthFixtures>({
 
   /**
    * Pharmacist authenticated page - specifically for pharmacist role
+   *
+   * Uses storageState if available, otherwise falls back to manual login
    */
   pharmacistPage: async ({ page }, use) => {
-    // Login as pharmacist
-    await login(page, testUsers.pharmacist);
+    // Check if storageState was loaded
+    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null);
 
-    // Wait for pharmacist dashboard
-    await page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, {
-      timeout: 10000,
-    });
+    if (!hasAuth) {
+      // Fallback: Login manually if storageState not available
+      await login(page, testUsers.pharmacist);
+
+      // Wait for pharmacist dashboard
+      await page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, {
+        timeout: 10000,
+      });
+    }
 
     await use(page);
 

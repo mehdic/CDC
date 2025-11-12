@@ -28,11 +28,12 @@ const router = Router();
 /**
  * Rate limiter for login endpoint to prevent brute force attacks
  * Limits: 5 login attempts per IP per 15-minute window (production)
- * Development: 100 attempts per 15 minutes (for E2E testing)
+ * Development: 1000 attempts per 15 minutes (for E2E testing with 695 tests)
+ * Test: 5000 attempts (effectively unlimited for E2E test suite)
  */
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 5 : 100, // Relaxed limit for dev/test
+  max: process.env.NODE_ENV === 'test' ? 5000 : (process.env.NODE_ENV === 'production' ? 5 : 1000),
   message: 'Too many login attempts. Please try again in 15 minutes.',
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers

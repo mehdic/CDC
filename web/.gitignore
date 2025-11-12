@@ -2,3 +2,6 @@
 /playwright-report/
 /playwright/.cache/
 /test-results/
+
+# Playwright auth states
+.auth/
