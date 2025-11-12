@@ -182,7 +182,7 @@ function determineHealthStatus(
 // Routes
 // ============================================================================
 
-export const healthRouter = Router();
+export const healthRouter: import('express').Router = Router();
 
 /**
  * GET /health

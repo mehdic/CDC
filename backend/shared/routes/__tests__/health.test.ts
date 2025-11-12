@@ -5,7 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import { DataSource, QueryRunner } from 'typeorm';
-import * as redis from 'redis';
+import { RedisClientType } from 'redis';
 import { healthRouter, initializeHealthCheck } from '../health';
 
 // Mock dependencies
@@ -19,7 +19,7 @@ jest.mock('../../utils/metrics', () => ({
 describe('Health Check Routes', () => {
   let mockDataSource: jest.Mocked<DataSource>;
   let mockQueryRunner: jest.Mocked<QueryRunner>;
-  let mockRedisClient: jest.Mocked<redis.RedisClient>;
+  let mockRedisClient: jest.Mocked<RedisClientType>;
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
 

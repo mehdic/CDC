@@ -281,7 +281,7 @@ describe('Logger Utility', () => {
       logError('DB Error', error);
 
       expect(spy).toHaveBeenCalled();
-      const call = spy.mock.calls[0];
+      const call = spy.mock.calls[0] as any[];
       expect(call[1]).toHaveProperty('error', 'Database connection failed');
       expect(call[1]).toHaveProperty('stack');
 

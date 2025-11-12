@@ -14,9 +14,9 @@
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import app, { AppDataSource } from '../index';
-import { User, UserRole, UserStatus } from '../../../shared/models/User';
-import { hashPassword } from '../../../shared/utils/auth';
-import { generateTokenPair } from '../../../shared/utils/jwt';
+import { User, UserRole, UserStatus } from '../../../../shared/models/User';
+import { hashPassword } from '../../../../shared/utils/auth';
+import { generateTokenPair } from '../../../../shared/utils/jwt';
 import * as speakeasy from 'speakeasy';
 
 // ============================================================================
@@ -36,14 +36,29 @@ beforeAll(async () => {
     await testDataSource.initialize();
   }
 
-  // Create test users
+  // Clean up any existing test data first
+  try {
+    // Clean up audit trail entries first (foreign key constraint)
+    await testDataSource.query(
+      "DELETE FROM audit_trail_entries WHERE user_id IN (SELECT id FROM users WHERE email IN ('test.patient@example.com', 'test.pharmacist@example.com'))"
+    );
+
+    // Then delete existing test users if they exist
+    const userRepository = testDataSource.getRepository(User);
+    await userRepository.delete({ email: 'test.patient@example.com' });
+    await userRepository.delete({ email: 'test.pharmacist@example.com' });
+  } catch (error) {
+    // Ignore errors if users don't exist
+    console.log('No existing test data to clean up');
+  }
+
   const userRepository = testDataSource.getRepository(User);
 
   // Test patient (no MFA required)
   testUser = userRepository.create({
     email: 'test.patient@example.com',
     email_verified: true,
-    password_hash: await hashPassword('TestPassword123!'),
+    password_hash: await hashPassword('SecureP@ssw0rd!Test2024'),
     role: UserRole.PATIENT,
     status: UserStatus.ACTIVE,
     first_name_encrypted: Buffer.from('Test'),
@@ -59,7 +74,7 @@ beforeAll(async () => {
   testPharmacist = userRepository.create({
     email: 'test.pharmacist@example.com',
     email_verified: true,
-    password_hash: await hashPassword('PharmacistPass123!'),
+    password_hash: await hashPassword('SecurePharm@cist!P@ss2024'),
     role: UserRole.PHARMACIST,
     status: UserStatus.ACTIVE,
     first_name_encrypted: Buffer.from('Test'),
@@ -83,9 +98,19 @@ beforeAll(async () => {
 
 afterAll(async () => {
   // Cleanup test data
-  const userRepository = testDataSource.getRepository(User);
-  await userRepository.delete({ email: 'test.patient@example.com' });
-  await userRepository.delete({ email: 'test.pharmacist@example.com' });
+  try {
+    // Clean up audit trail entries first (foreign key constraint)
+    await testDataSource.query(
+      "DELETE FROM audit_trail_entries WHERE user_id IN (SELECT id FROM users WHERE email IN ('test.patient@example.com', 'test.pharmacist@example.com'))"
+    );
+
+    // Then delete users
+    const userRepository = testDataSource.getRepository(User);
+    await userRepository.delete({ email: 'test.patient@example.com' });
+    await userRepository.delete({ email: 'test.pharmacist@example.com' });
+  } catch (error) {
+    console.error('Cleanup error:', error);
+  }
 
   // Close database connection
   if (testDataSource.isInitialized) {
@@ -103,7 +128,7 @@ describe('POST /auth/login', () => {
       .post('/auth/login')
       .send({
         email: 'test.patient@example.com',
-        password: 'TestPassword123!',
+        password: 'SecureP@ssw0rd!Test2024',
       });
 
     expect(response.status).toBe(200);
@@ -148,7 +173,7 @@ describe('POST /auth/login', () => {
       .post('/auth/login')
       .send({
         email: 'nonexistent@example.com',
-        password: 'TestPassword123!',
+        password: 'SecureP@ssw0rd!Test2024',
       });
 
     expect(response.status).toBe(401);
@@ -160,7 +185,7 @@ describe('POST /auth/login', () => {
     const response = await request(app)
       .post('/auth/login')
       .send({
-        password: 'TestPassword123!',
+        password: 'SecureP@ssw0rd!Test2024',
       });
 
     expect(response.status).toBe(400);
@@ -172,7 +197,7 @@ describe('POST /auth/login', () => {
       .post('/auth/login')
       .send({
         email: 'invalid-email',
-        password: 'TestPassword123!',
+        password: 'SecureP@ssw0rd!Test2024',
       });
 
     expect(response.status).toBe(400);
