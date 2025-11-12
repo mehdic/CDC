@@ -33,7 +33,8 @@
 import { Request, Response, NextFunction } from 'express';
 import * as api from '@opentelemetry/api';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { BasicTracerProvider, BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
 import { logger } from '../utils/logger';
 
 // ============================================================================
@@ -76,8 +77,8 @@ export function initializeTracing(options?: {
   const enableConsoleExporter = options?.enableConsoleExporter ?? environment === 'development';
 
   try {
-    // Create tracer provider
-    const tracerProvider = new BasicTracerProvider();
+    // Create span processors
+    const spanProcessors: BatchSpanProcessor[] = [];
 
     // Add OTLP exporter for production
     if (environment !== 'development') {
@@ -85,8 +86,7 @@ export function initializeTracing(options?: {
         const otlpExporter = new OTLPTraceExporter({
           url: exporterUrl,
         });
-        const processor = new BatchSpanProcessor(otlpExporter);
-        tracerProvider.addSpanProcessor(processor);
+        spanProcessors.push(new BatchSpanProcessor(otlpExporter));
       } catch (exporterError) {
         logger.warn('Failed to initialize OTLP exporter', exporterError as Error);
       }
@@ -96,14 +96,21 @@ export function initializeTracing(options?: {
     if (enableConsoleExporter) {
       try {
         const consoleExporter = new ConsoleSpanExporter();
-        const consoleProcessor = new BatchSpanProcessor(consoleExporter);
-        tracerProvider.addSpanProcessor(consoleProcessor);
+        spanProcessors.push(new BatchSpanProcessor(consoleExporter));
       } catch (consoleError) {
         logger.warn('Failed to initialize console exporter', consoleError as Error);
       }
     }
 
-    // Set global tracer provider
+    // Create tracer provider with span processors
+    const tracerProvider = new NodeTracerProvider({
+      spanProcessors,
+    });
+
+    // Register the provider
+    tracerProvider.register();
+
+    // Set global tracer provider (for compatibility)
     api.trace.setGlobalTracerProvider(tracerProvider);
 
     // Get tracer instance

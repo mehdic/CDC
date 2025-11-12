@@ -350,7 +350,10 @@ export function getCORSConfig(): CORSConfig {
 
   // Development: Allow all origins
   return {
-    origin: true,
+    origin: (origin, callback) => {
+      // In development, allow all origins
+      callback(null, true);
+    },
     credentials: true,
     optionsSuccessStatus: 204,
     allowedHeaders: [
