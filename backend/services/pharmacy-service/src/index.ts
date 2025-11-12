@@ -7,6 +7,7 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { Pharmacy } from '../../../shared/models/Pharmacy';
@@ -46,6 +47,40 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting
+// General rate limit for all endpoints
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: {
+    error: 'Too many requests',
+    message: 'You have exceeded the rate limit. Please try again later.',
+    retryAfter: '15 minutes',
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => {
+    // Skip rate limiting for health checks
+    return req.path === '/health';
+  },
+});
+
+// Stricter rate limit for write operations (POST, PUT, DELETE)
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Limit each IP to 30 write operations per windowMs
+  message: {
+    error: 'Too many write requests',
+    message: 'You have exceeded the write operation limit. Please try again later.',
+    retryAfter: '15 minutes',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply general rate limiter to all routes
+app.use(generalLimiter);
 
 // Request logging
 app.use((req: Request, res: Response, next) => {
@@ -113,4 +148,4 @@ async function startServer() {
 
 startServer();
 
-export { AppDataSource };
+export { AppDataSource, writeLimiter };

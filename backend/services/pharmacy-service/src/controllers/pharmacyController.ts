@@ -7,12 +7,26 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../index';
 import { Pharmacy, SubscriptionTier, SubscriptionStatus } from '../../../../shared/models/Pharmacy';
 import { Repository } from 'typeorm';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 // Encryption helpers (simplified for now - should use AWS KMS in production)
+function getEncryptionKey(): Buffer {
+  const encryptionKey = process.env.ENCRYPTION_KEY;
+
+  if (!encryptionKey) {
+    throw new Error('ENCRYPTION_KEY environment variable is required but not set. Please set ENCRYPTION_KEY in your environment configuration.');
+  }
+
+  if (encryptionKey.length < 32) {
+    throw new Error('ENCRYPTION_KEY must be at least 32 characters long for AES-256 encryption.');
+  }
+
+  return Buffer.from(encryptionKey).slice(0, 32);
+}
+
 function encryptAddress(address: string): Buffer {
   const algorithm = 'aes-256-gcm';
-  const key = Buffer.from(process.env.ENCRYPTION_KEY || 'your-encryption-key-change-this-32-chars-minimum').slice(0, 32);
+  const key = getEncryptionKey();
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(algorithm, key, iv);
 
@@ -27,7 +41,7 @@ function encryptAddress(address: string): Buffer {
 
 function decryptAddress(encryptedBuffer: Buffer): string {
   const algorithm = 'aes-256-gcm';
-  const key = Buffer.from(process.env.ENCRYPTION_KEY || 'your-encryption-key-change-this-32-chars-minimum').slice(0, 32);
+  const key = getEncryptionKey();
 
   const iv = encryptedBuffer.slice(0, 16);
   const authTag = encryptedBuffer.slice(16, 32);
@@ -216,14 +230,51 @@ export async function updatePharmacy(req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Whitelist of allowed fields that can be updated
+    const allowedFields = [
+      'name',
+      'address',
+      'city',
+      'canton',
+      'postal_code',
+      'phone',
+      'email',
+      'latitude',
+      'longitude',
+      'operating_hours',
+      'subscription_tier',
+      'subscription_status',
+    ];
+
+    // Filter out any fields not in the whitelist
+    const filteredUpdates: Record<string, any> = {};
+    for (const field of allowedFields) {
+      if (updates[field] !== undefined) {
+        filteredUpdates[field] = updates[field];
+      }
+    }
+
+    // Reject if trying to update non-whitelisted fields
+    const attemptedFields = Object.keys(updates);
+    const rejectedFields = attemptedFields.filter(field => !allowedFields.includes(field));
+
+    if (rejectedFields.length > 0) {
+      res.status(400).json({
+        error: 'Invalid fields',
+        message: `The following fields cannot be updated: ${rejectedFields.join(', ')}`,
+        allowedFields,
+      });
+      return;
+    }
+
     // Handle address encryption if address is being updated
-    if (updates.address) {
-      updates.address_encrypted = encryptAddress(updates.address);
-      delete updates.address;
+    if (filteredUpdates.address) {
+      filteredUpdates.address_encrypted = encryptAddress(filteredUpdates.address);
+      delete filteredUpdates.address;
     }
 
     // Update fields
-    Object.assign(pharmacy, updates);
+    Object.assign(pharmacy, filteredUpdates);
     await pharmacyRepo.save(pharmacy);
 
     res.json({
