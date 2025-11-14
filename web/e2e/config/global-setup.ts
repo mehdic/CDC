@@ -34,11 +34,16 @@ async function globalSetup(config: FullConfig) {
     console.log('⚙️  Starting backend API Gateway...\n');
 
     // Start API Gateway (which proxies to other services)
+    // Set NODE_ENV=test to disable rate limiting for E2E tests
     backendProcess = spawn('npm', ['run', 'dev'], {
       cwd: path.join(__dirname, '../../../backend/services/api-gateway'),
       detached: false,
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: true,
+      env: {
+        ...process.env,
+        NODE_ENV: 'test', // Disable rate limiting for E2E tests
+      },
     });
 
     // Wait for backend to be ready
