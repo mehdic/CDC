@@ -46,7 +46,7 @@ export interface NavigationProps {
 /**
  * Styled components
  */
-const NavigationContainer = styled(Box)(({ theme }) => ({
+const NavigationContainer = styled('nav')(({ theme }) => ({
   width: '100%',
   backgroundColor: theme.palette.background.paper,
 }));
@@ -223,7 +223,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <NavigationContainer role="navigation">
+    <NavigationContainer>
       <List component="nav" aria-label="navigation principale">
         {defaultNavigationItems.map((item) => renderNavigationItem(item))}
       </List>
