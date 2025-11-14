@@ -172,6 +172,7 @@ const OperatingHoursSection: React.FC = () => {
         disabled={loading}
         className="mt-4 bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
         aria-label="Save"
+        data-testid="save-hours"
       >
         {loading ? 'Enregistrement...' : 'Enregistrer'}
       </button>
@@ -320,6 +321,7 @@ const DeliveryZonesSection: React.FC = () => {
         }}
         className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
         aria-label="Save"
+        data-testid="save-delivery"
       >
         Enregistrer
       </button>
@@ -446,6 +448,7 @@ const ProductCatalogSection: React.FC = () => {
         }}
         className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
         aria-label="Save"
+        data-testid="save-catalog"
       >
         Enregistrer
       </button>
@@ -654,6 +657,7 @@ export const PharmacyProfileManager: React.FC = () => {
                 onClick={handleSave}
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 aria-label="Save"
+                data-testid="save-info"
               >
                 Enregistrer
               </button>

@@ -223,7 +223,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <NavigationContainer>
+    <NavigationContainer role="navigation">
       <List component="nav" aria-label="navigation principale">
         {defaultNavigationItems.map((item) => renderNavigationItem(item))}
       </List>
