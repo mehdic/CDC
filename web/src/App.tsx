@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useMemo } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AppShell } from '@shared/components/AppShell';
 import { FullScreenLoading } from '@shared/pages/Loading';
 import { NotFoundPage } from '@shared/pages/Error';
@@ -88,87 +88,19 @@ const App: React.FC = () => {
     console.log('Navigate to settings');
   };
 
+  // Layout component that wraps all protected routes
   const ProtectedLayout: React.FC = () => {
     return (
-      <AppShell
-        user={user}
-        onLogout={handleLogout}
-        onProfileClick={handleProfile}
-        onSettingsClick={handleSettings}
-      >
-        <Routes>
-          {/* Dashboard - Default route */}
-          <Route path="/" element={<PrescriptionDashboard />} />
-
-          {/* Prescription routes */}
-          <Route path="/prescriptions" element={<PrescriptionDashboard />} />
-          <Route path="/prescriptions/review" element={<PrescriptionReview />} />
-          <Route path="/prescriptions/review/:id" element={<PrescriptionReview />} />
-
-          {/* Inventory route */}
-          <Route path="/inventory" element={<InventoryManagement />} />
-
-          {/* Teleconsultation route */}
-          <Route path="/teleconsultation" element={<VideoCall />} />
-          <Route path="/teleconsultation/:sessionId" element={<VideoCall />} />
-
-          {/* Master Account Management */}
-          <Route path="/account/master" element={<MasterAccountPage />} />
-
-          {/* Pharmacy Profile Management */}
-          <Route path="/pharmacy/manage" element={<PharmacyProfileManager />} />
-
-          {/* Analytics route (placeholder) */}
-          <Route
-            path="/analytics"
-            element={
-              <div style={{ padding: '20px' }}>
-                <h2>Analyses</h2>
-                <p>Page d'analyses - À implémenter</p>
-              </div>
-            }
-          />
-
-          {/* Marketing route (placeholder) */}
-          <Route
-            path="/marketing"
-            element={
-              <div style={{ padding: '20px' }}>
-                <h2>Marketing</h2>
-                <p>Page marketing - À implémenter</p>
-              </div>
-            }
-          />
-
-          {/* Delivery route (placeholder) */}
-          <Route
-            path="/delivery"
-            element={
-              <div style={{ padding: '20px' }}>
-                <h2>Livraisons</h2>
-                <p>Page de gestion des livraisons - À implémenter</p>
-              </div>
-            }
-          />
-
-          {/* Settings route (placeholder) */}
-          <Route
-            path="/settings"
-            element={
-              <div style={{ padding: '20px' }}>
-                <h2>Paramètres</h2>
-                <p>Page de paramètres - À implémenter</p>
-              </div>
-            }
-          />
-
-          {/* Dashboard route - alias for root */}
-          <Route path="/dashboard" element={<PrescriptionDashboard />} />
-
-          {/* 404 Not Found */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </AppShell>
+      <ProtectedRoute>
+        <AppShell
+          user={user}
+          onLogout={handleLogout}
+          onProfileClick={handleProfile}
+          onSettingsClick={handleSettings}
+        >
+          <Outlet />
+        </AppShell>
+      </ProtectedRoute>
     );
   };
 
@@ -179,14 +111,78 @@ const App: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />
 
         {/* All other routes wrapped in AppShell and ProtectedRoute */}
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <ProtectedLayout />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/" element={<ProtectedLayout />}>
+          {/* Dashboard - Default route */}
+          <Route index element={<PrescriptionDashboard />} />
+
+          {/* Prescription routes */}
+          <Route path="prescriptions" element={<PrescriptionDashboard />} />
+          <Route path="prescriptions/review" element={<PrescriptionReview />} />
+          <Route path="prescriptions/review/:id" element={<PrescriptionReview />} />
+
+          {/* Inventory route */}
+          <Route path="inventory" element={<InventoryManagement />} />
+
+          {/* Teleconsultation route */}
+          <Route path="teleconsultation" element={<VideoCall />} />
+          <Route path="teleconsultation/:sessionId" element={<VideoCall />} />
+
+          {/* Master Account Management */}
+          <Route path="account/master" element={<MasterAccountPage />} />
+
+          {/* Pharmacy Profile Management */}
+          <Route path="pharmacy/manage" element={<PharmacyProfileManager />} />
+
+          {/* Analytics route (placeholder) */}
+          <Route
+            path="analytics"
+            element={
+              <div style={{ padding: '20px' }}>
+                <h2>Analyses</h2>
+                <p>Page d&apos;analyses - À implémenter</p>
+              </div>
+            }
+          />
+
+          {/* Marketing route (placeholder) */}
+          <Route
+            path="marketing"
+            element={
+              <div style={{ padding: '20px' }}>
+                <h2>Marketing</h2>
+                <p>Page marketing - À implémenter</p>
+              </div>
+            }
+          />
+
+          {/* Delivery route (placeholder) */}
+          <Route
+            path="delivery"
+            element={
+              <div style={{ padding: '20px' }}>
+                <h2>Livraisons</h2>
+                <p>Page de gestion des livraisons - À implémenter</p>
+              </div>
+            }
+          />
+
+          {/* Settings route (placeholder) */}
+          <Route
+            path="settings"
+            element={
+              <div style={{ padding: '20px' }}>
+                <h2>Paramètres</h2>
+                <p>Page de paramètres - À implémenter</p>
+              </div>
+            }
+          />
+
+          {/* Dashboard route - alias for root */}
+          <Route path="dashboard" element={<PrescriptionDashboard />} />
+
+          {/* 404 Not Found */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
       </Routes>
     </Suspense>
   );
