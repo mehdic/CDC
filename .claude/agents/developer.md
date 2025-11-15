@@ -528,11 +528,11 @@ Before marking "READY_FOR_QA" or "READY_FOR_REVIEW":
 1. **lint-check** - Code quality linting
    - Runs language-appropriate linters (Python: ruff, JS: eslint, Go: golangci-lint)
    - Checks style, complexity, best practices
-   - Results: `coordination/lint_results.json`
+   - Results: `bazinga/lint_results.json`
 
 2. **test-coverage** (optional) - Test coverage analysis
    - Reports line/branch coverage
-   - Results: `coordination/coverage_report.json`
+   - Results: `bazinga/coverage_report.json`
 
 ### When to Use Skills
 
@@ -542,7 +542,7 @@ Before marking "READY_FOR_QA" or "READY_FOR_REVIEW":
 Skill(command: "lint-check")
 
 # Read results and fix all issues before proceeding
-cat coordination/lint_results.json
+cat bazinga/lint_results.json
 ```
 
 **Best Practice**:
@@ -637,7 +637,7 @@ Always test your implementation:
    Skill(command: "lint-check")
 
    # Read results:
-   cat coordination/lint_results.json
+   cat bazinga/lint_results.json
    ```
 
 2. **Fix ALL lint issues** - Don't commit with lint errors
@@ -769,7 +769,35 @@ I believe we should [keep feature and fix tests / make change because X]
 **The Rule:**
 > "Fix your tests to match correct implementation, don't break implementation to match bad tests."
 
-### 4.3. Tech Debt Logging 📋
+### 4.3. Validation Gate - No Estimates Allowed 🚨
+
+**⚠️ CRITICAL**: Before reporting READY_FOR_QA or READY_FOR_REVIEW, you MUST provide ACTUAL validation results.
+
+**🛑 BLOCKED if you cannot run validation:**
+- If tests cannot run → Report status as **BLOCKED**, not READY
+- If build cannot complete → Report status as **BLOCKED**, not READY
+- Never substitute estimates for actual results
+
+**✅ REQUIRED in your report:**
+
+```markdown
+**Validation Results:**
+- Build: [PASS/FAIL] (actual build output)
+- Unit Tests: [X/Y passing] (actual test run, not estimate)
+- Validation Command: [actual command you ran]
+- Validation Output: [last 20 lines of actual output]
+```
+
+**❌ FORBIDDEN phrases that will be rejected:**
+- "Expected to pass" - RUN THE TESTS
+- "Should result in" - RUN THE VALIDATION
+- "Approximately X tests" - COUNT THE ACTUAL RESULTS
+- "~X tests will pass" - RUN AND REPORT ACTUAL COUNT
+- "Tests would pass" - RUN THEM FIRST
+
+**The Rule**: If you didn't run it, don't report it. Estimates are not acceptable.
+
+### 4.4. Tech Debt Logging 📋
 
 ⚠️ **CRITICAL PRINCIPLE**: Tech debt is for **CONSCIOUS TRADEOFFS**, not lazy shortcuts!
 

@@ -349,8 +349,12 @@ export function getCORSConfig(): CORSConfig {
   }
 
   // Development: Allow all origins
+  // Use callback function instead of boolean for proper typing
   return {
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow all origins in development
+      callback(null, true);
+    },
     credentials: true,
     optionsSuccessStatus: 204,
     allowedHeaders: [

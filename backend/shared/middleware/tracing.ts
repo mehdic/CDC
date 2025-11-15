@@ -33,7 +33,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as api from '@opentelemetry/api';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { BasicTracerProvider, BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';
+import { BasicTracerProvider, BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
 import { logger } from '../utils/logger';
 
 // ============================================================================
@@ -76,8 +76,8 @@ export function initializeTracing(options?: {
   const enableConsoleExporter = options?.enableConsoleExporter ?? environment === 'development';
 
   try {
-    // Create tracer provider
-    const tracerProvider = new BasicTracerProvider();
+    // Create span processors array
+    const spanProcessors: BatchSpanProcessor[] = [];
 
     // Add OTLP exporter for production
     if (environment !== 'development') {
@@ -86,7 +86,7 @@ export function initializeTracing(options?: {
           url: exporterUrl,
         });
         const processor = new BatchSpanProcessor(otlpExporter);
-        tracerProvider.addSpanProcessor(processor);
+        spanProcessors.push(processor);
       } catch (exporterError) {
         logger.warn('Failed to initialize OTLP exporter', exporterError as Error);
       }
@@ -97,11 +97,16 @@ export function initializeTracing(options?: {
       try {
         const consoleExporter = new ConsoleSpanExporter();
         const consoleProcessor = new BatchSpanProcessor(consoleExporter);
-        tracerProvider.addSpanProcessor(consoleProcessor);
+        spanProcessors.push(consoleProcessor);
       } catch (consoleError) {
         logger.warn('Failed to initialize console exporter', consoleError as Error);
       }
     }
+
+    // Create tracer provider with span processors
+    const tracerProvider = new BasicTracerProvider({
+      spanProcessors,
+    });
 
     // Set global tracer provider
     api.trace.setGlobalTracerProvider(tracerProvider);

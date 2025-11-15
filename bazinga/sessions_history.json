@@ -1,0 +1,20 @@
+{
+  "_metadata": {
+    "description": "Historical record of all orchestration sessions",
+    "version": "1.0"
+  },
+  "sessions": [
+    {
+      "session_id": "bazinga_20251114_100756",
+      "start_time": "2025-11-14T09:07:56Z",
+      "status": "started",
+      "end_time": null
+    },
+    {
+      "session_id": "bazinga_20251114_103143",
+      "start_time": "2025-11-14T09:31:43Z",
+      "status": "started",
+      "end_time": null
+    }
+  ]
+}

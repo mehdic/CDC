@@ -11,7 +11,7 @@ You are helping the user configure which Skills should be invoked during BAZINGA
 First, read the current configuration:
 
 ```bash
-cat coordination/skills_config.json 2>/dev/null
+cat bazinga/skills_config.json 2>/dev/null
 ```
 
 Parse the current status (mandatory/disabled) for each Skill.
@@ -142,7 +142,7 @@ Support these input patterns:
 After parsing user input, update the configuration:
 
 ```bash
-cat > coordination/skills_config.json << 'EOF'
+cat > bazinga/skills_config.json << 'EOF'
 {
   "_metadata": {
     "profile": "lite|advanced|custom",
@@ -215,7 +215,7 @@ Current Active Skills (✅ ON):
 
 Total: 6 of 11 Skills active
 
-Configuration saved to coordination/skills_config.json
+Configuration saved to bazinga/skills_config.json
 Run /configure-skills anytime to adjust.
 ```
 
@@ -241,7 +241,7 @@ Run /configure-skills anytime to adjust.
 
 **Persistence:**
 - Configuration persists across all BAZINGA sessions
-- Tracked in git (unlike other coordination/*.json files)
+- Tracked in git (configuration file, not ephemeral state)
 
 **Performance Guidance:**
 - Core Skills (<20s): 1, 6, 7, 8

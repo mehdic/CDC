@@ -116,6 +116,7 @@ class SendGridEmailClient {
       }
 
       // Build email message
+      // SendGrid requires either 'content' array or 'text'/'html' properties
       const msg: MailDataRequired = {
         to: params.to,
         from: {
@@ -123,6 +124,13 @@ class SendGridEmailClient {
           name: this.fromName,
         },
         subject: params.subject,
+        // Provide default content if neither text nor html is provided (template-only emails)
+        content: [
+          {
+            type: 'text/plain',
+            value: params.text || ' ',
+          },
+        ],
       };
 
       // Add optional fields
@@ -132,6 +140,17 @@ class SendGridEmailClient {
 
       if (params.html) {
         msg.html = params.html;
+        // Update content array to include HTML
+        msg.content = [
+          {
+            type: 'text/plain',
+            value: params.text || ' ',
+          },
+          {
+            type: 'text/html',
+            value: params.html,
+          },
+        ];
       }
 
       if (params.templateId) {

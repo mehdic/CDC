@@ -1,0 +1,13 @@
+# Coordination state files are temporary and should not be committed
+*.json
+
+# EXCEPT these files - they are permanent configuration or historical data
+!skills_config.json
+!testing_config.json
+!sessions_history.json
+
+# Reports are ephemeral - generated per session
+reports/
+
+# Keep the folder structure
+!.gitignore
