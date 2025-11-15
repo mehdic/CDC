@@ -26,6 +26,12 @@ const PharmacyProfileManager = lazy(
 const MasterAccountPage = lazy(
   () => import('@apps/pharmacist/pages/MasterAccountPage')
 );
+const ProductCatalog = lazy(
+  () => import('@apps/pharmacist/pages/ProductCatalog')
+);
+const OrderManagement = lazy(
+  () => import('@apps/pharmacist/pages/OrderManagement')
+);
 
 /**
  * Protected route component
@@ -300,6 +306,40 @@ const App: React.FC = () => {
                   <h2>Marketing</h2>
                   <p>Page marketing - À implémenter</p>
                 </div>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* E-commerce - Product Catalog */}
+        <Route
+          path="/ecommerce"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <ProductCatalog />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* E-commerce - Order Management */}
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <OrderManagement />
               </AppShell>
             </ProtectedRoute>
           }
