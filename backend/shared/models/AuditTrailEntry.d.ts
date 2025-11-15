@@ -29,7 +29,6 @@ export declare class AuditTrailEntry {
     action: AuditAction;
     resource_type: string;
     resource_id: string;
-    _resourceIndex?: void;
     changes: AuditChanges | null;
     ip_address: string | null;
     user_agent: string | null;

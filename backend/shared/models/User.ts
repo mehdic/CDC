@@ -114,9 +114,27 @@ export class User {
   @JoinColumn({ name: 'primary_pharmacy_id' })
   primary_pharmacy: Pharmacy | null;
 
+  // Master Account Management (for sub-accounts)
+  @Column({ type: 'uuid', nullable: true })
+  @Index('idx_users_master_account')
+  master_account_id: string | null; // Reference to master account user
+
+  @ManyToOne(() => User, (user) => user.sub_accounts, {
+    onDelete: 'RESTRICT',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'master_account_id' })
+  master_account: User | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  permissions_override: Record<string, any> | null; // Custom permissions (TypeORM auto-parses JSONB)
+
   // ============================================================================
   // Relationships
   // ============================================================================
+
+  @OneToMany(() => User, (user) => user.master_account)
+  sub_accounts: User[];
 
   @OneToMany(() => AuditTrailEntry, (auditEntry) => auditEntry.user)
   audit_trail_entries: AuditTrailEntry[];

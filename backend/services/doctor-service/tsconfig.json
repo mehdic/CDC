@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["../../shared/*"],
+      "@models/*": ["../../shared/models/*"]
+    },
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src/**/*", "../../shared/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "../../shared/**/__tests__/**"]
+}

@@ -157,35 +157,41 @@ export const PrescriptionDashboard: React.FC = () => {
 
       {/* Statistics Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {stats.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card>
-              <CardContent>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      borderRadius: 2,
-                      backgroundColor: `${stat.color}20`,
-                      color: stat.color,
-                      display: 'flex',
-                    }}
-                  >
-                    {stat.icon}
-                  </Box>
-                  <Box>
-                    <Typography variant="h4" fontWeight="bold">
-                      {stat.value}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {stat.label}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+        {stats.map((stat, index) => {
+          // Map index to appropriate test ID
+          const testIds = ['prescriptions-card', 'inventory-card', 'consultations-card', 'revenue-card'];
+          const testId = testIds[index] || `stat-card-${index}`;
+
+          return (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Card data-testid={testId}>
+                <CardContent>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        backgroundColor: `${stat.color}20`,
+                        color: stat.color,
+                        display: 'flex',
+                      }}
+                    >
+                      {stat.icon}
+                    </Box>
+                    <Box>
+                      <Typography variant="h4" fontWeight="bold">
+                        {stat.value}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {stat.label}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
       </Grid>
 
       {/* Status Filters */}

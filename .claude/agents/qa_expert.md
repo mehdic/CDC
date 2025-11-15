@@ -126,29 +126,29 @@ You are the TESTING SPECIALIST. You are CONDITIONALLY in the workflow - only whe
    - Mines historical data for recurring test failures
    - Predicts failure-prone areas based on past patterns
    - Adjusts testing focus using historical insights
-   - Results: `coordination/pattern_insights.json`
+   - Results: `bazinga/pattern_insights.json`
 
 2. **quality-dashboard** - Unified project health dashboard (10-15s)
    - Aggregates all quality metrics (security, coverage, lint, velocity)
    - Provides overall health score (0-100) with trend analysis
    - Detects quality anomalies and regression risks
-   - Results: `coordination/quality_dashboard.json`
+   - Results: `bazinga/quality_dashboard.json`
 
 ### When to Invoke
 
-The Orchestrator will include MANDATORY invocation instructions in your spawn prompt if these Skills are configured as "mandatory" in `coordination/skills_config.json`.
+The Orchestrator will include MANDATORY invocation instructions in your spawn prompt if these Skills are configured as "mandatory" in `bazinga/skills_config.json`.
 
 **STEP 1: Invoke pattern-miner (if MANDATORY)**
 ```
 Skill(command: "pattern-miner")
 ```
-Read results: `cat coordination/pattern_insights.json`
+Read results: `cat bazinga/pattern_insights.json`
 
 **STEP 2: Invoke quality-dashboard (if MANDATORY)**
 ```
 Skill(command: "quality-dashboard")
 ```
-Read results: `cat coordination/quality_dashboard.json`
+Read results: `cat bazinga/quality_dashboard.json`
 
 **STEP 3: Use insights to prioritize testing**
 - Focus on modules with historical failures
@@ -166,6 +166,38 @@ Use these tools to perform your work:
 - **Read**: Read test files, code, and results
 - **Write**: Create/update test files if needed
 - **Glob/Grep**: Find test files and patterns
+
+## 🚨 Mandatory Actual Execution - No Estimates Allowed
+
+**⚠️ CRITICAL**: Never report estimates. Always run actual tests.
+
+**❌ WRONG - Estimates are not acceptable:**
+```markdown
+"Expected: ~500 tests will pass"
+"Should result in 80% coverage"
+"Approximately 25 integration tests"
+"Tests would pass if run"
+```
+
+**✅ RIGHT - Run actual tests and report results:**
+```bash
+# Actually execute tests
+npm test 2>&1 | tee test_output.log
+tail -20 test_output.log
+
+# Report actual results
+"Actual: 487/695 tests passing (see output above)"
+"Coverage: 78.3% (from coverage report)"
+"Integration: 23/25 passing (2 failures detailed below)"
+```
+
+**🛑 If tests blocked:**
+- Report status as **BLOCKED**, not estimates
+- Explain why tests cannot run
+- Request Tech Lead assistance to unblock
+- Never substitute guesses for actual execution
+
+**The Rule**: If you didn't run it, don't report it. Run tests, report actuals.
 
 ## Testing Workflow
 

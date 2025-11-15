@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useMemo } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from '@shared/components/AppShell';
 import { FullScreenLoading } from '@shared/pages/Loading';
@@ -7,6 +7,9 @@ import { LoginPage } from '@shared/pages/Login';
 import { logout, getUserData } from '@shared/services/authService';
 
 // Lazy load pages for code splitting
+const Dashboard = lazy(
+  () => import('@apps/pharmacist/pages/Dashboard')
+);
 const PrescriptionDashboard = lazy(
   () => import('@apps/pharmacist/pages/PrescriptionDashboard')
 );
@@ -17,6 +20,18 @@ const InventoryManagement = lazy(
   () => import('@apps/pharmacist/pages/InventoryManagement')
 );
 const VideoCall = lazy(() => import('@apps/pharmacist/pages/VideoCall'));
+const PharmacyProfileManager = lazy(
+  () => import('@apps/pharmacist/pages/pharmacy-profile/PharmacyProfileManager')
+);
+const MasterAccountPage = lazy(
+  () => import('@apps/pharmacist/pages/MasterAccountPage')
+);
+const ProductCatalog = lazy(
+  () => import('@apps/pharmacist/pages/ProductCatalog')
+);
+const OrderManagement = lazy(
+  () => import('@apps/pharmacist/pages/OrderManagement')
+);
 
 /**
  * Protected route component
@@ -50,7 +65,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
  */
 const App: React.FC = () => {
   // Get user data from localStorage or use mock data
-  const user = useMemo(() => {
+  // NOTE: DO NOT use useMemo here - we need fresh user data on every render
+  // to support dynamic user context changes in tests
+  const getUserInfo = () => {
     const userData = getUserData();
     if (userData) {
       return {
@@ -65,7 +82,9 @@ const App: React.FC = () => {
       email: 'martin.dupont@metapharm.ch',
       role: 'pharmacist',
     };
-  }, []);
+  };
+
+  const user = getUserInfo();
 
   const handleLogout = () => {
     logout();
@@ -82,99 +101,332 @@ const App: React.FC = () => {
     console.log('Navigate to settings');
   };
 
-  const ProtectedLayout: React.FC = () => {
-    return (
-      <AppShell
-        user={user}
-        onLogout={handleLogout}
-        onProfileClick={handleProfile}
-        onSettingsClick={handleSettings}
-      >
-        <Routes>
-          {/* Dashboard - Default route */}
-          <Route path="/" element={<PrescriptionDashboard />} />
-
-          {/* Prescription routes */}
-          <Route path="/prescriptions" element={<PrescriptionDashboard />} />
-          <Route path="/prescriptions/review" element={<PrescriptionReview />} />
-          <Route path="/prescriptions/review/:id" element={<PrescriptionReview />} />
-
-          {/* Inventory route */}
-          <Route path="/inventory" element={<InventoryManagement />} />
-
-          {/* Teleconsultation route */}
-          <Route path="/teleconsultation" element={<VideoCall />} />
-          <Route path="/teleconsultation/:sessionId" element={<VideoCall />} />
-
-          {/* Analytics route (placeholder) */}
-          <Route
-            path="/analytics"
-            element={
-              <div style={{ padding: '20px' }}>
-                <h2>Analyses</h2>
-                <p>Page d'analyses - À implémenter</p>
-              </div>
-            }
-          />
-
-          {/* Marketing route (placeholder) */}
-          <Route
-            path="/marketing"
-            element={
-              <div style={{ padding: '20px' }}>
-                <h2>Marketing</h2>
-                <p>Page marketing - À implémenter</p>
-              </div>
-            }
-          />
-
-          {/* Delivery route (placeholder) */}
-          <Route
-            path="/delivery"
-            element={
-              <div style={{ padding: '20px' }}>
-                <h2>Livraisons</h2>
-                <p>Page de gestion des livraisons - À implémenter</p>
-              </div>
-            }
-          />
-
-          {/* Settings route (placeholder) */}
-          <Route
-            path="/settings"
-            element={
-              <div style={{ padding: '20px' }}>
-                <h2>Paramètres</h2>
-                <p>Page de paramètres - À implémenter</p>
-              </div>
-            }
-          />
-
-          {/* Dashboard route - alias for root */}
-          <Route path="/dashboard" element={<PrescriptionDashboard />} />
-
-          {/* 404 Not Found */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </AppShell>
-    );
-  };
-
   return (
     <Suspense fallback={<FullScreenLoading message="Chargement de la page..." />}>
       <Routes>
         {/* Login route (no authentication required, no AppShell) */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* All other routes wrapped in AppShell and ProtectedRoute */}
+        {/* Dashboard - Default route */}
         <Route
-          path="/*"
+          path="/"
           element={
             <ProtectedRoute>
-              <ProtectedLayout />
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <Dashboard />
+              </AppShell>
             </ProtectedRoute>
           }
         />
+
+        {/* Dashboard route - alias for root */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <Dashboard />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Prescription routes */}
+        <Route
+          path="/prescriptions"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <PrescriptionDashboard />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/prescriptions/review"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <PrescriptionReview />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/prescriptions/review/:id"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <PrescriptionReview />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Inventory route */}
+        <Route
+          path="/inventory"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <InventoryManagement />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Teleconsultation route */}
+        <Route
+          path="/teleconsultation"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <VideoCall />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teleconsultation/:sessionId"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <VideoCall />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Master Account Management */}
+        <Route
+          path="/account/master"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <MasterAccountPage />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Pharmacy Profile Management */}
+        <Route
+          path="/pharmacy/manage"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <PharmacyProfileManager />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Analytics route (placeholder) */}
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <div style={{ padding: '20px' }}>
+                  <h2>Analyses</h2>
+                  <p>Page d&apos;analyses - À implémenter</p>
+                </div>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Marketing route (placeholder) */}
+        <Route
+          path="/marketing"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <div style={{ padding: '20px' }}>
+                  <h2>Marketing</h2>
+                  <p>Page marketing - À implémenter</p>
+                </div>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* E-commerce - Product Catalog */}
+        <Route
+          path="/ecommerce"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <ProductCatalog />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* E-commerce - Order Management */}
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <OrderManagement />
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Delivery route (placeholder) */}
+        <Route
+          path="/delivery"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <div style={{ padding: '20px' }}>
+                  <h2>Livraisons</h2>
+                  <p>Page de gestion des livraisons - À implémenter</p>
+                </div>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Deliveries route (alias) */}
+        <Route
+          path="/deliveries"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <div style={{ padding: '20px' }}>
+                  <h2>Livraisons</h2>
+                  <p>Page de gestion des livraisons - À implémenter</p>
+                </div>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Messages route (placeholder) */}
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <div style={{ padding: '20px' }}>
+                  <h2>Messages</h2>
+                  <p>Page de messagerie - À implémenter</p>
+                </div>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Settings route (placeholder) */}
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <div style={{ padding: '20px' }}>
+                  <h2>Paramètres</h2>
+                  <p>Page de paramètres - À implémenter</p>
+                </div>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 404 Not Found */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );

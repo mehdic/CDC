@@ -7,7 +7,6 @@ import {
   ListItemIcon,
   ListItemText,
   Collapse,
-  Box,
   styled,
 } from '@mui/material';
 import {
@@ -46,7 +45,7 @@ export interface NavigationProps {
 /**
  * Styled components
  */
-const NavigationContainer = styled(Box)(({ theme }) => ({
+const NavigationContainer = styled('nav')(({ theme }) => ({
   width: '100%',
   backgroundColor: theme.palette.background.paper,
 }));

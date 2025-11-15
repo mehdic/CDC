@@ -142,14 +142,8 @@ export function configureSecurityHeaders() {
       allow: false,
     },
 
-    // Expect-CT header (Certificate Transparency)
-    // Enforce Certificate Transparency to prevent mis-issued certificates
-    expectCt: isProduction()
-      ? {
-          maxAge: 86400, // 24 hours
-          enforce: true,
-        }
-      : false,
+    // Note: expectCt was deprecated in helmet v7
+    // Certificate Transparency is now enforced by browsers automatically
   });
 }
 

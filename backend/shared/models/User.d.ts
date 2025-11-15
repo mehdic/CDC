@@ -28,6 +28,10 @@ export declare class User {
     mfa_secret_encrypted: Buffer | null;
     primary_pharmacy_id: string | null;
     primary_pharmacy: Pharmacy | null;
+    master_account_id: string | null;
+    master_account: User | null;
+    permissions_override: Record<string, any> | null;
+    sub_accounts: User[];
     audit_trail_entries: AuditTrailEntry[];
     created_at: Date;
     updated_at: Date;

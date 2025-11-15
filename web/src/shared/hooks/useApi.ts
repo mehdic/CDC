@@ -28,9 +28,13 @@ export interface ApiRequestConfig extends AxiosRequestConfig {
  * Falls back to default for test environments
  */
 const getBaseUrl = (): string => {
-  // In test environment, just use default
-  // In Vite environment, this will be replaced by the actual env variable
-  return 'http://localhost:8000/api';
+  // In Vite environment, use VITE_API_BASE_URL env variable if available
+  const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined);
+  if (baseUrl) {
+    return `${baseUrl}/api`;
+  }
+  // Default to API gateway on port 4000
+  return 'http://localhost:4000/api';
 };
 
 /**

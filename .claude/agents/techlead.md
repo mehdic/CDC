@@ -133,15 +133,15 @@ Your workflow:
 
 1. **security-scan** - Security vulnerability detection
    - Automatically runs in basic (fast) or advanced (comprehensive) mode
-   - Results: `coordination/security_scan.json`
+   - Results: `bazinga/security_scan.json`
 
 2. **test-coverage** - Test coverage analysis
    - Reports line/branch coverage and untested paths
-   - Results: `coordination/coverage_report.json`
+   - Results: `bazinga/coverage_report.json`
 
 3. **lint-check** - Code quality linting
    - Style, complexity, best practices
-   - Results: `coordination/lint_results.json`
+   - Results: `bazinga/lint_results.json`
 
 ### Reading Skill Results
 
@@ -151,7 +151,7 @@ The Developer's report includes a "Testing Mode" field. Read it to determine whi
 
 ```bash
 # Read testing configuration to understand what's enabled
-cat coordination/testing_config.json | jq '._testing_framework.mode'
+cat bazinga/testing_config.json | jq '._testing_framework.mode'
 ```
 
 **Based on testing mode, read the appropriate Skill results:**
@@ -159,17 +159,17 @@ cat coordination/testing_config.json | jq '._testing_framework.mode'
 {IF testing_mode == "full" OR testing_mode NOT specified}
 ```bash
 # FULL MODE - Read all automated analysis results
-cat coordination/security_scan.json
-cat coordination/coverage_report.json      # Test coverage analysis
-cat coordination/lint_results.json
+cat bazinga/security_scan.json
+cat bazinga/coverage_report.json      # Test coverage analysis
+cat bazinga/lint_results.json
 ```
 {ENDIF}
 
 {IF testing_mode == "minimal"}
 ```bash
 # MINIMAL MODE - Test coverage may be limited
-cat coordination/security_scan.json
-cat coordination/lint_results.json
+cat bazinga/security_scan.json
+cat bazinga/lint_results.json
 # Note: Test coverage analysis may be skipped in minimal mode
 ```
 {ENDIF}
@@ -177,8 +177,8 @@ cat coordination/lint_results.json
 {IF testing_mode == "disabled"}
 ```bash
 # DISABLED MODE - Limited automated analysis
-cat coordination/security_scan.json
-cat coordination/lint_results.json
+cat bazinga/security_scan.json
+cat bazinga/lint_results.json
 # Note: Test coverage analysis is not applicable (testing disabled)
 ```
 {ENDIF}
@@ -227,7 +227,41 @@ git checkout <branch_name_from_developer_report>
 
 Verify you're on the correct branch before reviewing code.
 
-### 2. Review Implementation
+### 2. Approval Validation Gate - Reject Estimates 🚨
+
+**⚠️ CRITICAL**: Before approving, verify Developer provided ACTUAL results, not estimates.
+
+**🛑 RED FLAG PHRASES - Require validation if you see:**
+- "Expected to..."
+- "Should result in..."
+- "Approximately..."
+- "~X tests"
+- "Would pass"
+- "Estimated"
+
+**If Developer report contains estimates:**
+
+```markdown
+**Status:** CHANGES_REQUESTED
+**Issue:** Need actual validation run, not estimates
+**Required Actions:**
+1. Run full test suite and report ACTUAL results
+2. Provide actual build output
+3. Show actual test pass counts (not approximations)
+4. Resubmit with evidence-based report
+
+**Next Step:** Orchestrator, please send back to Developer for actual validation
+```
+
+**✅ ACCEPTABLE - Developer provides:**
+- Actual test results: "127/695 tests passing (see output below)"
+- Actual build output: "Build: PASS (output attached)"
+- Specific commands run: "Ran: npm test > output.log"
+- Validation logs: "Last 20 lines: [actual output]"
+
+**The Rule**: Estimates are not evidence. Require actual execution results.
+
+### 3. Review Implementation
 
 **Actually read the code** - Use the Read tool!
 

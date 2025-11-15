@@ -112,16 +112,35 @@ export async function clearAuth(page: Page): Promise<void> {
  * @returns Access token or null
  */
 export async function getAuthToken(page: Page): Promise<string | null> {
-  // Wait for token to be available (handles async storage timing)
-  await page.waitForFunction(
-    () => localStorage.getItem('auth_token') !== null,
-    { timeout: 10000 }
-  ).catch(() => {
-    // If timeout, token doesn't exist - return null
-    return null;
-  });
+  try {
+    // First check if page is on a valid URL (not about:blank)
+    const currentUrl = page.url();
+    if (currentUrl === 'about:blank' || !currentUrl.startsWith('http')) {
+      return null;
+    }
 
-  return page.evaluate(() => localStorage.getItem('auth_token'));
+    // Try to get token directly first (fast path)
+    const token = await page.evaluate(() => localStorage.getItem('auth_token')).catch(() => null);
+
+    // If token exists, return it
+    if (token) {
+      return token;
+    }
+
+    // If no token, wait briefly in case it's being set (handles async storage timing)
+    await page.waitForFunction(
+      () => localStorage.getItem('auth_token') !== null,
+      { timeout: 1000 } // Shorter timeout - if token doesn't exist, don't wait long
+    ).catch(() => {
+      // If timeout, token doesn't exist - return null
+      return null;
+    });
+
+    return page.evaluate(() => localStorage.getItem('auth_token')).catch(() => null);
+  } catch (error) {
+    // If any error occurs, return null
+    return null;
+  }
 }
 
 /**

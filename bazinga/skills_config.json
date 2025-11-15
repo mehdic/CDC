@@ -1,0 +1,38 @@
+{
+  "_metadata": {
+    "profile": "lite",
+    "version": "2.0",
+    "description": "Lite profile - core skills only for fast development",
+    "created": "2025-11-14T09:07:56Z",
+    "last_updated": "2025-11-14T09:07:56Z",
+    "configuration_notes": [
+      "MANDATORY: Skill will be automatically invoked by the agent",
+      "DISABLED: Skill will not be invoked",
+      "Use /bazinga.configure-skills to modify this configuration interactively",
+      "LITE PROFILE: 3 core skills (security-scan, lint-check, test-coverage)",
+      "ADVANCED PROFILE: All 10 skills enabled - use --profile advanced during init"
+    ]
+  },
+  "developer": {
+    "lint-check": "mandatory",
+    "codebase-analysis": "disabled",
+    "test-pattern-analysis": "disabled",
+    "api-contract-validation": "disabled",
+    "db-migration-check": "disabled"
+  },
+  "tech_lead": {
+    "security-scan": "mandatory",
+    "lint-check": "mandatory",
+    "test-coverage": "mandatory"
+  },
+  "qa_expert": {
+    "pattern-miner": "disabled",
+    "quality-dashboard": "disabled"
+  },
+  "pm": {
+    "velocity-tracker": "disabled"
+  },
+  "dashboard": {
+    "dashboard_ai_diagram_enabled": false
+  }
+}

@@ -74,9 +74,12 @@ export const test = base.extend<AuthFixtures>({
    * Uses storageState if available, otherwise falls back to manual login
    */
   authenticatedPage: async ({ page }, use) => {
+    // Navigate to app first to ensure context is established
+    await page.goto('/');
+
     // Check if storageState was loaded (from playwright.config.ts)
     // If yes, tokens are already available. If no, login manually.
-    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null);
+    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null).catch(() => false);
 
     if (!hasAuth) {
       // Fallback: Login manually if storageState not available
@@ -100,8 +103,11 @@ export const test = base.extend<AuthFixtures>({
    * Uses storageState if available, otherwise falls back to manual login
    */
   pharmacistPage: async ({ page }, use) => {
+    // Navigate to app first to ensure context is established
+    await page.goto('/');
+
     // Check if storageState was loaded
-    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null);
+    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null).catch(() => false);
 
     if (!hasAuth) {
       // Fallback: Login manually if storageState not available
