@@ -7,6 +7,9 @@ import { LoginPage } from '@shared/pages/Login';
 import { logout, getUserData } from '@shared/services/authService';
 
 // Lazy load pages for code splitting
+const Dashboard = lazy(
+  () => import('@apps/pharmacist/pages/Dashboard')
+);
 const PrescriptionDashboard = lazy(
   () => import('@apps/pharmacist/pages/PrescriptionDashboard')
 );
@@ -109,7 +112,7 @@ const App: React.FC = () => {
                 onProfileClick={handleProfile}
                 onSettingsClick={handleSettings}
               >
-                <PrescriptionDashboard />
+                <Dashboard />
               </AppShell>
             </ProtectedRoute>
           }
@@ -126,7 +129,7 @@ const App: React.FC = () => {
                 onProfileClick={handleProfile}
                 onSettingsClick={handleSettings}
               >
-                <PrescriptionDashboard />
+                <Dashboard />
               </AppShell>
             </ProtectedRoute>
           }
@@ -316,6 +319,46 @@ const App: React.FC = () => {
                 <div style={{ padding: '20px' }}>
                   <h2>Livraisons</h2>
                   <p>Page de gestion des livraisons - À implémenter</p>
+                </div>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Deliveries route (alias) */}
+        <Route
+          path="/deliveries"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <div style={{ padding: '20px' }}>
+                  <h2>Livraisons</h2>
+                  <p>Page de gestion des livraisons - À implémenter</p>
+                </div>
+              </AppShell>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Messages route (placeholder) */}
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <AppShell
+                user={user}
+                onLogout={handleLogout}
+                onProfileClick={handleProfile}
+                onSettingsClick={handleSettings}
+              >
+                <div style={{ padding: '20px' }}>
+                  <h2>Messages</h2>
+                  <p>Page de messagerie - À implémenter</p>
                 </div>
               </AppShell>
             </ProtectedRoute>
