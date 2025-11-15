@@ -67,15 +67,11 @@ export const login = async (
 
     // If login successful and tokens provided, store them
     if (response.data.success && response.data.accessToken) {
-      console.log('[authService] Login successful, storing tokens');
       storeTokens(
         response.data.accessToken,
         response.data.refreshToken || '',
         response.data.user
       );
-      console.log('[authService] Tokens stored, isAuthenticated:', localStorage.getItem('auth_token') !== null);
-    } else {
-      console.log('[authService] Login response missing success or accessToken:', response.data);
     }
 
     return response.data;

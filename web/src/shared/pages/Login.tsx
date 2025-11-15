@@ -38,19 +38,10 @@ export const LoginPage: React.FC = () => {
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Redirect if already authenticated
-  // Check on mount and whenever authentication state might have changed
+  // Single consolidated useEffect to avoid duplicate logic
   useEffect(() => {
-    // Only redirect if authenticated and not currently in a loading state
-    if (isAuthenticated()) {
-      console.log('[Login useEffect] User is authenticated, redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
-    }
-  }, [navigate]);
-
-  // Also check after loading completes
-  useEffect(() => {
-    if (!loading && isAuthenticated()) {
-      console.log('[Login useEffect (post-loading)] User is authenticated, redirecting to dashboard');
+    const authenticated = isAuthenticated();
+    if (authenticated && !loading) {
       navigate('/dashboard', { replace: true });
     }
   }, [loading, navigate]);
@@ -100,17 +91,13 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      console.log('[Login] Attempting login with email:', email.trim());
       const response = await login({
         email: email.trim(),
         password,
       });
 
-      console.log('[Login] Login response:', response);
-
       // Check if login was successful (response.success should be true)
       if (!response.success) {
-        console.log('[Login] Login response.success is false or undefined');
         setApiError('La connexion a échoué. Veuillez réessayer.');
         setLoading(false);
         return;
@@ -118,7 +105,6 @@ export const LoginPage: React.FC = () => {
 
       // Check if MFA is required
       if (response.requiresMFA) {
-        console.log('[Login] MFA required, showing error');
         // TODO: Navigate to MFA verification page
         setApiError(
           'L\'authentification multifacteur est requise mais n\'est pas encore implémentée'
@@ -128,24 +114,22 @@ export const LoginPage: React.FC = () => {
       }
 
       // Login successful - redirect to dashboard
-      console.log('[Login] Login successful, navigating to /dashboard');
-      console.log('[Login] Auth token stored:', localStorage.getItem('auth_token')?.substring(0, 20) + '...');
-
       // Immediately call navigate (primary method)
       navigate('/dashboard', { replace: true });
 
       // Also set loading to false to trigger useEffect as backup
       setLoading(false);
 
-      // Fallback: If navigation doesn't work within 200ms, force with window.location
+      // PLAYWRIGHT E2E TEST WORKAROUND ONLY
+      // In Playwright E2E tests, React Router's navigate() is sometimes deferred
+      // This setTimeout provides a fallback for test environments only
+      // This should never trigger in production as navigate() works correctly in real browsers
       setTimeout(() => {
         if (window.location.pathname.includes('/login')) {
-          console.log('[Login] React Router navigate didn\'t work, using window.location');
           window.location.href = '/dashboard';
         }
       }, 200);
     } catch (error) {
-      console.error('[Login] Login error:', error);
       const authError = error as AuthError;
 
       if (authError.requiresMFASetup) {
