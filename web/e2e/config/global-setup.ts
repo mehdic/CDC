@@ -24,10 +24,11 @@ async function globalSetup(config: FullConfig) {
   console.log('🔧 Checking backend services availability...\n');
 
   try {
-    const response = await fetch(`${backendURL}/health`).catch(() => null);
-    // Accept both 200 (healthy) and 503 (gateway running but services mocked/unavailable)
-    if (response && (response.ok || response.status === 503)) {
-      console.log('✅ Backend gateway available (status:', response.status, ')\n');
+    // Use /health/live endpoint which returns 200 when gateway is running
+    // This is more appropriate for E2E tests than /health which checks downstream services
+    const response = await fetch(`${backendURL}/health/live`).catch(() => null);
+    if (response && response.ok) {
+      console.log('✅ Backend gateway available (liveness check passed)\n');
     } else {
       throw new Error('Backend not available');
     }
@@ -53,10 +54,9 @@ async function globalSetup(config: FullConfig) {
 
     while (attempts < maxAttempts) {
       try {
-        const response = await fetch(`${backendURL}/health`);
-        // Accept both 200 (healthy) and 503 (gateway running but services mocked)
-        if (response.ok || response.status === 503) {
-          console.log('✅ Backend gateway ready (status:', response.status, ')\n');
+        const response = await fetch(`${backendURL}/health/live`);
+        if (response.ok) {
+          console.log('✅ Backend gateway ready (liveness check passed)\n');
           break;
         }
       } catch {
