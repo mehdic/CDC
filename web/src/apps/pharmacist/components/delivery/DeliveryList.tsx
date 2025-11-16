@@ -6,7 +6,7 @@
 import React from 'react';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { Chip, Box, IconButton, Tooltip } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, LocalShipping as TrackIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, LocalShipping as TrackIcon, Assignment as AssignIcon } from '@mui/icons-material';
 import { Delivery, DeliveryStatus } from '../../../../shared/hooks/useDelivery';
 
 interface DeliveryListProps {
@@ -15,6 +15,7 @@ interface DeliveryListProps {
   onEdit?: (delivery: Delivery) => void;
   onDelete?: (delivery: Delivery) => void;
   onTrack?: (delivery: Delivery) => void;
+  onAssign?: (delivery: Delivery) => void;
 }
 
 const getStatusColor = (status: DeliveryStatus): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
@@ -61,6 +62,7 @@ export const DeliveryList: React.FC<DeliveryListProps> = ({
   onEdit,
   onDelete,
   onTrack,
+  onAssign,
 }) => {
   const columns: GridColDef[] = [
     {
@@ -144,6 +146,13 @@ export const DeliveryList: React.FC<DeliveryListProps> = ({
               <Tooltip title="Track delivery">
                 <IconButton size="small" onClick={() => onTrack(delivery)} color="primary">
                   <TrackIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {onAssign && !delivery.delivery_personnel_id && delivery.status === DeliveryStatus.PENDING && (
+              <Tooltip title="Assign delivery">
+                <IconButton size="small" onClick={() => onAssign(delivery)} color="secondary">
+                  <AssignIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}

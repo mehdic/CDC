@@ -13,6 +13,8 @@ import {
   Box,
   Typography,
   Chip,
+} from '@mui/material';
+import {
   Timeline,
   TimelineItem,
   TimelineSeparator,
@@ -20,7 +22,7 @@ import {
   TimelineContent,
   TimelineDot,
   TimelineOppositeContent,
-} from '@mui/material';
+} from '@mui/lab';
 import {
   CheckCircle as CheckIcon,
   LocalShipping as ShippingIcon,
@@ -37,7 +39,7 @@ interface DeliveryTrackingProps {
 }
 
 const getStatusIcon = (status: DeliveryStatus, isActive: boolean) => {
-  const color = isActive ? 'primary' : 'grey';
+  const color = isActive ? 'primary' : 'disabled';
 
   switch (status) {
     case DeliveryStatus.PENDING:
@@ -176,7 +178,7 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({ open, delive
                 {formatDateTime(event.time)}
               </TimelineOppositeContent>
               <TimelineSeparator>
-                <TimelineDot color={event.isActive ? 'primary' : 'grey'}>
+                <TimelineDot color={event.isActive ? 'primary' : undefined} variant={event.isActive ? 'filled' : 'outlined'}>
                   {getStatusIcon(event.status, event.isActive)}
                 </TimelineDot>
                 {index < timelineEvents.length - 1 && <TimelineConnector />}
