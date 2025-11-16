@@ -114,21 +114,13 @@ export const LoginPage: React.FC = () => {
       }
 
       // Login successful - redirect to dashboard
-      // Immediately call navigate (primary method)
+
+      //  Emit custom event for E2E test synchronization
+      // Playwright tests can listen for this event to know when navigation is starting
+      window.dispatchEvent(new CustomEvent('login-success', { detail: { navigatingTo: '/dashboard' } }));
+
+      // Use React Router navigate for SPA navigation
       navigate('/dashboard', { replace: true });
-
-      // Also set loading to false to trigger useEffect as backup
-      setLoading(false);
-
-      // PLAYWRIGHT E2E TEST WORKAROUND ONLY
-      // In Playwright E2E tests, React Router's navigate() is sometimes deferred
-      // This setTimeout provides a fallback for test environments only
-      // This should never trigger in production as navigate() works correctly in real browsers
-      setTimeout(() => {
-        if (window.location.pathname.includes('/login')) {
-          window.location.href = '/dashboard';
-        }
-      }, 200);
     } catch (error) {
       const authError = error as AuthError;
 

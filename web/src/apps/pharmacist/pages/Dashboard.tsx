@@ -119,7 +119,7 @@ export const Dashboard: React.FC = () => {
             Tableau de Bord
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Vue d'ensemble de votre activité pharmaceutique
+            Vue d&apos;ensemble de votre activité pharmaceutique
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
@@ -206,10 +206,20 @@ export const Dashboard: React.FC = () => {
               />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
+              <DashboardCard
+                testId="deliveries-card"
+                title="Livraisons"
+                value={analytics.deliveries.total}
+                subtitle={`${analytics.deliveries.inTransit} en cours`}
+                color="#00bcd4"
+                onClick={() => navigate('/deliveries')}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
               <Card data-testid="revenue-card">
                 <CardContent>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Chiffre d'Affaires
+                    Chiffre d&apos;Affaires
                   </Typography>
                   <Typography
                     variant="h3"

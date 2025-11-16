@@ -159,18 +159,24 @@ test.describe('Smoke Tests - Infrastructure Verification', () => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
 
-    // Fill and submit form
+    // Set up navigation promise BEFORE triggering login
+    const navigationPromise = page.waitForURL(url => url.pathname === '/dashboard' || url.pathname === '/', {
+      timeout: 10000,
+    });
+
+    // Fill and submit form (this triggers navigation)
     await loginPage.login({
       email: testUsers.pharmacist.email,
       password: testUsers.pharmacist.password,
     });
 
-    // Should redirect away from login page
-    await page.waitForURL(/.*\/(?!login)/, { timeout: 5000 });
+    // Wait for navigation to complete
+    await navigationPromise;
 
-    // Verify not on login page anymore
+    // Verify we navigated away from login page
     const currentUrl = page.url();
     expect(currentUrl).not.toContain('/login');
+    expect(currentUrl).toMatch(/\/(dashboard|$)/);
   });
 
   test('should use Page Object Model correctly', async ({ page }) => {

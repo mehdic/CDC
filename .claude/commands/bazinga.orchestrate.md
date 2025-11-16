@@ -42,6 +42,7 @@ The user's message to you contains their requirements for this orchestration tas
 - **Message router** - Pass information between agents
 - **State coordinator** - Manage state files for agent "memory"
 - **Progress tracker** - Log all interactions
+- **Database verifier** - Verify PM saved state and task groups; create fallback if needed
 - **UI communicator** - Print clear status messages at each step
 - **NEVER implement** - Don't use Read/Edit/Bash for actual work
 
@@ -61,6 +62,55 @@ Examples:
 **Key Change from V3:**
 - V3: Always 2 agents (dev → tech lead → BAZINGA)
 - Claude Code Multi-Agent Dev Team: Adaptive 2-6 agents (PM decides mode → agents work → PM sends BAZINGA)
+
+---
+
+## ⚠️ MANDATORY DATABASE OPERATIONS
+
+**CRITICAL: You MUST invoke the bazinga-db skill at these required points:**
+
+### Required Database Operations
+
+1. **At Initialization (Step 0, Path B):**
+   - MUST invoke bazinga-db to save initial orchestrator state
+   - MUST include skills_config, testing_config, and phase info
+   - MUST wait for confirmation before proceeding
+
+2. **After Receiving PM Decision (Step 1.3):**
+   - MUST invoke bazinga-db to log PM interaction
+   - MUST wait for confirmation
+
+3. **After Verifying PM State (Step 1.4):**
+   - MUST invoke bazinga-db to query task groups
+   - If empty, MUST create task groups from PM response (Step 1.4b)
+
+4. **After Each Agent Spawn:**
+   - MUST invoke bazinga-db to update orchestrator state
+   - MUST record agent type, iteration, and phase
+
+5. **After Each Agent Response:**
+   - MUST invoke bazinga-db to log agent interaction
+   - MUST update orchestrator state with new phase/status
+
+6. **After Updating Task Group Status:**
+   - MUST invoke bazinga-db to update task group records
+   - MUST record status changes, assignments, and review results
+
+7. **At Completion (Phase 3, Step 4):**
+   - MUST invoke bazinga-db to save final orchestrator state
+   - MUST invoke bazinga-db to update session status to 'completed'
+
+### Why This Matters
+
+- **Dashboard** queries database to display orchestration status and progress
+- **Session Resumption** requires orchestrator state to continue from where it left off
+- **Progress Tracking** requires task group records to show current status
+- **Audit Trail** depends on all interactions being logged
+- **Metrics** need state snapshots to calculate velocity and performance
+
+### Verification
+
+After each bazinga-db skill invocation, you should see a confirmation response. If you don't see confirmation or see an error, retry the invocation before proceeding.
 
 ---
 
@@ -206,7 +256,46 @@ PM Response: BAZINGA → END
 🔄 **ORCHESTRATOR**: Initializing Claude Code Multi-Agent Dev Team orchestration system...
 ```
 
-**Check user's intent:**
+**MANDATORY: Check previous session status FIRST (before checking user intent)**
+
+Invoke bazinga-db skill to check the most recent session status:
+
+Request to bazinga-db skill:
+```
+bazinga-db, please list the most recent sessions (limit 1).
+I need to check if the previous session is still active or completed.
+```
+
+Then invoke:
+```
+Skill(command: "bazinga-db")
+```
+
+**IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
+
+
+
+**After receiving the session list, check the status:**
+
+**IF list is empty (no previous sessions):**
+- This is the FIRST session ever
+- Decision: Follow **Path B** (create new session)
+- SKIP the user intent analysis below
+
+**IF list has sessions:**
+- Check the most recent session's status field
+- **IF status = "completed":**
+  - Previous session is finished
+  - Decision: Follow **Path B** (create new session)
+  - SKIP the user intent analysis below
+  - **DO NOT try to resume a completed session**
+- **IF status = "active" or "running":**
+  - Previous session is still in progress
+  - Proceed to user intent analysis below
+
+---
+
+**Check user's intent (ONLY if previous session is active/running):**
 
 **First, analyze what the user asked for:**
 
@@ -225,39 +314,13 @@ User said: "[user's message]"
 - User wants to RESUME → Follow **Path A** below
 - User wants NEW task → Follow **Path B** below (skip session check, create new)
 
-**Simple rule:** Check user's intent FIRST. Most users give new tasks and should get new sessions.
+**Simple rule:** Check previous session status FIRST. If completed, always create new. Otherwise, check user's intent.
 
 ---
 
 **IF user wants to RESUME (Path A):**
 
-Invoke bazinga-db skill to get the most recent session:
-
-Request to bazinga-db skill:
-```
-bazinga-db, please list the most recent sessions (limit 5).
-I need to find the latest session to resume.
-```
-
-Then invoke:
-```
-Skill(command: "bazinga-db")
-```
-
-**IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
-
-
-
-**Wait for bazinga-db response with session list.**
-
-**IMMEDIATELY after receiving the session list, analyze it:**
-
-**IF list is empty:**
-- Display: "⚠️ **ORCHESTRATOR**: No existing sessions found to resume"
-- Ask user: "Please provide a new task to start a fresh orchestration session."
-- STOP and wait for user input
-
-**IF list has sessions (NOT EMPTY):**
+**Use the session info already retrieved in Step 0** (you already invoked bazinga-db and received the most recent session).
 
 ### 🔴 MANDATORY RESUME WORKFLOW - EXECUTE NOW
 
@@ -317,7 +380,7 @@ Skill(command: "bazinga-db")
 
 **IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
 
-**WAIT for PM state response. Then continue to Step 4 below.**
+
 
 ---
 
@@ -389,7 +452,7 @@ Display:
 
 
 
-   **WAIT for bazinga-db response.**
+   
 
    **REQUIRED OUTPUT - You MUST display the session creation result:**
    ```
@@ -456,7 +519,7 @@ Display:
 **IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
 
 
-   **WAIT for confirmation.** Database will save the initial orchestrator state.
+   
 
    **REQUIRED OUTPUT - Display confirmation:**
    ```
@@ -490,6 +553,26 @@ Display:
    - If successful: "✅ **ORCHESTRATOR**: Baseline build successful"
    - If errors: "⚠️ **ORCHESTRATOR**: Baseline build has errors (will track if Developer introduces NEW errors)"
    - If unknown: "ℹ️ **ORCHESTRATOR**: Could not detect build system, skipping build check"
+
+6. **Start dashboard if not running:**
+
+   Display: "📊 **ORCHESTRATOR**: Checking dashboard status..."
+
+   ```bash
+   # Check if dashboard is running
+   if [ -f /tmp/bazinga-dashboard.pid ] && kill -0 $(cat /tmp/bazinga-dashboard.pid) 2>/dev/null; then
+       echo "Dashboard already running"
+   else
+       # Start dashboard in background
+       bash scripts/start-dashboard.sh &
+       sleep 1
+       echo "Dashboard started"
+   fi
+   ```
+
+   Display result:
+   - If already running: "✅ **ORCHESTRATOR**: Dashboard already running"
+   - If started: "✅ **ORCHESTRATOR**: Dashboard started at http://localhost:53124"
 
 **After initialization:**
 ```
@@ -682,10 +765,61 @@ Skill(command: "bazinga-db")
 
 **IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
 
+### Step 1.4: Verify PM State and Task Groups in Database
+
+**⚠️ CRITICAL VERIFICATION: Ensure PM saved state and task groups**
+
+The PM agent should have saved PM state and created task groups in the database. Verify this now:
+
+**Query task groups:**
+```
+bazinga-db, please get all task groups for session [current session_id]
+```
+
+**Then invoke:**
+```
+Skill(command: "bazinga-db")
+```
+
+**Check the response:**
+- If task groups are returned (array with N groups), proceed to Step 1.5
+- If task groups are empty or no records found, proceed to Step 1.4b (fallback)
+
+#### Step 1.4b: Fallback - Create Task Groups from PM Response
+
+**If PM did not create task groups in database, you must create them now:**
+
+Parse the PM's response to extract task group information. Look for sections like:
+- "Task Groups Created"
+- "Group [ID]: [Name]"
+- Task group IDs (like SETUP, US1, US2, etc.)
+
+For each task group found, invoke bazinga-db:
+
+```
+bazinga-db, please create task group:
+
+Group ID: [extracted group_id]
+Session ID: [current session_id]
+Name: [extracted group name]
+Status: pending
+```
+
+**Then invoke:**
+```
+Skill(command: "bazinga-db")
+```
+
+Repeat for each task group found in the PM's response.
+
+**UI Message:**
+```
+⚠️ **ORCHESTRATOR**: PM did not persist task groups - creating [N] task groups in database now
+```
 
 See `bazinga/templates/message_templates.md` for PM response format examples.
 
-### Step 1.4: Route Based on Mode
+### Step 1.5: Route Based on Mode
 
 **UI Message:**
 ```
@@ -827,20 +961,6 @@ See `bazinga/templates/prompt_building.md` for the template reference.
 Task(subagent_type: "general-purpose", description: "Developer implementation", prompt: [Developer prompt built using above process])
 ```
 
-**🔴 CRITICAL: WAIT FOR DEVELOPER TO COMPLETE**
-
-After spawning the Developer agent, you MUST wait for the Task tool to complete and return the Developer's response. DO NOT proceed until you receive the Developer's full response.
-
-The Developer may take several minutes to:
-- Analyze code
-- Invoke mandatory skills
-- Implement changes
-- Run tests
-- Report status
-
-**WAIT for the complete Developer response before proceeding to Step 2A.2.**
-
----
 
 ### Step 2A.2: Receive Developer Response
 
@@ -972,13 +1092,6 @@ See `bazinga/templates/prompt_building.md` for the template reference.
 Task(subagent_type: "general-purpose", description: "QA validation", prompt: [QA Expert prompt built using above process])
 ```
 
-**🔴 CRITICAL: WAIT FOR QA EXPERT TO COMPLETE**
-
-After spawning the QA Expert, you MUST wait for the Task tool to complete and return the QA Expert's response. DO NOT proceed until you receive the full response.
-
-**WAIT for the complete QA Expert response before proceeding.**
-
----
 
 **AFTER receiving the QA Expert's response:**
 
@@ -1001,7 +1114,7 @@ Skill(command: "bazinga-db")
 **IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
 
 
-**WAIT for bazinga-db confirmation before proceeding.**
+
 
 ---
 
@@ -1109,22 +1222,15 @@ See `bazinga/templates/prompt_building.md` for the template reference.
 Task(subagent_type: "general-purpose", description: "Tech Lead review", prompt: [Tech Lead prompt built using above process])
 ```
 
-**🔴 CRITICAL: WAIT FOR TECH LEAD TO COMPLETE**
-
-After spawning the Tech Lead, you MUST wait for the Task tool to complete and return the Tech Lead's response. DO NOT proceed until you receive the full response.
-
-**WAIT for the complete Tech Lead response before proceeding.**
-
----
 
 **AFTER receiving the Tech Lead's response:**
 
 **Log Tech Lead interaction:**
 ```
-bazinga-db, please log this tech_lead interaction:
+bazinga-db, please log this techlead interaction:
 
 Session ID: [session_id]
-Agent Type: tech_lead
+Agent Type: techlead
 Content: [Tech Lead response]
 Iteration: [iteration]
 Agent ID: techlead_main
@@ -1138,7 +1244,7 @@ Skill(command: "bazinga-db")
 **IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
 
 
-**WAIT for bazinga-db confirmation before proceeding.**
+
 
 ---
 
@@ -1166,13 +1272,6 @@ Build PM prompt with complete implementation summary and quality metrics.
 Task(subagent_type="general-purpose", description="PM final assessment", prompt=[PM prompt])
 ```
 
-**🔴 CRITICAL: WAIT FOR PM TO COMPLETE**
-
-After spawning the PM, you MUST wait for the Task tool to complete and return the PM's response. DO NOT proceed until you receive the full response.
-
-**WAIT for the complete PM response before proceeding.**
-
----
 
 **AFTER receiving the PM's response:**
 
@@ -1185,7 +1284,7 @@ velocity-tracker, please analyze completion metrics
 Skill(command: "velocity-tracker")
 ```
 
-**WAIT for velocity-tracker response.**
+
 
 **Log PM interaction:**
 ```
@@ -1206,7 +1305,7 @@ Skill(command: "bazinga-db")
 **IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
 
 
-**WAIT for bazinga-db confirmation before proceeding.**
+
 
 ### Step 2A.9: Check for BAZINGA
 
@@ -1300,22 +1399,6 @@ Same workflow as Simple Mode, but include group-specific branch name
 See `bazinga/templates/message_templates.md` for standard prompt format.
 See `agents/developer.md` for full developer agent definition.
 
-**🔴 CRITICAL: WAIT FOR ALL DEVELOPERS TO COMPLETE**
-
-After spawning all developers in parallel (in ONE message), you MUST wait for ALL Task tools to complete and return their responses. DO NOT proceed until you receive ALL developer responses.
-
-The developers will execute in parallel, but you must still wait for the complete set of responses before proceeding to Step 2B.2.
-
-Each Developer may take several minutes to:
-- Analyze their assigned code group
-- Invoke mandatory skills (security-scan, lint-check, test-coverage, etc.)
-- Implement changes
-- Run tests
-- Report status
-
-**WAIT for ALL developer responses before proceeding to Step 2B.2.**
-
----
 
 **AFTER receiving ALL developer responses:**
 
@@ -1373,19 +1456,6 @@ The routing chain for each group is:
 
    Spawn: `Task(subagent_type="general-purpose", description="QA Group [X]", prompt=[QA prompt built using Step 2A.4 process])`
 
-   **🔴 CRITICAL: WAIT FOR QA EXPERT TO COMPLETE**
-
-   After spawning the QA Expert for this group, you MUST wait for the Task tool to complete and return the QA Expert's response. DO NOT proceed until you receive the QA Expert's full response.
-
-   The QA Expert may take several minutes to:
-   - Review test results and code quality
-   - Invoke mandatory skills (if configured)
-   - Verify acceptance criteria
-   - Provide approval or feedback
-
-   **WAIT for the complete QA Expert response before proceeding.**
-
-   ---
 
    **AFTER receiving the QA Expert's response:**
 
@@ -1425,28 +1495,15 @@ The routing chain for each group is:
 
    Spawn: `Task(subagent_type="general-purpose", description="Tech Lead Group [X]", prompt=[Tech Lead prompt built using Step 2A.6 process])`
 
-   **🔴 CRITICAL: WAIT FOR TECH LEAD TO COMPLETE**
-
-   After spawning the Tech Lead for this group, you MUST wait for the Task tool to complete and return the Tech Lead's response. DO NOT proceed until you receive the Tech Lead's full response.
-
-   The Tech Lead may take several minutes to:
-   - Review code quality and architecture
-   - Invoke mandatory skills (if configured)
-   - Check for technical debt and security issues
-   - Provide approval or feedback
-
-   **WAIT for the complete Tech Lead response before proceeding.**
-
-   ---
 
    **AFTER receiving the Tech Lead's response:**
 
    **Log Tech Lead response:**
    ```
-   bazinga-db, please log this tech_lead interaction:
+   bazinga-db, please log this techlead interaction:
 
    Session ID: [session_id]
-   Agent Type: tech_lead
+   Agent Type: techlead
    Content: [Tech Lead response]
    Iteration: [iteration]
    Agent ID: techlead_group_[X]
@@ -1470,7 +1527,7 @@ All agent prompts follow same pattern as Phase 2A (see `bazinga/templates/prompt
 
 ### Step 2B.8: Spawn PM When All Groups Complete
 
-**WAIT until ALL groups have Tech Lead approval.**
+
 
 **UI Message:**
 ```
@@ -1484,19 +1541,6 @@ Build PM prompt with:
 
 Spawn: `Task(subagent_type="general-purpose", description="PM overall assessment", prompt=[PM prompt])`
 
-**🔴 CRITICAL: WAIT FOR PM TO COMPLETE**
-
-After spawning the PM, you MUST wait for the Task tool to complete and return the PM's response. DO NOT proceed until you receive the PM's full response.
-
-The PM may take several minutes to:
-- Review all group completion reports
-- Analyze overall project health
-- Check velocity metrics
-- Provide final assessment and next steps
-
-**WAIT for the complete PM response before proceeding.**
-
----
 
 **AFTER receiving the PM's response:**
 
@@ -1554,7 +1598,7 @@ After EVERY agent interaction, IMMEDIATELY invoke the **bazinga-db skill** to lo
 bazinga-db, please log this [agent_type] interaction:
 
 Session ID: [current session_id from init]
-Agent Type: [pm|developer|qa|tech_lead|orchestrator]
+Agent Type: [pm|developer|qa_expert|techlead|orchestrator]
 Content: [Full agent response text - preserve all formatting]
 Iteration: [current iteration number]
 Agent ID: [agent identifier - pm_main, developer_1, qa_expert, tech_lead, etc.]
@@ -1590,7 +1634,7 @@ Then invoke: `Skill(command: "bazinga-db")`
 
 **IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
 
-Wait for response. Returns PM state or null if first iteration.
+ Returns PM state or null if first iteration.
 
 ---
 
@@ -1606,7 +1650,7 @@ Then invoke: `Skill(command: "bazinga-db")`
 
 **IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
 
-Wait for response. Returns orchestrator state or null if first time.
+ Returns orchestrator state or null if first time.
 
 ---
 
@@ -1622,11 +1666,18 @@ Then invoke: `Skill(command: "bazinga-db")`
 
 **IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
 
-Wait for response. Returns array of task groups.
+ Returns array of task groups.
 
 ### Updating Orchestrator State
 
-After each major decision, save orchestrator state to database:
+**⚠️ MANDATORY: Save orchestrator state after each major decision**
+
+Major decisions include:
+- After spawning any agent (developer, QA, tech lead, PM)
+- After routing based on PM mode decision
+- After receiving agent responses (developer, QA, tech lead)
+- Before and after phase transitions
+- After updating task group statuses
 
 **Request to bazinga-db skill:**
 ```
@@ -1660,7 +1711,8 @@ State Data: {
 Skill(command: "bazinga-db")
 ```
 
-**IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
+**CRITICAL:** You MUST invoke bazinga-db skill here. This is not optional. The dashboard and session resumption depend on orchestrator state being persisted.
+
 
 
 ### Updating Task Group Status
@@ -1880,7 +1932,13 @@ Report includes:
 
 ### Step 4: Update Database
 
-**Save final orchestrator state:**
+**⚠️ MANDATORY: Save final orchestrator state and update session**
+
+This step has TWO required sub-steps that MUST both be completed:
+
+#### Sub-step 4.1: Save Final Orchestrator State
+
+**Request to bazinga-db skill:**
 ```
 bazinga-db, please save the orchestrator state:
 
@@ -1890,7 +1948,10 @@ State Data: {
   "status": "completed",
   "end_time": [timestamp],
   "duration_minutes": [duration],
-  "completion_report": [report_filename]
+  "completion_report": [report_filename],
+  "current_phase": "completion",
+  "iteration": [final iteration count],
+  "total_spawns": [total agent spawns]
 }
 ```
 
@@ -1899,14 +1960,10 @@ State Data: {
 Skill(command: "bazinga-db")
 ```
 
-**IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
 
+#### Sub-step 4.2: Update Session Status to Completed
 
-**WAIT for confirmation.** Orchestrator state saved to database.
-
-**Now update session status:**
-
-Request to bazinga-db skill:
+**Request to bazinga-db skill:**
 ```
 bazinga-db, please update session status:
 
@@ -1920,7 +1977,13 @@ End Time: [timestamp]
 Skill(command: "bazinga-db")
 ```
 
-**IMPORTANT:** You MUST invoke bazinga-db skill here. Use the returned data. Simply do not echo the skill response text in your message to user.
+
+**Verification Checkpoint:**
+- ✅ Orchestrator final state saved (1 invocation)
+- ✅ Session status updated to 'completed' (1 invocation)
+- ✅ Both invocations returned success responses
+
+**CRITICAL:** You MUST complete both database operations before proceeding to Step 5. The dashboard and metrics depend on this final state being persisted.
 
 
 ### Step 5: Display Concise Report
@@ -2083,7 +2146,7 @@ After **EVERY SINGLE AGENT RESPONSE**, you MUST invoke the **bazinga-db skill** 
 bazinga-db, please log this [agent_type] interaction:
 
 Session ID: [session_id]
-Agent Type: [pm|developer|qa|tech_lead|orchestrator]
+Agent Type: [pm|developer|qa_expert|techlead|orchestrator]
 Content: [Full agent response]
 Iteration: [N]
 Agent ID: [identifier]

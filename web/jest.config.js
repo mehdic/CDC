@@ -16,12 +16,30 @@ module.exports = {
         jsx: 'react-jsx',
         esModuleInterop: true,
         allowSyntheticDefaultImports: true
+      },
+      babelConfig: {
+        plugins: [
+          ['babel-plugin-transform-vite-meta-env', {
+            env: {
+              VITE_API_BASE_URL: process.env.VITE_API_BASE_URL || 'http://localhost:4000',
+              VITE_DELIVERY_SERVICE_URL: process.env.VITE_DELIVERY_SERVICE_URL || 'http://localhost:3004'
+            }
+          }]
+        ]
       }
     }],
     '^.+\\.jsx?$': ['babel-jest', {
       presets: [
         ['@babel/preset-env', { targets: { node: 'current' } }],
         ['@babel/preset-react', { runtime: 'automatic' }]
+      ],
+      plugins: [
+        ['babel-plugin-transform-vite-meta-env', {
+          env: {
+            VITE_API_BASE_URL: process.env.VITE_API_BASE_URL || 'http://localhost:4000',
+            VITE_DELIVERY_SERVICE_URL: process.env.VITE_DELIVERY_SERVICE_URL || 'http://localhost:3004'
+          }
+        }]
       ]
     }]
   },
