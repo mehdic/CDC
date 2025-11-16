@@ -1,39 +1,37 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import App from '../App';
 
-// Use React type to satisfy linter
-void (React as unknown);
+// Mock the pharmacist pages with simple string returns to avoid JSX/React hoisting issues
+jest.mock('@apps/pharmacist/pages/PrescriptionDashboard', () => ({
+  default: () => 'Prescription Dashboard',
+}));
 
-// Mock the pharmacist pages
-jest.mock('@apps/pharmacist/pages/PrescriptionDashboard', () => {
-  return function PrescriptionDashboard() {
-    return <div>Prescription Dashboard</div>;
-  };
-});
+jest.mock('@apps/pharmacist/pages/PrescriptionReview', () => ({
+  default: () => 'Prescription Review',
+}));
 
-jest.mock('@apps/pharmacist/pages/PrescriptionReview', () => {
-  return function PrescriptionReview() {
-    return <div>Prescription Review</div>;
-  };
-});
+jest.mock('@apps/pharmacist/pages/InventoryManagement', () => ({
+  default: () => 'Inventory Management',
+}));
 
-jest.mock('@apps/pharmacist/pages/InventoryManagement', () => {
-  return function InventoryManagement() {
-    return <div>Inventory Management</div>;
-  };
-});
-
-jest.mock('@apps/pharmacist/pages/VideoCall', () => {
-  return function VideoCall() {
-    return <div>Video Call</div>;
-  };
-});
+jest.mock('@apps/pharmacist/pages/VideoCall', () => ({
+  default: () => 'Video Call',
+}));
 
 describe('App Component', () => {
+  let queryClient: QueryClient;
+
   beforeEach(() => {
+    // Create a new QueryClient for each test
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
     // Set auth token for protected routes
     localStorage.setItem('auth_token', 'test-token');
   });
@@ -42,22 +40,28 @@ describe('App Component', () => {
     localStorage.clear();
   });
 
-  it('renders App component', () => {
+  it('renders App component', async () => {
     render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
     );
 
-    // AppShell should render (there are multiple instances of this text)
-    expect(screen.getAllByText('MetaPharm Connect').length).toBeGreaterThanOrEqual(1);
+    // Wait for AppShell to render (async loading)
+    await waitFor(() => {
+      expect(screen.getAllByText('MetaPharm Connect').length).toBeGreaterThanOrEqual(1);
+    });
   });
 
   it('renders user information', () => {
     render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
     );
 
     expect(screen.getByText('Dr. Martin Dupont')).toBeInTheDocument();
@@ -65,9 +69,11 @@ describe('App Component', () => {
 
   it('renders navigation items', () => {
     render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
     );
 
     expect(screen.getByText('Tableau de bord')).toBeInTheDocument();
@@ -79,9 +85,11 @@ describe('App Component', () => {
     localStorage.removeItem('auth_token');
 
     render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
     );
 
     // Should redirect to login (route exists but user not authenticated)
