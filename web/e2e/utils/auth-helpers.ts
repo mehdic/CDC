@@ -21,11 +21,21 @@ export async function login(page: Page, user: TestUser): Promise<void> {
   await page.locator('input[name="email"]').fill(user.email);
   await page.locator('input[name="password"]').fill(user.password);
 
+  // Set up listener for login-success event before clicking submit
+  const loginSuccessPromise = page.evaluate(() => {
+    return new Promise<void>((resolve) => {
+      window.addEventListener('login-success', () => resolve(), { once: true });
+    });
+  });
+
   // Submit form
   await page.locator('button[type="submit"]').click();
 
-  // Wait for navigation to complete (redirected away from login)
-  await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+  // Wait for login-success event (emitted before navigation starts)
+  await Promise.race([
+    loginSuccessPromise,
+    page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, { timeout: 10000 })
+  ]);
 }
 
 /**

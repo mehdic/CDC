@@ -32,6 +32,9 @@ const ProductCatalog = lazy(
 const OrderManagement = lazy(
   () => import('@apps/pharmacist/pages/OrderManagement')
 );
+const DeliveryManagement = lazy(
+  () => import('@apps/pharmacist/pages/DeliveryManagement')
+);
 
 /**
  * Protected route component
@@ -345,7 +348,7 @@ const App: React.FC = () => {
           }
         />
 
-        {/* Delivery route (placeholder) */}
+        {/* Delivery route */}
         <Route
           path="/delivery"
           element={
@@ -356,10 +359,7 @@ const App: React.FC = () => {
                 onProfileClick={handleProfile}
                 onSettingsClick={handleSettings}
               >
-                <div style={{ padding: '20px' }}>
-                  <h2>Livraisons</h2>
-                  <p>Page de gestion des livraisons - À implémenter</p>
-                </div>
+                <DeliveryManagement />
               </AppShell>
             </ProtectedRoute>
           }
@@ -376,10 +376,7 @@ const App: React.FC = () => {
                 onProfileClick={handleProfile}
                 onSettingsClick={handleSettings}
               >
-                <div style={{ padding: '20px' }}>
-                  <h2>Livraisons</h2>
-                  <p>Page de gestion des livraisons - À implémenter</p>
-                </div>
+                <DeliveryManagement />
               </AppShell>
             </ProtectedRoute>
           }

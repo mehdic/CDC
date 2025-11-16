@@ -19,7 +19,7 @@ export class DeliveryPage extends BasePage {
   constructor(page: Page) {
     super(page);
 
-    this.pageTitle = page.getByRole('heading', { name: /livraisons|deliveries/i });
+    this.pageTitle = page.getByRole('heading', { name: /livraisons|delivery management|deliveries/i });
     this.createDeliveryButton = page.getByRole('button', { name: /créer livraison|create delivery/i });
     this.deliveryList = page.locator('[data-testid="delivery-list"]');
     this.activeTab = page.getByRole('tab', { name: /en cours|active/i });
