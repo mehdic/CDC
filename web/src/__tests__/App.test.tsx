@@ -8,29 +8,29 @@ import App from '../App';
 void (React as unknown);
 
 // Mock the pharmacist pages
-jest.mock('@apps/pharmacist/pages/PrescriptionDashboard', () => {
-  return function PrescriptionDashboard() {
-    return <div>Prescription Dashboard</div>;
-  };
-});
+jest.mock('@apps/pharmacist/pages/PrescriptionDashboard', () => ({
+  default: function PrescriptionDashboard() {
+    return React.createElement('div', {}, 'Prescription Dashboard');
+  },
+}));
 
-jest.mock('@apps/pharmacist/pages/PrescriptionReview', () => {
-  return function PrescriptionReview() {
-    return <div>Prescription Review</div>;
-  };
-});
+jest.mock('@apps/pharmacist/pages/PrescriptionReview', () => ({
+  default: function PrescriptionReview() {
+    return React.createElement('div', {}, 'Prescription Review');
+  },
+}));
 
-jest.mock('@apps/pharmacist/pages/InventoryManagement', () => {
-  return function InventoryManagement() {
-    return <div>Inventory Management</div>;
-  };
-});
+jest.mock('@apps/pharmacist/pages/InventoryManagement', () => ({
+  default: function InventoryManagement() {
+    return React.createElement('div', {}, 'Inventory Management');
+  },
+}));
 
-jest.mock('@apps/pharmacist/pages/VideoCall', () => {
-  return function VideoCall() {
-    return <div>Video Call</div>;
-  };
-});
+jest.mock('@apps/pharmacist/pages/VideoCall', () => ({
+  default: function VideoCall() {
+    return React.createElement('div', {}, 'Video Call');
+  },
+}));
 
 describe('App Component', () => {
   beforeEach(() => {
