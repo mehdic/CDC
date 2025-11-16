@@ -44,7 +44,7 @@ export const RevenueAnalyticsWidget: React.FC<RevenueAnalyticsWidgetProps> = ({ 
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <MoneyIcon sx={{ mr: 1, color: 'primary.main' }} />
           <Typography variant="h6" fontWeight="bold">
-            Chiffre d'Affaires
+            Chiffre d&apos;Affaires
           </Typography>
         </Box>
 

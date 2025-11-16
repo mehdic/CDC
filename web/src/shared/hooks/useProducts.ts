@@ -3,7 +3,7 @@
  * Custom hook for managing product data from e-commerce service
  */
 
-import { useFetchList, useFetchItem, useApiMutation, ApiError } from './useApi';
+import { useFetchList, useFetchItem, useApiMutation } from './useApi';
 
 // ============================================================================
 // Types
@@ -20,7 +20,7 @@ export interface Product {
   imageUrl?: string;
 }
 
-export interface ProductFilters {
+export interface ProductFilters extends Record<string, unknown> {
   category?: string;
   search?: string;
   requiresPrescription?: boolean;

@@ -41,13 +41,13 @@ export const useInventoryData = () => {
   );
 
   // Handle both array and paginated response formats
-  const items = Array.isArray(data) ? data : (data as any)?.items || [];
+  const items = Array.isArray(data) ? data : ((data as { items?: InventoryItem[] } | undefined))?.items || [];
 
   return {
     items,
     loading: isLoading,
     error,
-    fetchItems: async (_params?: Record<string, any>) => {
+    fetchItems: async (_params?: Record<string, unknown>) => {
       // Re-fetch with current params
       refetch();
       return items;

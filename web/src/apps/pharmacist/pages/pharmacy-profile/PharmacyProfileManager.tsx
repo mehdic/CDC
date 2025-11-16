@@ -18,7 +18,7 @@ interface PharmacyProfile {
   fax: string | null;
   whatsapp: string | null;
   website: string | null;
-  services: any | null;
+  services: string[] | null;
   published: boolean;
 }
 
@@ -81,7 +81,7 @@ const OperatingHoursSection: React.FC = () => {
     }
   };
 
-  const handleHourChange = (index: number, field: keyof OperatingHour, value: any) => {
+  const handleHourChange = (index: number, field: keyof OperatingHour, value: string | number | boolean) => {
     const updated = [...hours];
     updated[index] = { ...updated[index], [field]: value };
     setHours(updated);

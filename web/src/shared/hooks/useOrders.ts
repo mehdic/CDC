@@ -3,7 +3,7 @@
  * Custom hook for managing order data from order-service
  */
 
-import { useFetchList, useFetchItem, useApiMutation, ApiError } from './useApi';
+import { useFetchList, useFetchItem, useApiMutation } from './useApi';
 
 // ============================================================================
 // Types
@@ -61,7 +61,7 @@ export interface Order {
   paid_at?: string;
 }
 
-export interface OrderFilters {
+export interface OrderFilters extends Record<string, unknown> {
   status?: OrderStatus[];
   payment_status?: PaymentStatus[];
   limit?: number;

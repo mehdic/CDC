@@ -13,7 +13,7 @@ import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 export interface ApiError {
   message: string;
   code?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 /**
@@ -89,7 +89,7 @@ const handleApiError = (error: unknown): ApiError => {
 /**
  * Generic fetch function for GET requests
  */
-export const fetchApi = async <TData = any>(
+export const fetchApi = async <TData = unknown>(
   endpoint: string,
   config?: AxiosRequestConfig
 ): Promise<TData> => {
@@ -104,7 +104,7 @@ export const fetchApi = async <TData = any>(
 /**
  * Generic mutation function for POST/PUT/PATCH/DELETE requests
  */
-export const mutateApi = async <TData = any, TVariables = any>(
+export const mutateApi = async <TData = unknown, TVariables = unknown>(
   endpoint: string,
   data?: TVariables,
   config?: AxiosRequestConfig
@@ -139,7 +139,7 @@ export const mutateApi = async <TData = any, TVariables = any>(
 /**
  * Custom hook for GET requests using React Query
  */
-export function useApiQuery<TData = any>(
+export function useApiQuery<TData = unknown>(
   queryKey: QueryKey,
   endpoint: string,
   config?: AxiosRequestConfig,
@@ -155,7 +155,7 @@ export function useApiQuery<TData = any>(
 /**
  * Custom hook for POST/PUT/PATCH/DELETE requests using React Query
  */
-export function useApiMutation<TData = any, TVariables = any>(
+export function useApiMutation<TData = unknown, TVariables = unknown>(
   endpoint: string,
   config?: AxiosRequestConfig,
   options?: UseMutationOptions<TData, ApiError, TVariables>
@@ -170,9 +170,9 @@ export function useApiMutation<TData = any, TVariables = any>(
 /**
  * Hook for fetching a list of items
  */
-export function useFetchList<TData = any>(
+export function useFetchList<TData = unknown>(
   resourceName: string,
-  params?: Record<string, any>,
+  params?: Record<string, unknown>,
   options?: Omit<UseQueryOptions<TData, ApiError>, 'queryKey' | 'queryFn'>
 ) {
   const queryKey = params
@@ -190,7 +190,7 @@ export function useFetchList<TData = any>(
 /**
  * Hook for fetching a single item by ID
  */
-export function useFetchItem<TData = any>(
+export function useFetchItem<TData = unknown>(
   resourceName: string,
   id: string | number,
   options?: Omit<UseQueryOptions<TData, ApiError>, 'queryKey' | 'queryFn'>
@@ -209,7 +209,7 @@ export function useFetchItem<TData = any>(
 /**
  * Hook for creating a new item
  */
-export function useCreateItem<TData = any, TVariables = any>(
+export function useCreateItem<TData = unknown, TVariables = unknown>(
   resourceName: string,
   options?: UseMutationOptions<TData, ApiError, TVariables>
 ) {
@@ -223,7 +223,7 @@ export function useCreateItem<TData = any, TVariables = any>(
 /**
  * Hook for updating an existing item
  */
-export function useUpdateItem<TData = any, TVariables = any>(
+export function useUpdateItem<TData = unknown, TVariables = unknown>(
   resourceName: string,
   id: string | number,
   options?: UseMutationOptions<TData, ApiError, TVariables>
@@ -238,7 +238,7 @@ export function useUpdateItem<TData = any, TVariables = any>(
 /**
  * Hook for deleting an item
  */
-export function useDeleteItem<TData = any>(
+export function useDeleteItem<TData = unknown>(
   resourceName: string,
   options?: UseMutationOptions<TData, ApiError, string | number>
 ) {

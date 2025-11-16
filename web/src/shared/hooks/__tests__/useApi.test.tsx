@@ -49,9 +49,11 @@ const createWrapper = () => {
     },
   });
 
-  return ({ children }: { children: ReactNode }) => (
+  const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+  Wrapper.displayName = 'QueryWrapper';
+  return Wrapper;
 };
 
 describe('useApi Hooks', () => {

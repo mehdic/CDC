@@ -109,7 +109,7 @@ export const InventoryManagement: React.FC = () => {
           />
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Filter</InputLabel>
-            <Select value={filter} onChange={(e) => setFilter(e.target.value as any)} label="Filter">
+            <Select value={filter} onChange={(e) => setFilter(e.target.value as 'all' | 'low_stock' | 'expiring' | 'controlled')} label="Filter">
               <MenuItem value="all">All Items</MenuItem>
               <MenuItem value="low_stock">Low Stock</MenuItem>
               <MenuItem value="expiring">Expiring Soon</MenuItem>

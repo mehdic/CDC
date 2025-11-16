@@ -62,7 +62,7 @@ export interface Prescription {
   pharmacist_id: string | null;
   source: PrescriptionSource;
   image_url: string | null;
-  ai_transcription_data: any;
+  ai_transcription_data: Record<string, unknown> | null;
   ai_confidence_score: number | null;
   status: PrescriptionStatus;
   rejection_reason: string | null;

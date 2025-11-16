@@ -338,7 +338,7 @@ export const TranscriptionEditor: React.FC<TranscriptionEditorProps> = ({
       {localItems.length === 0 && (
         <Alert severity="info" sx={{ mt: 2 }}>
           <Typography variant="body2">
-            No medications transcribed. Click "Add Medication" to enter prescription details
+            No medications transcribed. Click &quot;Add Medication&quot; to enter prescription details
             manually.
           </Typography>
         </Alert>
