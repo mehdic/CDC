@@ -164,7 +164,7 @@ export const DeliveryManagement: React.FC = () => {
       </Paper>
 
       {/* Delivery List */}
-      <Paper sx={{ p: 2 }}>
+      <Paper sx={{ p: 2 }} data-testid="delivery-list">
         <DeliveryList
           deliveries={deliveries}
           loading={loading}
