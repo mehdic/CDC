@@ -10,6 +10,17 @@ import { TestUser } from '../fixtures/auth.fixture';
 /**
  * Login a user via the UI
  *
+ * Uses custom 'login-success' event for reliable synchronization with React Router navigation.
+ *
+ * Why custom event pattern:
+ * - React Router navigation is client-side and doesn't trigger browser navigation events
+ * - waitForURL() has race conditions between React Router state and browser URL
+ * - waitForSelector() is fragile if dashboard UI changes
+ * - The Login component emits 'login-success' event BEFORE calling navigate()
+ * - This provides a deterministic synchronization point for tests
+ *
+ * See Login.tsx for the event emission implementation and detailed rationale.
+ *
  * @param page - Playwright page object
  * @param user - Test user credentials
  */
@@ -21,11 +32,36 @@ export async function login(page: Page, user: TestUser): Promise<void> {
   await page.locator('input[name="email"]').fill(user.email);
   await page.locator('input[name="password"]').fill(user.password);
 
+  /**
+   * Set up listener for login-success event before clicking submit
+   *
+   * This custom event is emitted by Login.tsx immediately before navigation starts.
+   * By setting up the listener BEFORE clicking submit, we ensure we catch the event
+   * even if navigation happens very quickly.
+   *
+   * The event contains { detail: { navigatingTo: '/dashboard' } } which could be
+   * used for additional assertions if needed.
+   */
+  const loginSuccessPromise = page.evaluate(() => {
+    return new Promise<void>((resolve) => {
+      window.addEventListener('login-success', () => resolve(), { once: true });
+    });
+  });
+
   // Submit form
   await page.locator('button[type="submit"]').click();
 
-  // Wait for navigation to complete (redirected away from login)
-  await page.waitForURL(/.*\/(?!login)/, { timeout: 10000 });
+  /**
+   * Wait for EITHER:
+   * - login-success event (preferred - fires before navigation)
+   * - URL change (fallback - in case event mechanism fails)
+   *
+   * Promise.race ensures we proceed as soon as the first condition is met.
+   */
+  await Promise.race([
+    loginSuccessPromise,
+    page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, { timeout: 10000 })
+  ]);
 }
 
 /**

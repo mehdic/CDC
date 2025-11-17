@@ -149,49 +149,49 @@ export const authProxy = createProxyMiddleware({
 
 /**
  * Prescription Service Proxy
- * Routes: /prescriptions/*
+ * Routes: /api/prescriptions/*
  */
 export const prescriptionProxy = createProxyMiddleware({
   ...commonProxyOptions,
   target: PRESCRIPTION_SERVICE_URL,
   pathRewrite: {
-    '^/prescriptions': '', // Remove /prescriptions prefix
+    '^/api/prescriptions': '/prescriptions', // Strip /api, keep /prescriptions for backend
   },
 });
 
 /**
  * Teleconsultation Service Proxy
- * Routes: /teleconsultations/*
+ * Routes: /api/teleconsultations/*
  */
 export const teleconsultationProxy = createProxyMiddleware({
   ...commonProxyOptions,
   target: TELECONSULTATION_SERVICE_URL,
   pathRewrite: {
-    '^/teleconsultations': '', // Remove /teleconsultations prefix
+    '^/api/teleconsultations': '/teleconsultations', // Strip /api, keep /teleconsultations for backend
   },
 });
 
 /**
  * Inventory Service Proxy
- * Routes: /inventory/*
+ * Routes: /api/inventory/*
  */
 export const inventoryProxy = createProxyMiddleware({
   ...commonProxyOptions,
   target: INVENTORY_SERVICE_URL,
   pathRewrite: {
-    '^/inventory': '', // Remove /inventory prefix
+    '^/api/inventory': '/inventory', // Strip /api, keep /inventory for backend
   },
 });
 
 /**
  * Notification Service Proxy
- * Routes: /notifications/*
+ * Routes: /api/notifications/*
  */
 export const notificationProxy = createProxyMiddleware({
   ...commonProxyOptions,
   target: NOTIFICATION_SERVICE_URL,
   pathRewrite: {
-    '^/notifications': '', // Remove /notifications prefix
+    '^/api/notifications': '/notifications', // Strip /api, keep /notifications for backend
   },
 });
 

@@ -115,8 +115,27 @@ export const LoginPage: React.FC = () => {
 
       // Login successful - redirect to dashboard
 
-      //  Emit custom event for E2E test synchronization
-      // Playwright tests can listen for this event to know when navigation is starting
+      /**
+       * E2E Test Integration: Emit custom event for Playwright synchronization
+       *
+       * Problem: React Router navigation in SPAs happens asynchronously and doesn't trigger
+       * traditional page load events. Playwright's waitForNavigation() doesn't work reliably
+       * with client-side routing because there's no actual HTTP navigation.
+       *
+       * Solution: Emit a custom 'login-success' event BEFORE navigate() is called.
+       * This allows E2E tests to set up listeners that fire immediately when navigation starts,
+       * providing a reliable synchronization point.
+       *
+       * Alternative approaches considered:
+       * - waitForURL(): Unreliable due to race conditions between React Router and Playwright
+       * - waitForSelector(): Fragile if dashboard UI changes
+       * - Fixed timeouts: Flaky and slow
+       *
+       * This event-based approach is:
+       * - Deterministic: Event fires at exact moment navigation begins
+       * - Fast: No polling or waiting
+       * - Maintainable: Independent of UI implementation details
+       */
       window.dispatchEvent(new CustomEvent('login-success', { detail: { navigatingTo: '/dashboard' } }));
 
       // Use React Router navigate for SPA navigation

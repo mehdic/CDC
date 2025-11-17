@@ -15,6 +15,12 @@
       "start_time": "2025-11-14T09:31:43Z",
       "status": "started",
       "end_time": null
+    },
+    {
+      "session_id": "bazinga_20251116_205410",
+      "start_time": "2025-11-16T19:54:10Z",
+      "status": "started",
+      "end_time": null
     }
   ]
 }

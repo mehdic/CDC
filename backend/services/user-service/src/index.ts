@@ -1,11 +1,12 @@
 /**
- * Pharmacy Service (In-Memory Version for Phase 2)
- * Main Express server for pharmacy management
+ * User Service
+ * Main Express server for user management
  *
  * Endpoints:
- * - POST /api/pharmacies - Create new pharmacy
- * - GET /api/pharmacies - List all pharmacies
- * - GET /api/pharmacies/:id - Get pharmacy by ID
+ * - POST /api/users - Create new user
+ * - GET /api/users/:id - Get user by ID
+ * - PATCH /api/users/:id - Update user
+ * - GET /api/users/search?email=... - Search users by email
  * - GET /health - Health check
  */
 
@@ -22,7 +23,7 @@ import helmet from 'helmet';
 // Configuration
 // ============================================================================
 
-const PORT = process.env.PHARMACY_SERVICE_PORT || 4008;
+const PORT = process.env.USER_SERVICE_PORT || 4009;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const CORS_ORIGIN = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
@@ -32,19 +33,20 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN
 // Data Models
 // ============================================================================
 
-interface Pharmacy {
+interface User {
   id: string;
-  name: string;
-  address: string;
-  phone: string;
   email: string;
-  status: 'active' | 'inactive';
+  firstName: string;
+  lastName: string;
+  role: 'pharmacist' | 'doctor' | 'nurse' | 'patient' | 'delivery';
+  phone?: string;
+  status: 'active' | 'inactive' | 'suspended';
   createdAt: string;
   updatedAt: string;
 }
 
 // In-memory storage
-const pharmacies = new Map<string, Pharmacy>();
+const users = new Map<string, User>();
 let nextId = 1;
 
 // ============================================================================
@@ -56,10 +58,8 @@ function isValidEmail(email: string): boolean {
   return emailRegex.test(email);
 }
 
-function isValidPhone(phone: string): boolean {
-  // Basic phone validation (allows various formats)
-  const phoneRegex = /^\+?[\d\s\-().]+$/;
-  return phoneRegex.test(phone) && phone.replace(/\D/g, '').length >= 10;
+function isValidRole(role: string): role is User['role'] {
+  return ['pharmacist', 'doctor', 'nurse', 'patient', 'delivery'].includes(role);
 }
 
 // ============================================================================
@@ -98,7 +98,7 @@ if (NODE_ENV === 'development') {
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'healthy',
-    service: 'pharmacy-service',
+    service: 'user-service',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
   });
@@ -109,17 +109,53 @@ app.get('/health', (_req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * POST /api/pharmacies - Create new pharmacy
+ * GET /api/users/search?email=... - Search users by email
+ * NOTE: This route must come BEFORE /api/users/:id to avoid conflicts
  */
-app.post('/api/pharmacies', (req: Request, res: Response) => {
+app.get('/api/users/search', (req: Request, res: Response) => {
   try {
-    const { name, address, phone, email } = req.body;
+    const { email } = req.query;
 
-    // Validate required fields
-    if (!name || !address || !phone || !email) {
+    if (!email || typeof email !== 'string') {
       return res.status(400).json({
         error: 'Validation Error',
-        message: 'Missing required fields: name, address, phone, email',
+        message: 'Email query parameter is required',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Search for users with matching email (case-insensitive partial match)
+    const matchingUsers = Array.from(users.values()).filter(user =>
+      user.email.toLowerCase().includes(email.toLowerCase())
+    );
+
+    return res.status(200).json({
+      count: matchingUsers.length,
+      users: matchingUsers,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error searching users:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to search users',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+/**
+ * POST /api/users - Create new user
+ */
+app.post('/api/users', (req: Request, res: Response) => {
+  try {
+    const { email, firstName, lastName, role, phone } = req.body;
+
+    // Validate required fields
+    if (!email || !firstName || !lastName || !role) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Missing required fields: email, firstName, lastName, role',
         timestamp: new Date().toISOString(),
       });
     }
@@ -133,107 +169,174 @@ app.post('/api/pharmacies', (req: Request, res: Response) => {
       });
     }
 
-    // Validate phone format
-    if (!isValidPhone(phone)) {
+    // Validate role
+    if (!isValidRole(role)) {
       return res.status(400).json({
         error: 'Validation Error',
-        message: 'Invalid phone format',
+        message: 'Invalid role. Must be one of: pharmacist, doctor, nurse, patient, delivery',
         timestamp: new Date().toISOString(),
       });
     }
 
-    // Check if pharmacy with email already exists
-    const existingPharmacy = Array.from(pharmacies.values()).find(p => p.email === email);
-    if (existingPharmacy) {
+    // Check if user with email already exists
+    const existingUser = Array.from(users.values()).find(u => u.email === email);
+    if (existingUser) {
       return res.status(409).json({
         error: 'Conflict',
-        message: 'Pharmacy with this email already exists',
+        message: 'User with this email already exists',
         timestamp: new Date().toISOString(),
       });
     }
 
-    // Create new pharmacy
-    const pharmacyId = String(nextId++);
+    // Create new user
+    const userId = String(nextId++);
     const now = new Date().toISOString();
 
-    const newPharmacy: Pharmacy = {
-      id: pharmacyId,
-      name,
-      address,
-      phone,
+    const newUser: User = {
+      id: userId,
       email,
+      firstName,
+      lastName,
+      role,
+      phone: phone || undefined,
       status: 'active',
       createdAt: now,
       updatedAt: now,
     };
 
-    pharmacies.set(pharmacyId, newPharmacy);
+    users.set(userId, newUser);
 
-    console.log(`✅ Created pharmacy: ${pharmacyId} (${name})`);
+    console.log(`✅ Created user: ${userId} (${email})`);
 
     return res.status(201).json({
-      message: 'Pharmacy created successfully',
-      pharmacy: newPharmacy,
+      message: 'User created successfully',
+      user: newUser,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error creating pharmacy:', error);
+    console.error('Error creating user:', error);
     return res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to create pharmacy',
+      message: 'Failed to create user',
       timestamp: new Date().toISOString(),
     });
   }
 });
 
 /**
- * GET /api/pharmacies - List all pharmacies
+ * GET /api/users/:id - Get user by ID
  */
-app.get('/api/pharmacies', (_req: Request, res: Response) => {
-  try {
-    const allPharmacies = Array.from(pharmacies.values());
-
-    return res.status(200).json({
-      count: allPharmacies.length,
-      pharmacies: allPharmacies,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Error fetching pharmacies:', error);
-    return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to fetch pharmacies',
-      timestamp: new Date().toISOString(),
-    });
-  }
-});
-
-/**
- * GET /api/pharmacies/:id - Get pharmacy by ID
- */
-app.get('/api/pharmacies/:id', (req: Request, res: Response) => {
+app.get('/api/users/:id', (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const pharmacy = pharmacies.get(id);
+    const user = users.get(id);
 
-    if (!pharmacy) {
+    if (!user) {
       return res.status(404).json({
         error: 'Not Found',
-        message: `Pharmacy with ID ${id} not found`,
+        message: `User with ID ${id} not found`,
         timestamp: new Date().toISOString(),
       });
     }
 
     return res.status(200).json({
-      pharmacy,
+      user,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error fetching pharmacy:', error);
+    console.error('Error fetching user:', error);
     return res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to fetch pharmacy',
+      message: 'Failed to fetch user',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+/**
+ * PATCH /api/users/:id - Update user
+ */
+app.patch('/api/users/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { email, firstName, lastName, role, phone, status } = req.body;
+
+    const user = users.get(id);
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `User with ID ${id} not found`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Validate email format if provided
+    if (email && !isValidEmail(email)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid email format',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Validate role if provided
+    if (role && !isValidRole(role)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid role. Must be one of: pharmacist, doctor, nurse, patient, delivery',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Validate status if provided
+    if (status && !['active', 'inactive', 'suspended'].includes(status)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid status. Must be one of: active, inactive, suspended',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Check if email is being changed to one that already exists
+    if (email && email !== user.email) {
+      const existingUser = Array.from(users.values()).find(u => u.email === email && u.id !== id);
+      if (existingUser) {
+        return res.status(409).json({
+          error: 'Conflict',
+          message: 'User with this email already exists',
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    // Update user fields
+    const updatedUser: User = {
+      ...user,
+      email: email || user.email,
+      firstName: firstName || user.firstName,
+      lastName: lastName || user.lastName,
+      role: role || user.role,
+      phone: phone !== undefined ? phone : user.phone,
+      status: status || user.status,
+      updatedAt: new Date().toISOString(),
+    };
+
+    users.set(id, updatedUser);
+
+    console.log(`✅ Updated user: ${id} (${updatedUser.email})`);
+
+    return res.status(200).json({
+      message: 'User updated successfully',
+      user: updatedUser,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to update user',
       timestamp: new Date().toISOString(),
     });
   }
@@ -276,7 +379,7 @@ async function startServer() {
   try {
     // Start Express server
     const server = app.listen(PORT, () => {
-      console.log(`🚀 Pharmacy Service running on port ${PORT}`);
+      console.log(`🚀 User Service running on port ${PORT}`);
       console.log(`📊 Environment: ${NODE_ENV}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
     });

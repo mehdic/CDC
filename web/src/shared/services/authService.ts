@@ -56,7 +56,7 @@ export const login = async (
 ): Promise<LoginResponse> => {
   try {
     const response = await axios.post<LoginResponse>(
-      `${API_GATEWAY_URL}/auth/login`,
+      `${API_GATEWAY_URL}/api/auth/login`,
       credentials,
       {
         headers: {
@@ -161,7 +161,7 @@ export const refreshAccessToken = async (): Promise<string | null> => {
     const response = await axios.post<{
       success: boolean;
       accessToken?: string;
-    }>(`${API_GATEWAY_URL}/auth/refresh`, {
+    }>(`${API_GATEWAY_URL}/api/auth/refresh`, {
       refreshToken,
     });
 

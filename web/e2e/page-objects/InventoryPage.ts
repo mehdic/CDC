@@ -20,7 +20,7 @@ export class InventoryPage extends BasePage {
   constructor(page: Page) {
     super(page);
 
-    this.pageTitle = page.getByRole('heading', { name: /inventaire|inventory/i });
+    this.pageTitle = page.getByRole('heading', { name: /inventaire|inventory management/i });
     this.scanQRButton = page.getByRole('button', { name: /scanner qr|scan qr/i });
     this.addItemButton = page.getByRole('button', { name: /ajouter|add item/i });
     this.inventoryList = page.locator('[data-testid="inventory-list"]');

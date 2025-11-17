@@ -30,7 +30,7 @@ import doctorRouter from './routes/doctors';
 // Configuration
 // ============================================================================
 
-const PORT = process.env.DOCTOR_SERVICE_PORT || 4006;
+const PORT = process.env.DOCTOR_SERVICE_PORT || 4011;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const CORS_ORIGIN = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())

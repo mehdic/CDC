@@ -23,7 +23,7 @@ import { sendSMS, sendBulkSMS, getSMSStatus, getSMSHealth } from './controllers/
 import './workers/pushWorker';
 
 const app: Application = express();
-const PORT = process.env.PORT || 4005;
+const PORT = process.env.NOTIFICATION_SERVICE_PORT || 4005;
 const SERVICE_NAME = 'notification-service';
 
 // Redis client for queue management

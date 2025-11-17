@@ -82,7 +82,7 @@ export const test = base.extend<AuthFixtures>({
     const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null).catch(() => false);
 
     if (!hasAuth) {
-      // Fallback: Login manually if storageState not available
+      // Login with real backend
       await login(page, testUsers.pharmacist);
 
       // Wait for navigation to complete
@@ -110,7 +110,7 @@ export const test = base.extend<AuthFixtures>({
     const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null).catch(() => false);
 
     if (!hasAuth) {
-      // Fallback: Login manually if storageState not available
+      // Login with real backend
       await login(page, testUsers.pharmacist);
 
       // Wait for pharmacist dashboard

@@ -120,7 +120,7 @@ export const InventoryManagement: React.FC = () => {
       </Paper>
 
       {/* DataGrid */}
-      <Paper sx={{ height: 600 }}>
+      <Paper sx={{ height: 600 }} data-testid="inventory-list">
         <DataGrid
           rows={items}
           columns={columns}

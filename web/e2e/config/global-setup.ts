@@ -24,9 +24,11 @@ async function globalSetup(config: FullConfig) {
   console.log('🔧 Checking backend services availability...\n');
 
   try {
-    const response = await fetch(`${backendURL}/health`).catch(() => null);
+    // Use /health/live endpoint which returns 200 when gateway is running
+    // This is more appropriate for E2E tests than /health which checks downstream services
+    const response = await fetch(`${backendURL}/health/live`).catch(() => null);
     if (response && response.ok) {
-      console.log('✅ Backend services already running\n');
+      console.log('✅ Backend gateway available (liveness check passed)\n');
     } else {
       throw new Error('Backend not available');
     }
@@ -52,9 +54,9 @@ async function globalSetup(config: FullConfig) {
 
     while (attempts < maxAttempts) {
       try {
-        const response = await fetch(`${backendURL}/health`);
+        const response = await fetch(`${backendURL}/health/live`);
         if (response.ok) {
-          console.log('✅ Backend services ready\n');
+          console.log('✅ Backend gateway ready (liveness check passed)\n');
           break;
         }
       } catch {
@@ -65,9 +67,9 @@ async function globalSetup(config: FullConfig) {
       attempts++;
 
       if (attempts === maxAttempts) {
-        console.error('❌ Backend services failed to start after 30 seconds');
-        console.error('   Tests will likely fail with 503 errors');
-        console.error('   You may need to start backend services manually\n');
+        console.error('❌ Backend gateway failed to start after 30 seconds');
+        console.error('   Tests will likely fail');
+        console.error('   You may need to start backend gateway manually\n');
       }
     }
   }

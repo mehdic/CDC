@@ -30,7 +30,7 @@ import rejectRouter from './routes/reject';
 import listRouter from './routes/list';
 
 const app = express();
-const PORT = process.env.PORT || 4002;
+const PORT = process.env.PRESCRIPTION_SERVICE_PORT || 4002;
 
 // ============================================================================
 // Middleware
