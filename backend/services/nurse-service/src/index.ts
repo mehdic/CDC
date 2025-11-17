@@ -31,7 +31,7 @@ import nurseRouter from './routes/nurses';
 // Configuration
 // ============================================================================
 
-const PORT = process.env.NURSE_SERVICE_PORT || 4007;
+const PORT = process.env.NURSE_SERVICE_PORT || 4012;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const CORS_ORIGIN = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
