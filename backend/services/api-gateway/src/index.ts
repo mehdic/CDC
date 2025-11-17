@@ -46,7 +46,7 @@ import {
 } from './routes/proxy';
 
 // Configuration
-const PORT = process.env['PORT'] || 4000;
+const PORT = process.env['API_GATEWAY_PORT'] || process.env['PORT'] || 4000;
 const NODE_ENV = process.env['NODE_ENV'] || 'development';
 const AUTH_SERVICE_URL = process.env['AUTH_SERVICE_URL'] || 'http://localhost:4001';
 

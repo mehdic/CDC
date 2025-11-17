@@ -22,7 +22,7 @@ import { authenticateJWT } from '../../../shared/middleware/auth';
 import deliveriesRouter from './routes/deliveries';
 
 const app = express();
-const PORT = process.env.PORT || 4006;
+const PORT = process.env.DELIVERY_SERVICE_PORT || 4006;
 
 // ============================================================================
 // Middleware

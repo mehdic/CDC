@@ -17,7 +17,7 @@ import { initializeDatabase } from './config/database';
 dotenv.config();
 
 const app: Application = express();
-const PORT = process.env.PORT || 4007;
+const PORT = process.env.PAYMENT_SERVICE_PORT || 4013;
 const SERVICE_NAME = 'payment-service';
 
 // ============================================================================

@@ -37,7 +37,7 @@ import hinRouter from './integrations/hin-eid';
 // Configuration
 // ============================================================================
 
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.AUTH_SERVICE_PORT || 4001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const CORS_ORIGIN = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
