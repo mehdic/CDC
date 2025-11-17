@@ -1,7 +1,6 @@
 import { test as base, Page } from '@playwright/test';
 import { LoginPage } from '../page-objects/LoginPage';
 import { login, clearAuth } from '../utils/auth-helpers';
-import { mockLoginSuccess } from '../utils/api-mock';
 
 /**
  * Test user credentials for authentication testing
@@ -83,16 +82,7 @@ export const test = base.extend<AuthFixtures>({
     const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null).catch(() => false);
 
     if (!hasAuth) {
-      // Mock login API response before attempting login
-      await mockLoginSuccess(page, {
-        email: testUsers.pharmacist.email,
-        role: testUsers.pharmacist.role,
-        firstName: testUsers.pharmacist.firstName,
-        lastName: testUsers.pharmacist.lastName,
-        pharmacyId: testUsers.pharmacist.pharmacyId,
-      });
-
-      // Fallback: Login manually if storageState not available
+      // Login with real backend
       await login(page, testUsers.pharmacist);
 
       // Wait for navigation to complete
@@ -120,16 +110,7 @@ export const test = base.extend<AuthFixtures>({
     const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null).catch(() => false);
 
     if (!hasAuth) {
-      // Mock login API response before attempting login
-      await mockLoginSuccess(page, {
-        email: testUsers.pharmacist.email,
-        role: testUsers.pharmacist.role,
-        firstName: testUsers.pharmacist.firstName,
-        lastName: testUsers.pharmacist.lastName,
-        pharmacyId: testUsers.pharmacist.pharmacyId,
-      });
-
-      // Fallback: Login manually if storageState not available
+      // Login with real backend
       await login(page, testUsers.pharmacist);
 
       // Wait for pharmacist dashboard
