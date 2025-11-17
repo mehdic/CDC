@@ -4,8 +4,8 @@
   "description": "Authentication service for MetaPharm Connect - handles login, MFA, HIN e-ID, and session management",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/services/auth-service/src/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -37,6 +37,7 @@
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.3.3"
   },
   "jest": {
