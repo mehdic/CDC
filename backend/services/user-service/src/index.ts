@@ -109,6 +109,42 @@ app.get('/health', (_req: Request, res: Response) => {
 // ============================================================================
 
 /**
+ * GET /api/users/search?email=... - Search users by email
+ * NOTE: This route must come BEFORE /api/users/:id to avoid conflicts
+ */
+app.get('/api/users/search', (req: Request, res: Response) => {
+  try {
+    const { email } = req.query;
+
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Email query parameter is required',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Search for users with matching email (case-insensitive partial match)
+    const matchingUsers = Array.from(users.values()).filter(user =>
+      user.email.toLowerCase().includes(email.toLowerCase())
+    );
+
+    return res.status(200).json({
+      count: matchingUsers.length,
+      users: matchingUsers,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error searching users:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to search users',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+/**
  * POST /api/users - Create new user
  */
 app.post('/api/users', (req: Request, res: Response) => {
@@ -301,41 +337,6 @@ app.patch('/api/users/:id', (req: Request, res: Response) => {
     return res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to update user',
-      timestamp: new Date().toISOString(),
-    });
-  }
-});
-
-/**
- * GET /api/users/search?email=... - Search users by email
- */
-app.get('/api/users/search', (req: Request, res: Response) => {
-  try {
-    const { email } = req.query;
-
-    if (!email || typeof email !== 'string') {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Email query parameter is required',
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Search for users with matching email (case-insensitive partial match)
-    const matchingUsers = Array.from(users.values()).filter(user =>
-      user.email.toLowerCase().includes(email.toLowerCase())
-    );
-
-    return res.status(200).json({
-      count: matchingUsers.length,
-      users: matchingUsers,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Error searching users:', error);
-    return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to search users',
       timestamp: new Date().toISOString(),
     });
   }
