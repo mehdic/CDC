@@ -104,14 +104,16 @@ app.get('/', (_req: Request, res: Response) => {
 // ============================================================================
 
 // Auth routes: login, register, MFA - stricter rate limiting
-console.log('Registering /auth proxy to', AUTH_SERVICE_URL);
+console.log('Registering /api/auth proxy to', AUTH_SERVICE_URL);
 
 // TEMPORARY: Direct forwarding instead of proxy middleware
 // TODO: Fix http-proxy-middleware configuration issue
-app.use('/auth', async (req: Request, res: Response, next: NextFunction) => {
+app.use('/api/auth', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const axios = require('axios');
-    const targetUrl = `${AUTH_SERVICE_URL}/auth${req.path}`;
+    // Strip /api prefix before forwarding to auth-service
+    const pathWithoutApi = req.path.replace(/^\/api/, '');
+    const targetUrl = `${AUTH_SERVICE_URL}/auth${pathWithoutApi}`;
     console.log('[AUTH FORWARD] Forwarding', req.method, req.url, 'to', targetUrl);
 
     const response = await axios({
@@ -146,16 +148,16 @@ app.use('/auth', async (req: Request, res: Response, next: NextFunction) => {
 app.use(authenticateJWT);
 
 // Prescription Service
-app.use('/prescriptions', prescriptionProxy);
+app.use('/api/prescriptions', prescriptionProxy);
 
 // Teleconsultation Service
-app.use('/teleconsultations', teleconsultationProxy);
+app.use('/api/teleconsultations', teleconsultationProxy);
 
 // Inventory Service
-app.use('/inventory', inventoryProxy);
+app.use('/api/inventory', inventoryProxy);
 
 // Notification Service
-app.use('/notifications', notificationProxy);
+app.use('/api/notifications', notificationProxy);
 
 // ============================================================================
 // Error Handling

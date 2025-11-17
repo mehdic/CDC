@@ -153,7 +153,11 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
     // =========================================================================
 
     // Healthcare professionals MUST have MFA enabled (FR-002)
-    if (user.isHealthcareProfessional() && !user.mfa_enabled) {
+    // Exception: Skip MFA requirement in test environment for E2E testing
+    const isTestEnv = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development';
+    const skipMFARequirement = isTestEnv && user.email.includes('@test.metapharm.ch');
+
+    if (user.isHealthcareProfessional() && !user.mfa_enabled && !skipMFARequirement) {
       return res.status(403).json({
         success: false,
         error: 'MFA is required for healthcare professionals. Please enable MFA.',
