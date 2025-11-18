@@ -1,8 +1,13 @@
 /**
- * Prescription Service - Main Entry Point
- * Handles prescription upload and AI-powered OCR transcription using AWS Textract
- * Port: 4002
- * Phase 3 - US1: Prescription Processing & Validation
+ * Prescription Service (Database Version)
+ * Main Express server for prescription management
+ *
+ * Endpoints:
+ * - POST /api/prescriptions - Create new prescription
+ * - GET /api/prescriptions - List all prescriptions
+ * - GET /api/prescriptions/:id - Get prescription by ID
+ * - PATCH /api/prescriptions/:id/status - Update prescription status
+ * - GET /health - Health check
  */
 
 import dotenv from 'dotenv';
@@ -10,105 +15,346 @@ import dotenv from 'dotenv';
 // Load environment variables FIRST (before any imports that depend on them)
 dotenv.config();
 
-import express, { Request, Response, NextFunction, RequestHandler } from 'express';
-import helmet from 'helmet';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { DataSource } from 'typeorm';
-import { Prescription } from '../../../shared/models/Prescription';
-import { PrescriptionItem } from '../../../shared/models/PrescriptionItem';
-import { TreatmentPlan } from '../../../shared/models/TreatmentPlan';
-import { User } from '../../../shared/models/User';
-import { Pharmacy } from '../../../shared/models/Pharmacy';
-import { AuditTrailEntry } from '../../../shared/models/AuditTrailEntry';
-import { authenticateJWT } from '../../../shared/middleware/auth';
-import { requirePermission, Permission } from '../../../shared/middleware/rbac';
-import prescriptionsRouter from './routes/prescriptions';
-import transcribeRouter from './routes/transcribe';
-import validateRouter from './routes/validate';
-import approveRouter from './routes/approve';
-import rejectRouter from './routes/reject';
-import listRouter from './routes/list';
-
-const app = express();
-const PORT = process.env.PRESCRIPTION_SERVICE_PORT || 4002;
+import helmet from 'helmet';
+import { initializeDatabase, closeDatabase, AppDataSource } from './config/database';
+import { PrescriptionRepository } from './repository/PrescriptionRepository';
+import { PrescriptionStatus } from './models/Prescription';
 
 // ============================================================================
-// Middleware
+// Configuration
 // ============================================================================
 
+const PORT = process.env.PRESCRIPTION_SERVICE_PORT || 4003;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const CORS_ORIGIN = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:3000'];
+
+// ============================================================================
+// Data Models (for API validation)
+// ============================================================================
+
+interface MedicationDTO {
+  name: string;
+  dosage: string;
+  quantity: number;
+  instructions: string;
+}
+
+// ============================================================================
+// Validation Functions
+// ============================================================================
+
+function isValidStatus(status: string): status is PrescriptionStatus {
+  return ['pending', 'dispensed', 'cancelled'].includes(status);
+}
+
+function isValidStatusTransition(currentStatus: string, newStatus: string): boolean {
+  // Only pending prescriptions can transition to dispensed or cancelled
+  if (currentStatus === 'pending') {
+    return newStatus === 'dispensed' || newStatus === 'cancelled';
+  }
+  // Dispensed and cancelled are terminal states
+  return false;
+}
+
+function validateMedications(medications: any): medications is MedicationDTO[] {
+  if (!Array.isArray(medications) || medications.length === 0) {
+    return false;
+  }
+
+  return medications.every(med =>
+    med &&
+    typeof med.name === 'string' && med.name.trim() !== '' &&
+    typeof med.dosage === 'string' && med.dosage.trim() !== '' &&
+    typeof med.quantity === 'number' && med.quantity > 0 &&
+    typeof med.instructions === 'string' && med.instructions.trim() !== ''
+  );
+}
+
+// ============================================================================
+// Express App Setup
+// ============================================================================
+
+const app: Express = express();
+
+// Security middleware
 app.use(helmet());
-app.use(cors());
-app.use(express.json());
+
+// CORS configuration
+app.use(cors({
+  origin: CORS_ORIGIN,
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request logging middleware (development only)
+if (NODE_ENV === 'development') {
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
+    next();
+  });
+}
 
 // ============================================================================
-// Database Connection
+// Repository Initialization
 // ============================================================================
 
-const dataSource = new DataSource({
-  type: 'postgres',
-  url: process.env.DATABASE_URL,
-  entities: [Prescription, PrescriptionItem, TreatmentPlan, User, Pharmacy, AuditTrailEntry],
-  synchronize: false, // Use migrations instead in production
-  logging: process.env.NODE_ENV === 'development',
+let prescriptionRepository: PrescriptionRepository;
+
+// ============================================================================
+// Health Check
+// ============================================================================
+
+app.get('/health', async (_req: Request, res: Response) => {
+  try {
+    // Check database connection
+    const dbHealthy = AppDataSource.isInitialized;
+
+    res.status(dbHealthy ? 200 : 503).json({
+      status: dbHealthy ? 'healthy' : 'unhealthy',
+      service: 'prescription-service',
+      database: dbHealthy ? 'connected' : 'disconnected',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      service: 'prescription-service',
+      database: 'error',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+    });
+  }
 });
 
 // ============================================================================
-// Initialize Database
+// API Routes
 // ============================================================================
 
-dataSource
-  .initialize()
-  .then(() => {
-    console.log('[Prescription Service] ✓ Database connected');
-  })
-  .catch((error) => {
-    console.error('[Prescription Service] ✗ Database connection error:', error);
-    process.exit(1);
-  });
+/**
+ * POST /api/prescriptions - Create new prescription
+ */
+app.post('/api/prescriptions', async (req: Request, res: Response) => {
+  try {
+    const { patientId, doctorId, pharmacyId, medications } = req.body;
 
-// Make dataSource available to routes
-app.locals.dataSource = dataSource;
+    // Validate required fields
+    if (!patientId || !doctorId || !pharmacyId || !medications) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Missing required fields: patientId, doctorId, pharmacyId, medications',
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-// ============================================================================
-// Routes
-// ============================================================================
+    // Validate medications array
+    if (!validateMedications(medications)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid medications array. Must be non-empty array with valid medication objects (name, dosage, quantity, instructions)',
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-// Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
-  res.json({
-    status: 'healthy',
-    service: 'prescription-service',
-    port: PORT,
-    timestamp: new Date().toISOString(),
-  });
+    // Create prescription using repository
+    const prescription = await prescriptionRepository.create({
+      patientId,
+      doctorId,
+      pharmacyId,
+      medications,
+    });
+
+    console.log(`✅ Created prescription: ${prescription.id} (${medications.length} medication(s))`);
+
+    return res.status(201).json({
+      message: 'Prescription created successfully',
+      prescription: {
+        id: prescription.id,
+        patientId: prescription.patientId,
+        doctorId: prescription.doctorId,
+        pharmacyId: prescription.pharmacyId,
+        medications: prescription.medications,
+        status: prescription.status,
+        createdAt: prescription.createdAt.toISOString(),
+        updatedAt: prescription.updatedAt.toISOString(),
+        dispensedAt: prescription.dispensedAt?.toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error creating prescription:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to create prescription',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
-// ============================================================================
-// Prescription Routes with Authentication & Authorization
-// ============================================================================
-//
-// Security Requirements (FR-006, FR-007, FR-112):
-// - All prescription endpoints require JWT authentication
-// - RBAC enforced based on user role and permissions
-// - Audit logging handled by auth middleware
+/**
+ * GET /api/prescriptions - List all prescriptions
+ */
+app.get('/api/prescriptions', async (_req: Request, res: Response) => {
+  try {
+    const prescriptions = await prescriptionRepository.findAll();
 
-// List prescriptions - Requires authentication (filtering by role in controller)
-app.use('/prescriptions', authenticateJWT as RequestHandler, listRouter);
+    return res.status(200).json({
+      count: prescriptions.length,
+      prescriptions: prescriptions.map(p => ({
+        id: p.id,
+        patientId: p.patientId,
+        doctorId: p.doctorId,
+        pharmacyId: p.pharmacyId,
+        medications: p.medications,
+        status: p.status,
+        createdAt: p.createdAt.toISOString(),
+        updatedAt: p.updatedAt.toISOString(),
+        dispensedAt: p.dispensedAt?.toISOString(),
+      })),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error fetching prescriptions:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch prescriptions',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
 
-// Upload prescription - Requires UPLOAD_PRESCRIPTION permission (patients)
-app.use('/prescriptions', authenticateJWT as RequestHandler, requirePermission(Permission.UPLOAD_PRESCRIPTION) as RequestHandler, prescriptionsRouter);
+/**
+ * GET /api/prescriptions/:id - Get prescription by ID
+ */
+app.get('/api/prescriptions/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
 
-// Transcribe prescription - Requires REVIEW_PRESCRIPTION permission (pharmacists)
-app.use('/prescriptions/:id/transcribe', authenticateJWT as RequestHandler, requirePermission(Permission.REVIEW_PRESCRIPTION) as RequestHandler, transcribeRouter);
+    const prescription = await prescriptionRepository.findById(id);
 
-// Validate prescription - Requires REVIEW_PRESCRIPTION permission (pharmacists)
-app.use('/prescriptions/:id/validate', authenticateJWT as RequestHandler, requirePermission(Permission.REVIEW_PRESCRIPTION) as RequestHandler, validateRouter);
+    if (!prescription) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Prescription with ID ${id} not found`,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-// Approve prescription - Requires APPROVE_PRESCRIPTION permission (pharmacists only)
-app.use('/prescriptions/:id/approve', authenticateJWT as RequestHandler, requirePermission(Permission.APPROVE_PRESCRIPTION) as RequestHandler, approveRouter);
+    return res.status(200).json({
+      prescription: {
+        id: prescription.id,
+        patientId: prescription.patientId,
+        doctorId: prescription.doctorId,
+        pharmacyId: prescription.pharmacyId,
+        medications: prescription.medications,
+        status: prescription.status,
+        createdAt: prescription.createdAt.toISOString(),
+        updatedAt: prescription.updatedAt.toISOString(),
+        dispensedAt: prescription.dispensedAt?.toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error fetching prescription:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch prescription',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
 
-// Reject prescription - Requires APPROVE_PRESCRIPTION permission (pharmacists only)
-app.use('/prescriptions/:id/reject', authenticateJWT as RequestHandler, requirePermission(Permission.APPROVE_PRESCRIPTION) as RequestHandler, rejectRouter);
+/**
+ * PATCH /api/prescriptions/:id/status - Update prescription status
+ */
+app.patch('/api/prescriptions/:id/status', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Validate status field
+    if (!status) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Missing required field: status',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Validate status value
+    if (!isValidStatus(status)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid status. Must be one of: pending, dispensed, cancelled',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    const prescription = await prescriptionRepository.findById(id);
+
+    if (!prescription) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Prescription with ID ${id} not found`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Validate status transition
+    if (!isValidStatusTransition(prescription.status, status)) {
+      return res.status(409).json({
+        error: 'Conflict',
+        message: `Invalid status transition from ${prescription.status} to ${status}. Only pending prescriptions can be dispensed or cancelled.`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Update prescription status
+    const updatedPrescription = await prescriptionRepository.updateStatus(id, status);
+
+    if (!updatedPrescription) {
+      return res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'Failed to update prescription status',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    console.log(`✅ Updated prescription status: ${id} -> ${status}`);
+
+    return res.status(200).json({
+      message: 'Prescription status updated successfully',
+      prescription: {
+        id: updatedPrescription.id,
+        patientId: updatedPrescription.patientId,
+        doctorId: updatedPrescription.doctorId,
+        pharmacyId: updatedPrescription.pharmacyId,
+        medications: updatedPrescription.medications,
+        status: updatedPrescription.status,
+        createdAt: updatedPrescription.createdAt.toISOString(),
+        updatedAt: updatedPrescription.updatedAt.toISOString(),
+        dispensedAt: updatedPrescription.dispensedAt?.toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error updating prescription status:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to update prescription status',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
 
 // ============================================================================
 // Error Handling
@@ -116,59 +362,79 @@ app.use('/prescriptions/:id/reject', authenticateJWT as RequestHandler, requireP
 
 // 404 handler
 app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    error: 'Not found',
-    path: req.path,
+  return res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.method} ${req.path} not found`,
+    timestamp: new Date().toISOString(),
   });
 });
 
 // Global error handler
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('[Error]', {
-    message: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-  });
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('Unhandled error:', err);
 
-  res.status(err.statusCode || 500).json({
-    error: err.message || 'Internal server error',
-    code: err.code || 'INTERNAL_ERROR',
+  // Don't expose internal errors in production
+  const message = NODE_ENV === 'production'
+    ? 'Internal server error'
+    : err.message;
+
+  return res.status(500).json({
+    error: 'Internal Server Error',
+    message,
+    timestamp: new Date().toISOString(),
   });
 });
 
 // ============================================================================
-// Start Server
+// Server Initialization
 // ============================================================================
 
-const server = app.listen(PORT, () => {
-  console.log(`[Prescription Service] 🚀 Running on port ${PORT}`);
-  console.log(`[Prescription Service] Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`[Prescription Service] Health check: http://localhost:${PORT}/health`);
-});
+async function startServer() {
+  try {
+    // Initialize database connection
+    const dataSource = await initializeDatabase();
 
-// ============================================================================
-// Graceful Shutdown
-// ============================================================================
+    // Initialize repository
+    prescriptionRepository = new PrescriptionRepository(dataSource);
 
-process.on('SIGTERM', async () => {
-  console.log('[Prescription Service] SIGTERM received, shutting down gracefully...');
-  server.close(() => {
-    console.log('[Prescription Service] HTTP server closed');
-  });
-  await dataSource.destroy();
-  console.log('[Prescription Service] Database connection closed');
-  process.exit(0);
-});
+    // Start Express server
+    const server = app.listen(PORT, () => {
+      console.log(`🚀 Prescription Service running on port ${PORT}`);
+      console.log(`📊 Environment: ${NODE_ENV}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    });
 
-process.on('SIGINT', async () => {
-  console.log('[Prescription Service] SIGINT received, shutting down gracefully...');
-  server.close(() => {
-    console.log('[Prescription Service] HTTP server closed');
-  });
-  await dataSource.destroy();
-  console.log('[Prescription Service] Database connection closed');
-  process.exit(0);
-});
+    // Graceful shutdown
+    const shutdown = async () => {
+      console.log('\n🛑 Shutting down gracefully...');
 
-export { app, dataSource };
+      server.close(async () => {
+        console.log('✅ HTTP server closed');
+        await closeDatabase();
+        process.exit(0);
+      });
+
+      // Force shutdown after 10 seconds
+      setTimeout(() => {
+        console.error('❌ Forced shutdown after timeout');
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start server if this file is executed directly
+if (require.main === module) {
+  startServer();
+}
+
+// Export app and repository for testing
+export default app;
+export { prescriptionRepository, initializeDatabase, closeDatabase };
