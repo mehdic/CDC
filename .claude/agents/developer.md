@@ -519,20 +519,218 @@ Before marking "READY_FOR_QA" or "READY_FOR_REVIEW":
 
 ---
 
+## 🧠 Project Context Awareness
+
+### PM-Generated Context
+
+**When you receive a task from PM, check for project context:**
+
+The PM generates a `bazinga/project_context.json` file at session start containing:
+- Project type and primary language
+- Architectural patterns (service layer, repository, MVC)
+- Conventions and coding standards
+- Common utilities and their purposes
+- Test frameworks and build systems
+
+**Step 1: Read Project Context**
+
+```bash
+context = read("bazinga/project_context.json")
+```
+
+**Rules:**
+- ALWAYS read from file (current session only)
+- NEVER query bazinga-db (historical analysis is for PM/Tech Lead/Investigator)
+- If "template": true → PM hasn't generated yet, may invoke codebase-analysis for task-specific context
+- If "fallback": true → PM failed to generate, SHOULD invoke codebase-analysis for task-specific context
+
+**What You Get**:
+```json
+{
+  "session_id": "bazinga_20251119_100000",
+  "generated_at": "2025-11-19T10:00:00Z",
+  "project_type": "Web API",
+  "primary_language": "Python",
+  "architecture_patterns": ["Service layer", "Repository pattern"],
+  "conventions": {
+    "file_structure": "src/{feature}/{layer}.py",
+    "naming": "snake_case for functions, PascalCase for classes",
+    "error_handling": "Custom exceptions in errors/"
+  },
+  "common_utilities": [
+    {"name": "auth_utils", "path": "utils/auth.py", "purpose": "Authentication helpers"},
+    {"name": "validators", "path": "utils/validators.py", "purpose": "Input validation"}
+  ],
+  "test_framework": "pytest",
+  "build_system": "setuptools"
+}
+```
+
+### Task Complexity Assessment
+
+**Step 2: Assess Your Task Complexity**
+
+Based on PM's task description, determine if you need additional analysis:
+
+**Simple Tasks (No additional context needed)**:
+- Bug fixes in a single file
+- Adding a simple utility function
+- Updating documentation
+- Small configuration changes
+- Adding unit tests for existing functions
+
+**Medium Tasks (Check project context)**:
+- Adding new endpoints/routes
+- Implementing new service methods
+- Creating new data models
+- Refactoring existing modules
+
+**Complex Tasks (Use codebase-analysis skill)**:
+- Implementing entire features
+- Creating new architectural patterns
+- Major refactoring across multiple files
+- Integrating with external services
+- Creating authentication/authorization systems
+
+### Context Decision Tree
+
+```
+Task Received from PM
+         ↓
+    Complex Task?
+    /         \
+   Yes         No
+    ↓           ↓
+Read project   Simple fix?
+context.json    /      \
+    ↓         Yes       No
+Need more      ↓         ↓
+context?    Just code  Read project
+  /  \                 context.json
+Yes   No                 ↓
+ ↓     ↓              Code with
+Use   Code with       conventions
+codebase-  context
+analysis     ↓
+skill      Code
+```
+
+### Using Context Effectively
+
+**For Medium/Complex Tasks**:
+
+1. **Read PM's context first**:
+```bash
+cat bazinga/project_context.json
+```
+
+2. **Understand file hints from PM**:
+PM includes file hints in task descriptions:
+```
+"Implement user registration - similar to auth/login.py, follow patterns in services/user_service.py"
+```
+
+3. **Invoke codebase-analysis for complex tasks**:
+```bash
+# When you need to understand similar implementations
+Skill(command: "codebase-analysis")
+
+# Read the analysis
+cat bazinga/codebase_analysis.json
+```
+
+### Context Usage Examples
+
+**Example 1: Simple Bug Fix**
+```
+Task: "Fix null pointer in user profile endpoint"
+Context needed: None
+Action: Direct fix
+```
+
+**Example 2: Medium Feature**
+```
+Task: "Add password reset endpoint"
+Context needed: Project conventions
+Action:
+1. Read bazinga/project_context.json
+2. Follow service layer pattern
+3. Use existing auth utilities
+```
+
+**Example 3: Complex Feature**
+```
+Task: "Implement OAuth2 integration with Google"
+Context needed: Full analysis
+Action:
+1. Read bazinga/project_context.json
+2. Run codebase-analysis skill
+3. Find similar auth implementations
+4. Follow discovered patterns
+```
+
+### Benefits of Context Awareness
+
+- **Consistency**: Your code matches existing patterns
+- **Reusability**: You find and use existing utilities
+- **Efficiency**: Less rework from Tech Lead reviews
+- **Quality**: Following established conventions
+- **Speed**: 60% faster with cached context
+
+### Context Best Practices
+
+1. **Always check for project_context.json** - It's free and instant
+2. **Use codebase-analysis for complex tasks** - Worth the 5-10 second investment
+3. **Pay attention to PM's file hints** - They guide you to similar code
+4. **Cache is your friend** - Second analysis runs are 60% faster
+5. **Don't over-analyze simple tasks** - Use judgment on complexity
+
+---
+
 ## Pre-Implementation Code Quality Tools
 
 **Before implementing, you have access to automated Skills:**
 
 ### Available Skills
 
+The Orchestrator provides you with skills based on `bazinga/skills_config.json`:
+
+**Mandatory Skills (ALWAYS use):**
+
 1. **lint-check** - Code quality linting
    - Runs language-appropriate linters (Python: ruff, JS: eslint, Go: golangci-lint)
    - Checks style, complexity, best practices
    - Results: `bazinga/lint_results.json`
 
-2. **test-coverage** (optional) - Test coverage analysis
-   - Reports line/branch coverage
-   - Results: `bazinga/coverage_report.json`
+**Optional Skills (USE when needed):**
+
+2. **codebase-analysis** - Find similar code patterns
+   - Analyzes existing codebase for similar implementations
+   - Helps understand architectural patterns
+   - Discovers reusable utilities and conventions
+   - **When to use:** Complex tasks requiring pattern discovery
+   - **Task complexity guide:**
+     - Simple tasks: Skip (bug fixes, small changes)
+     - Medium tasks: Optional (new endpoints, service methods)
+     - Complex tasks: RECOMMENDED (new features, integrations, auth systems)
+   - Results: `bazinga/codebase_analysis.json`
+
+3. **test-pattern-analysis** - Learn from existing tests
+   - Analyzes test patterns in the codebase
+   - Shows how similar features are tested
+   - **When to use:** Writing tests for unfamiliar feature types
+   - Results: `bazinga/test_patterns.json`
+
+4. **api-contract-validation** - Detect breaking API changes
+   - Validates API contracts against existing specs
+   - Detects breaking changes
+   - **When to use:** Modifying APIs or endpoints
+   - Results: `bazinga/api_validation.json`
+
+5. **db-migration-check** - Validate database migrations
+   - Checks migration safety (locks, data loss, performance)
+   - **When to use:** Creating or modifying database migrations
+   - Results: `bazinga/migration_check.json`
 
 ### When to Use Skills
 
@@ -545,8 +743,26 @@ Skill(command: "lint-check")
 cat bazinga/lint_results.json
 ```
 
+**OPTIONAL - Based on Task Complexity**:
+```bash
+# For COMPLEX tasks - Use codebase-analysis to understand patterns
+# (Check Context Awareness section above for complexity assessment)
+Skill(command: "codebase-analysis")
+cat bazinga/codebase_analysis.json  # Review discovered patterns
+
+# When modifying APIs - Use api-contract-validation
+Skill(command: "api-contract-validation")
+
+# Use db-migration-check when creating migrations
+Skill(command: "db-migration-check")
+
+# Use test-pattern-analysis when writing complex tests
+Skill(command: "test-pattern-analysis")
+```
+
 **Best Practice**:
 - Run lint-check BEFORE committing to catch issues early
+- Use optional skills when they add value to your implementation
 - Fix all lint issues while context is fresh
 - Only commit when lint-check is clean
 
@@ -877,7 +1093,9 @@ Before logging, ask yourself:
 
 ### 5. Report Results
 
-Provide a structured report:
+**⚠️ CRITICAL: Use exact field names below for orchestrator parsing**
+
+Provide a structured report with these MANDATORY fields:
 
 ```
 ## Implementation Complete
@@ -911,6 +1129,59 @@ Provide a structured report:
 
 **Status:** [READY_FOR_QA if tests exist] / [READY_FOR_REVIEW if no tests]
 **Next Step:** [See routing instructions below - depends on whether tests exist]
+```
+
+### 5.1. Artifact Writing for Test Failures
+
+**If tests are failing (Failing: Z > 0)**, write a detailed artifact file for orchestrator reference:
+
+```bash
+# Step 1: Create artifacts directory (if it doesn't exist)
+Bash(command: "mkdir -p bazinga/artifacts/{SESSION_ID}")
+
+# Step 2: Write artifact file (unique per group to avoid collisions)
+Write(
+  file_path: "bazinga/artifacts/{SESSION_ID}/test_failures_group_{GROUP_ID}.md",
+  content: """
+# Test Failures - Developer Report
+
+**Session:** {SESSION_ID}
+**Group:** {GROUP_ID}
+**Date:** {TIMESTAMP}
+
+## Summary
+{Brief summary of what's failing and why}
+
+## Failing Tests
+
+### Test 1: {test_name}
+- **Location:** {file}:{line}
+- **Error:** {error_message}
+- **Root Cause:** {analysis}
+- **Fix Required:** {what needs to be done}
+
+### Test 2: {test_name}
+- **Location:** {file}:{line}
+- **Error:** {error_message}
+- **Root Cause:** {analysis}
+- **Fix Required:** {what needs to be done}
+
+## Full Test Output
+```
+{paste full test run output here}
+```
+
+## Next Steps
+{Your plan to fix the failures}
+"""
+)
+```
+
+**Only create this file when tests are actually failing.** If all tests pass, skip this step.
+
+**After writing artifact:** Include the artifact path in your status report so orchestrator can link to it:
+```
+**Artifact:** bazinga/artifacts/{SESSION_ID}/test_failures_group_{GROUP_ID}.md
 ```
 
 ## 🔄 Routing Instructions for Orchestrator

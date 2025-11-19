@@ -60,15 +60,15 @@ export class User {
   // ============================================================================
 
   @Column({
-    type: 'enum',
-    enum: UserRole,
+    type: 'varchar',
+    length: 50,
   })
   @Index('idx_users_role')
   role: UserRole;
 
   @Column({
-    type: 'enum',
-    enum: UserStatus,
+    type: 'varchar',
+    length: 50,
     default: UserStatus.ACTIVE,
   })
   status: UserStatus;
@@ -77,13 +77,13 @@ export class User {
   // Profile (encrypted with AWS KMS)
   // ============================================================================
 
-  @Column({ type: 'bytea' })
+  @Column({ type: 'blob' })
   first_name_encrypted: Buffer; // AWS KMS encrypted PHI
 
-  @Column({ type: 'bytea' })
+  @Column({ type: 'blob' })
   last_name_encrypted: Buffer; // AWS KMS encrypted PHI
 
-  @Column({ type: 'bytea', nullable: true })
+  @Column({ type: 'blob', nullable: true })
   phone_encrypted: Buffer | null; // AWS KMS encrypted PHI
 
   // ============================================================================
@@ -96,14 +96,14 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   mfa_secret: string | null; // DEPRECATED: Use mfa_secret_encrypted instead
 
-  @Column({ type: 'bytea', nullable: true })
+  @Column({ type: 'blob', nullable: true })
   mfa_secret_encrypted: Buffer | null; // AWS KMS encrypted TOTP secret (FR-104)
 
   // ============================================================================
   // Affiliations
   // ============================================================================
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', length: 36, nullable: true })
   @Index('idx_users_pharmacy')
   primary_pharmacy_id: string | null;
 
@@ -115,7 +115,7 @@ export class User {
   primary_pharmacy: Pharmacy | null;
 
   // Master Account Management (for sub-accounts)
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', length: 36, nullable: true })
   @Index('idx_users_master_account')
   master_account_id: string | null; // Reference to master account user
 
@@ -126,8 +126,8 @@ export class User {
   @JoinColumn({ name: 'master_account_id' })
   master_account: User | null;
 
-  @Column({ type: 'jsonb', nullable: true })
-  permissions_override: Record<string, any> | null; // Custom permissions (TypeORM auto-parses JSONB)
+  @Column({ type: 'simple-json', nullable: true })
+  permissions_override: Record<string, any> | null; // Custom permissions (TypeORM auto-parses JSON)
 
   // ============================================================================
   // Relationships
@@ -145,16 +145,16 @@ export class User {
   // Metadata
   // ============================================================================
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: 'datetime' })
   updated_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   last_login_at: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   deleted_at: Date | null; // Soft delete
 
   // ============================================================================

@@ -35,7 +35,7 @@ export class Delivery {
   // Relationships
   // ============================================================================
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'varchar', length: 36 })
   @Index('idx_deliveries_user')
   user_id: string;
 
@@ -43,11 +43,11 @@ export class Delivery {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', length: 36, nullable: true })
   @Index('idx_deliveries_order')
   order_id: string | null;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', length: 36, nullable: true })
   @Index('idx_deliveries_delivery_personnel')
   delivery_personnel_id: string | null;
 
@@ -60,8 +60,8 @@ export class Delivery {
   // ============================================================================
 
   @Column({
-    type: 'enum',
-    enum: DeliveryStatus,
+    type: 'varchar',
+    length: 50,
     default: DeliveryStatus.PENDING,
   })
   @Index('idx_deliveries_status')
@@ -71,13 +71,13 @@ export class Delivery {
   // Delivery Information (HIPAA Compliant)
   // ============================================================================
 
-  @Column({ type: 'bytea' })
+  @Column({ type: 'blob' })
   delivery_address_encrypted: Buffer; // AWS KMS encrypted PHI
 
-  @Column({ type: 'bytea', nullable: true })
+  @Column({ type: 'blob', nullable: true })
   delivery_notes_encrypted: Buffer | null; // AWS KMS encrypted PHI
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   tracking_info: Record<string, any> | null; // GPS coordinates, timestamps, etc.
 
   @Column({ type: 'varchar', length: 100, nullable: true })
@@ -87,16 +87,16 @@ export class Delivery {
   // Timing
   // ============================================================================
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   scheduled_at: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   picked_up_at: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   delivered_at: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   failed_at: Date | null;
 
   @Column({ type: 'text', nullable: true })
@@ -106,11 +106,11 @@ export class Delivery {
   // Metadata
   // ============================================================================
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   @Index('idx_deliveries_created')
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: 'datetime' })
   updated_at: Date;
 
   // ============================================================================

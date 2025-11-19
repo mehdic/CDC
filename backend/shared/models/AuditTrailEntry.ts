@@ -50,7 +50,7 @@ export class AuditTrailEntry {
   // Context
   // ============================================================================
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'varchar', length: 36, nullable: true })
   @Index('idx_audit_trail_pharmacy')
   pharmacy_id: string | null; // Nullable for global events
 
@@ -58,7 +58,7 @@ export class AuditTrailEntry {
   @JoinColumn({ name: 'pharmacy_id' })
   pharmacy: Pharmacy | null;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'varchar', length: 36 })
   @Index('idx_audit_trail_user')
   user_id: string;
 
@@ -75,42 +75,42 @@ export class AuditTrailEntry {
   event_type: string; // "prescription.approved", "record.accessed", "delivery.confirmed"
 
   @Column({
-    type: 'enum',
-    enum: AuditAction,
+    type: 'varchar',
+    length: 50,
   })
   action: AuditAction;
 
   @Column({ type: 'varchar', length: 100 })
   resource_type: string; // "prescription", "patient_medical_record", "inventory_item"
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'varchar', length: 36 })
   resource_id: string;
 
   // ============================================================================
   // Changes (for UPDATE actions)
   // ============================================================================
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   changes: AuditChanges | null; // {field: {old: value, new: value}}
 
   // ============================================================================
   // Request Context
   // ============================================================================
 
-  @Column({ type: 'inet', nullable: true })
-  ip_address: string | null;
+  @Column({ type: 'varchar', length: 45, nullable: true })
+  ip_address: string | null; // IPv4 (15) or IPv6 (45)
 
   @Column({ type: 'text', nullable: true })
   user_agent: string | null;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   device_info: DeviceInfo | null;
 
   // ============================================================================
   // Timestamp (immutable)
   // ============================================================================
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   @Index('idx_audit_trail_created')
   created_at: Date;
 
