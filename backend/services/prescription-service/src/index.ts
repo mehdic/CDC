@@ -22,6 +22,14 @@ import { initializeDatabase, closeDatabase, AppDataSource } from './config/datab
 import { PrescriptionRepository } from './repository/PrescriptionRepository';
 import { PrescriptionStatus } from './models/Prescription';
 
+// Import route modules (with validation)
+import prescriptionRoutes from './routes/prescriptions';
+import listRoutes from './routes/list';
+import approveRoutes from './routes/approve';
+import rejectRoutes from './routes/reject';
+import transcribeRoutes from './routes/transcribe';
+import validateRoutes from './routes/validate';
+
 // ============================================================================
 // Configuration
 // ============================================================================
@@ -109,6 +117,14 @@ if (NODE_ENV === 'development') {
 
 let prescriptionRepository: PrescriptionRepository;
 
+// Initialize repository for tests (will be overridden in startServer for production)
+if (NODE_ENV === 'test') {
+  // In test mode, create a dummy DataSource that will be mocked by jest
+  prescriptionRepository = new PrescriptionRepository(AppDataSource);
+  // Make dataSource available to controllers in test mode
+  app.locals.dataSource = AppDataSource;
+}
+
 // ============================================================================
 // Health Check
 // ============================================================================
@@ -137,7 +153,19 @@ app.get('/health', async (_req: Request, res: Response) => {
 });
 
 // ============================================================================
-// API Routes
+// Mount Routes with Validation
+// ============================================================================
+
+// Note: These routes use class-validator DTOs and validation middleware
+app.use('/prescriptions', prescriptionRoutes);      // POST /prescriptions (upload)
+app.use('/prescriptions', listRoutes);              // GET /prescriptions (list)
+app.use('/prescriptions', approveRoutes);           // POST /prescriptions/:id/approve
+app.use('/prescriptions', rejectRoutes);            // POST /prescriptions/:id/reject
+app.use('/prescriptions', transcribeRoutes);        // POST /prescriptions/:id/transcribe
+app.use('/prescriptions', validateRoutes);          // POST /prescriptions/:id/validate
+
+// ============================================================================
+// Legacy API Routes (for backward compatibility)
 // ============================================================================
 
 /**
@@ -396,6 +424,9 @@ async function startServer() {
 
     // Initialize repository
     prescriptionRepository = new PrescriptionRepository(dataSource);
+
+    // Make dataSource available to controllers via app.locals
+    app.locals.dataSource = dataSource;
 
     // Start Express server
     const server = app.listen(PORT, () => {
