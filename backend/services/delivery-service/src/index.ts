@@ -36,29 +36,31 @@ app.use(express.json());
 // Database Connection
 // ============================================================================
 
-// For testing, we'll mock the database connection entirely
-// to avoid PostgreSQL vs SQLite type incompatibilities
+// SQLite configuration for local development and testing
 const dataSource = new DataSource({
-  type: 'postgres',
-  url: process.env.DATABASE_URL || 'postgresql://localhost/metapharm_delivery_test',
+  type: 'better-sqlite3',
+  database: process.env.DATABASE_PATH || './data/delivery.sqlite',
   entities: [Delivery, User, Pharmacy, AuditTrailEntry],
-  synchronize: false, // Use migrations instead in production
+  synchronize: true, // Auto-create schema in development/test
   logging: process.env.NODE_ENV === 'development',
 });
 
 // ============================================================================
-// Initialize Database
+// Initialize Database (only if not in test mode)
 // ============================================================================
 
-dataSource
-  .initialize()
-  .then(() => {
-    console.log('[Delivery Service] ✓ Database connected');
-  })
-  .catch((error) => {
-    console.error('[Delivery Service] ✗ Database connection error:', error);
-    process.exit(1);
-  });
+// In test mode, tests will handle database initialization
+if (process.env.NODE_ENV !== 'test') {
+  dataSource
+    .initialize()
+    .then(() => {
+      console.log('[Delivery Service] ✓ Database connected');
+    })
+    .catch((error) => {
+      console.error('[Delivery Service] ✗ Database connection error:', error);
+      process.exit(1);
+    });
+}
 
 // Make dataSource available to routes
 app.locals.dataSource = dataSource;
