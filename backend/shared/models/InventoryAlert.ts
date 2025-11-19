@@ -119,17 +119,17 @@ export class InventoryAlert {
   @JoinColumn({ name: 'acknowledged_by_user_id' })
   acknowledged_by_user: User | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   acknowledged_at: Date | null;
 
   // ============================================================================
   // Metadata
   // ============================================================================
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   created_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   resolved_at: Date | null;
 
   // ============================================================================

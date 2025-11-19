@@ -57,7 +57,7 @@ export class Pharmacy {
   // Location (encrypted for privacy)
   // ============================================================================
 
-  @Column({ type: 'bytea' })
+  @Column({ type: 'blob' })
   address_encrypted: Buffer; // AWS KMS encrypted
 
   @Column({ type: 'varchar', length: 100 })
@@ -90,7 +90,7 @@ export class Pharmacy {
   // Operating Hours (JSON for flexibility)
   // ============================================================================
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   operating_hours: OperatingHours | null;
 
   // ============================================================================
@@ -98,15 +98,15 @@ export class Pharmacy {
   // ============================================================================
 
   @Column({
-    type: 'enum',
-    enum: SubscriptionTier,
+    type: 'varchar',
+    length: 50,
     default: SubscriptionTier.BASIC,
   })
   subscription_tier: SubscriptionTier;
 
   @Column({
-    type: 'enum',
-    enum: SubscriptionStatus,
+    type: 'varchar',
+    length: 50,
     default: SubscriptionStatus.ACTIVE,
   })
   @Index('idx_pharmacies_status')
@@ -125,13 +125,13 @@ export class Pharmacy {
   // Metadata
   // ============================================================================
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: 'datetime' })
   updated_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   deleted_at: Date | null; // Soft delete
 
   // ============================================================================

@@ -6,6 +6,9 @@
 
 import { Router } from 'express';
 import { approvePrescription } from '../controllers/approveController';
+import { validateBody, validateParams } from '../middleware/validation.middleware';
+import { ApprovePrescriptionDto } from '../dto/ApprovePrescriptionDto';
+import { PrescriptionIdDto } from '../dto/PrescriptionIdDto';
 
 const router = Router();
 
@@ -30,6 +33,6 @@ const router = Router();
  *   "treatment_plan_id": "uuid"
  * }
  */
-router.put('/:id/approve', approvePrescription);
+router.put('/:id/approve', validateParams(PrescriptionIdDto), validateBody(ApprovePrescriptionDto), approvePrescription);
 
 export default router;

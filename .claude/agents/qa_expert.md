@@ -136,18 +136,31 @@ You are the TESTING SPECIALIST. You are CONDITIONALLY in the workflow - only whe
 
 ### When to Invoke
 
-The Orchestrator will include MANDATORY invocation instructions in your spawn prompt if these Skills are configured as "mandatory" in `bazinga/skills_config.json`.
+The Orchestrator will include invocation instructions in your spawn prompt based on how Skills are configured in `bazinga/skills_config.json`:
+- **MANDATORY**: You MUST invoke (included in ⚡ ADVANCED SKILLS ACTIVE section)
+- **OPTIONAL**: You CAN invoke if needed (included in ⚡ OPTIONAL SKILLS AVAILABLE section)
+- **DISABLED**: Not available
 
-**STEP 1: Invoke pattern-miner (if MANDATORY)**
+**STEP 1: Invoke pattern-miner (if MANDATORY or useful)**
 ```
 Skill(command: "pattern-miner")
 ```
+**When to use if OPTIONAL:**
+- Tests failing in unexpected areas
+- Need historical context on test patterns
+- Complex test suite with unknown hotspots
+
 Read results: `cat bazinga/pattern_insights.json`
 
-**STEP 2: Invoke quality-dashboard (if MANDATORY)**
+**STEP 2: Invoke quality-dashboard (if MANDATORY or useful)**
 ```
 Skill(command: "quality-dashboard")
 ```
+**When to use if OPTIONAL:**
+- Need comprehensive quality overview
+- User requests quality metrics
+- Complex project with multiple quality dimensions
+
 Read results: `cat bazinga/quality_dashboard.json`
 
 **STEP 3: Use insights to prioritize testing**
@@ -643,6 +656,71 @@ Tests FAILED for Group [ID]: [Name]
 After fixes, QA will retest.
 ```
 
+### 4.1. Artifact Writing for QA Failures
+
+**If any tests fail**, write a detailed artifact file for orchestrator reference:
+
+```bash
+# Step 1: Create artifacts directory (if it doesn't exist)
+Bash(command: "mkdir -p bazinga/artifacts/{SESSION_ID}")
+
+# Step 2: Write artifact file (unique per group to avoid collisions)
+Write(
+  file_path: "bazinga/artifacts/{SESSION_ID}/qa_failures_group_{GROUP_ID}.md",
+  content: """
+# QA Test Failures
+
+**Session:** {SESSION_ID}
+**Group:** {GROUP_ID}
+**Date:** {TIMESTAMP}
+
+## Summary
+{Total tests run}, {count} failures across integration/contract/E2E tests
+
+## Failed Tests
+
+### Integration Failures
+
+#### {test_name}
+- **Location:** {file}:{line}
+- **Error:** {error_message}
+- **Impact:** {Critical/High/Medium}
+- **Fix Required:** {specific fix needed}
+
+### Contract Failures
+
+#### {contract_name}
+- **Location:** {file}:{line}
+- **Error:** {violation description}
+- **Impact:** {Critical/High/Medium}
+- **Fix Required:** {specific fix needed}
+
+### E2E Failures
+
+#### {scenario_name}
+- **Step Failed:** {which step}
+- **Expected:** {expected behavior}
+- **Actual:** {actual behavior}
+- **Fix Required:** {specific fix needed}
+
+## Full Test Output
+```
+{paste complete test run output here}
+```
+
+## Recommendation
+{Summary of what developer needs to fix}
+"""
+)
+```
+
+**Only create this file when tests are actually failing.** If all tests pass, skip this step.
+
+**After writing artifact:** Include the artifact path in your status report so orchestrator can link to it:
+```
+**Artifact:** bazinga/artifacts/{SESSION_ID}/qa_failures_group_{GROUP_ID}.md
+```
+
 ---
 
 ## Special Cases
@@ -804,7 +882,9 @@ When tests fail, provide:
 
 ## Output Format
 
-Always use this structure:
+**⚠️ CRITICAL: Use exact field names below for orchestrator parsing**
+
+Always use this structure with MANDATORY fields:
 
 ```markdown
 ## QA Expert: Test Results - [PASS / FAIL / BLOCKED / FLAKY]

@@ -19,9 +19,14 @@ dotenv.config();
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { DataSource } from 'typeorm';
 import { initializeDatabase, clearDatabase } from './database';
 import deliveryRepository from './repository/DeliveryRepository';
 import { DeliveryStatus, Location } from './models/Delivery';
+import { Delivery } from '../../shared/models/Delivery';
+import { User } from '../../shared/models/User';
+import { Pharmacy } from '../../shared/models/Pharmacy';
+import { AuditTrailEntry } from '../../shared/models/AuditTrailEntry';
 
 // Initialize database
 initializeDatabase();
@@ -112,6 +117,35 @@ if (NODE_ENV === 'development') {
     next();
   });
 }
+
+// SQLite configuration for local development and testing
+const dataSource = new DataSource({
+  type: 'better-sqlite3',
+  database: process.env.DATABASE_PATH || './data/delivery.sqlite',
+  entities: [Delivery, User, Pharmacy, AuditTrailEntry],
+  synchronize: true, // Auto-create schema in development/test
+  logging: process.env.NODE_ENV === 'development',
+});
+
+// ============================================================================
+// Initialize Database (only if not in test mode)
+// ============================================================================
+
+// In test mode, tests will handle database initialization
+if (process.env.NODE_ENV !== 'test') {
+  dataSource
+    .initialize()
+    .then(() => {
+      console.log('[Delivery Service] ✓ Database connected');
+    })
+    .catch((error) => {
+      console.error('[Delivery Service] ✗ Database connection error:', error);
+      process.exit(1);
+    });
+}
+
+// Make dataSource available to routes
+app.locals.dataSource = dataSource;
 
 // ============================================================================
 // Health Check

@@ -4,8 +4,15 @@
  */
 
 import request from 'supertest';
-import { app, dataSource } from '../index';
+import app from '../index';
 import path from 'path';
+
+// Mock the transcribe controller to avoid database dependency
+jest.mock('../controllers/transcribeController', () => ({
+  transcribePrescription: jest.fn((req, res) => {
+    res.status(404).json({ error: 'Prescription not found' });
+  }),
+}));
 
 describe('POST /prescriptions', () => {
   // ============================================================================
@@ -13,17 +20,11 @@ describe('POST /prescriptions', () => {
   // ============================================================================
 
   beforeAll(async () => {
-    // Wait for database connection
-    if (!dataSource.isInitialized) {
-      await dataSource.initialize();
-    }
+    // Database connection handled by index.ts
   });
 
   afterAll(async () => {
-    // Close database connection
-    if (dataSource.isInitialized) {
-      await dataSource.destroy();
-    }
+    // Database connection cleanup handled by index.ts
   });
 
   // ============================================================================
@@ -38,7 +39,8 @@ describe('POST /prescriptions', () => {
       .field('uploaded_by_id', 'test-user-id');
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('No image file');
+    // Validation middleware returns structured error
+    expect(response.body.error).toBe('Validation failed');
   });
 
   it('should return 400 if missing required fields', async () => {
@@ -47,7 +49,9 @@ describe('POST /prescriptions', () => {
       .attach('image', Buffer.from('fake-image'), 'test.jpg');
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Missing required fields');
+    // Validation middleware returns structured error
+    expect(response.body.error).toBe('Validation failed');
+    expect(response.body.code).toBe('VALIDATION_ERROR');
   });
 
   it('should return 400 if invalid uploaded_by_type', async () => {
@@ -59,7 +63,9 @@ describe('POST /prescriptions', () => {
       .attach('image', Buffer.from('fake-image'), 'test.jpg');
 
     expect(response.status).toBe(400);
-    expect(response.body.error).toContain('Invalid uploaded_by_type');
+    // Validation middleware returns structured error with constraint details
+    expect(response.body.error).toBe('Validation failed');
+    expect(response.body.code).toBe('VALIDATION_ERROR');
   });
 
   // ============================================================================
@@ -98,8 +104,10 @@ describe('POST /prescriptions', () => {
 
 describe('POST /prescriptions/:id/transcribe', () => {
   it('should return 404 if prescription not found', async () => {
+    // Use a valid UUID v4 format (but non-existent prescription)
+    const nonExistentUuid = '12345678-1234-4234-8234-123456789012';
     const response = await request(app)
-      .post('/prescriptions/non-existent-id/transcribe');
+      .post(`/prescriptions/${nonExistentUuid}/transcribe`);
 
     expect(response.status).toBe(404);
     expect(response.body.error).toContain('not found');

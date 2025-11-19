@@ -7,6 +7,8 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { uploadPrescription } from '../controllers/uploadController';
+import { validateBody } from '../middleware/validation.middleware';
+import { UploadPrescriptionDto } from '../dto/UploadPrescriptionDto';
 
 const router = Router();
 
@@ -47,6 +49,6 @@ const upload = multer({
  * - uploaded_by_type: String (patient, doctor, nurse)
  * - uploaded_by_id: UUID
  */
-router.post('/', upload.single('image'), uploadPrescription);
+router.post('/', upload.single('image'), validateBody(UploadPrescriptionDto), uploadPrescription);
 
 export default router;

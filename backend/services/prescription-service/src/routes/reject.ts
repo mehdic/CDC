@@ -6,6 +6,9 @@
 
 import { Router } from 'express';
 import { rejectPrescription } from '../controllers/rejectController';
+import { validateBody, validateParams } from '../middleware/validation.middleware';
+import { RejectPrescriptionDto } from '../dto/RejectPrescriptionDto';
+import { PrescriptionIdDto } from '../dto/PrescriptionIdDto';
 
 const router = Router();
 
@@ -35,6 +38,6 @@ const router = Router();
  *   }
  * }
  */
-router.put('/:id/reject', rejectPrescription);
+router.put('/:id/reject', validateParams(PrescriptionIdDto), validateBody(RejectPrescriptionDto), rejectPrescription);
 
 export default router;

@@ -11,7 +11,7 @@ module.exports = {
   testEnvironment: 'node',
 
   // Root directory for tests
-  roots: ['<rootDir>/src'],
+  roots: ['<rootDir>/src', '<rootDir>/tests'],
 
   // Test file patterns
   testMatch: [
