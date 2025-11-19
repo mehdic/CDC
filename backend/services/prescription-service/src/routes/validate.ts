@@ -6,6 +6,8 @@
 
 import { Router } from 'express';
 import { validatePrescription } from '../controllers/validateController';
+import { validateParams } from '../middleware/validation.middleware';
+import { PrescriptionIdDto } from '../dto/PrescriptionIdDto';
 
 const router = Router();
 
@@ -18,6 +20,6 @@ const router = Router();
  *
  * Returns validation results with severity-sorted warnings
  */
-router.post('/:id/validate', validatePrescription);
+router.post('/:id/validate', validateParams(PrescriptionIdDto), validatePrescription);
 
 export default router;

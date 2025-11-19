@@ -6,6 +6,8 @@
 
 import { Router } from 'express';
 import { listPrescriptions } from '../controllers/listController';
+import { validateQuery } from '../middleware/validation.middleware';
+import { ListPrescriptionsDto } from '../dto/ListPrescriptionsDto';
 
 const router = Router();
 
@@ -46,6 +48,6 @@ const router = Router();
  *   "filters_applied": {...}
  * }
  */
-router.get('/', listPrescriptions);
+router.get('/', validateQuery(ListPrescriptionsDto), listPrescriptions);
 
 export default router;

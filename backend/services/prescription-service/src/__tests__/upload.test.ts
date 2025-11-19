@@ -4,7 +4,7 @@
  */
 
 import request from 'supertest';
-import { app, dataSource } from '../index';
+import app from '../index';
 import path from 'path';
 
 describe('POST /prescriptions', () => {
@@ -13,17 +13,11 @@ describe('POST /prescriptions', () => {
   // ============================================================================
 
   beforeAll(async () => {
-    // Wait for database connection
-    if (!dataSource.isInitialized) {
-      await dataSource.initialize();
-    }
+    // Database connection handled by index.ts
   });
 
   afterAll(async () => {
-    // Close database connection
-    if (dataSource.isInitialized) {
-      await dataSource.destroy();
-    }
+    // Database connection cleanup handled by index.ts
   });
 
   // ============================================================================
