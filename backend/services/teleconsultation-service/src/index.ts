@@ -1,8 +1,19 @@
 /**
- * Teleconsultation Service - Main Entry Point
- * Handles video consultation booking, Twilio Video integration, and AI transcription
- * Port: 4003
- * Phase 4 - US2: Secure Teleconsultation (FR-021 to FR-030)
+ * Teleconsultation Service
+ * Main Express server for teleconsultation management
+ *
+ * Endpoints:
+ * - POST /api/teleconsultation/sessions - Create new session
+ * - GET /api/teleconsultation/sessions - List all sessions
+ * - GET /api/teleconsultation/sessions/:id - Get session details
+ * - PATCH /api/teleconsultation/sessions/:id - Update session status/notes
+ * - POST /api/teleconsultation/sessions/:id/participants - Add participant
+ * - DELETE /api/teleconsultation/sessions/:id/participants/:participantId - Remove participant
+ * - GET /api/teleconsultation/sessions/:id/participants - Get participants
+ * - POST /api/teleconsultation/sessions/:id/recordings - Start recording
+ * - DELETE /api/teleconsultation/sessions/:id/recordings/:recordingId - Stop recording
+ * - GET /api/teleconsultation/sessions/:id/recordings - List recordings
+ * - GET /health - Health check
  */
 
 import dotenv from 'dotenv';
@@ -10,104 +21,77 @@ import dotenv from 'dotenv';
 // Load environment variables FIRST (before any imports that depend on them)
 dotenv.config();
 
-import express, { Request, Response, NextFunction, RequestHandler } from 'express';
-import helmet from 'helmet';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { DataSource } from 'typeorm';
-import { Teleconsultation } from '../../../shared/models/Teleconsultation';
-import { ConsultationNote } from '../../../shared/models/ConsultationNote';
-import { Prescription } from '../../../shared/models/Prescription';
-import { User } from '../../../shared/models/User';
-import { Pharmacy } from '../../../shared/models/Pharmacy';
-import { AuditTrailEntry } from '../../../shared/models/AuditTrailEntry';
-import { authenticateJWT } from '../../../shared/middleware/auth';
-import { requirePermission, Permission } from '../../../shared/middleware/rbac';
-import availabilityRouter from './routes/availability';
-import bookRouter from './routes/book';
-import joinRouter from './routes/join';
-import notesRouter from './routes/notes';
+import helmet from 'helmet';
+import { initializeDatabase, clearDatabase } from './database';
+import teleconsultationRoutes from './api/routes';
 
-const app = express();
-const PORT = process.env.TELECONSULTATION_SERVICE_PORT || 4003;
+// Initialize database
+initializeDatabase();
+
+// Clear database in test mode (for test isolation)
+if (process.env.NODE_ENV === 'test') {
+  clearDatabase();
+}
 
 // ============================================================================
-// Middleware
+// Configuration
 // ============================================================================
 
+const PORT = process.env.TELECONSULTATION_SERVICE_PORT || 4006;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const CORS_ORIGIN = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:3000'];
+
+// ============================================================================
+// Express App Setup
+// ============================================================================
+
+const app: Express = express();
+
+// Security middleware
 app.use(helmet());
-app.use(cors());
-app.use(express.json());
 
-// ============================================================================
-// Database Connection
-// ============================================================================
+// CORS configuration
+app.use(cors({
+  origin: CORS_ORIGIN,
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
-const dataSource = new DataSource({
-  type: 'postgres',
-  url: process.env.DATABASE_URL,
-  entities: [
-    Teleconsultation,
-    ConsultationNote,
-    Prescription,
-    User,
-    Pharmacy,
-    AuditTrailEntry,
-  ],
-  synchronize: false, // Use migrations instead in production
-  logging: process.env.NODE_ENV === 'development',
-});
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ============================================================================
-// Initialize Database
-// ============================================================================
-
-dataSource
-  .initialize()
-  .then(() => {
-    console.log('[Teleconsultation Service] ✓ Database connected');
-  })
-  .catch((error) => {
-    console.error('[Teleconsultation Service] ✗ Database connection error:', error);
-    process.exit(1);
+// Request logging middleware (development only)
+if (NODE_ENV === 'development') {
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
+    next();
   });
-
-// Make dataSource available to routes
-app.locals.dataSource = dataSource;
+}
 
 // ============================================================================
-// Routes
+// Health Check
 // ============================================================================
 
-// Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
-  res.json({
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({
     status: 'healthy',
     service: 'teleconsultation-service',
-    port: PORT,
     timestamp: new Date().toISOString(),
+    version: '1.0.0',
   });
 });
 
 // ============================================================================
-// Teleconsultation Routes with Authentication & Authorization
+// API Routes
 // ============================================================================
-//
-// Security Requirements (FR-006, FR-007, FR-112):
-// - All teleconsultation endpoints require JWT authentication
-// - RBAC enforced based on user role and permissions
-// - Audit logging handled by auth middleware
 
-// Availability checking - Requires authentication (patients)
-app.use('/teleconsultations/availability', authenticateJWT as RequestHandler, availabilityRouter);
-
-// Booking endpoint - Requires BOOK_CONSULTATION permission (patients)
-app.use('/teleconsultations', authenticateJWT as RequestHandler, requirePermission(Permission.BOOK_CONSULTATION) as RequestHandler, bookRouter);
-
-// Join video call - Requires authentication (patient or pharmacist)
-app.use('/teleconsultations/:id/join', authenticateJWT as RequestHandler, joinRouter);
-
-// Consultation notes - Requires CONDUCT_CONSULTATION permission (pharmacists)
-app.use('/teleconsultations/:id/notes', authenticateJWT as RequestHandler, requirePermission(Permission.CONDUCT_CONSULTATION) as RequestHandler, notesRouter);
+app.use('/api/teleconsultation', teleconsultationRoutes);
 
 // ============================================================================
 // Error Handling
@@ -115,59 +99,71 @@ app.use('/teleconsultations/:id/notes', authenticateJWT as RequestHandler, requi
 
 // 404 handler
 app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    error: 'Not found',
-    path: req.path,
+  return res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.method} ${req.path} not found`,
+    timestamp: new Date().toISOString(),
   });
 });
 
 // Global error handler
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('[Error]', {
-    message: err.message,
-    stack: err.stack,
-    path: req.path,
-    method: req.method,
-  });
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('Unhandled error:', err);
 
-  res.status(err.statusCode || 500).json({
-    error: err.message || 'Internal server error',
-    code: err.code || 'INTERNAL_ERROR',
+  // Don't expose internal errors in production
+  const message = NODE_ENV === 'production'
+    ? 'Internal server error'
+    : err.message;
+
+  return res.status(500).json({
+    error: 'Internal Server Error',
+    message,
+    timestamp: new Date().toISOString(),
   });
 });
 
 // ============================================================================
-// Start Server
+// Server Initialization
 // ============================================================================
 
-const server = app.listen(PORT, () => {
-  console.log(`[Teleconsultation Service] 🚀 Running on port ${PORT}`);
-  console.log(`[Teleconsultation Service] Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`[Teleconsultation Service] Health check: http://localhost:${PORT}/health`);
-});
+async function startServer() {
+  try {
+    // Start Express server
+    const server = app.listen(PORT, () => {
+      console.log(`🚀 Teleconsultation Service running on port ${PORT}`);
+      console.log(`📊 Environment: ${NODE_ENV}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    });
 
-// ============================================================================
-// Graceful Shutdown
-// ============================================================================
+    // Graceful shutdown
+    const shutdown = () => {
+      console.log('\n🛑 Shutting down gracefully...');
 
-process.on('SIGTERM', async () => {
-  console.log('[Teleconsultation Service] SIGTERM received, shutting down gracefully...');
-  server.close(() => {
-    console.log('[Teleconsultation Service] HTTP server closed');
-  });
-  await dataSource.destroy();
-  console.log('[Teleconsultation Service] Database connection closed');
-  process.exit(0);
-});
+      server.close(() => {
+        console.log('✅ HTTP server closed');
+        process.exit(0);
+      });
 
-process.on('SIGINT', async () => {
-  console.log('[Teleconsultation Service] SIGINT received, shutting down gracefully...');
-  server.close(() => {
-    console.log('[Teleconsultation Service] HTTP server closed');
-  });
-  await dataSource.destroy();
-  console.log('[Teleconsultation Service] Database connection closed');
-  process.exit(0);
-});
+      // Force shutdown after 10 seconds
+      setTimeout(() => {
+        console.error('❌ Forced shutdown after timeout');
+        process.exit(1);
+      }, 10000);
+    };
 
-export { app, dataSource };
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Only start server if this file is executed directly AND not in test mode
+if (require.main === module && process.env.NODE_ENV !== 'test') {
+  startServer();
+}
+
+// Export app for testing
+export default app;
