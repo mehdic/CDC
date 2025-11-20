@@ -159,3 +159,9 @@ pnpm-lock.yaml
 
 # Misc
 .git-blame-ignore-revs
+# Bazinga orchestration artifacts
+bazinga/artifacts/
+bazinga/bazinga.db
+bazinga/bazinga.db-shm
+bazinga/bazinga.db-wal
+backend/bazinga/
