@@ -194,6 +194,31 @@ export class PrescriptionStateMachine {
   }
 
   /**
+   * Check if clarification can be requested
+   * @param prescription Prescription entity
+   * @returns Object with can flag and optional error message
+   */
+  static canRequestClarification(prescription: Prescription): { can: boolean; reason?: string } {
+    // Must be in correct state
+    if (prescription.status !== PrescriptionStatus.IN_REVIEW) {
+      return {
+        can: false,
+        reason: `Prescription must be in 'in_review' state. Current state: ${prescription.status}`,
+      };
+    }
+
+    // Must have a prescribing doctor
+    if (!prescription.prescribing_doctor_id) {
+      return {
+        can: false,
+        reason: 'Prescription has no prescribing doctor to contact',
+      };
+    }
+
+    return { can: true };
+  }
+
+  /**
    * Check if prescription can be edited
    * Only editable in non-immutable states
    * @param prescription Prescription entity

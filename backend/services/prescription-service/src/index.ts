@@ -29,6 +29,7 @@ import approveRoutes from './routes/approve';
 import rejectRoutes from './routes/reject';
 import transcribeRoutes from './routes/transcribe';
 import validateRoutes from './routes/validate';
+import clarificationRoutes from './routes/clarification';
 
 // ============================================================================
 // Configuration
@@ -159,10 +160,11 @@ app.get('/health', async (_req: Request, res: Response) => {
 // Note: These routes use class-validator DTOs and validation middleware
 app.use('/prescriptions', prescriptionRoutes);      // POST /prescriptions (upload)
 app.use('/prescriptions', listRoutes);              // GET /prescriptions (list)
-app.use('/prescriptions', approveRoutes);           // POST /prescriptions/:id/approve
-app.use('/prescriptions', rejectRoutes);            // POST /prescriptions/:id/reject
+app.use('/prescriptions', approveRoutes);           // PUT /prescriptions/:id/approve
+app.use('/prescriptions', rejectRoutes);            // PUT /prescriptions/:id/reject
 app.use('/prescriptions', transcribeRoutes);        // POST /prescriptions/:id/transcribe
 app.use('/prescriptions', validateRoutes);          // POST /prescriptions/:id/validate
+app.use('/prescriptions', clarificationRoutes);     // POST /prescriptions/:id/request-clarification
 
 // ============================================================================
 // Legacy API Routes (for backward compatibility)
