@@ -11,6 +11,7 @@ import {
   trackDatabaseQuery,
   getMemoryStats,
   checkForMemoryLeak,
+  resetPerformanceMetrics,
 } from '../performanceMonitor';
 
 // Mock logger
@@ -36,6 +37,7 @@ describe('Performance Monitor Middleware', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    resetPerformanceMetrics(); // Clear samples between tests
 
     mockRequest = {
       method: 'GET',
@@ -74,6 +76,7 @@ describe('Performance Monitor Middleware', () => {
     });
 
     it('should track min and max durations', () => {
+      resetPerformanceMetrics(); // Ensure clean state
       [50, 150, 75, 200, 100].forEach((d) => recordDuration(d));
 
       const stats = getPerformanceStats();
@@ -159,9 +162,11 @@ describe('Performance Monitor Middleware', () => {
       const { logger } = require('../../utils/logger');
       const longQuery = 'SELECT * FROM very_long_table_name '.repeat(10);
 
-      trackDatabaseQuery(longQuery, 100);
+      // Trigger slow query to ensure query is logged
+      trackDatabaseQuery(longQuery, 1500);
 
-      const call = logger.debug.mock.calls[0];
+      const call = logger.warn.mock.calls[0];
+      expect(call[1].query).toBeDefined();
       expect(call[1].query.length).toBeLessThanOrEqual(100);
     });
 
@@ -337,11 +342,11 @@ describe('Performance Monitor Middleware', () => {
     it('should include memory stats when enabled', () => {
       performanceMonitor(mockRequest as Request, mockResponse as Response, mockNext);
 
-      const json = (mockResponse.json as jest.Mock);
+      const json = mockResponse.json as jest.Mock;
       json({ data: 'test' });
 
-      // Memory stats collection is internal
-      expect(json).toHaveBeenCalled();
+      // Memory stats collection is internal, just verify response was sent
+      expect(json).toHaveBeenCalledWith({ data: 'test' });
     });
 
     it('should track request duration', () => {

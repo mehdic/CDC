@@ -42,6 +42,12 @@
     "collectCoverageFrom": [
       "src/**/*.ts",
       "!src/**/*.d.ts"
-    ]
+    ],
+    "moduleNameMapper": {
+      "^@shared/(.*)$": "<rootDir>/../../shared/$1",
+      "^@services/(.*)$": "<rootDir>/../../services/$1",
+      "^@models/(.*)$": "<rootDir>/../../shared/models/$1",
+      "^@utils/(.*)$": "<rootDir>/../../shared/utils/$1"
+    }
   }
 }

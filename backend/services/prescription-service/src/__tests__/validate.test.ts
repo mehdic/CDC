@@ -23,7 +23,7 @@ const mockPrescriptionRepo = {
 };
 
 const mockDataSource = {
-  getRepository: jest.fn(() => mockPrescriptionRepo),
+  getRepository: jest.fn().mockReturnValue(mockPrescriptionRepo),
 };
 
 // Mock FDBService
@@ -85,6 +85,8 @@ function createMockPrescription(overrides?: Partial<Prescription>): Prescription
 describe('Validate Controller - validatePrescription', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset mock implementation
+    mockDataSource.getRepository.mockReturnValue(mockPrescriptionRepo);
   });
 
   // ==========================================================================

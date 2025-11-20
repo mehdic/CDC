@@ -98,6 +98,16 @@ function createMockClarification(overrides?: Partial<Clarification>): Clarificat
 describe('Clarification Controller - requestClarification', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset mock implementation
+    mockDataSource.getRepository = jest.fn((entity: any) => {
+      if (entity.name === 'Prescription') {
+        return mockPrescriptionRepo;
+      }
+      if (entity.name === 'Clarification') {
+        return mockClarificationRepo;
+      }
+      return null;
+    });
   });
 
   // ==========================================================================

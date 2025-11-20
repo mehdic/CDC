@@ -70,6 +70,13 @@ const MAX_SAMPLES = 1000;
 // ============================================================================
 
 /**
+ * Reset performance metrics (for testing)
+ */
+export function resetPerformanceMetrics(): void {
+  requestDurations.length = 0;
+}
+
+/**
  * Record request duration and calculate percentiles
  */
 export function recordDuration(duration: number): void {

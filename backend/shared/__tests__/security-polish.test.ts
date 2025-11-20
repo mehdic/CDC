@@ -279,6 +279,24 @@ describe('Enhanced Password Policy (T249)', () => {
       expect(result.errors.some((e) => e.includes('common'))).toBe(true);
     });
 
+    it('should detect common words with character substitutions', async () => {
+      const result = await validatePasswordComprehensive('P@ssw0rd123!');
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.includes('common'))).toBe(true);
+    });
+
+    it('should detect common phrases with modifications', async () => {
+      const result = await validatePasswordComprehensive('Welcome2024!');
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.includes('common'))).toBe(true);
+    });
+
+    it('should detect leetspeak variations of common words', async () => {
+      const result = await validatePasswordComprehensive('C0mpl3x!P@ssw0rd');
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.includes('common'))).toBe(true);
+    });
+
     it('should detect password reuse', async () => {
       // Use random password without common words
       const oldPassword = 'Yz8#pN3$mR6@wK4!';

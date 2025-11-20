@@ -531,5 +531,6 @@ if (require.main === module && process.env.NODE_ENV !== 'test') {
   startServer();
 }
 
-// Export app for testing
+// Export app and dataSource for testing
+export { app, dataSource };
 export default app;

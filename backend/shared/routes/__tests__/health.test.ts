@@ -90,10 +90,11 @@ describe('Health Check Routes', () => {
     it('should return uptime in seconds', (done) => {
       const testFn = () => {
         const response = mockResponse as Response;
+        const uptime = 123.456; // Actual number, not matcher
         response.status(200).json({
           status: 'alive',
-          uptime: expect.any(Number),
-          timestamp: expect.any(String),
+          uptime,
+          timestamp: new Date().toISOString(),
         });
 
         expect(response.json).toHaveBeenCalledWith(
@@ -241,7 +242,7 @@ describe('Health Check Routes', () => {
         uptime: 100,
         database: {
           status: 'connected',
-          latency: expect.any(Number),
+          latency: 5.2, // Actual number, not matcher
         },
       });
 
