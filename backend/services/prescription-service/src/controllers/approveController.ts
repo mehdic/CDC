@@ -8,6 +8,7 @@
 import { Request, Response } from 'express';
 import { DataSource } from 'typeorm';
 import { Prescription } from '../../../../shared/models/Prescription';
+import { PrescriptionItem } from '../../../../shared/models/PrescriptionItem';
 import { TreatmentPlan } from '../../../../shared/models/TreatmentPlan';
 import { FieldCorrection } from '../../../../shared/models/FieldCorrection';
 import { PrescriptionStateMachine } from '../utils/stateMachine';
@@ -138,22 +139,26 @@ export async function approvePrescription(req: Request, res: Response): Promise<
       }
 
       // Validate that all low-confidence fields have corrections
-      const correctedItemIds = new Set(approvalData.field_corrections.map(c => c.item_id));
-      const uncorrectedItems = lowConfidenceItems.filter(item => !correctedItemIds.has(item.id));
+      // Must validate field-level completeness, not just item-level
+      for (const item of lowConfidenceItems) {
+        const lowConfFields = item.getLowConfidenceFields();
+        const itemCorrections = approvalData.field_corrections.filter(c => c.item_id === item.id);
+        const correctedFields = new Set(itemCorrections.map(c => c.field_name));
 
-      if (uncorrectedItems.length > 0) {
-        res.status(400).json({
-          error: 'Not all low-confidence items have been verified',
-          code: 'INCOMPLETE_VERIFICATION',
-          details: {
-            uncorrected_items: uncorrectedItems.map(item => ({
+        const missingFields = lowConfFields.filter(f => !correctedFields.has(f));
+        if (missingFields.length > 0) {
+          res.status(400).json({
+            error: `Missing corrections for fields: ${missingFields.join(', ')}`,
+            code: 'INCOMPLETE_FIELD_VERIFICATION',
+            details: {
               item_id: item.id,
               medication_name: item.medication_name,
-              low_confidence_fields: item.getLowConfidenceFields(),
-            })),
-          },
-        });
-        return;
+              missing_fields: missingFields,
+              required_fields: lowConfFields,
+            },
+          });
+          return;
+        }
       }
     }
 
@@ -222,7 +227,7 @@ export async function approvePrescription(req: Request, res: Response): Promise<
       await fieldCorrectionRepo.save(fieldCorrections);
 
       // Update prescription items with corrected values
-      const itemRepo = dataSource.getRepository('PrescriptionItem');
+      const itemRepo = dataSource.getRepository(PrescriptionItem);
       for (const correction of approvalData.field_corrections) {
         const item = prescription.items.find(i => i.id === correction.item_id);
         if (item && correction.was_corrected) {
@@ -236,10 +241,13 @@ export async function approvePrescription(req: Request, res: Response): Promise<
           }
 
           // Mark as corrected and store original value
-          item.markAsCorrected({
+          item.markAsCorrectedWithOriginal({
             [correction.field_name]: correction.original_value,
             confidence: correction.original_confidence,
           });
+
+          // Set verification status
+          item.markAsCorrected();
 
           await itemRepo.save(item);
         }

@@ -46,7 +46,7 @@ describe('Low-Confidence Field Verification', () => {
         if (entityName === FieldCorrection || entityName === 'FieldCorrection') {
           return mockFieldCorrectionRepo;
         }
-        if (entityName === 'PrescriptionItem') {
+        if (entityName === PrescriptionItem || entityName === 'PrescriptionItem') {
           return mockItemRepo;
         }
         return {} as any;
@@ -155,7 +155,7 @@ describe('Low-Confidence Field Verification', () => {
       );
     });
 
-    it('should reject approval when not all low-confidence items are verified', async () => {
+    it('should reject approval when not all low-confidence fields are verified', async () => {
       // Mock state machine before test
       const { PrescriptionStateMachine } = require('../utils/stateMachine');
       PrescriptionStateMachine.canApprove = jest.fn().mockReturnValue({ canApprove: true });
@@ -164,6 +164,7 @@ describe('Low-Confidence Field Verification', () => {
       item1.id = 'item-1';
       item1.medication_name = 'Aspirin';
       item1.medication_confidence = 75; // Low confidence
+      item1.dosage_confidence = 70; // Low confidence
 
       const item2 = new PrescriptionItem();
       item2.id = 'item-2';
@@ -181,13 +182,22 @@ describe('Low-Confidence Field Verification', () => {
         pharmacist_id: 'pharmacist-456',
         low_confidence_verified: true,
         field_corrections: [
-          // Only correcting item-1, missing item-2
+          // Correcting item-1's medication_name but missing dosage field
           {
             item_id: 'item-1',
             field_name: 'medication_name',
             original_value: 'Aspirin',
             corrected_value: 'Aspirin',
             original_confidence: 75,
+            was_corrected: false,
+          },
+          // Correcting item-2's dosage (complete for this item)
+          {
+            item_id: 'item-2',
+            field_name: 'dosage',
+            original_value: '500mg',
+            corrected_value: '500mg',
+            original_confidence: 70,
             was_corrected: false,
           },
         ],
@@ -198,8 +208,14 @@ describe('Low-Confidence Field Verification', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: 'Not all low-confidence items have been verified',
-          code: 'INCOMPLETE_VERIFICATION',
+          error: expect.stringContaining('Missing corrections for fields'),
+          code: 'INCOMPLETE_FIELD_VERIFICATION',
+          details: expect.objectContaining({
+            item_id: 'item-1',
+            medication_name: 'Aspirin',
+            missing_fields: ['dosage'],
+            required_fields: ['medication_name', 'dosage'],
+          }),
         })
       );
     });
@@ -213,6 +229,7 @@ describe('Low-Confidence Field Verification', () => {
       lowConfidenceItem.medication_confidence = 75; // Low confidence
       lowConfidenceItem.dosage_confidence = 85; // OK
       lowConfidenceItem.frequency_confidence = 90; // OK
+      lowConfidenceItem.markAsCorrectedWithOriginal = jest.fn();
       lowConfidenceItem.markAsCorrected = jest.fn();
 
       const prescription = new Prescription();
@@ -297,6 +314,7 @@ describe('Low-Confidence Field Verification', () => {
       item.medication_confidence = 75;
       item.dosage_confidence = 70;
       item.frequency_confidence = 65;
+      item.markAsCorrectedWithOriginal = jest.fn();
       item.markAsCorrected = jest.fn();
 
       const prescription = new Prescription();
@@ -369,6 +387,7 @@ describe('Low-Confidence Field Verification', () => {
       item.id = 'item-1';
       item.medication_name = 'Asprin'; // Misspelled
       item.medication_confidence = 60;
+      item.markAsCorrectedWithOriginal = jest.fn();
       item.markAsCorrected = jest.fn();
 
       const prescription = new Prescription();
@@ -411,10 +430,13 @@ describe('Low-Confidence Field Verification', () => {
       expect(item.medication_name).toBe('Aspirin');
 
       // Should mark as corrected with original values
-      expect(item.markAsCorrected).toHaveBeenCalledWith({
+      expect(item.markAsCorrectedWithOriginal).toHaveBeenCalledWith({
         medication_name: 'Asprin',
         confidence: 60,
       });
+
+      // Should set verification status
+      expect(item.markAsCorrected).toHaveBeenCalled();
     });
   });
 

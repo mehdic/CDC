@@ -83,6 +83,12 @@ export class PrescriptionItem {
   @Column({ type: 'jsonb', nullable: true })
   original_ai_value: any; // Store original AI extraction if pharmacist corrects
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  verification_status: string | null; // CORRECTED, VERIFIED, etc.
+
+  @Column({ type: 'timestamp', nullable: true })
+  verified_at: Date | null; // Timestamp when pharmacist verified/corrected
+
   // ============================================================================
   // Inventory Link
   // ============================================================================
@@ -198,8 +204,17 @@ export class PrescriptionItem {
    * Mark item as corrected by pharmacist
    * Stores original AI values for audit trail
    */
-  markAsCorrected(originalValues: any): void {
+  markAsCorrectedWithOriginal(originalValues: any): void {
     this.pharmacist_corrected = true;
     this.original_ai_value = originalValues;
+  }
+
+  /**
+   * Mark item as corrected (sets verification status)
+   * Used when pharmacist verifies/corrects low-confidence fields
+   */
+  markAsCorrected(): void {
+    this.verification_status = 'CORRECTED';
+    this.verified_at = new Date();
   }
 }
