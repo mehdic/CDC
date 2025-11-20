@@ -9,13 +9,26 @@ import { Request, Response } from 'express';
 import { DataSource } from 'typeorm';
 import { Prescription } from '../../../../shared/models/Prescription';
 import { TreatmentPlan } from '../../../../shared/models/TreatmentPlan';
+import { FieldCorrection } from '../../../../shared/models/FieldCorrection';
 import { PrescriptionStateMachine } from '../utils/stateMachine';
 import { generateTreatmentPlan } from '../utils/treatmentPlan';
+
+export interface FieldCorrectionInput {
+  item_id: string;          // Prescription item ID
+  field_name: string;       // Field name (medication_name, dosage, frequency)
+  original_value: string;   // AI-extracted value
+  corrected_value: string;  // Pharmacist-verified/corrected value
+  original_confidence: number; // AI confidence score
+  was_corrected: boolean;   // true if value changed, false if just verified
+  notes?: string;           // Optional pharmacist notes
+}
 
 export interface ApprovalRequest {
   pharmacist_id: string;   // ID of pharmacist approving
   digital_signature?: string; // Optional digital signature (FR-028)
   notes?: string;           // Optional pharmacist notes
+  field_corrections?: FieldCorrectionInput[]; // Low-confidence field verifications
+  low_confidence_verified?: boolean; // Flag indicating all low-confidence fields were reviewed
 }
 
 export interface ApprovalResponse {
@@ -80,6 +93,70 @@ export async function approvePrescription(req: Request, res: Response): Promise<
       return;
     }
 
+    // ========================================================================
+    // GROUP_API_3: Low-Confidence Field Verification
+    // ========================================================================
+    // Check if any prescription items have low-confidence fields (< 80%)
+    const lowConfidenceItems = prescription.items.filter(item => item.hasAnyLowConfidence());
+
+    if (lowConfidenceItems.length > 0) {
+      // If there are low-confidence fields, pharmacist MUST verify them
+      if (!approvalData.low_confidence_verified) {
+        // Collect all low-confidence fields for error response
+        const lowConfidenceDetails = lowConfidenceItems.map(item => ({
+          item_id: item.id,
+          medication_name: item.medication_name,
+          low_confidence_fields: item.getLowConfidenceFields(),
+          confidence_scores: {
+            medication: item.medication_confidence,
+            dosage: item.dosage_confidence,
+            frequency: item.frequency_confidence,
+          },
+        }));
+
+        res.status(400).json({
+          error: 'Prescription has low-confidence fields requiring manual verification',
+          code: 'LOW_CONFIDENCE_VERIFICATION_REQUIRED',
+          details: {
+            items_requiring_verification: lowConfidenceItems.length,
+            low_confidence_fields: lowConfidenceDetails,
+          },
+        });
+        return;
+      }
+
+      // If verified flag is set, validate that corrections were provided
+      if (!approvalData.field_corrections || approvalData.field_corrections.length === 0) {
+        res.status(400).json({
+          error: 'Field corrections must be provided for low-confidence fields',
+          code: 'FIELD_CORRECTIONS_REQUIRED',
+          details: {
+            items_requiring_verification: lowConfidenceItems.length,
+          },
+        });
+        return;
+      }
+
+      // Validate that all low-confidence fields have corrections
+      const correctedItemIds = new Set(approvalData.field_corrections.map(c => c.item_id));
+      const uncorrectedItems = lowConfidenceItems.filter(item => !correctedItemIds.has(item.id));
+
+      if (uncorrectedItems.length > 0) {
+        res.status(400).json({
+          error: 'Not all low-confidence items have been verified',
+          code: 'INCOMPLETE_VERIFICATION',
+          details: {
+            uncorrected_items: uncorrectedItems.map(item => ({
+              item_id: item.id,
+              medication_name: item.medication_name,
+              low_confidence_fields: item.getLowConfidenceFields(),
+            })),
+          },
+        });
+        return;
+      }
+    }
+
     // Check for critical safety issues
     const hasCriticalIssues = prescription.hasSafetyWarnings();
     if (hasCriticalIssues) {
@@ -117,6 +194,57 @@ export async function approvePrescription(req: Request, res: Response): Promise<
 
     // Save prescription with approval data
     await prescriptionRepo.save(prescription);
+
+    // ========================================================================
+    // GROUP_API_3: Save Field Corrections to Audit Trail
+    // ========================================================================
+    if (approvalData.field_corrections && approvalData.field_corrections.length > 0) {
+      const fieldCorrectionRepo = dataSource.getRepository(FieldCorrection);
+
+      // Create field correction records for audit trail
+      const fieldCorrections = approvalData.field_corrections.map(correction => {
+        const fieldCorrection = new FieldCorrection();
+        fieldCorrection.prescription_id = prescription.id;
+        fieldCorrection.prescription_item_id = correction.item_id;
+        fieldCorrection.pharmacist_id = approvalData.pharmacist_id;
+        fieldCorrection.field_name = correction.field_name;
+        fieldCorrection.original_value = correction.original_value;
+        fieldCorrection.corrected_value = correction.corrected_value;
+        fieldCorrection.original_confidence = correction.original_confidence;
+        fieldCorrection.was_corrected = correction.was_corrected;
+        fieldCorrection.correction_notes = correction.notes || null;
+        fieldCorrection.correction_type = correction.was_corrected ? 'correction' : 'verification';
+
+        return fieldCorrection;
+      });
+
+      // Save all corrections in batch
+      await fieldCorrectionRepo.save(fieldCorrections);
+
+      // Update prescription items with corrected values
+      const itemRepo = dataSource.getRepository('PrescriptionItem');
+      for (const correction of approvalData.field_corrections) {
+        const item = prescription.items.find(i => i.id === correction.item_id);
+        if (item && correction.was_corrected) {
+          // Update the item field with corrected value
+          if (correction.field_name === 'medication_name') {
+            item.medication_name = correction.corrected_value;
+          } else if (correction.field_name === 'dosage') {
+            item.dosage = correction.corrected_value;
+          } else if (correction.field_name === 'frequency') {
+            item.frequency = correction.corrected_value;
+          }
+
+          // Mark as corrected and store original value
+          item.markAsCorrected({
+            [correction.field_name]: correction.original_value,
+            confidence: correction.original_confidence,
+          });
+
+          await itemRepo.save(item);
+        }
+      }
+    }
 
     // Generate treatment plan (FR-017)
     let treatmentPlan: TreatmentPlan | null = null;
