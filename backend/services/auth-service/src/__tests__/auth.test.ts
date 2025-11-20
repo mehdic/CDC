@@ -14,9 +14,9 @@
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import app, { AppDataSource } from '../index';
-import { User, UserRole, UserStatus } from '../../../shared/models/User';
-import { hashPassword } from '../../../shared/utils/auth';
-import { generateTokenPair } from '../../../shared/utils/jwt';
+import { User, UserRole, UserStatus } from '@models/User';
+import { hashPassword } from '@utils/auth';
+import { generateTokenPair } from '@utils/jwt';
 import * as speakeasy from 'speakeasy';
 
 // ============================================================================

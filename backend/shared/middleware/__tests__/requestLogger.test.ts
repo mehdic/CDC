@@ -3,16 +3,10 @@
  * Tests request logging, correlation IDs, and response tracking
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import { requestLogger, attachRequestIdToLogs } from '../requestLogger';
+// Mock uuid - MUST be before imports
+jest.mock('uuid');
 
-// Mock uuid
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'generated-uuid-123'),
-}));
-
-// Mock logger
+// Mock logger - MUST be before imports
 jest.mock('../../utils/logger', () => ({
   logger: {
     info: jest.fn(),
@@ -26,6 +20,10 @@ jest.mock('../../utils/logger', () => ({
   },
 }));
 
+import { Request, Response, NextFunction } from 'express';
+import { requestLogger, attachRequestIdToLogs } from '../requestLogger';
+import { v4 as uuidv4 } from 'uuid';
+
 describe('Request Logger Middleware', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
@@ -33,6 +31,9 @@ describe('Request Logger Middleware', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Configure uuid mock to return a test value
+    (uuidv4 as jest.Mock).mockReturnValue('generated-uuid-123');
 
     mockRequest = {
       method: 'GET',
@@ -63,8 +64,8 @@ describe('Request Logger Middleware', () => {
     it('should attach requestId to request object', () => {
       requestLogger(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockRequest.requestId).toBeDefined();
-      expect(typeof mockRequest.requestId).toBe('string');
+      expect((mockRequest as any).requestId).toBeDefined();
+      expect(typeof (mockRequest as any).requestId).toBe('string');
     });
 
     it('should generate UUID v4 for requestId', () => {
@@ -81,13 +82,13 @@ describe('Request Logger Middleware', () => {
 
       requestLogger(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockRequest.requestId).toBe(customId);
+      expect((mockRequest as any).requestId).toBe(customId);
     });
 
     it('should set correlation ID', () => {
       requestLogger(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockRequest.correlationId).toBeDefined();
+      expect((mockRequest as any).correlationId).toBeDefined();
     });
 
     it('should use X-Correlation-ID header if provided', () => {
@@ -98,7 +99,7 @@ describe('Request Logger Middleware', () => {
 
       requestLogger(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockRequest.correlationId).toBe(customCorrelation);
+      expect((mockRequest as any).correlationId).toBe(customCorrelation);
     });
 
     it('should set response headers with request ID', () => {
@@ -325,7 +326,7 @@ describe('Request Logger Middleware', () => {
 
   describe('attachRequestIdToLogs middleware', () => {
     it('should attach logger to request object', () => {
-      mockRequest.requestId = 'req-123';
+      (mockRequest as any).requestId = 'req-123';
 
       attachRequestIdToLogs(mockRequest as Request, mockResponse as Response, mockNext);
 
@@ -334,9 +335,9 @@ describe('Request Logger Middleware', () => {
 
     it('should create child logger with request context', () => {
       const { logger } = require('../../utils/logger');
-      mockRequest.requestId = 'req-123';
+      (mockRequest as any).requestId = 'req-123';
       (mockRequest as any).userId = 'user-456';
-      mockRequest.correlationId = 'corr-789';
+      (mockRequest as any).correlationId = 'corr-789';
 
       attachRequestIdToLogs(mockRequest as Request, mockResponse as Response, mockNext);
 

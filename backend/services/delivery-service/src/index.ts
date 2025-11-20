@@ -23,10 +23,10 @@ import { DataSource } from 'typeorm';
 import { initializeDatabase, clearDatabase } from './database';
 import deliveryRepository from './repository/DeliveryRepository';
 import { DeliveryStatus, Location } from './models/Delivery';
-import { Delivery } from '../../shared/models/Delivery';
-import { User } from '../../shared/models/User';
-import { Pharmacy } from '../../shared/models/Pharmacy';
-import { AuditTrailEntry } from '../../shared/models/AuditTrailEntry';
+import { Delivery } from '@models/Delivery';
+import { User } from '@models/User';
+import { Pharmacy } from '@models/Pharmacy';
+import { AuditTrailEntry } from '@models/AuditTrailEntry';
 
 // Initialize database
 initializeDatabase();

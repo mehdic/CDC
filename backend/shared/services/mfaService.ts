@@ -117,14 +117,18 @@ function generateBackupCodes(count: number = 10, length: number = 8): string[] {
 
   for (let i = 0; i < count; i++) {
     // Generate random alphanumeric code
-    const code = crypto
-      .randomBytes(Math.ceil(length * 0.75))
-      .toString('base64')
-      .replace(/[^a-zA-Z0-9]/g, '')
-      .substring(0, length)
-      .toUpperCase();
+    // Generate more bytes than needed to ensure we have enough alphanumeric chars after filtering
+    let code = '';
+    while (code.length < length) {
+      const bytes = crypto.randomBytes(length);
+      const chunk = bytes
+        .toString('base64')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .toUpperCase();
+      code += chunk;
+    }
 
-    codes.push(code);
+    codes.push(code.substring(0, length));
   }
 
   return codes;
