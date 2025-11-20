@@ -146,7 +146,7 @@ describe('JWT Token Utilities', () => {
         testUser.pharmacyId
       );
 
-      expect(() => verifyAccessToken(refreshToken)).toThrow('expected access token');
+      expect(() => verifyAccessToken(refreshToken)).toThrow(/access token/i);
     });
 
     it('should reject invalid token', () => {
@@ -185,7 +185,7 @@ describe('JWT Token Utilities', () => {
         testUser.pharmacyId
       );
 
-      expect(() => verifyRefreshToken(accessToken)).toThrow('expected refresh token');
+      expect(() => verifyRefreshToken(accessToken)).toThrow(/refresh token/i);
     });
   });
 

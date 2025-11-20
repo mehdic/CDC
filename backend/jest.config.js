@@ -63,6 +63,13 @@ module.exports = {
   // Setup files to run before tests
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
 
+  // Ignore patterns for test discovery
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',           // Exclude build artifacts
+    '\\.d\\.ts$'        // Exclude TypeScript declaration files
+  ],
+
   // Module file extensions
   moduleFileExtensions: ['ts', 'js', 'json'],
 

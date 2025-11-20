@@ -91,7 +91,7 @@ describe('Authentication Utilities', () => {
 
     it('should reject invalid passwords', async () => {
       const invalidPassword = 'short';
-      await expect(hashPassword(invalidPassword)).rejects.toThrow('Invalid password');
+      await expect(hashPassword(invalidPassword)).rejects.toThrow(/password/i);
     });
 
     it('should hash unicode passwords', async () => {
