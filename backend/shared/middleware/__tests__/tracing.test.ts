@@ -3,6 +3,108 @@
  * Tests OpenTelemetry spans, context propagation, and tracing
  */
 
+// ============================================================================
+// IMPORTANT: Mock external dependencies BEFORE importing tracing module
+// ============================================================================
+
+// Mock logger BEFORE importing tracing
+jest.mock('../../utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
+// Mock OpenTelemetry SDK packages BEFORE importing tracing
+// These must be mocked before the tracing module imports them
+jest.mock('@opentelemetry/exporter-trace-otlp-http', () => ({
+  OTLPTraceExporter: jest.fn().mockImplementation(() => ({
+    export: jest.fn(),
+    shutdown: jest.fn(),
+  })),
+}));
+
+jest.mock('@opentelemetry/sdk-trace-base', () => {
+  // Create mock span that will be used by all tests
+  const createMockSpan = () => ({
+    setAttribute: jest.fn().mockReturnThis(),
+    setAttributes: jest.fn().mockReturnThis(),
+    recordException: jest.fn().mockReturnThis(),
+    setStatus: jest.fn().mockReturnThis(),
+    end: jest.fn(),
+    addEvent: jest.fn().mockReturnThis(),
+    spanContext: jest.fn(() => ({
+      traceId: 'test-trace-id',
+      spanId: 'test-span-id',
+    })),
+  });
+
+  // Create mock tracer
+  const mockTracer = {
+    startSpan: jest.fn(() => createMockSpan()),
+  };
+
+  return {
+    BasicTracerProvider: jest.fn().mockImplementation(() => ({
+      addSpanProcessor: jest.fn(),
+      getTracer: jest.fn(() => mockTracer),
+    })),
+    BatchSpanProcessor: jest.fn().mockImplementation(() => ({
+      forceFlush: jest.fn(),
+      shutdown: jest.fn(),
+    })),
+    ConsoleSpanExporter: jest.fn().mockImplementation(() => ({
+      export: jest.fn(),
+      shutdown: jest.fn(),
+    })),
+  };
+});
+
+// Mock OpenTelemetry API - must provide all methods used
+jest.mock('@opentelemetry/api', () => {
+  // Create mock span factory
+  const createMockSpan = () => ({
+    setAttribute: jest.fn().mockReturnThis(),
+    setAttributes: jest.fn().mockReturnThis(),
+    recordException: jest.fn().mockReturnThis(),
+    setStatus: jest.fn().mockReturnThis(),
+    end: jest.fn(),
+    addEvent: jest.fn().mockReturnThis(),
+    spanContext: jest.fn(() => ({
+      traceId: 'test-trace-id',
+      spanId: 'test-span-id',
+    })),
+  });
+
+  // Create mock tracer
+  const mockTracer = {
+    startSpan: jest.fn(() => createMockSpan()),
+  };
+
+  return {
+    SpanStatusCode: {
+      OK: 0,
+      ERROR: 1,
+      UNSET: 2,
+    },
+    trace: {
+      getActiveSpan: jest.fn(() => null),
+      getTracer: jest.fn(() => mockTracer),
+      setGlobalTracerProvider: jest.fn(),
+      setSpan: jest.fn((ctx, span) => ctx),
+    },
+    context: {
+      active: jest.fn(() => ({})),
+      with: jest.fn(async (ctx, fn) => await fn()),
+    },
+  };
+});
+
+// ============================================================================
+// NOW import the modules after mocks are set up
+// ============================================================================
+
 import { Request, Response, NextFunction } from 'express';
 import {
   initializeTracing,
@@ -20,76 +122,6 @@ import {
   recordException,
 } from '../tracing';
 
-// Mock logger
-jest.mock('../../utils/logger', () => ({
-  logger: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  },
-}));
-
-// Mock OpenTelemetry API
-jest.mock('@opentelemetry/api', () => ({
-  SpanStatusCode: {
-    OK: 0,
-    ERROR: 1,
-    UNSET: 2,
-  },
-  trace: {
-    getActiveSpan: jest.fn(() => null),
-    getTracer: jest.fn(() => ({
-      startSpan: jest.fn(() => ({
-        setAttribute: jest.fn(),
-        recordException: jest.fn(),
-        setStatus: jest.fn(),
-        end: jest.fn(),
-        addEvent: jest.fn(),
-      })),
-    })),
-    setGlobalTracerProvider: jest.fn(),
-    setSpan: jest.fn((ctx, span) => ctx),
-  },
-  context: {
-    active: jest.fn(() => ({})),
-    with: jest.fn((ctx, fn) => fn()),
-  },
-}));
-
-// Mock OpenTelemetry SDK
-jest.mock('@opentelemetry/sdk-node', () => ({
-  NodeSDK: jest.fn(),
-}));
-
-jest.mock('@opentelemetry/exporter-trace-otlp-http', () => ({
-  OTLPTraceExporter: jest.fn(),
-}));
-
-jest.mock('@opentelemetry/sdk-trace-node', () => ({
-  BasicTracerProvider: jest.fn(function () {
-    return {
-      addSpanProcessor: jest.fn(),
-    };
-  }),
-  BatchSpanProcessor: jest.fn(),
-  ConsoleSpanExporter: jest.fn(),
-}));
-
-jest.mock('@opentelemetry/resources', () => ({
-  Resource: {
-    default: jest.fn(() => ({
-      merge: jest.fn(() => ({})),
-    })),
-  },
-}));
-
-jest.mock('@opentelemetry/semantic-conventions', () => ({
-  SemanticResourceAttributes: {
-    SERVICE_NAME: 'service.name',
-    SERVICE_VERSION: 'service.version',
-  },
-}));
-
 describe('Distributed Tracing', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
@@ -97,6 +129,9 @@ describe('Distributed Tracing', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Initialize tracing before each test
+    initializeTracing();
 
     mockRequest = {
       method: 'GET',
