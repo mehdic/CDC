@@ -1,3 +1,5 @@
 [2025-11-20 17:03:46 UTC] ORCHESTRATOR: Tech Lead returned CHANGES_REQUESTED for GROUP_FINAL_FIXES
 [2025-11-20 17:03:46 UTC] ORCHESTRATOR: Spawning Developer to address 5 specific issues
 [2025-11-20 17:03:46 UTC] ORCHESTRATOR: Priority: CRITICAL (test validation), HIGH (MFA performance, password tests), MEDIUM (delivery-service, requestLogger)
+[2025-11-20 19:27:11 UTC] ORCHESTRATOR: Tech Lead returned CHANGES_REQUESTED for TEST_INFRA - OpenTelemetry conditional mocking strategy needed
+[2025-11-20 19:27:11 UTC] ORCHESTRATOR: Spawning Developer to implement 4-task conditional mocking fix

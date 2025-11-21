@@ -1,146 +1,142 @@
 /**
  * Unit Tests for Distributed Tracing Middleware (T257)
  * Tests OpenTelemetry spans, context propagation, and tracing
+ *
+ * ISOLATION STRATEGY:
+ * - Uses jest.isolateModules() to prevent mock leakage
+ * - Mocks are scoped to this test file only
+ * - Other test files get the real OpenTelemetry API
  */
 
-// ============================================================================
-// IMPORTANT: Mock external dependencies BEFORE importing tracing module
-// ============================================================================
-
-// Mock logger BEFORE importing tracing
-jest.mock('../../utils/logger', () => ({
-  logger: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  },
-}));
-
-// Mock OpenTelemetry SDK packages BEFORE importing tracing
-// These must be mocked before the tracing module imports them
-jest.mock('@opentelemetry/exporter-trace-otlp-http', () => ({
-  OTLPTraceExporter: jest.fn().mockImplementation(() => ({
-    export: jest.fn(),
-    shutdown: jest.fn(),
-  })),
-}));
-
-jest.mock('@opentelemetry/sdk-trace-base', () => {
-  // Create mock span that will be used by all tests
-  const createMockSpan = () => ({
-    setAttribute: jest.fn().mockReturnThis(),
-    setAttributes: jest.fn().mockReturnThis(),
-    recordException: jest.fn().mockReturnThis(),
-    setStatus: jest.fn().mockReturnThis(),
-    end: jest.fn(),
-    addEvent: jest.fn().mockReturnThis(),
-    spanContext: jest.fn(() => ({
-      traceId: 'test-trace-id',
-      spanId: 'test-span-id',
-    })),
-  });
-
-  // Create mock tracer
-  const mockTracer = {
-    startSpan: jest.fn(() => createMockSpan()),
-  };
-
-  return {
-    BasicTracerProvider: jest.fn().mockImplementation(() => ({
-      addSpanProcessor: jest.fn(),
-      getTracer: jest.fn(() => mockTracer),
-    })),
-    BatchSpanProcessor: jest.fn().mockImplementation(() => ({
-      forceFlush: jest.fn(),
-      shutdown: jest.fn(),
-    })),
-    ConsoleSpanExporter: jest.fn().mockImplementation(() => ({
-      export: jest.fn(),
-      shutdown: jest.fn(),
-    })),
-  };
-});
-
-// Mock OpenTelemetry API - must provide all methods used
-// CRITICAL: jest.fn() is NOT available in jest.mock() factory function scope
-// Use plain functions and return values directly
-jest.mock('@opentelemetry/api', () => {
-  // Create mock span that will be returned by startSpan
-  const mockSpan = {
-    setAttribute() { return this; },
-    setAttributes() { return this; },
-    recordException() { return this; },
-    setStatus() { return this; },
-    end() {},
-    addEvent() { return this; },
-    spanContext() {
-      return {
-        traceId: 'test-trace-id',
-        spanId: 'test-span-id',
-      };
-    },
-  };
-
-  // Create mock tracer that will be returned by getTracer
-  const mockTracer = {
-    startSpan() {
-      return mockSpan;
-    },
-  };
-
-  return {
-    SpanStatusCode: {
-      OK: 0,
-      ERROR: 1,
-      UNSET: 2,
-    },
-    trace: {
-      getActiveSpan() { return null; },
-      // Return mockTracer directly
-      getTracer() {
-        return mockTracer;
-      },
-      setGlobalTracerProvider() {},
-      setSpan(ctx, span) { return ctx; },
-    },
-    context: {
-      active() { return {}; },
-      async with(ctx, fn) { return await fn(); },
-    },
-  };
-});
-
-// ============================================================================
-// NOW import the modules after mocks are set up
-// ============================================================================
-
-import { Request, Response, NextFunction } from 'express';
-import {
-  initializeTracing,
-  getTracer,
-  getCurrentSpan,
-  createSpan,
-  withSpan,
-  withSpanSync,
-  traceDbQuery,
-  traceExternalCall,
-  traceCacheOperation,
-  tracingMiddleware,
-  addSpanEvent,
-  setSpanAttribute,
-  recordException,
-} from '../tracing';
+// Import types only (not runtime imports that could be mocked)
+import type { Request, Response, NextFunction } from 'express';
 
 describe('Distributed Tracing', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let mockNext: jest.Mock;
 
+  // Store module exports in isolated scope
+  let tracingModule: any;
+
+  beforeAll(() => {
+    // Use jest.isolateModules to prevent mock contamination
+    jest.isolateModules(() => {
+      // Mock logger within isolated scope
+      jest.doMock('../../utils/logger', () => ({
+        logger: {
+          info: jest.fn(),
+          warn: jest.fn(),
+          error: jest.fn(),
+        },
+      }));
+
+      // Mock OpenTelemetry SDK packages
+      jest.doMock('@opentelemetry/exporter-trace-otlp-http', () => ({
+        OTLPTraceExporter: jest.fn().mockImplementation(() => ({
+          export: jest.fn(),
+          shutdown: jest.fn(),
+        })),
+      }));
+
+      jest.doMock('@opentelemetry/sdk-trace-base', () => {
+        // Create mock span factory
+        const createMockSpan = () => ({
+          setAttribute: jest.fn().mockReturnThis(),
+          setAttributes: jest.fn().mockReturnThis(),
+          recordException: jest.fn().mockReturnThis(),
+          setStatus: jest.fn().mockReturnThis(),
+          end: jest.fn(),
+          addEvent: jest.fn().mockReturnThis(),
+          spanContext: jest.fn(() => ({
+            traceId: 'test-trace-id',
+            spanId: 'test-span-id',
+          })),
+        });
+
+        // Create mock tracer
+        const mockTracer = {
+          startSpan: jest.fn(() => createMockSpan()),
+        };
+
+        return {
+          BasicTracerProvider: jest.fn().mockImplementation(() => ({
+            addSpanProcessor: jest.fn(),
+            getTracer: jest.fn(() => mockTracer),
+          })),
+          BatchSpanProcessor: jest.fn().mockImplementation(() => ({
+            forceFlush: jest.fn(),
+            shutdown: jest.fn(),
+          })),
+          ConsoleSpanExporter: jest.fn().mockImplementation(() => ({
+            export: jest.fn(),
+            shutdown: jest.fn(),
+          })),
+        };
+      });
+
+      // Mock OpenTelemetry API with proper methods
+      jest.doMock('@opentelemetry/api', () => {
+        // Mock span
+        const mockSpan = {
+          setAttribute() { return this; },
+          setAttributes() { return this; },
+          recordException() { return this; },
+          setStatus() { return this; },
+          end() {},
+          addEvent() { return this; },
+          spanContext() {
+            return {
+              traceId: 'test-trace-id',
+              spanId: 'test-span-id',
+            };
+          },
+        };
+
+        // Mock tracer
+        const mockTracer = {
+          startSpan() {
+            return mockSpan;
+          },
+        };
+
+        return {
+          SpanStatusCode: {
+            OK: 0,
+            ERROR: 1,
+            UNSET: 2,
+          },
+          trace: {
+            getActiveSpan() { return null; },
+            getTracer() {
+              return mockTracer;
+            },
+            setGlobalTracerProvider() {},
+            setSpan(ctx: any, span: any) { return ctx; },
+          },
+          context: {
+            active() { return {}; },
+            async with(ctx: any, fn: () => any) { return await fn(); },
+          },
+        };
+      });
+
+      // NOW require the tracing module within isolated context
+      tracingModule = require('../tracing');
+    });
+  });
+
+  afterAll(() => {
+    // Clean up all mocks after tests complete
+    jest.resetModules();
+    jest.restoreAllMocks();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
 
     // Initialize tracing before each test
-    initializeTracing();
+    tracingModule.initializeTracing();
 
     mockRequest = {
       method: 'GET',
@@ -167,13 +163,13 @@ describe('Distributed Tracing', () => {
   describe('initializeTracing()', () => {
     it('should initialize tracing without error', () => {
       expect(() => {
-        initializeTracing();
+        tracingModule.initializeTracing();
       }).not.toThrow();
     });
 
     it('should accept configuration options', () => {
       expect(() => {
-        initializeTracing({
+        tracingModule.initializeTracing({
           serviceName: 'custom-service',
           environment: 'production',
           exporterUrl: 'http://localhost:4318/v1/traces',
@@ -182,15 +178,15 @@ describe('Distributed Tracing', () => {
     });
 
     it('should not reinitialize if already initialized', () => {
-      initializeTracing();
-      initializeTracing(); // Second call should be skipped
+      tracingModule.initializeTracing();
+      tracingModule.initializeTracing(); // Second call should be skipped
 
-      expect(initializeTracing).toBeDefined();
+      expect(tracingModule.initializeTracing).toBeDefined();
     });
 
     it('should use default values', () => {
       expect(() => {
-        initializeTracing({});
+        tracingModule.initializeTracing({});
       }).not.toThrow();
     });
 
@@ -199,7 +195,7 @@ describe('Distributed Tracing', () => {
       process.env.OTLP_EXPORTER_URL = 'http://custom-exporter:4318/v1/traces';
 
       expect(() => {
-        initializeTracing();
+        tracingModule.initializeTracing();
       }).not.toThrow();
 
       delete process.env.NODE_ENV;
@@ -209,20 +205,20 @@ describe('Distributed Tracing', () => {
 
   describe('getTracer()', () => {
     it('should return a tracer instance', () => {
-      const tracer = getTracer();
+      const tracer = tracingModule.getTracer();
 
       expect(tracer).toBeDefined();
     });
 
     it('should initialize tracing if not already done', () => {
-      const tracer = getTracer();
+      const tracer = tracingModule.getTracer();
 
       expect(tracer).not.toBeNull();
     });
 
     it('should return the same tracer instance', () => {
-      const tracer1 = getTracer();
-      const tracer2 = getTracer();
+      const tracer1 = tracingModule.getTracer();
+      const tracer2 = tracingModule.getTracer();
 
       // Both should be defined
       expect(tracer1).toBeDefined();
@@ -232,13 +228,13 @@ describe('Distributed Tracing', () => {
 
   describe('createSpan()', () => {
     it('should create a span with name', () => {
-      const span = createSpan('test-operation');
+      const span = tracingModule.createSpan('test-operation');
 
       expect(span).toBeDefined();
     });
 
     it('should set attributes on span', () => {
-      const span = createSpan('test-operation', {
+      const span = tracingModule.createSpan('test-operation', {
         userId: 'user-123',
         operationId: 'op-456',
       });
@@ -247,13 +243,13 @@ describe('Distributed Tracing', () => {
     });
 
     it('should handle span without attributes', () => {
-      const span = createSpan('test-operation');
+      const span = tracingModule.createSpan('test-operation');
 
       expect(span).toBeDefined();
     });
 
     it('should support different attribute types', () => {
-      const span = createSpan('test-operation', {
+      const span = tracingModule.createSpan('test-operation', {
         stringAttr: 'value',
         numberAttr: 123,
         booleanAttr: true,
@@ -266,7 +262,7 @@ describe('Distributed Tracing', () => {
 
   describe('withSpan() async context', () => {
     it('should run function within span context', async () => {
-      const result = await withSpan('test-operation', async (span) => {
+      const result = await tracingModule.withSpan('test-operation', async (span: any) => {
         return 'success';
       });
 
@@ -277,7 +273,7 @@ describe('Distributed Tracing', () => {
       const error = new Error('Test error');
 
       try {
-        await withSpan('test-operation', async (span) => {
+        await tracingModule.withSpan('test-operation', async (span: any) => {
           throw error;
         });
       } catch (e) {
@@ -286,9 +282,9 @@ describe('Distributed Tracing', () => {
     });
 
     it('should set attributes', async () => {
-      await withSpan(
+      await tracingModule.withSpan(
         'test-operation',
-        async (span) => {
+        async (span: any) => {
           return 'success';
         },
         {
@@ -296,13 +292,13 @@ describe('Distributed Tracing', () => {
         }
       );
 
-      expect(withSpan).toBeDefined();
+      expect(tracingModule.withSpan).toBeDefined();
     });
 
     it('should end span after execution', async () => {
       let spanEnded = false;
 
-      await withSpan('test-operation', async (span) => {
+      await tracingModule.withSpan('test-operation', async (span: any) => {
         // Mock end method
         const mockSpan = span as any;
         if (!mockSpan.end) {
@@ -311,13 +307,13 @@ describe('Distributed Tracing', () => {
         return 'done';
       });
 
-      expect(withSpan).toBeDefined();
+      expect(tracingModule.withSpan).toBeDefined();
     });
   });
 
   describe('withSpanSync() sync context', () => {
     it('should run sync function within span context', () => {
-      const result = withSpanSync('sync-operation', (span) => {
+      const result = tracingModule.withSpanSync('sync-operation', (span: any) => {
         return 'sync-success';
       });
 
@@ -328,16 +324,16 @@ describe('Distributed Tracing', () => {
       const error = new Error('Sync error');
 
       expect(() => {
-        withSpanSync('sync-operation', (span) => {
+        tracingModule.withSpanSync('sync-operation', (span: any) => {
           throw error;
         });
       }).toThrow();
     });
 
     it('should set attributes on sync span', () => {
-      const result = withSpanSync(
+      const result = tracingModule.withSpanSync(
         'sync-operation',
-        (span) => {
+        (span: any) => {
           return 'result';
         },
         { operation: 'test' }
@@ -349,7 +345,7 @@ describe('Distributed Tracing', () => {
 
   describe('traceDbQuery()', () => {
     it('should trace database queries', async () => {
-      const result = await traceDbQuery(
+      const result = await tracingModule.traceDbQuery(
         'SELECT * FROM users WHERE id = ?',
         'SELECT',
         'users',
@@ -363,7 +359,7 @@ describe('Distributed Tracing', () => {
     });
 
     it('should set database attributes', async () => {
-      await traceDbQuery(
+      await tracingModule.traceDbQuery(
         'INSERT INTO users VALUES (?)',
         'INSERT',
         'users',
@@ -372,11 +368,11 @@ describe('Distributed Tracing', () => {
         }
       );
 
-      expect(traceDbQuery).toBeDefined();
+      expect(tracingModule.traceDbQuery).toBeDefined();
     });
 
     it('should measure query duration', async () => {
-      await traceDbQuery(
+      await tracingModule.traceDbQuery(
         'SELECT COUNT(*) FROM orders',
         'SELECT',
         'orders',
@@ -385,14 +381,14 @@ describe('Distributed Tracing', () => {
         }
       );
 
-      expect(traceDbQuery).toBeDefined();
+      expect(tracingModule.traceDbQuery).toBeDefined();
     });
 
     it('should handle query errors', async () => {
       const error = new Error('Query failed');
 
       try {
-        await traceDbQuery(
+        await tracingModule.traceDbQuery(
           'SELECT * FROM invalid_table',
           'SELECT',
           'invalid_table',
@@ -408,7 +404,7 @@ describe('Distributed Tracing', () => {
 
   describe('traceExternalCall()', () => {
     it('should trace external HTTP calls', async () => {
-      const result = await traceExternalCall(
+      const result = await tracingModule.traceExternalCall(
         'payment-service',
         'POST',
         'https://payment-api.example.com/charge',
@@ -421,7 +417,7 @@ describe('Distributed Tracing', () => {
     });
 
     it('should set HTTP attributes', async () => {
-      await traceExternalCall(
+      await tracingModule.traceExternalCall(
         'user-service',
         'GET',
         'https://users-api.example.com/users/123',
@@ -430,14 +426,14 @@ describe('Distributed Tracing', () => {
         }
       );
 
-      expect(traceExternalCall).toBeDefined();
+      expect(tracingModule.traceExternalCall).toBeDefined();
     });
 
     it('should handle external call failures', async () => {
       const error = new Error('Service unavailable');
 
       try {
-        await traceExternalCall(
+        await tracingModule.traceExternalCall(
           'failing-service',
           'GET',
           'https://failing-service.example.com/endpoint',
@@ -453,7 +449,7 @@ describe('Distributed Tracing', () => {
 
   describe('traceCacheOperation()', () => {
     it('should trace cache get operations', async () => {
-      const result = await traceCacheOperation(
+      const result = await tracingModule.traceCacheOperation(
         'get',
         'user:123',
         'user-cache',
@@ -466,7 +462,7 @@ describe('Distributed Tracing', () => {
     });
 
     it('should trace cache set operations', async () => {
-      const result = await traceCacheOperation(
+      const result = await tracingModule.traceCacheOperation(
         'set',
         'user:123',
         'user-cache',
@@ -479,7 +475,7 @@ describe('Distributed Tracing', () => {
     });
 
     it('should trace cache delete operations', async () => {
-      const result = await traceCacheOperation(
+      const result = await tracingModule.traceCacheOperation(
         'delete',
         'user:123',
         'user-cache',
@@ -495,7 +491,7 @@ describe('Distributed Tracing', () => {
       const error = new Error('Cache error');
 
       try {
-        await traceCacheOperation(
+        await tracingModule.traceCacheOperation(
           'get',
           'invalid:key',
           'user-cache',
@@ -509,25 +505,25 @@ describe('Distributed Tracing', () => {
     });
 
     it('should set cache hit attribute', async () => {
-      await traceCacheOperation('get', 'key', 'cache', async () => {
+      await tracingModule.traceCacheOperation('get', 'key', 'cache', async () => {
         return { data: 'value' };
       });
 
-      expect(traceCacheOperation).toBeDefined();
+      expect(tracingModule.traceCacheOperation).toBeDefined();
     });
 
     it('should set cache miss attribute', async () => {
-      await traceCacheOperation('get', 'key', 'cache', async () => {
+      await tracingModule.traceCacheOperation('get', 'key', 'cache', async () => {
         return null;
       });
 
-      expect(traceCacheOperation).toBeDefined();
+      expect(tracingModule.traceCacheOperation).toBeDefined();
     });
   });
 
   describe('tracingMiddleware', () => {
     it('should create span for HTTP request', () => {
-      tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
+      tracingModule.tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
 
@@ -538,7 +534,7 @@ describe('Distributed Tracing', () => {
     });
 
     it('should set span attributes from request', () => {
-      tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
+      tracingModule.tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
 
@@ -551,7 +547,7 @@ describe('Distributed Tracing', () => {
     it('should capture response status code', () => {
       mockResponse.statusCode = 404;
 
-      tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
+      tracingModule.tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
 
@@ -564,7 +560,7 @@ describe('Distributed Tracing', () => {
     it('should handle 4xx responses', () => {
       mockResponse.statusCode = 400;
 
-      tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
+      tracingModule.tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
 
@@ -577,7 +573,7 @@ describe('Distributed Tracing', () => {
     it('should handle 5xx responses', () => {
       mockResponse.statusCode = 500;
 
-      tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
+      tracingModule.tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
 
@@ -590,7 +586,7 @@ describe('Distributed Tracing', () => {
     it('should set request ID attribute', () => {
       (mockRequest as any).requestId = 'req-123';
 
-      tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
+      tracingModule.tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
 
@@ -603,7 +599,7 @@ describe('Distributed Tracing', () => {
     it('should set user ID attribute', () => {
       (mockRequest as any).userId = 'user-456';
 
-      tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
+      tracingModule.tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
 
@@ -617,40 +613,31 @@ describe('Distributed Tracing', () => {
   describe('Utility functions', () => {
     describe('addSpanEvent()', () => {
       it('should add event to current span', () => {
-        addSpanEvent('operation-complete', { duration: 100 });
+        tracingModule.addSpanEvent('operation-complete', { duration: 100 });
 
-        expect(addSpanEvent).toBeDefined();
+        expect(tracingModule.addSpanEvent).toBeDefined();
       });
 
       it('should handle missing span', () => {
-        // Mock getActiveSpan to return null
-        jest.mock('@opentelemetry/api', () => ({
-          ...jest.requireActual('@opentelemetry/api'),
-          trace: {
-            ...jest.requireActual('@opentelemetry/api').trace,
-            getActiveSpan: jest.fn(() => null),
-          },
-        }));
+        tracingModule.addSpanEvent('event');
 
-        addSpanEvent('event');
-
-        expect(addSpanEvent).toBeDefined();
+        expect(tracingModule.addSpanEvent).toBeDefined();
       });
     });
 
     describe('setSpanAttribute()', () => {
       it('should set attribute on current span', () => {
-        setSpanAttribute('userId', 'user-789');
+        tracingModule.setSpanAttribute('userId', 'user-789');
 
-        expect(setSpanAttribute).toBeDefined();
+        expect(tracingModule.setSpanAttribute).toBeDefined();
       });
 
       it('should handle different attribute types', () => {
-        setSpanAttribute('stringValue', 'test');
-        setSpanAttribute('numberValue', 42);
-        setSpanAttribute('boolValue', true);
+        tracingModule.setSpanAttribute('stringValue', 'test');
+        tracingModule.setSpanAttribute('numberValue', 42);
+        tracingModule.setSpanAttribute('boolValue', true);
 
-        expect(setSpanAttribute).toBeDefined();
+        expect(tracingModule.setSpanAttribute).toBeDefined();
       });
     });
 
@@ -658,46 +645,46 @@ describe('Distributed Tracing', () => {
       it('should record exception in span', () => {
         const error = new Error('Test exception');
 
-        recordException(error);
+        tracingModule.recordException(error);
 
-        expect(recordException).toBeDefined();
+        expect(tracingModule.recordException).toBeDefined();
       });
 
       it('should set error status', () => {
         const error = new Error('Database error');
 
-        recordException(error);
+        tracingModule.recordException(error);
 
-        expect(recordException).toBeDefined();
+        expect(tracingModule.recordException).toBeDefined();
       });
     });
   });
 
   describe('getCurrentSpan()', () => {
     it('should return current active span', () => {
-      const span = getCurrentSpan();
+      const span = tracingModule.getCurrentSpan();
 
-      expect(typeof getCurrentSpan).toBe('function');
+      expect(typeof tracingModule.getCurrentSpan).toBe('function');
     });
   });
 
   describe('Span lifecycle', () => {
     it('should properly lifecycle spans', async () => {
-      await withSpan('operation', async (span) => {
+      await tracingModule.withSpan('operation', async (span: any) => {
         // Span is active
         expect(span).toBeDefined();
         return 'done';
       });
 
       // Span should be ended after
-      expect(withSpan).toBeDefined();
+      expect(tracingModule.withSpan).toBeDefined();
     });
   });
 
   describe('Context propagation', () => {
     it('should propagate W3C Trace Context', () => {
       // Tracing middleware should set headers for propagation
-      tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
+      tracingModule.tracingMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
     });
@@ -707,7 +694,7 @@ describe('Distributed Tracing', () => {
     it('should handle span creation errors', () => {
       // Should not throw
       expect(() => {
-        createSpan('test');
+        tracingModule.createSpan('test');
       }).not.toThrow();
     });
 
@@ -715,14 +702,14 @@ describe('Distributed Tracing', () => {
       const error = new Error('Operation failed');
 
       try {
-        await withSpan('failing-operation', async (span) => {
+        await tracingModule.withSpan('failing-operation', async (span: any) => {
           throw error;
         });
       } catch (e) {
-        recordException(e as Error);
+        tracingModule.recordException(e as Error);
       }
 
-      expect(recordException).toBeDefined();
+      expect(tracingModule.recordException).toBeDefined();
     });
   });
 });
