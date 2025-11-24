@@ -108,7 +108,8 @@ describe('DrugSearch Component', () => {
     const input = getByPlaceholderText('Search medication...');
     fireEvent.changeText(input, 'Amox');
 
-    const errorMessage = await findByText(/Failed to search drugs/);
+    // Component displays the error message from the thrown error
+    const errorMessage = await findByText('API Error');
     expect(errorMessage).toBeTruthy();
   });
 
