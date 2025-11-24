@@ -15,8 +15,8 @@ import {
 } from '../audit';
 import { AuditTrailEntry, AuditAction, AuditChanges, DeviceInfo } from '../../models/AuditTrailEntry';
 
-// Mock TypeORM
-jest.mock('typeorm');
+// Note: TypeORM decorators are handled by reflect-metadata in global setup
+// We don't need to mock TypeORM itself, just mock DataSource instances used in tests
 
 describe('Audit Trail Utility', () => {
   let mockDataSource: jest.Mocked<DataSource>;

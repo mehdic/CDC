@@ -75,7 +75,12 @@ export const AppDataSource = new DataSource({
 // ============================================================================
 
 app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'healthy', service: 'inventory-service', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'healthy',
+    service: 'inventory-service',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+  });
 });
 
 app.use('/inventory/scan', scanRouter);
@@ -87,6 +92,15 @@ app.use('/inventory/analytics', analyticsRouter);
 // Error Handling
 // ============================================================================
 
+// 404 handler for unknown routes
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.method} ${req.path} not found`,
+  });
+});
+
+// Global error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Error:', err.message);
   console.error(err.stack);

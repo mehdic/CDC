@@ -109,32 +109,42 @@ export function parseDeviceInfo(userAgent: string | null): DeviceInfo | null {
 
   const deviceInfo: DeviceInfo = {};
 
-  // Detect OS
-  if (/windows/i.test(userAgent)) {
+  // Detect OS (check specific patterns BEFORE generic ones)
+  // iPhone/iPad user agents contain "Mac OS X", so check iOS first
+  // Android user agents contain "Linux", so check Android first
+  // Also check for custom app format like "MetaPharmApp/1.2.3 (iOS 14.0)"
+  if (/iphone|ipad|ipod|\(ios\s/i.test(userAgent)) {
+    deviceInfo.os = 'iOS';
+  } else if (/android/i.test(userAgent)) {
+    deviceInfo.os = 'Android';
+  } else if (/windows/i.test(userAgent)) {
     deviceInfo.os = 'Windows';
   } else if (/macintosh|mac os x/i.test(userAgent)) {
     deviceInfo.os = 'macOS';
   } else if (/linux/i.test(userAgent)) {
     deviceInfo.os = 'Linux';
-  } else if (/android/i.test(userAgent)) {
-    deviceInfo.os = 'Android';
-  } else if (/iphone|ipad|ipod/i.test(userAgent)) {
-    deviceInfo.os = 'iOS';
   }
 
-  // Detect Browser
+  // Detect Browser (check specific browsers before Safari)
+  // Note: Chrome/Edge user agents also contain "Safari", so check them first
   if (/edg/i.test(userAgent)) {
     deviceInfo.browser = 'Edge';
   } else if (/chrome/i.test(userAgent)) {
     deviceInfo.browser = 'Chrome';
   } else if (/firefox/i.test(userAgent)) {
     deviceInfo.browser = 'Firefox';
-  } else if (/safari/i.test(userAgent)) {
+  } else if (/safari/i.test(userAgent) || /applewebkit/i.test(userAgent)) {
+    // Safari or iOS WebView (AppleWebKit without Chrome/Firefox/Edge = Safari)
+    deviceInfo.browser = 'Safari';
+  } else if (deviceInfo.os === 'iOS' && /mozilla/i.test(userAgent)) {
+    // Default to Safari for iOS devices with Mozilla prefix (standard browser user agents)
+    // But not for custom apps like "MetaPharmApp/1.2.3 (iOS 14.0)"
     deviceInfo.browser = 'Safari';
   }
 
   // Detect Platform (mobile vs. desktop)
-  if (/mobile|android|iphone|ipad|ipod/i.test(userAgent)) {
+  // Also check for custom app format like "MetaPharmApp/1.2.3 (iOS 14.0)"
+  if (/mobile|android|iphone|ipad|ipod|\(ios\s/i.test(userAgent)) {
     deviceInfo.platform = 'mobile';
   } else if (/tablet|ipad/i.test(userAgent)) {
     deviceInfo.platform = 'tablet';

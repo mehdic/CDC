@@ -1,13 +1,12 @@
 /**
- * Delivery Service (Database-Backed Version)
- * Main Express server for delivery management
+ * Delivery Service (TypeORM Version)
+ * Main Express server for delivery management with proper database integration
  *
- * Endpoints:
- * - POST /api/deliveries - Create new delivery
- * - GET /api/deliveries - List all deliveries
- * - GET /api/deliveries/:id - Get delivery by ID
- * - PATCH /api/deliveries/:id/status - Update delivery status
- * - PATCH /api/deliveries/:id/location - Update delivery location
+ * API Endpoints:
+ * - POST /deliveries - Create new delivery
+ * - GET /deliveries - List all deliveries (with pagination)
+ * - GET /deliveries/:id - Get delivery by ID
+ * - PUT /deliveries/:id - Update delivery (status, location, etc.)
  * - GET /health - Health check
  */
 
@@ -19,22 +18,11 @@ dotenv.config();
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { DataSource } from 'typeorm';
-import { initializeDatabase, clearDatabase } from './database';
-import deliveryRepository from './repository/DeliveryRepository';
-import { DeliveryStatus, Location } from './models/Delivery';
-import { Delivery } from '@models/Delivery';
+import { DataSource, Repository } from 'typeorm';
+import { Delivery, DeliveryStatus } from '@models/Delivery';
 import { User } from '@models/User';
 import { Pharmacy } from '@models/Pharmacy';
 import { AuditTrailEntry } from '@models/AuditTrailEntry';
-
-// Initialize database
-initializeDatabase();
-
-// Clear database in test mode (for test isolation)
-if (process.env.NODE_ENV === 'test') {
-  clearDatabase();
-}
 
 // ============================================================================
 // Configuration
@@ -47,47 +35,16 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN
   : ['http://localhost:3000'];
 
 // ============================================================================
-// Status Transition Validation
+// Database Configuration (TypeORM with SQLite)
 // ============================================================================
 
-const validTransitions: Record<DeliveryStatus, DeliveryStatus[]> = {
-  'pending': ['assigned', 'failed'],
-  'assigned': ['picked_up', 'failed'],
-  'picked_up': ['in_transit', 'failed'],
-  'in_transit': ['delivered', 'failed'],
-  'delivered': [],
-  'failed': []
-};
-
-function isValidStatusTransition(from: DeliveryStatus, to: DeliveryStatus): boolean {
-  return validTransitions[from]?.includes(to) || false;
-}
-
-// ============================================================================
-// Validation Functions
-// ============================================================================
-
-function isValidStatus(status: string): status is DeliveryStatus {
-  return ['pending', 'assigned', 'picked_up', 'in_transit', 'delivered', 'failed'].includes(status);
-}
-
-function isValidAddress(address: string): boolean {
-  // Basic address validation - must have some content
-  return typeof address === 'string' && address.trim().length >= 5;
-}
-
-function isValidLocation(location: any): location is Location {
-  return (
-    location &&
-    typeof location === 'object' &&
-    typeof location.lat === 'number' &&
-    typeof location.lng === 'number' &&
-    location.lat >= -90 &&
-    location.lat <= 90 &&
-    location.lng >= -180 &&
-    location.lng <= 180
-  );
-}
+export const dataSource = new DataSource({
+  type: 'better-sqlite3',
+  database: process.env.DATABASE_PATH || ':memory:', // Use in-memory for tests
+  entities: [Delivery, User, Pharmacy, AuditTrailEntry],
+  synchronize: true, // Auto-create schema in development/test
+  logging: process.env.NODE_ENV === 'development',
+});
 
 // ============================================================================
 // Express App Setup
@@ -102,7 +59,7 @@ app.use(helmet());
 app.use(cors({
   origin: CORS_ORIGIN,
   credentials: true,
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
@@ -118,34 +75,21 @@ if (NODE_ENV === 'development') {
   });
 }
 
-// SQLite configuration for local development and testing
-const dataSource = new DataSource({
-  type: 'better-sqlite3',
-  database: process.env.DATABASE_PATH || './data/delivery.sqlite',
-  entities: [Delivery, User, Pharmacy, AuditTrailEntry],
-  synchronize: true, // Auto-create schema in development/test
-  logging: process.env.NODE_ENV === 'development',
-});
-
 // ============================================================================
-// Initialize Database (only if not in test mode)
+// Repository Helper
 // ============================================================================
 
-// In test mode, tests will handle database initialization
-if (process.env.NODE_ENV !== 'test') {
-  dataSource
-    .initialize()
-    .then(() => {
-      console.log('[Delivery Service] ✓ Database connected');
-    })
-    .catch((error) => {
-      console.error('[Delivery Service] ✗ Database connection error:', error);
-      process.exit(1);
-    });
+function getDeliveryRepo(): Repository<Delivery> {
+  return dataSource.getRepository(Delivery);
 }
 
-// Make dataSource available to routes
-app.locals.dataSource = dataSource;
+// ============================================================================
+// Validation Functions
+// ============================================================================
+
+function isValidDeliveryStatus(status: string): status is DeliveryStatus {
+  return Object.values(DeliveryStatus).includes(status as DeliveryStatus);
+}
 
 // ============================================================================
 // Health Check
@@ -155,6 +99,7 @@ app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'healthy',
     service: 'delivery-service',
+    port: typeof PORT === 'number' ? PORT : parseInt(PORT as string, 10),
     timestamp: new Date().toISOString(),
     version: '1.0.0',
   });
@@ -165,74 +110,71 @@ app.get('/health', (_req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * POST /api/deliveries - Create new delivery
+ * POST /deliveries - Create new delivery
  */
-app.post('/api/deliveries', (req: Request, res: Response) => {
+app.post('/deliveries', async (req: Request, res: Response) => {
   try {
     const {
-      orderId,
-      pharmacyId,
-      patientId,
-      driverId,
-      pickupAddress,
-      deliveryAddress,
-      estimatedDeliveryTime
+      user_id,
+      order_id,
+      delivery_address_encrypted,
+      delivery_notes_encrypted,
+      scheduled_at,
     } = req.body;
 
     // Validate required fields
-    if (!orderId || !pharmacyId || !patientId || !pickupAddress || !deliveryAddress || !estimatedDeliveryTime) {
+    if (!user_id) {
       return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Missing required fields: orderId, pharmacyId, patientId, pickupAddress, deliveryAddress, estimatedDeliveryTime',
+        error: 'user_id is required',
         timestamp: new Date().toISOString(),
       });
     }
 
-    // Validate addresses
-    if (!isValidAddress(pickupAddress)) {
+    if (!delivery_address_encrypted) {
       return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Invalid pickupAddress format. Address must be at least 5 characters',
+        error: 'delivery_address_encrypted is required',
         timestamp: new Date().toISOString(),
       });
     }
 
-    if (!isValidAddress(deliveryAddress)) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Invalid deliveryAddress format. Address must be at least 5 characters',
-        timestamp: new Date().toISOString(),
-      });
-    }
+    const deliveryRepo = getDeliveryRepo();
 
-    // Validate estimatedDeliveryTime is a valid ISO date string
-    const estimatedDate = new Date(estimatedDeliveryTime);
-    if (isNaN(estimatedDate.getTime())) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Invalid estimatedDeliveryTime format. Expected ISO 8601 date string',
-        timestamp: new Date().toISOString(),
-      });
-    }
+    // Convert encrypted address from string to Buffer if necessary
+    const addressBuffer = typeof delivery_address_encrypted === 'string'
+      ? Buffer.from(delivery_address_encrypted, 'base64')
+      : delivery_address_encrypted;
 
-    // Create new delivery using repository
-    const newDelivery = deliveryRepository.create({
-      orderId,
-      pharmacyId,
-      patientId,
-      driverId,
-      pickupAddress,
-      deliveryAddress,
-      estimatedDeliveryTime,
+    const notesBuffer = delivery_notes_encrypted
+      ? (typeof delivery_notes_encrypted === 'string'
+          ? Buffer.from(delivery_notes_encrypted, 'base64')
+          : delivery_notes_encrypted)
+      : null;
+
+    // Create new delivery
+    const newDelivery = deliveryRepo.create({
+      user_id,
+      order_id: order_id || null,
+      delivery_address_encrypted: addressBuffer,
+      delivery_notes_encrypted: notesBuffer,
+      scheduled_at: scheduled_at ? new Date(scheduled_at) : null,
+      status: DeliveryStatus.PENDING,
+      delivery_personnel_id: null,
+      tracking_info: null,
+      tracking_number: null,
+      picked_up_at: null,
+      delivered_at: null,
+      failed_at: null,
+      failure_reason: null,
     });
 
-    console.log(`✅ Created delivery: ${newDelivery.id} (Order: ${orderId})`);
+    await deliveryRepo.save(newDelivery);
 
-    return res.status(201).json({
-      message: 'Delivery created successfully',
-      delivery: newDelivery,
-      timestamp: new Date().toISOString(),
-    });
+    console.log(`✅ Created delivery: ${newDelivery.id}`);
+
+    // Exclude sensitive encrypted fields from response
+    const { delivery_address_encrypted: _addr, delivery_notes_encrypted: _notes, ...safeDelivery } = newDelivery;
+
+    return res.status(201).json(safeDelivery);
   } catch (error) {
     console.error('Error creating delivery:', error);
     return res.status(500).json({
@@ -244,16 +186,35 @@ app.post('/api/deliveries', (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/deliveries - List all deliveries
+ * GET /deliveries - List all deliveries (with pagination)
  */
-app.get('/api/deliveries', (_req: Request, res: Response) => {
+app.get('/deliveries', async (req: Request, res: Response) => {
   try {
-    const allDeliveries = deliveryRepository.findAll();
+    const deliveryRepo = getDeliveryRepo();
+
+    // Get query parameters for pagination
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = (page - 1) * limit;
+
+    // Get total count
+    const totalItems = await deliveryRepo.count();
+
+    // Get paginated deliveries
+    const deliveries = await deliveryRepo.find({
+      skip: offset,
+      take: limit,
+      order: { created_at: 'DESC' },
+    });
 
     return res.status(200).json({
-      count: allDeliveries.length,
-      deliveries: allDeliveries,
-      timestamp: new Date().toISOString(),
+      pagination: {
+        total_items: totalItems,
+        page,
+        limit,
+        total_pages: Math.ceil(totalItems / limit),
+      },
+      deliveries,
     });
   } catch (error) {
     console.error('Error fetching deliveries:', error);
@@ -266,26 +227,23 @@ app.get('/api/deliveries', (_req: Request, res: Response) => {
 });
 
 /**
- * GET /api/deliveries/:id - Get delivery by ID
+ * GET /deliveries/:id - Get delivery by ID
  */
-app.get('/api/deliveries/:id', (req: Request, res: Response) => {
+app.get('/deliveries/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const delivery = deliveryRepository.findById(id);
+    const deliveryRepo = getDeliveryRepo();
+    const delivery = await deliveryRepo.findOne({ where: { id } });
 
     if (!delivery) {
       return res.status(404).json({
-        error: 'Not Found',
-        message: `Delivery with ID ${id} not found`,
+        error: `Delivery ${id} not found`,
         timestamp: new Date().toISOString(),
       });
     }
 
-    return res.status(200).json({
-      delivery,
-      timestamp: new Date().toISOString(),
-    });
+    return res.status(200).json(delivery);
   } catch (error) {
     console.error('Error fetching delivery:', error);
     return res.status(500).json({
@@ -297,163 +255,76 @@ app.get('/api/deliveries/:id', (req: Request, res: Response) => {
 });
 
 /**
- * PATCH /api/deliveries/:id/status - Update delivery status
+ * PUT /deliveries/:id - Update delivery (status, personnel, location, etc.)
  */
-app.patch('/api/deliveries/:id/status', (req: Request, res: Response) => {
+app.put('/deliveries/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, driverId, actualDeliveryTime } = req.body;
+    const {
+      status,
+      delivery_personnel_id,
+      tracking_info,
+      tracking_number,
+      failure_reason,
+    } = req.body;
 
-    const delivery = deliveryRepository.findById(id);
+    const deliveryRepo = getDeliveryRepo();
+    const delivery = await deliveryRepo.findOne({ where: { id } });
 
     if (!delivery) {
       return res.status(404).json({
-        error: 'Not Found',
-        message: `Delivery with ID ${id} not found`,
+        error: `Delivery ${id} not found`,
         timestamp: new Date().toISOString(),
       });
     }
 
-    // Validate status is provided
-    if (!status) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Missing required field: status',
-        timestamp: new Date().toISOString(),
-      });
-    }
+    // Update status if provided
+    if (status && isValidDeliveryStatus(status)) {
+      delivery.status = status as DeliveryStatus;
 
-    // Validate status value
-    if (!isValidStatus(status)) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Invalid status. Must be one of: pending, assigned, picked_up, in_transit, delivered, failed',
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Validate status transition
-    if (!isValidStatusTransition(delivery.status, status)) {
-      return res.status(409).json({
-        error: 'Conflict',
-        message: `Invalid status transition from ${delivery.status} to ${status}`,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Validate actualDeliveryTime if provided
-    if (actualDeliveryTime !== undefined) {
-      const actualDate = new Date(actualDeliveryTime);
-      if (isNaN(actualDate.getTime())) {
-        return res.status(400).json({
-          error: 'Validation Error',
-          message: 'Invalid actualDeliveryTime format. Expected ISO 8601 date string',
-          timestamp: new Date().toISOString(),
-        });
+      // Update timestamps based on status transitions
+      if (status === DeliveryStatus.IN_TRANSIT && !delivery.picked_up_at) {
+        delivery.picked_up_at = new Date();
+      } else if (status === DeliveryStatus.DELIVERED && !delivery.delivered_at) {
+        delivery.delivered_at = new Date();
+      } else if (status === DeliveryStatus.FAILED && !delivery.failed_at) {
+        delivery.failed_at = new Date();
+        if (failure_reason) {
+          delivery.failure_reason = failure_reason;
+        }
       }
     }
 
-    // Update status using repository
-    const updatedDelivery = deliveryRepository.updateStatus(
-      id,
-      status,
-      driverId,
-      actualDeliveryTime
-    );
-
-    if (!updatedDelivery) {
-      return res.status(500).json({
-        error: 'Internal Server Error',
-        message: 'Failed to update delivery status',
-        timestamp: new Date().toISOString(),
-      });
+    // Update delivery personnel if provided
+    if (delivery_personnel_id !== undefined) {
+      delivery.delivery_personnel_id = delivery_personnel_id;
     }
 
-    console.log(`✅ Updated delivery ${id} status to ${status}`);
+    // Update tracking info if provided
+    if (tracking_info !== undefined) {
+      delivery.tracking_info = tracking_info;
+    }
 
-    return res.status(200).json({
-      message: 'Delivery status updated successfully',
-      delivery: updatedDelivery,
-      timestamp: new Date().toISOString(),
-    });
+    // Update tracking number if provided
+    if (tracking_number !== undefined) {
+      delivery.tracking_number = tracking_number;
+    }
+
+    // Update failure reason if provided
+    if (failure_reason !== undefined) {
+      delivery.failure_reason = failure_reason;
+    }
+
+    await deliveryRepo.save(delivery);
+
+    console.log(`✅ Updated delivery ${id}`);
+
+    return res.status(200).json(delivery);
   } catch (error) {
-    console.error('Error updating delivery status:', error);
+    console.error('Error updating delivery:', error);
     return res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to update delivery status',
-      timestamp: new Date().toISOString(),
-    });
-  }
-});
-
-/**
- * PATCH /api/deliveries/:id/location - Update delivery location
- */
-app.patch('/api/deliveries/:id/location', (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { location } = req.body;
-
-    const delivery = deliveryRepository.findById(id);
-
-    if (!delivery) {
-      return res.status(404).json({
-        error: 'Not Found',
-        message: `Delivery with ID ${id} not found`,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Location updates only allowed when status is in_transit
-    if (delivery.status !== 'in_transit') {
-      return res.status(409).json({
-        error: 'Conflict',
-        message: `Location updates only allowed when delivery status is in_transit. Current status: ${delivery.status}`,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Validate location is provided
-    if (!location) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Missing required field: location',
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Validate location format
-    if (!isValidLocation(location)) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Invalid location format. Expected object with lat and lng numbers (lat: -90 to 90, lng: -180 to 180)',
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Update location using repository
-    const updatedDelivery = deliveryRepository.updateLocation(id, location);
-
-    if (!updatedDelivery) {
-      return res.status(500).json({
-        error: 'Internal Server Error',
-        message: 'Failed to update delivery location',
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    console.log(`✅ Updated delivery ${id} location to (${location.lat}, ${location.lng})`);
-
-    return res.status(200).json({
-      message: 'Delivery location updated successfully',
-      delivery: updatedDelivery,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Error updating delivery location:', error);
-    return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to update delivery location',
+      message: 'Failed to update delivery',
       timestamp: new Date().toISOString(),
     });
   }
@@ -494,6 +365,12 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 async function startServer() {
   try {
+    // Initialize database
+    if (!dataSource.isInitialized) {
+      await dataSource.initialize();
+      console.log('[Delivery Service] ✓ Database connected');
+    }
+
     // Start Express server
     const server = app.listen(PORT, () => {
       console.log(`🚀 Delivery Service running on port ${PORT}`);
@@ -502,19 +379,19 @@ async function startServer() {
     });
 
     // Graceful shutdown
-    const shutdown = () => {
+    const shutdown = async () => {
       console.log('\n🛑 Shutting down gracefully...');
 
       server.close(() => {
         console.log('✅ HTTP server closed');
-        process.exit(0);
       });
 
-      // Force shutdown after 10 seconds
-      setTimeout(() => {
-        console.error('❌ Forced shutdown after timeout');
-        process.exit(1);
-      }, 10000);
+      if (dataSource.isInitialized) {
+        await dataSource.destroy();
+        console.log('✅ Database connection closed');
+      }
+
+      process.exit(0);
     };
 
     process.on('SIGTERM', shutdown);
@@ -532,5 +409,5 @@ if (require.main === module && process.env.NODE_ENV !== 'test') {
 }
 
 // Export app and dataSource for testing
-export { app, dataSource };
+export { app };
 export default app;

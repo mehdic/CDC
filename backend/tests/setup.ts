@@ -37,14 +37,16 @@ process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
 
 jest.mock('@aws-sdk/client-kms', () => {
   // Mock KMS responses
+  // Create a proper 32-byte buffer for AES-256 encryption
+  const mockPlaintextKey = Buffer.alloc(32, 0); // 32 bytes of zeros
   const mockGenerateDataKey = jest.fn().mockResolvedValue({
-    Plaintext: Buffer.from('0'.repeat(32), 'hex'), // 32-byte key for AES-256
+    Plaintext: mockPlaintextKey, // 32-byte key for AES-256
     CiphertextBlob: Buffer.from('encrypted-data-key'),
     KeyId: 'arn:aws:kms:eu-central-1:123456789012:key/test-key-id',
   });
 
   const mockDecrypt = jest.fn().mockResolvedValue({
-    Plaintext: Buffer.from('0'.repeat(32), 'hex'), // 32-byte key for AES-256
+    Plaintext: mockPlaintextKey, // 32-byte key for AES-256
     KeyId: 'arn:aws:kms:eu-central-1:123456789012:key/test-key-id',
   });
 
