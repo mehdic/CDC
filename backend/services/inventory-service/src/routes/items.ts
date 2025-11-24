@@ -120,7 +120,7 @@ itemsRouter.get('/:id', async (req: Request, res: Response) => {
     });
 
     if (!item) {
-      return res.status(404).json({ error: 'Inventory item not found' });
+      return res.status(404).json({ error: 'Not Found' });
     }
 
     res.json({ item });
@@ -162,7 +162,7 @@ itemsRouter.put('/:id', async (req: Request, res: Response) => {
     });
 
     if (!item) {
-      return res.status(404).json({ error: 'Inventory item not found' });
+      return res.status(404).json({ error: 'Not Found' });
     }
 
     // Update fields

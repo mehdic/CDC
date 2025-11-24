@@ -175,7 +175,20 @@ export async function comparePassword(
 export function needsRehash(hash: string): boolean {
   try {
     // bcrypt hash format: $2b$<rounds>$<salt><hash>
-    const rounds = parseInt(hash.split('$')[2], 10);
+    const parts = hash.split('$');
+
+    // Valid bcrypt hash should have at least 4 parts
+    if (parts.length < 4 || !parts[2]) {
+      return true; // Invalid hash format
+    }
+
+    const rounds = parseInt(parts[2], 10);
+
+    // NaN check - invalid rounds means invalid hash
+    if (isNaN(rounds)) {
+      return true;
+    }
+
     return rounds < BCRYPT_SALT_ROUNDS;
   } catch (error) {
     // Invalid hash format

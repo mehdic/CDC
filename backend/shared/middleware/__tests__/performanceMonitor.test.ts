@@ -340,13 +340,17 @@ describe('Performance Monitor Middleware', () => {
     });
 
     it('should include memory stats when enabled', () => {
+      // Store reference to original mock before middleware wraps it
+      const originalJsonMock = mockResponse.json as jest.Mock;
+
       performanceMonitor(mockRequest as Request, mockResponse as Response, mockNext);
 
-      const json = mockResponse.json as jest.Mock;
-      json({ data: 'test' });
+      // Call the wrapped json function
+      const wrappedJson = mockResponse.json;
+      (wrappedJson as any)({ data: 'test' });
 
-      // Memory stats collection is internal, just verify response was sent
-      expect(json).toHaveBeenCalledWith({ data: 'test' });
+      // Verify the original mock was called
+      expect(originalJsonMock).toHaveBeenCalledWith({ data: 'test' });
     });
 
     it('should track request duration', () => {

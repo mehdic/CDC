@@ -33,16 +33,26 @@ if (!AWS_KMS_KEY_ID) {
 }
 
 // ============================================================================
-// KMS Client Initialization
+// KMS Client Initialization (Lazy)
 // ============================================================================
 
-const kmsClient = new KMSClient({
-  region: AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
+let kmsClient: KMSClient | null = null;
+
+/**
+ * Get or create KMS client (lazy initialization for testability)
+ */
+function getKMSClient(): KMSClient {
+  if (!kmsClient) {
+    kmsClient = new KMSClient({
+      region: AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+      },
+    });
+  }
+  return kmsClient;
+}
 
 // ============================================================================
 // Data Key Cache (In-Memory)
@@ -97,7 +107,8 @@ async function generateDataKey(): Promise<{
       KeySpec: 'AES_256', // 256-bit key as specified in plan.md
     });
 
-    const response: GenerateDataKeyCommandOutput = await kmsClient.send(command);
+    const client = getKMSClient();
+    const response: GenerateDataKeyCommandOutput = await client.send(command);
 
     if (!response.Plaintext || !response.CiphertextBlob) {
       throw new Error('KMS GenerateDataKey returned incomplete response');
@@ -137,7 +148,8 @@ async function decryptDataKey(encryptedKey: Buffer): Promise<Buffer> {
       KeyId: AWS_KMS_KEY_ID,
     });
 
-    const response: DecryptCommandOutput = await kmsClient.send(command);
+    const client = getKMSClient();
+    const response: DecryptCommandOutput = await client.send(command);
 
     if (!response.Plaintext) {
       throw new Error('KMS Decrypt returned no plaintext');

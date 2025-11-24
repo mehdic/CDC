@@ -73,14 +73,14 @@ module.exports = {
   // Module file extensions
   moduleFileExtensions: ['ts', 'js', 'json'],
 
-  // Clear mocks between tests
-  clearMocks: true,
+  // Clear mocks between tests (disabled to preserve AWS SDK mocks)
+  clearMocks: false,
 
-  // Reset mocks between tests
-  resetMocks: true,
+  // Reset mocks between tests (disabled to preserve AWS SDK mocks)
+  resetMocks: false,
 
-  // Restore mocks between tests
-  restoreMocks: true,
+  // Restore mocks between tests (disabled to preserve AWS SDK mocks)
+  restoreMocks: false,
 
   // Verbose output
   verbose: true,

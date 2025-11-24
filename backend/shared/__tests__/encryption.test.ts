@@ -2,6 +2,39 @@
  * Tests for AWS KMS Encryption Utilities (T036-T038)
  */
 
+// Mock AWS KMS before importing encryption utilities
+const mockPlaintextKey = Buffer.alloc(32, 0);
+const mockSend = jest.fn().mockImplementation(async (command) => {
+  const commandName = command.constructor.name;
+  if (commandName === 'GenerateDataKeyCommand') {
+    return {
+      Plaintext: mockPlaintextKey,
+      CiphertextBlob: Buffer.from('encrypted-data-key'),
+      KeyId: 'arn:aws:kms:eu-central-1:123456789012:key/test-key-id',
+    };
+  } else if (commandName === 'DecryptCommand') {
+    return {
+      Plaintext: mockPlaintextKey,
+      KeyId: 'arn:aws:kms:eu-central-1:123456789012:key/test-key-id',
+    };
+  }
+  return Promise.resolve({});
+});
+
+jest.mock('@aws-sdk/client-kms', () => ({
+  KMSClient: jest.fn().mockImplementation(() => ({
+    send: mockSend,
+  })),
+  GenerateDataKeyCommand: jest.fn().mockImplementation((input) => ({
+    constructor: { name: 'GenerateDataKeyCommand' },
+    input,
+  })),
+  DecryptCommand: jest.fn().mockImplementation((input) => ({
+    constructor: { name: 'DecryptCommand' },
+    input,
+  })),
+}));
+
 import {
   encryptField,
   decryptField,

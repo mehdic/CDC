@@ -37,27 +37,32 @@ process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
 
 jest.mock('@aws-sdk/client-kms', () => {
   // Mock KMS responses
-  const mockGenerateDataKey = jest.fn().mockResolvedValue({
-    Plaintext: Buffer.from('0'.repeat(32), 'hex'), // 32-byte key for AES-256
-    CiphertextBlob: Buffer.from('encrypted-data-key'),
-    KeyId: 'arn:aws:kms:eu-central-1:123456789012:key/test-key-id',
-  });
+  // Create a proper 32-byte buffer for AES-256 encryption
+  const mockPlaintextKey = Buffer.alloc(32, 0); // 32 bytes of zeros
 
-  const mockDecrypt = jest.fn().mockResolvedValue({
-    Plaintext: Buffer.from('0'.repeat(32), 'hex'), // 32-byte key for AES-256
-    KeyId: 'arn:aws:kms:eu-central-1:123456789012:key/test-key-id',
+  const mockSend = jest.fn().mockImplementation(async (command) => {
+    // Check command type by constructor name
+    const commandName = command.constructor.name;
+
+    if (commandName === 'GenerateDataKeyCommand') {
+      return {
+        Plaintext: mockPlaintextKey, // 32-byte key for AES-256
+        CiphertextBlob: Buffer.from('encrypted-data-key'),
+        KeyId: 'arn:aws:kms:eu-central-1:123456789012:key/test-key-id',
+      };
+    } else if (commandName === 'DecryptCommand') {
+      return {
+        Plaintext: mockPlaintextKey, // 32-byte key for AES-256
+        KeyId: 'arn:aws:kms:eu-central-1:123456789012:key/test-key-id',
+      };
+    }
+
+    return Promise.resolve({});
   });
 
   return {
     KMSClient: jest.fn().mockImplementation(() => ({
-      send: jest.fn().mockImplementation((command) => {
-        if (command.constructor.name === 'GenerateDataKeyCommand') {
-          return mockGenerateDataKey();
-        } else if (command.constructor.name === 'DecryptCommand') {
-          return mockDecrypt();
-        }
-        return Promise.resolve({});
-      }),
+      send: mockSend,
     })),
     GenerateDataKeyCommand: jest.fn().mockImplementation((input) => ({
       constructor: { name: 'GenerateDataKeyCommand' },

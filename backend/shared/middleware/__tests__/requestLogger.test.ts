@@ -12,11 +12,11 @@ jest.mock('../../utils/logger', () => ({
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-    child: jest.fn().mockReturnValue({
+    child: jest.fn().mockImplementation(() => ({
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
-    }),
+    })),
   },
 }));
 
@@ -31,6 +31,16 @@ describe('Request Logger Middleware', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Ensure the logger mock is properly set up
+    const { logger } = require('../../utils/logger');
+    if (logger.child && jest.isMockFunction(logger.child)) {
+      (logger.child as jest.Mock).mockImplementation(() => ({
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+      }));
+    }
 
     // Configure uuid mock to return a test value
     (uuidv4 as jest.Mock).mockReturnValue('generated-uuid-123');
@@ -328,9 +338,14 @@ describe('Request Logger Middleware', () => {
     it('should attach logger to request object', () => {
       (mockRequest as any).requestId = 'req-123';
 
+      // Call the middleware
       attachRequestIdToLogs(mockRequest as Request, mockResponse as Response, mockNext);
 
+      // Verify that a logger was attached to request
       expect((mockRequest as any).logger).toBeDefined();
+      expect((mockRequest as any).logger).toHaveProperty('info');
+      expect((mockRequest as any).logger).toHaveProperty('warn');
+      expect((mockRequest as any).logger).toHaveProperty('error');
     });
 
     it('should create child logger with request context', () => {

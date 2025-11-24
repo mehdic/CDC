@@ -61,11 +61,11 @@ if (NODE_ENV === 'test') {
 /**
  * General rate limiter for all API endpoints
  * Default: 100 requests per 15 minutes per IP
- * Disabled in test environment for E2E tests
+ * In test environment: Headers still sent but limits not enforced
  */
 export const generalLimiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MS,
-  max: RATE_LIMIT_MAX_REQUESTS,
+  max: NODE_ENV === 'test' ? 999999 : RATE_LIMIT_MAX_REQUESTS, // Very high limit in test
   message: {
     error: 'Too Many Requests',
     message: 'Too many requests from this IP, please try again later.',
@@ -73,18 +73,18 @@ export const generalLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  skip: shouldSkipRateLimit,
+  // Don't skip - we want headers in tests, just with high limits
 });
 
 /**
  * Stricter rate limiter for authentication endpoints
  * Default: 5 requests per 15 minutes per IP
  * Prevents brute force attacks on login
- * Disabled in test environment for E2E tests
+ * In test environment: Headers still sent but limits not enforced
  */
 export const authLimiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MS,
-  max: AUTH_RATE_LIMIT_MAX_REQUESTS,
+  max: NODE_ENV === 'test' ? 999999 : AUTH_RATE_LIMIT_MAX_REQUESTS, // Very high limit in test
   message: {
     error: 'Too Many Requests',
     message: 'Too many login attempts from this IP, please try again later.',
@@ -93,17 +93,17 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false, // Count all requests, even successful ones
-  skip: shouldSkipRateLimit,
+  // Don't skip - we want headers in tests, just with high limits
 });
 
 /**
  * Rate limiter for authenticated users (more permissive)
  * 200 requests per 15 minutes for authenticated users
- * Disabled in test environment for E2E tests
+ * In test environment: Headers still sent but limits not enforced
  */
 export const authenticatedLimiter = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MS,
-  max: RATE_LIMIT_MAX_REQUESTS * 2, // 2x the general limit
+  max: NODE_ENV === 'test' ? 999999 : RATE_LIMIT_MAX_REQUESTS * 2, // Very high limit in test
   message: {
     error: 'Too Many Requests',
     message: 'Rate limit exceeded. Please slow down your requests.',
@@ -111,7 +111,7 @@ export const authenticatedLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: shouldSkipRateLimit,
+  // Don't skip - we want headers in tests, just with high limits
   // Use user ID as key for authenticated requests
   keyGenerator: (req: any) => {
     return req.user?.userId || req.ip || 'unknown';

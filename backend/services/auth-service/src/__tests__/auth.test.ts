@@ -11,6 +11,104 @@
  * - Logout functionality
  */
 
+// ============================================================================
+// Mocks (MUST be defined before imports)
+// ============================================================================
+
+// Mock TypeORM DataSource and Repository
+const mockUsers: any[] = [];
+
+const mockRepository = {
+  create: jest.fn((data: any) => ({ ...data, id: 'mock-id-' + Math.random() })),
+  save: jest.fn(async (user: any) => {
+    const existingIndex = mockUsers.findIndex((u: any) => u.id === user.id);
+    if (existingIndex !== -1) {
+      mockUsers[existingIndex] = user;
+    } else {
+      mockUsers.push(user);
+    }
+    return user;
+  }),
+  findOne: jest.fn(async (options: any) => {
+    if (options.where?.email) {
+      const email = options.where.email.toLowerCase ? options.where.email.toLowerCase() : options.where.email;
+      return mockUsers.find((u: any) => u.email.toLowerCase() === email) || null;
+    }
+    if (options.where?.id) {
+      return mockUsers.find((u: any) => u.id === options.where.id) || null;
+    }
+    return null;
+  }),
+  find: jest.fn(async (options: any) => mockUsers),
+  delete: jest.fn(async (criteria: any) => {
+    if (criteria.email) {
+      const index = mockUsers.findIndex((u: any) => u.email === criteria.email);
+      if (index !== -1) mockUsers.splice(index, 1);
+    }
+    return { affected: 1 };
+  }),
+  update: jest.fn(async (criteria: any, updateData: any) => {
+    const user = mockUsers.find((u: any) => u.id === criteria.id || u.email === criteria.email);
+    if (user) {
+      Object.assign(user, updateData);
+    }
+    return { affected: user ? 1 : 0 };
+  }),
+};
+
+// Mock AuditTrailEntry repository
+const mockAuditEntries: any[] = [];
+
+const mockAuditRepository = {
+  create: jest.fn((data: any) => {
+    const entry = { ...data, id: 'audit-' + Math.random(), created_at: new Date() };
+    return entry;
+  }),
+  save: jest.fn(async (entry: any) => {
+    mockAuditEntries.push(entry);
+    return Promise.resolve(entry);
+  }),
+  findOne: jest.fn(async () => null),
+  find: jest.fn(async () => mockAuditEntries),
+  createQueryBuilder: jest.fn(() => ({
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    getMany: jest.fn(async () => mockAuditEntries),
+  })),
+};
+
+const mockDataSource = {
+  isInitialized: true,
+  initialize: jest.fn(async function() { return this; }),
+  destroy: jest.fn(async () => {}),
+  query: jest.fn(async () => [{ '?column?': 1 }]), // Mock SELECT 1 query for health check
+  getRepository: jest.fn((entity: any) => {
+    // Return audit repository for AuditTrailEntry entity (handle both string and class)
+    if (entity && (entity.name === 'AuditTrailEntry' || entity === 'AuditTrailEntry')) {
+      return mockAuditRepository;
+    }
+    // Default to user repository
+    return mockRepository;
+  }),
+};
+
+// Mock TypeORM module - this must be done before any imports
+// CRITICAL: DataSource constructor must ALWAYS return the same mockDataSource instance
+jest.mock('typeorm', () => ({
+  ...jest.requireActual('typeorm'),
+  DataSource: jest.fn().mockImplementation(() => mockDataSource),
+  Entity: () => () => {},
+  Column: () => () => {},
+  PrimaryGeneratedColumn: () => () => {},
+  CreateDateColumn: () => () => {},
+  UpdateDateColumn: () => () => {},
+  Index: () => () => {},
+  ManyToOne: () => () => {},
+  OneToMany: () => () => {},
+}));
+
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import app, { AppDataSource } from '../index';
@@ -23,27 +121,25 @@ import * as speakeasy from 'speakeasy';
 // Test Setup
 // ============================================================================
 
-let testDataSource: DataSource;
-let testUser: User;
-let testPharmacist: User;
+let testDataSource: any;
+let testUser: any;
+let testPharmacist: any;
 let testAccessToken: string;
 
 beforeAll(async () => {
-  // Initialize test database connection
-  testDataSource = AppDataSource;
+  // Use mocked data source
+  testDataSource = mockDataSource;
 
-  if (!testDataSource.isInitialized) {
-    await testDataSource.initialize();
-  }
-
-  // Create test users
-  const userRepository = testDataSource.getRepository(User);
+  // Create test users with mocked repository
+  const userRepository = mockRepository;
 
   // Test patient (no MFA required)
-  testUser = userRepository.create({
+  // Use a strong password that doesn't contain common weak patterns
+  testUser = {
+    id: 'test-patient-id',
     email: 'test.patient@example.com',
     email_verified: true,
-    password_hash: await hashPassword('TestPassword123!'),
+    password_hash: await hashPassword('Str0ng!P4tient#SecureKey'),
     role: UserRole.PATIENT,
     status: UserStatus.ACTIVE,
     first_name_encrypted: Buffer.from('Test'),
@@ -52,24 +148,32 @@ beforeAll(async () => {
     mfa_enabled: false,
     mfa_secret: null,
     primary_pharmacy_id: null,
-  });
-  await userRepository.save(testUser);
+    isActive: () => true, // Mock method
+    isHealthcareProfessional: () => false, // Patients are not healthcare professionals
+    updateLastLogin: jest.fn(), // Mock method
+  };
+  mockUsers.push(testUser);
 
   // Test pharmacist (MFA required)
-  testPharmacist = userRepository.create({
+  const mfaSecret = speakeasy.generateSecret({ length: 32 }).base32;
+  testPharmacist = {
+    id: 'test-pharmacist-id',
     email: 'test.pharmacist@example.com',
     email_verified: true,
-    password_hash: await hashPassword('PharmacistPass123!'),
+    password_hash: await hashPassword('Str0ng!Pharm4cist#SecureKey'),
     role: UserRole.PHARMACIST,
     status: UserStatus.ACTIVE,
     first_name_encrypted: Buffer.from('Test'),
     last_name_encrypted: Buffer.from('Pharmacist'),
     phone_encrypted: null,
     mfa_enabled: true,
-    mfa_secret: speakeasy.generateSecret({ length: 32 }).base32,
+    mfa_secret: mfaSecret,
     primary_pharmacy_id: null,
-  });
-  await userRepository.save(testPharmacist);
+    isActive: () => true, // Mock method
+    isHealthcareProfessional: () => true, // Pharmacists are healthcare professionals
+    updateLastLogin: jest.fn(), // Mock method
+  };
+  mockUsers.push(testPharmacist);
 
   // Generate access token for authenticated tests
   const tokens = generateTokenPair(
@@ -82,15 +186,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // Cleanup test data
-  const userRepository = testDataSource.getRepository(User);
-  await userRepository.delete({ email: 'test.patient@example.com' });
-  await userRepository.delete({ email: 'test.pharmacist@example.com' });
-
-  // Close database connection
-  if (testDataSource.isInitialized) {
-    await testDataSource.destroy();
-  }
+  // Clear mock users
+  mockUsers.length = 0;
 });
 
 // ============================================================================
@@ -103,9 +200,12 @@ describe('POST /auth/login', () => {
       .post('/auth/login')
       .send({
         email: 'test.patient@example.com',
-        password: 'TestPassword123!',
+        password: 'Str0ng!P4tient#SecureKey',
       });
 
+    if (response.status !== 200) {
+      console.log('Error response:', response.body);
+    }
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
     expect(response.body.accessToken).toBeDefined();
@@ -120,7 +220,7 @@ describe('POST /auth/login', () => {
       .post('/auth/login')
       .send({
         email: 'test.pharmacist@example.com',
-        password: 'PharmacistPass123!',
+        password: 'Str0ng!Pharm4cist#SecureKey',
       });
 
     expect(response.status).toBe(200);
@@ -148,7 +248,7 @@ describe('POST /auth/login', () => {
       .post('/auth/login')
       .send({
         email: 'nonexistent@example.com',
-        password: 'TestPassword123!',
+        password: 'Str0ng!P4tient#SecureKey',
       });
 
     expect(response.status).toBe(401);
@@ -160,7 +260,7 @@ describe('POST /auth/login', () => {
     const response = await request(app)
       .post('/auth/login')
       .send({
-        password: 'TestPassword123!',
+        password: 'Str0ng!P4tient#SecureKey',
       });
 
     expect(response.status).toBe(400);
@@ -172,7 +272,7 @@ describe('POST /auth/login', () => {
       .post('/auth/login')
       .send({
         email: 'invalid-email',
-        password: 'TestPassword123!',
+        password: 'Str0ng!P4tient#SecureKey',
       });
 
     expect(response.status).toBe(400);
@@ -197,7 +297,7 @@ describe('POST /auth/mfa/verify', () => {
       .post('/auth/login')
       .send({
         email: 'test.pharmacist@example.com',
-        password: 'PharmacistPass123!',
+        password: 'Str0ng!Pharm4cist#SecureKey',
       });
 
     expect(loginResponse.body.requiresMFA).toBe(true);
@@ -223,7 +323,7 @@ describe('POST /auth/mfa/verify', () => {
       .post('/auth/login')
       .send({
         email: 'test.pharmacist@example.com',
-        password: 'PharmacistPass123!',
+        password: 'Str0ng!Pharm4cist#SecureKey',
       });
 
     const tempToken = loginResponse.body.tempToken;
@@ -301,7 +401,7 @@ describe('DELETE /auth/mfa/disable', () => {
     const response = await request(app)
       .delete('/auth/mfa/disable')
       .set('Authorization', `Bearer ${pharmacistTokens.accessToken}`)
-      .send({ password: 'PharmacistPass123!' });
+      .send({ password: 'Str0ng!Pharm4cist#SecureKey' });
 
     expect(response.status).toBe(403);
     expect(response.body.success).toBe(false);
