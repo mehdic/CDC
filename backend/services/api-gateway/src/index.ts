@@ -80,6 +80,18 @@ app.use(generalLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// 6. JSON Parse Error Handler - Catch malformed JSON
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof SyntaxError && 'body' in err) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: 'Invalid JSON payload',
+      code: 'INVALID_JSON',
+    });
+  }
+  next(err);
+});
+
 // ============================================================================
 // Public Routes (No Authentication Required)
 // ============================================================================
@@ -144,8 +156,29 @@ app.use('/api/auth', async (req: Request, res: Response, next: NextFunction) => 
 // Protected Routes (JWT Authentication Required)
 // ============================================================================
 
-// Apply JWT authentication middleware to all routes below
-app.use(authenticateJWT);
+// Apply JWT authentication middleware to all routes below (except 404 handler)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // Check if this is a known route before applying JWT auth
+  // Known protected routes start with /api/ (except /api/auth which is already handled)
+  const protectedRoutePrefixes = [
+    '/api/prescriptions',
+    '/api/teleconsultations',
+    '/api/inventory',
+    '/api/notifications',
+  ];
+
+  const isProtectedRoute = protectedRoutePrefixes.some(prefix =>
+    req.path.startsWith(prefix)
+  );
+
+  if (isProtectedRoute) {
+    // Apply JWT authentication for protected routes
+    return authenticateJWT(req, res, next);
+  } else {
+    // Skip JWT for unknown routes (will be caught by 404 handler)
+    next();
+  }
+});
 
 // Prescription Service
 app.use('/api/prescriptions', prescriptionProxy);

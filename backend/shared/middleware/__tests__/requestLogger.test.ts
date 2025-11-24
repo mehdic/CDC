@@ -32,6 +32,14 @@ describe('Request Logger Middleware', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Re-configure logger.child after clearAllMocks
+    const { logger } = require('../../utils/logger');
+    (logger.child as jest.Mock).mockReturnValue({
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    });
+
     // Configure uuid mock to return a test value
     (uuidv4 as jest.Mock).mockReturnValue('generated-uuid-123');
 
@@ -326,10 +334,14 @@ describe('Request Logger Middleware', () => {
 
   describe('attachRequestIdToLogs middleware', () => {
     it('should attach logger to request object', () => {
+      const { logger } = require('../../utils/logger');
       (mockRequest as any).requestId = 'req-123';
 
       attachRequestIdToLogs(mockRequest as Request, mockResponse as Response, mockNext);
 
+      // Verify logger.child was called (which creates the logger)
+      expect(logger.child).toHaveBeenCalled();
+      // Verify logger was attached to request
       expect((mockRequest as any).logger).toBeDefined();
     });
 

@@ -212,6 +212,7 @@ const ConsultationDashboardScreen: React.FC = () => {
 
   return (
     <ScrollView
+      testID="consultation-list"
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
@@ -220,18 +221,23 @@ const ConsultationDashboardScreen: React.FC = () => {
       <Text style={styles.title}>Teleconsultations</Text>
 
       {/* Active Consultations */}
-      {activeConsultations.length > 0 && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Now</Text>
-            <View style={styles.activeCount}>
-              <Text style={styles.activeCountText}>{activeConsultations.length}</Text>
-            </View>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Active Now</Text>
+        {activeConsultations.length > 0 && (
+          <View style={styles.activeCount}>
+            <Text style={styles.activeCountText}>{activeConsultations.length}</Text>
           </View>
-          {activeConsultations.map((consultation) =>
-            renderConsultationCard(consultation, true)
-          )}
-        </>
+        )}
+      </View>
+
+      {activeConsultations.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>No active consultations</Text>
+        </View>
+      ) : (
+        activeConsultations.map((consultation) =>
+          renderConsultationCard(consultation, true)
+        )
       )}
 
       {/* Upcoming Consultations */}

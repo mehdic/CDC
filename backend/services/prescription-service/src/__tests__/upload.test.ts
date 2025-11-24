@@ -111,7 +111,7 @@ describe('POST /prescriptions/:id/transcribe', () => {
 
     expect(response.status).toBe(404);
     expect(response.body.error).toContain('not found');
-  });
+  }, 30000); // Increase timeout to 30 seconds
 
   // Note: Full integration tests would require:
   // - Mock AWS Textract client

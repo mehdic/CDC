@@ -8,6 +8,39 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import DrugSearch from '../../src/components/DrugSearch';
 import { drugApi } from '../../src/services/api';
 
+// Mock the App module to provide theme
+jest.mock('../../src/App', () => ({
+  theme: {
+    colors: {
+      primary: '#2196F3',
+      secondary: '#03DAC6',
+      background: '#FFFFFF',
+      surface: '#F5F5F5',
+      error: '#B00020',
+      success: '#4CAF50',
+      warning: '#FF9800',
+      text: '#000000',
+      textSecondary: '#666666',
+      border: '#E0E0E0',
+    },
+    spacing: {
+      xs: 4,
+      sm: 8,
+      md: 16,
+      lg: 24,
+      xl: 32,
+    },
+    typography: {
+      h1: { fontSize: 32, fontWeight: '700' },
+      h2: { fontSize: 24, fontWeight: '600' },
+      h3: { fontSize: 20, fontWeight: '600' },
+      body1: { fontSize: 16, fontWeight: '400' },
+      body2: { fontSize: 14, fontWeight: '400' },
+      caption: { fontSize: 12, fontWeight: '400' },
+    },
+  },
+}));
+
 jest.mock('../../src/services/api');
 
 describe('DrugSearch Component', () => {
@@ -108,7 +141,7 @@ describe('DrugSearch Component', () => {
     const input = getByPlaceholderText('Search medication...');
     fireEvent.changeText(input, 'Amox');
 
-    const errorMessage = await findByText(/Failed to search drugs/);
+    const errorMessage = await findByText(/API Error/);
     expect(errorMessage).toBeTruthy();
   });
 

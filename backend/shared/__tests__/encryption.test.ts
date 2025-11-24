@@ -1,6 +1,12 @@
 /**
  * Tests for AWS KMS Encryption Utilities (T036-T038)
+ *
+ * Note: AWS SDK is automatically mocked via __mocks__/@aws-sdk/client-kms.ts
+ * Environment variables are set in jest.setup.js
  */
+
+// CRITICAL: Mock MUST be before any imports that use it
+jest.mock('@aws-sdk/client-kms');
 
 import {
   encryptField,

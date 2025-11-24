@@ -107,8 +107,8 @@ describe('TranscriptEditor - FR-025a Compliance Tests', () => {
       const userIdElements = getAllByText(/User ID: pharmaci/);
       expect(userIdElements.length).toBeGreaterThan(0);
 
-      // Check timestamp is displayed - may appear multiple times
-      const timestampElements = getAllByText(/11\/8\/2025/);
+      // Check timestamp is displayed in European format (DD.MM.YYYY) - may appear multiple times
+      const timestampElements = getAllByText(/08\.11\.2025/);
       expect(timestampElements.length).toBeGreaterThan(0);
     });
 

@@ -240,7 +240,11 @@ export function asyncHandler(
   fn: (req: Request, res: Response, next: NextFunction) => Promise<void>
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+    try {
+      Promise.resolve(fn(req, res, next)).catch(next);
+    } catch (error) {
+      next(error);
+    }
   };
 }
 

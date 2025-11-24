@@ -109,27 +109,30 @@ export function parseDeviceInfo(userAgent: string | null): DeviceInfo | null {
 
   const deviceInfo: DeviceInfo = {};
 
-  // Detect OS
-  if (/windows/i.test(userAgent)) {
+  // Detect OS (check mobile OSes first as they may contain desktop patterns)
+  if (/iphone|ipad|ipod/i.test(userAgent)) {
+    deviceInfo.os = 'iOS';
+  } else if (/android/i.test(userAgent)) {
+    deviceInfo.os = 'Android';
+  } else if (/windows/i.test(userAgent)) {
     deviceInfo.os = 'Windows';
   } else if (/macintosh|mac os x/i.test(userAgent)) {
     deviceInfo.os = 'macOS';
   } else if (/linux/i.test(userAgent)) {
     deviceInfo.os = 'Linux';
-  } else if (/android/i.test(userAgent)) {
-    deviceInfo.os = 'Android';
-  } else if (/iphone|ipad|ipod/i.test(userAgent)) {
-    deviceInfo.os = 'iOS';
   }
 
-  // Detect Browser
+  // Detect Browser (check Safari before Chrome as Safari UA contains "Chrome")
   if (/edg/i.test(userAgent)) {
     deviceInfo.browser = 'Edge';
-  } else if (/chrome/i.test(userAgent)) {
-    deviceInfo.browser = 'Chrome';
   } else if (/firefox/i.test(userAgent)) {
     deviceInfo.browser = 'Firefox';
+  } else if (/safari/i.test(userAgent) && !/chrome/i.test(userAgent)) {
+    deviceInfo.browser = 'Safari';
+  } else if (/chrome/i.test(userAgent)) {
+    deviceInfo.browser = 'Chrome';
   } else if (/safari/i.test(userAgent)) {
+    // Chrome on iOS contains both "Safari" and "CriOS", so this catches iOS Chrome
     deviceInfo.browser = 'Safari';
   }
 

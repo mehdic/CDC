@@ -385,10 +385,15 @@ export function hasValidTokenStructure(token: string): boolean {
     return false;
   }
 
-  // Check each part is base64url encoded
+  // Check each part is non-empty, has reasonable length, and is base64url encoded
+  // Real JWTs have parts with minimum length (header ~36 chars, payload ~20+ chars, signature ~40+ chars)
   const base64UrlPattern = /^[A-Za-z0-9_-]+$/;
+  const MIN_PART_LENGTH = 10; // Minimum length for any JWT part
 
-  return parts.every(part => base64UrlPattern.test(part));
+  return parts.every(part =>
+    part.length >= MIN_PART_LENGTH &&
+    base64UrlPattern.test(part)
+  );
 }
 
 /**

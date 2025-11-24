@@ -31,15 +31,12 @@ const AUTH_RATE_LIMIT_MAX_REQUESTS = parseInt(
 /**
  * Check if rate limiting should be skipped for this request
  * Skips rate limiting for:
- * 1. Test environment (NODE_ENV=test) to allow E2E test suites
- * 2. Whitelisted IPs (for development/testing)
+ * 1. Whitelisted IPs (for development/testing)
+ *
+ * Note: In test environment, rate limiting is enabled but with very high limits
+ * to allow E2E tests while still testing rate limit header presence
  */
 function shouldSkipRateLimit(req: Request): boolean {
-  // Skip rate limiting entirely in test environment
-  if (NODE_ENV === 'test') {
-    return true;
-  }
-
   // Check whitelisted IPs
   const whitelistedIPs = process.env['RATE_LIMIT_WHITELIST_IPS']?.split(',') || [];
   const clientIP = req.ip || '';
@@ -48,15 +45,12 @@ function shouldSkipRateLimit(req: Request): boolean {
 }
 
 // Log rate limiting configuration on module load
-if (NODE_ENV === 'test') {
-  console.log('⚠️  Rate limiting DISABLED (NODE_ENV=test) - E2E test mode');
-} else {
-  console.log('✓ Rate limiting enabled:', {
-    windowMs: RATE_LIMIT_WINDOW_MS,
-    maxRequests: RATE_LIMIT_MAX_REQUESTS,
-    authMaxRequests: AUTH_RATE_LIMIT_MAX_REQUESTS,
-  });
-}
+console.log('✓ Rate limiting enabled:', {
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  maxRequests: RATE_LIMIT_MAX_REQUESTS,
+  authMaxRequests: AUTH_RATE_LIMIT_MAX_REQUESTS,
+  testMode: NODE_ENV === 'test',
+});
 
 /**
  * General rate limiter for all API endpoints

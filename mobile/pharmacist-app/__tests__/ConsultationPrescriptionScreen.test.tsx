@@ -15,6 +15,7 @@ import { Teleconsultation, TeleconsultationStatus } from '../src/services/teleco
 // Mock navigation
 const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
+let mockRouteParams: any = null; // Will be set in beforeEach
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
@@ -22,9 +23,7 @@ jest.mock('@react-navigation/native', () => ({
     goBack: mockGoBack,
   }),
   useRoute: () => ({
-    params: {
-      teleconsultation: mockTeleconsultation,
-    },
+    params: mockRouteParams,
   }),
 }));
 
@@ -57,6 +56,10 @@ describe('ConsultationPrescriptionScreen - Validation Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    // Reset to default params
+    mockRouteParams = {
+      teleconsultation: mockTeleconsultation,
+    };
   });
 
   afterEach(() => {
@@ -377,16 +380,8 @@ describe('ConsultationPrescriptionScreen - Validation Tests', () => {
 
   describe('Error Handling', () => {
     it('should show error screen when teleconsultation is missing', () => {
-      // Mock useRoute to return no params
-      jest.mock('@react-navigation/native', () => ({
-        useNavigation: () => ({
-          navigate: mockNavigate,
-          goBack: mockGoBack,
-        }),
-        useRoute: () => ({
-          params: undefined,
-        }),
-      }));
+      // Set route params to undefined
+      mockRouteParams = undefined;
 
       const { getByText } = render(<ConsultationPrescriptionScreen />);
 

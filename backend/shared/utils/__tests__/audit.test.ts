@@ -15,8 +15,22 @@ import {
 } from '../audit';
 import { AuditTrailEntry, AuditAction, AuditChanges, DeviceInfo } from '../../models/AuditTrailEntry';
 
-// Mock TypeORM
-jest.mock('typeorm');
+// Mock TypeORM - Need to mock decorators before imports
+jest.mock('typeorm', () => {
+  const actual = jest.requireActual('typeorm');
+  return {
+    ...actual,
+    Entity: () => () => {},
+    PrimaryGeneratedColumn: () => () => {},
+    Column: () => () => {},
+    CreateDateColumn: () => () => {},
+    UpdateDateColumn: () => () => {},
+    ManyToOne: () => () => {},
+    OneToMany: () => () => {},
+    JoinColumn: () => () => {},
+    Index: () => () => {},
+  };
+});
 
 describe('Audit Trail Utility', () => {
   let mockDataSource: jest.Mocked<DataSource>;

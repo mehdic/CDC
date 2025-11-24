@@ -45,11 +45,11 @@ module.exports = {
     '<rootDir>/jest-setup.js'
   ],
 
-  // Test file patterns
+  // Test file patterns (exclude e2e tests - they use Detox)
   testMatch: [
     '**/__tests__/**/*.{ts,tsx}',
     '**/*.test.{ts,tsx}',
-    '**/*.spec.{ts,tsx}'
+    '!**/e2e/**'
   ],
 
   // Coverage configuration

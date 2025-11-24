@@ -60,6 +60,9 @@ module.exports = {
     }
   },
 
+  // Setup files to run BEFORE test framework initialization
+  setupFiles: ['<rootDir>/jest.setup.js'],
+
   // Setup files to run before tests
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
 
@@ -67,7 +70,8 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',           // Exclude build artifacts
-    '\\.d\\.ts$'        // Exclude TypeScript declaration files
+    '\\.d\\.ts$',       // Exclude TypeScript declaration files
+    '\\.config\\.ts$'   // Exclude config files in test directories
   ],
 
   // Module file extensions

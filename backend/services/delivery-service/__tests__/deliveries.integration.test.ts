@@ -89,7 +89,7 @@ describe('Delivery Service Integration Tests', () => {
     delete deliveryData['deliveryAddress'];
 
     const response = await request(app)
-      .post('/deliveries')
+      .post('/api/deliveries')
       .set('Authorization', 'Bearer test-token')
       .send(deliveryData);
 
@@ -107,7 +107,7 @@ describe('Delivery Service Integration Tests', () => {
       };
 
       const response = await request(app)
-        .post('/deliveries')
+        .post('/api/deliveries')
         .set('Authorization', 'Bearer test-token')
         .send(deliveryData)
         .expect(201);
@@ -133,7 +133,7 @@ describe('Delivery Service Integration Tests', () => {
       };
 
       const response = await request(app)
-        .post('/deliveries')
+        .post('/api/deliveries')
         .set('Authorization', 'Bearer test-token')
         .send(deliveryData)
         .expect(400);
@@ -149,7 +149,7 @@ describe('Delivery Service Integration Tests', () => {
       };
 
       const response = await request(app)
-        .post('/deliveries')
+        .post('/api/deliveries')
         .set('Authorization', 'Bearer test-token')
         .send(deliveryData)
         .expect(400);
@@ -165,7 +165,7 @@ describe('Delivery Service Integration Tests', () => {
       };
 
       const response = await request(app)
-        .post('/deliveries')
+        .post('/api/deliveries')
         .set('Authorization', 'Bearer test-token')
         .send(deliveryData)
         .expect(201);
@@ -180,7 +180,7 @@ describe('Delivery Service Integration Tests', () => {
 
     it('should return an empty list when no deliveries exist', async () => {
       const response = await request(app)
-        .get('/deliveries')
+        .get('/api/deliveries')
         .set('Authorization', 'Bearer test-token')
         .expect(200);
 
@@ -196,7 +196,7 @@ describe('Delivery Service Integration Tests', () => {
       await createTestDelivery({ order_id: 'ORDER-101' });
 
       const response = await request(app)
-        .get('/deliveries')
+        .get('/api/deliveries')
         .set('Authorization', 'Bearer test-token')
         .expect(200);
 
@@ -246,7 +246,7 @@ describe('Delivery Service Integration Tests', () => {
       const deliveryId = createResponse.body.id;
 
       const response = await request(app)
-        .put(`/deliveries/${deliveryId}`)
+        .patch(`/api/deliveries/${deliveryId}/status`)
         .set('Authorization', 'Bearer test-token')
         .send({ status: 'in_transit', delivery_personnel_id: 'driver-001' })
         .expect(200);
@@ -262,7 +262,7 @@ describe('Delivery Service Integration Tests', () => {
 
       // pending -> in_transit
       let response = await request(app)
-        .put(`/deliveries/${deliveryId}`)
+        .patch(`/api/deliveries/${deliveryId}/status`)
         .set('Authorization', 'Bearer test-token')
         .send({ status: 'in_transit', delivery_personnel_id: 'driver-001' })
         .expect(200);
@@ -271,7 +271,7 @@ describe('Delivery Service Integration Tests', () => {
 
       // in_transit -> delivered
       response = await request(app)
-        .put(`/deliveries/${deliveryId}`)
+        .patch(`/api/deliveries/${deliveryId}/status`)
         .set('Authorization', 'Bearer test-token')
         .send({ status: 'delivered' })
         .expect(200);
@@ -284,7 +284,7 @@ describe('Delivery Service Integration Tests', () => {
       const deliveryId = createResponse.body.id;
 
       const response = await request(app)
-        .put(`/deliveries/${deliveryId}`)
+        .patch(`/api/deliveries/${deliveryId}/status`)
         .set('Authorization', 'Bearer test-token')
         .send({ status: 'failed', failure_reason: 'Address not found' })
         .expect(200);
