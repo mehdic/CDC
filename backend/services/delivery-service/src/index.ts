@@ -167,78 +167,48 @@ app.get('/health', (_req: Request, res: Response) => {
 /**
  * POST /api/deliveries - Create new delivery
  */
-app.post('/api/deliveries', (req: Request, res: Response) => {
+app.post('/api/deliveries', async (req: Request, res: Response) => {
   try {
     const {
-      orderId,
-      pharmacyId,
-      patientId,
-      driverId,
-      pickupAddress,
-      deliveryAddress,
-      estimatedDeliveryTime
+      user_id,
+      order_id,
+      delivery_address_encrypted,
+      scheduled_at
     } = req.body;
 
     // Validate required fields
-    if (!orderId || !pharmacyId || !patientId || !pickupAddress || !deliveryAddress || !estimatedDeliveryTime) {
+    if (!user_id) {
       return res.status(400).json({
         error: 'Validation Error',
-        message: 'Missing required fields: orderId, pharmacyId, patientId, pickupAddress, deliveryAddress, estimatedDeliveryTime',
-        timestamp: new Date().toISOString(),
+        message: 'user_id is required',
       });
     }
 
-    // Validate addresses
-    if (!isValidAddress(pickupAddress)) {
+    if (!delivery_address_encrypted) {
       return res.status(400).json({
         error: 'Validation Error',
-        message: 'Invalid pickupAddress format. Address must be at least 5 characters',
-        timestamp: new Date().toISOString(),
+        message: 'delivery_address_encrypted is required',
       });
     }
 
-    if (!isValidAddress(deliveryAddress)) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Invalid deliveryAddress format. Address must be at least 5 characters',
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Validate estimatedDeliveryTime is a valid ISO date string
-    const estimatedDate = new Date(estimatedDeliveryTime);
-    if (isNaN(estimatedDate.getTime())) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Invalid estimatedDeliveryTime format. Expected ISO 8601 date string',
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Create new delivery using repository
-    const newDelivery = deliveryRepository.create({
-      orderId,
-      pharmacyId,
-      patientId,
-      driverId,
-      pickupAddress,
-      deliveryAddress,
-      estimatedDeliveryTime,
+    // Create new delivery
+    const deliveryRepo = dataSource.getRepository(Delivery);
+    const newDelivery = deliveryRepo.create({
+      user_id,
+      order_id,
+      delivery_address_encrypted,
+      scheduled_at: scheduled_at ? new Date(scheduled_at) : null,
+      status: 'pending' as DeliveryStatus,
     });
 
-    console.log(`✅ Created delivery: ${newDelivery.id} (Order: ${orderId})`);
+    await deliveryRepo.save(newDelivery);
 
-    return res.status(201).json({
-      message: 'Delivery created successfully',
-      delivery: newDelivery,
-      timestamp: new Date().toISOString(),
-    });
+    return res.status(201).json(newDelivery);
   } catch (error) {
     console.error('Error creating delivery:', error);
     return res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to create delivery',
-      timestamp: new Date().toISOString(),
     });
   }
 });

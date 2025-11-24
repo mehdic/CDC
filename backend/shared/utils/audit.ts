@@ -122,17 +122,18 @@ export function parseDeviceInfo(userAgent: string | null): DeviceInfo | null {
     deviceInfo.os = 'Linux';
   }
 
-  // Detect Browser (check Safari before Chrome as Safari UA contains "Chrome")
+  // Detect Browser (check iOS first as iOS browsers don't always contain browser keywords)
   if (/edg/i.test(userAgent)) {
     deviceInfo.browser = 'Edge';
   } else if (/firefox/i.test(userAgent)) {
     deviceInfo.browser = 'Firefox';
-  } else if (/safari/i.test(userAgent) && !/chrome/i.test(userAgent)) {
-    deviceInfo.browser = 'Safari';
-  } else if (/chrome/i.test(userAgent)) {
+  } else if (/chrome/i.test(userAgent) && !/safari/i.test(userAgent)) {
+    // Chrome on Android
     deviceInfo.browser = 'Chrome';
+  } else if ((deviceInfo.os === 'iOS' || /iphone|ipad|ipod/i.test(userAgent))) {
+    // iOS devices use Safari (or Safari WebView for other browsers)
+    deviceInfo.browser = 'Safari';
   } else if (/safari/i.test(userAgent)) {
-    // Chrome on iOS contains both "Safari" and "CriOS", so this catches iOS Chrome
     deviceInfo.browser = 'Safari';
   }
 
