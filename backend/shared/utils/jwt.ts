@@ -385,10 +385,10 @@ export function hasValidTokenStructure(token: string): boolean {
     return false;
   }
 
-  // Check each part is base64url encoded
+  // Check each part is non-empty and base64url encoded
   const base64UrlPattern = /^[A-Za-z0-9_-]+$/;
 
-  return parts.every(part => base64UrlPattern.test(part));
+  return parts.every(part => part.length > 0 && base64UrlPattern.test(part));
 }
 
 /**

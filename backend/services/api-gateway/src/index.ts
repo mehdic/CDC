@@ -80,6 +80,19 @@ app.use(generalLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// 6. JSON Parsing Error Handler - Must come AFTER body parser
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof SyntaxError && 'body' in err) {
+    // Invalid JSON payload
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: 'Invalid JSON payload',
+      code: 'INVALID_JSON',
+    });
+  }
+  next(err);
+});
+
 // ============================================================================
 // Public Routes (No Authentication Required)
 // ============================================================================
@@ -104,11 +117,12 @@ app.get('/', (_req: Request, res: Response) => {
 // ============================================================================
 
 // Auth routes: login, register, MFA - stricter rate limiting
-console.log('Registering /api/auth proxy to', AUTH_SERVICE_URL);
+console.log('Registering /api/auth and /auth proxies to', AUTH_SERVICE_URL);
 
 // TEMPORARY: Direct forwarding instead of proxy middleware
 // TODO: Fix http-proxy-middleware configuration issue
-app.use('/api/auth', async (req: Request, res: Response, next: NextFunction) => {
+// Support both /api/auth and /auth patterns
+const authForwardHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const axios = require('axios');
     // Strip /api prefix before forwarding to auth-service
@@ -138,26 +152,32 @@ app.use('/api/auth', async (req: Request, res: Response, next: NextFunction) => 
       });
     }
   }
-});
+};
+
+app.use('/api/auth', authForwardHandler);
+app.use('/auth', authForwardHandler);
 
 // ============================================================================
 // Protected Routes (JWT Authentication Required)
 // ============================================================================
 
-// Apply JWT authentication middleware to all routes below
-app.use(authenticateJWT);
-
+// Apply JWT authentication middleware ONLY to protected routes
+// Support both /api/X and /X patterns for backward compatibility
 // Prescription Service
-app.use('/api/prescriptions', prescriptionProxy);
+app.use('/api/prescriptions', authenticateJWT, prescriptionProxy);
+app.use('/prescriptions', authenticateJWT, prescriptionProxy);
 
 // Teleconsultation Service
-app.use('/api/teleconsultations', teleconsultationProxy);
+app.use('/api/teleconsultations', authenticateJWT, teleconsultationProxy);
+app.use('/teleconsultations', authenticateJWT, teleconsultationProxy);
 
 // Inventory Service
-app.use('/api/inventory', inventoryProxy);
+app.use('/api/inventory', authenticateJWT, inventoryProxy);
+app.use('/inventory', authenticateJWT, inventoryProxy);
 
 // Notification Service
-app.use('/api/notifications', notificationProxy);
+app.use('/api/notifications', authenticateJWT, notificationProxy);
+app.use('/notifications', authenticateJWT, notificationProxy);
 
 // ============================================================================
 // Error Handling
@@ -165,6 +185,7 @@ app.use('/api/notifications', notificationProxy);
 
 /**
  * 404 Not Found Handler
+ * IMPORTANT: Must come AFTER all route definitions but BEFORE global error handler
  */
 app.use((req: Request, res: Response) => {
   res.status(404).json({
