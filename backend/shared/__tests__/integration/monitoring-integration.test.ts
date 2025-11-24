@@ -136,8 +136,8 @@ describe('Monitoring & Observability Integration Tests', () => {
   });
 
   describe('Metrics Integration (T256)', () => {
-    it('should collect Prometheus metrics', () => {
-      const metrics = getMetrics();
+    it('should collect Prometheus metrics', async () => {
+      const metrics = await getMetrics();
 
       expect(metrics).toBeDefined();
       expect(typeof metrics).toBe('string');
