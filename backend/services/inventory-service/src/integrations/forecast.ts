@@ -7,17 +7,17 @@
  * - Calculate optimal reorder quantities
  * - Identify seasonal trends
  *
- * Note: This is a simplified implementation. Production use requires:
+ * INT-014: Full AWS Forecast integration with fallback to heuristic
+ *
+ * Production setup requires:
  * 1. Creating a forecast dataset in AWS Forecast
  * 2. Training a forecasting model
  * 3. Generating predictions via QueryForecast API
- *
- * For MVP, we'll use a simple heuristic based on historical data.
- * Full AWS Forecast integration can be added in Phase 2.
  */
 
 import { AppDataSource } from '../index';
 import { InventoryTransaction, TransactionType } from '../../../../shared/models/InventoryTransaction';
+import { ForecastqueryClient, QueryForecastCommand } from '@aws-sdk/client-forecastquery';
 
 export interface ForecastResult {
   medication_rxnorm_code: string;
@@ -25,24 +25,93 @@ export interface ForecastResult {
   suggested_quantity: number; // Recommended reorder quantity
   confidence: number; // 0-100
   forecast_period_days: number;
+  source: 'aws_forecast' | 'heuristic'; // INT-014: Track which method was used
+}
+
+// AWS Forecast configuration
+const AWS_FORECAST_ENABLED = process.env.AWS_FORECAST_ENABLED === 'true';
+const AWS_FORECAST_ARN = process.env.AWS_FORECAST_ARN || '';
+const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
+
+// Initialize AWS Forecast client if enabled
+let forecastClient: ForecastqueryClient | null = null;
+if (AWS_FORECAST_ENABLED && AWS_FORECAST_ARN) {
+  forecastClient = new ForecastqueryClient({ region: AWS_REGION });
+  console.log('[Forecast] AWS Forecast integration enabled');
+} else {
+  console.log('[Forecast] AWS Forecast disabled, using heuristic method');
 }
 
 /**
- * Get forecasted demand for a medication
- *
- * MVP Implementation: Uses historical average with safety stock calculation
- *
- * Future Enhancement: Replace with AWS Forecast QueryForecast API
- *
- * @param pharmacy_id - Pharmacy UUID
- * @param medication_rxnorm_code - RxNorm code for medication
- * @param forecast_days - Number of days to forecast (default: 30)
+ * INT-014: Query AWS Forecast for demand prediction
  */
-export async function getForecastedDemand(
+async function queryAWSForecast(
+  medication_rxnorm_code: string,
+  forecast_days: number
+): Promise<{ forecasted_demand: number; confidence: number } | null> {
+  if (!forecastClient || !AWS_FORECAST_ARN) {
+    return null;
+  }
+
+  try {
+    const command = new QueryForecastCommand({
+      ForecastArn: AWS_FORECAST_ARN,
+      Filters: {
+        item_id: medication_rxnorm_code,
+      },
+    });
+
+    const response = await forecastClient.send(command);
+
+    // AWS Forecast returns predictions with p10, p50, p90 percentiles
+    // Use p50 (median) as the forecasted demand
+    const predictions = response.Forecast?.Predictions?.p50;
+
+    if (!predictions || predictions.length === 0) {
+      console.log(`[Forecast] No AWS predictions found for ${medication_rxnorm_code}`);
+      return null;
+    }
+
+    // Sum predictions for the forecast period
+    const forecastedDemand = predictions
+      .slice(0, forecast_days)
+      .reduce((sum, pred) => sum + (pred.Value || 0), 0);
+
+    // Calculate confidence based on prediction spread (p90 - p10)
+    const p10Values = response.Forecast?.Predictions?.p10 || [];
+    const p90Values = response.Forecast?.Predictions?.p90 || [];
+
+    let confidence = 90; // Default high confidence
+    if (p10Values.length > 0 && p90Values.length > 0) {
+      const spread = (p90Values[0].Value || 0) - (p10Values[0].Value || 0);
+      const mean = predictions[0].Value || 1;
+      const coefficientOfVariation = spread / mean;
+
+      // Lower coefficient of variation = higher confidence
+      confidence = Math.max(50, Math.min(99, Math.floor(100 - coefficientOfVariation * 50)));
+    }
+
+    console.log(`[Forecast] AWS prediction for ${medication_rxnorm_code}: ${Math.ceil(forecastedDemand)} units (${confidence}% confidence)`);
+
+    return {
+      forecasted_demand: Math.ceil(forecastedDemand),
+      confidence,
+    };
+  } catch (error) {
+    console.error('[Forecast] AWS Forecast API error:', error);
+    return null;
+  }
+}
+
+/**
+ * Heuristic-based forecast using historical data
+ * Fallback method when AWS Forecast is unavailable
+ */
+async function getHeuristicForecast(
   pharmacy_id: string,
   medication_rxnorm_code: string,
-  forecast_days: number = 30
-): Promise<ForecastResult | null> {
+  forecast_days: number
+): Promise<{ forecasted_demand: number; confidence: number; suggested_quantity: number } | null> {
   try {
     const transactionRepository = AppDataSource.getRepository(InventoryTransaction);
 
@@ -106,50 +175,98 @@ export async function getForecastedDemand(
     const confidence = Math.min(100, Math.floor((historicalTransactions.length / 30) * 100));
 
     return {
-      medication_rxnorm_code,
       forecasted_demand: forecastedDemand,
-      suggested_quantity: suggestedQuantity,
       confidence,
-      forecast_period_days: forecast_days,
+      suggested_quantity: suggestedQuantity,
     };
   } catch (error) {
-    console.error('[Forecast] Error:', error);
+    console.error('[Forecast] Heuristic forecast error:', error);
     return null;
   }
 }
 
 /**
- * TODO: AWS Forecast Integration (Phase 2)
+ * Get forecasted demand for a medication
+ * INT-014: Uses AWS Forecast with fallback to heuristic
  *
- * Full AWS Forecast implementation would include:
+ * @param pharmacy_id - Pharmacy UUID
+ * @param medication_rxnorm_code - RxNorm code for medication
+ * @param forecast_days - Number of days to forecast (default: 30)
+ */
+export async function getForecastedDemand(
+  pharmacy_id: string,
+  medication_rxnorm_code: string,
+  forecast_days: number = 30
+): Promise<ForecastResult | null> {
+  // INT-014: Try AWS Forecast first
+  if (AWS_FORECAST_ENABLED && forecastClient) {
+    const awsForecast = await queryAWSForecast(medication_rxnorm_code, forecast_days);
+
+    if (awsForecast) {
+      // Calculate safety stock using AWS forecast
+      const stdDev = awsForecast.forecasted_demand * 0.2; // Assume 20% standard deviation
+      const safetyStock = Math.ceil(1.65 * stdDev * Math.sqrt(forecast_days));
+      const suggestedQuantity = awsForecast.forecasted_demand + safetyStock;
+
+      return {
+        medication_rxnorm_code,
+        forecasted_demand: awsForecast.forecasted_demand,
+        suggested_quantity: suggestedQuantity,
+        confidence: awsForecast.confidence,
+        forecast_period_days: forecast_days,
+        source: 'aws_forecast',
+      };
+    }
+
+    console.log(`[Forecast] AWS Forecast unavailable, falling back to heuristic for ${medication_rxnorm_code}`);
+  }
+
+  // Fallback to heuristic method
+  const heuristicForecast = await getHeuristicForecast(pharmacy_id, medication_rxnorm_code, forecast_days);
+
+  if (!heuristicForecast) {
+    return null;
+  }
+
+  return {
+    medication_rxnorm_code,
+    forecasted_demand: heuristicForecast.forecasted_demand,
+    suggested_quantity: heuristicForecast.suggested_quantity,
+    confidence: heuristicForecast.confidence,
+    forecast_period_days: forecast_days,
+    source: 'heuristic',
+  };
+}
+
+/**
+ * INT-014: AWS Forecast Setup Instructions
  *
- * 1. Create Dataset:
- *    - Export historical transaction data to S3
- *    - Create Forecast dataset with schema
+ * To enable AWS Forecast predictions, complete the following setup:
  *
- * 2. Train Model:
- *    - Create Predictor with AutoML
- *    - Wait for training to complete
+ * 1. Create Forecast Dataset:
+ *    - Export historical transaction data to S3 (CSV format)
+ *    - Create Forecast dataset with schema: timestamp, item_id, demand
+ *    - Import historical data into dataset
  *
- * 3. Generate Forecasts:
- *    - Create Forecast export
- *    - Query forecasts via QueryForecast API
+ * 2. Train Predictor:
+ *    - Create Predictor with AutoML algorithm selection
+ *    - Configure forecast horizon (30 days recommended)
+ *    - Wait for training to complete (can take 1-3 hours)
  *
- * Example AWS Forecast API usage:
+ * 3. Generate Forecast:
+ *    - Create Forecast from trained Predictor
+ *    - Wait for forecast generation to complete
+ *    - Get Forecast ARN for querying
  *
- * ```typescript
- * import { ForecastQueryClient, QueryForecastCommand } from '@aws-sdk/client-forecastquery';
+ * 4. Configure Environment Variables:
+ *    AWS_FORECAST_ENABLED=true
+ *    AWS_FORECAST_ARN=arn:aws:forecast:us-east-1:ACCOUNT_ID:forecast/FORECAST_NAME
+ *    AWS_REGION=us-east-1
+ *    AWS_ACCESS_KEY_ID=your_access_key
+ *    AWS_SECRET_ACCESS_KEY=your_secret_key
  *
- * const client = new ForecastQueryClient({ region: 'us-east-1' });
+ * 5. Service will automatically use AWS Forecast when available,
+ *    falling back to heuristic method if AWS is unavailable.
  *
- * const command = new QueryForecastCommand({
- *   ForecastArn: 'arn:aws:forecast:us-east-1:...',
- *   Filters: {
- *     item_id: medication_rxnorm_code,
- *   },
- * });
- *
- * const response = await client.send(command);
- * const forecastedDemand = response.Forecast?.Predictions?.p50?.[0]?.Value || 0;
- * ```
+ * Cost estimate: ~$0.60 per 1000 forecasts (~$100/month for daily forecasts on all inventory)
  */

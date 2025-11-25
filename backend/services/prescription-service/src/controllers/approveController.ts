@@ -13,6 +13,8 @@ import { TreatmentPlan } from '../../../../shared/models/TreatmentPlan';
 import { FieldCorrection } from '../../../../shared/models/FieldCorrection';
 import { PrescriptionStateMachine } from '../utils/stateMachine';
 import { generateTreatmentPlan } from '../utils/treatmentPlan';
+import { logAuditEventFromRequest } from '../../../../shared/utils/audit';
+import { AuditAction } from '../../../../shared/models/AuditTrailEntry';
 
 export interface FieldCorrectionInput {
   item_id: string;          // Prescription item ID
@@ -42,6 +44,31 @@ export interface ApprovalResponse {
 }
 
 /**
+ * Helper function to send email notifications via notification service
+ */
+async function sendNotification(params: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}): Promise<void> {
+  const notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:4005';
+
+  const response = await fetch(`${notificationServiceUrl}/notifications/email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(params),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Notification service error: ${response.status} - ${error}`);
+  }
+}
+
+/**
  * PUT /prescriptions/:id/approve
  * Approve a prescription after pharmacist validation
  */
@@ -60,11 +87,11 @@ export async function approvePrescription(req: Request, res: Response): Promise<
       return;
     }
 
-    // Find prescription with items
+    // Find prescription with items, patient, and prescribing_doctor for notifications
     const prescriptionRepo = dataSource.getRepository(Prescription);
     const prescription = await prescriptionRepo.findOne({
       where: { id },
-      relations: ['items', 'patient'],
+      relations: ['items', 'patient', 'prescribing_doctor'],
     });
 
     if (!prescription) {
@@ -265,65 +292,78 @@ export async function approvePrescription(req: Request, res: Response): Promise<
     }
 
     // ========================================================================
-    // TODO: Integrate Audit Service from Phase 2 (FR-018)
+    // INT-011: Audit Service Integration (FR-018)
     // ========================================================================
-    // Integration Point: POST http://localhost:4003/audit/events
-    // Service: Audit Service (T043-T045) - Completed in Phase 2
-    //
-    // Required payload:
-    // await fetch('http://audit-service:4003/audit/events', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${JWT_TOKEN}`, // Pass through from request
-    //   },
-    //   body: JSON.stringify({
-    //     event_type: 'prescription.approved',
-    //     user_id: approvalData.pharmacist_id,
-    //     resource_type: 'prescription',
-    //     resource_id: prescription.id,
-    //     pharmacy_id: prescription.pharmacy_id,
-    //     changes: {
-    //       status: { old: 'in_review', new: 'approved' },
-    //       approved_by_pharmacist_id: { old: null, new: approvalData.pharmacist_id },
-    //       approved_at: { old: null, new: new Date().toISOString() },
-    //     },
-    //     ip_address: req.ip,
-    //     user_agent: req.headers['user-agent'],
-    //   }),
-    // });
-    //
-    // Error handling: Log failure but don't block approval (audit is supplementary)
+    // Log prescription approval to audit trail for HIPAA compliance
+    try {
+      await logAuditEventFromRequest(dataSource, req, {
+        userId: approvalData.pharmacist_id,
+        pharmacyId: prescription.pharmacy_id,
+        eventType: 'prescription.approved',
+        action: AuditAction.UPDATE,
+        resourceType: 'prescription',
+        resourceId: prescription.id,
+        changes: {
+          status: { old: 'in_review', new: 'approved' },
+          approved_by_pharmacist_id: { old: null, new: approvalData.pharmacist_id },
+          approved_at: { old: null, new: prescription.approved_at!.toISOString() },
+        },
+      });
+      console.log('[Approve Controller] Audit event logged successfully');
+    } catch (auditError) {
+      // Log failure but don't block approval (audit is supplementary)
+      console.error('[Approve Controller] Failed to log audit event:', auditError);
+    }
 
     // ========================================================================
-    // TODO: Integrate Notification Service from Phase 2 (FR-028)
+    // INT-012: Notification Service Integration (FR-028)
     // ========================================================================
-    // Integration Point: POST http://localhost:4006/notifications/send
-    // Service: Notification Service (T051-T054) - Completed in Phase 2
-    //
-    // Required payload (for patient):
-    // await fetch('http://notification-service:4006/notifications/send', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     user_id: prescription.patient_id,
-    //     type: 'prescription_approved',
-    //     channel: 'in_app', // Also support: email, sms, push
-    //     priority: 'high',
-    //     title: 'Prescription Approved',
-    //     message: `Your prescription has been approved and is ready for pickup.`,
-    //     data: {
-    //       prescription_id: prescription.id,
-    //       pharmacy_id: prescription.pharmacy_id,
-    //       treatment_plan_id: treatmentPlan?.id,
-    //     },
-    //   }),
-    // });
-    //
-    // Required payload (for doctor):
-    // Same as above, but with doctor_id and appropriate message
-    //
-    // Error handling: Log failure but don't block approval
+    // Send notifications to patient and doctor about prescription approval
+
+    // Notification to patient
+    if (prescription.patient_id) {
+      try {
+        await sendNotification({
+          to: prescription.patient?.email || '',
+          subject: 'Prescription Approved',
+          text: `Your prescription has been approved and is ready for pickup or delivery.`,
+          html: `
+            <h2>Prescription Approved</h2>
+            <p>Your prescription has been approved by the pharmacist and is now ready.</p>
+            <p><strong>Prescription ID:</strong> ${prescription.id}</p>
+            ${treatmentPlan ? `<p><strong>Treatment Plan ID:</strong> ${treatmentPlan.id}</p>` : ''}
+            <p>You can now proceed with pickup or delivery arrangements.</p>
+          `,
+        });
+        console.log('[Approve Controller] Patient notification sent successfully');
+      } catch (notificationError) {
+        // Log failure but don't block approval
+        console.error('[Approve Controller] Failed to send patient notification:', notificationError);
+      }
+    }
+
+    // Notification to prescribing doctor
+    if (prescription.prescribing_doctor_id && prescription.prescribing_doctor) {
+      try {
+        await sendNotification({
+          to: prescription.prescribing_doctor.email,
+          subject: 'Prescription Approved by Pharmacist',
+          text: `The prescription you issued has been approved by the pharmacist.`,
+          html: `
+            <h2>Prescription Approved</h2>
+            <p>The prescription you issued has been reviewed and approved by the pharmacist.</p>
+            <p><strong>Patient ID:</strong> ${prescription.patient_id}</p>
+            <p><strong>Prescription ID:</strong> ${prescription.id}</p>
+            <p><strong>Approved by:</strong> Pharmacist ${approvalData.pharmacist_id}</p>
+            ${treatmentPlan ? `<p>A treatment plan has been created for the patient.</p>` : ''}
+          `,
+        });
+        console.log('[Approve Controller] Doctor notification sent successfully');
+      } catch (notificationError) {
+        // Log failure but don't block approval
+        console.error('[Approve Controller] Failed to send doctor notification:', notificationError);
+      }
+    }
 
     // Build response
     const response: ApprovalResponse = {
