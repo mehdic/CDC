@@ -26,6 +26,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { initializeDatabase, clearDatabase } from './database';
 import teleconsultationRoutes from './api/routes';
+import { startReminderWorker, stopReminderWorker } from './workers/reminderWorker';
 
 // Initialize database
 initializeDatabase();
@@ -34,6 +35,9 @@ initializeDatabase();
 if (process.env.NODE_ENV === 'test') {
   clearDatabase();
 }
+
+// Reminder worker interval ID for graceful shutdown
+let reminderWorkerInterval: NodeJS.Timeout | null = null;
 
 // ============================================================================
 // Configuration
@@ -128,16 +132,25 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 async function startServer() {
   try {
+    // Start reminder worker (INT-013)
+    reminderWorkerInterval = await startReminderWorker();
+
     // Start Express server
     const server = app.listen(PORT, () => {
       console.log(`🚀 Teleconsultation Service running on port ${PORT}`);
       console.log(`📊 Environment: ${NODE_ENV}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`⏰ Reminder worker active (checking every 5 minutes)`);
     });
 
     // Graceful shutdown
-    const shutdown = () => {
+    const shutdown = async () => {
       console.log('\n🛑 Shutting down gracefully...');
+
+      // Stop reminder worker
+      if (reminderWorkerInterval) {
+        await stopReminderWorker(reminderWorkerInterval);
+      }
 
       server.close(() => {
         console.log('✅ HTTP server closed');
