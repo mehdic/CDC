@@ -19,7 +19,13 @@ import {
  * Shimmer Effect Component
  * Creates a shimmer animation overlay for skeleton loaders
  */
-const ShimmerOverlay: React.FC<{ width?: number; height?: number; style?: ViewStyle }> = ({
+interface ShimmerOverlayProps {
+  width?: number | string;
+  height?: number | string;
+  style?: ViewStyle;
+}
+
+const ShimmerOverlay: React.FC<ShimmerOverlayProps> = ({
   width = '100%',
   height = 16,
   style,
@@ -48,8 +54,14 @@ const ShimmerOverlay: React.FC<{ width?: number; height?: number; style?: ViewSt
     outputRange: [-1000, 1000],
   });
 
+  // Convert percentage strings to dimensions if needed
+  const containerStyle: ViewStyle = {
+    width: typeof width === 'string' ? width : (width || '100%' as any),
+    height: typeof height === 'number' ? height : 16,
+  };
+
   return (
-    <View style={[styles.skeletonContainer, { width, height }, style]}>
+    <View style={[styles.skeletonContainer, containerStyle as any, style]}>
       <View style={styles.skeletonBase} />
       <Animated.View
         style={[
