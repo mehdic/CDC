@@ -13,6 +13,7 @@ import {
   FlatList,
   ViewStyle,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 
 /**
@@ -81,7 +82,13 @@ const ShimmerOverlay: React.FC<ShimmerOverlayProps> = ({
  */
 export const DeliveryCardSkeleton: React.FC = () => {
   return (
-    <View style={styles.card}>
+    <View
+      style={styles.card}
+      accessible={true}
+      accessibilityLabel="Delivery card loading"
+      accessibilityRole="progressbar"
+      accessibilityLiveRegion="polite"
+    >
       <View style={styles.cardHeader}>
         <ShimmerOverlay width="60%" height={20} />
         <ShimmerOverlay width="20%" height={20} />
@@ -105,7 +112,13 @@ export const DeliveryListSkeleton: React.FC<{ count?: number }> = ({ count = 5 }
   const skeletons = Array.from({ length: count }, (_, i) => i);
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessible={true}
+      accessibilityLabel="Delivery list loading"
+      accessibilityRole="progressbar"
+      accessibilityLiveRegion="polite"
+    >
       <View style={styles.filterBar}>
         <ShimmerOverlay width="45%" height={36} style={{ marginRight: 8 }} />
         <ShimmerOverlay width="45%" height={36} />
@@ -116,6 +129,8 @@ export const DeliveryListSkeleton: React.FC<{ count?: number }> = ({ count = 5 }
         renderItem={() => <DeliveryCardSkeleton />}
         keyExtractor={(item) => item.toString()}
         scrollEnabled={false}
+        accessible={true}
+        accessibilityRole="list"
       />
     </View>
   );
@@ -146,13 +161,38 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>Failed to Load</Text>
-        <Text style={styles.errorMessage}>{error}</Text>
+      <View
+        style={styles.errorContainer}
+        accessible={true}
+        accessibilityRole="alert"
+        accessibilityLiveRegion="assertive"
+        accessibilityLabel="Loading failed alert"
+      >
+        <Text
+          style={styles.errorTitle}
+          accessible={true}
+          accessibilityRole="header"
+        >
+          Failed to Load
+        </Text>
+        <Text
+          style={styles.errorMessage}
+          accessible={true}
+          accessibilityLabel={`Error: ${error}`}
+        >
+          {error}
+        </Text>
         {onRetry && (
-          <View style={styles.retryButton}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={onRetry}
+            accessible={true}
+            accessibilityLabel="Retry loading"
+            accessibilityHint="Double tap to try loading the content again"
+            accessibilityRole="button"
+          >
             <Text style={styles.retryText}>Tap to retry</Text>
-          </View>
+          </TouchableOpacity>
         )}
       </View>
     );
@@ -171,9 +211,25 @@ export const SlowNetworkIndicator: React.FC<{ visible: boolean }> = ({ visible }
   }
 
   return (
-    <View style={styles.slowNetworkBanner}>
-      <Text style={styles.slowNetworkText}>Slow network detected. Loading data...</Text>
-      <ActivityIndicator size="small" color="#FFF" />
+    <View
+      style={styles.slowNetworkBanner}
+      accessible={true}
+      accessibilityLiveRegion="polite"
+      accessibilityLabel="Slow network warning"
+    >
+      <Text
+        style={styles.slowNetworkText}
+        accessible={true}
+        accessibilityLabel="Slow network detected, loading data in progress"
+      >
+        Slow network detected. Loading data...
+      </Text>
+      <ActivityIndicator
+        size="small"
+        color="#FFF"
+        accessible={true}
+        accessibilityLabel="Loading indicator"
+      />
     </View>
   );
 };
@@ -187,9 +243,23 @@ export const LoadingSpinner: React.FC<{ message?: string; size?: 'small' | 'larg
   size = 'large',
 }) => {
   return (
-    <View style={styles.spinnerContainer}>
+    <View
+      style={styles.spinnerContainer}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLiveRegion="polite"
+      accessibilityLabel={message || 'Loading in progress'}
+    >
       <ActivityIndicator size={size} color="#007AFF" />
-      {message && <Text style={styles.spinnerText}>{message}</Text>}
+      {message && (
+        <Text
+          style={styles.spinnerText}
+          accessible={true}
+          accessibilityLabel={message}
+        >
+          {message}
+        </Text>
+      )}
     </View>
   );
 };
@@ -200,9 +270,27 @@ export const LoadingSpinner: React.FC<{ message?: string; size?: 'small' | 'larg
  */
 export const InlineLoading: React.FC<{ message?: string }> = ({ message = 'Loading...' }) => {
   return (
-    <View style={styles.inlineLoadingContainer}>
-      <ActivityIndicator size="small" color="#007AFF" style={{ marginRight: 8 }} />
-      <Text style={styles.inlineLoadingText}>{message}</Text>
+    <View
+      style={styles.inlineLoadingContainer}
+      accessible={true}
+      accessibilityRole="progressbar"
+      accessibilityLiveRegion="polite"
+      accessibilityLabel={message}
+    >
+      <ActivityIndicator
+        size="small"
+        color="#007AFF"
+        style={{ marginRight: 8 }}
+        accessible={true}
+        accessibilityLabel="Loading"
+      />
+      <Text
+        style={styles.inlineLoadingText}
+        accessible={true}
+        accessibilityLabel={message}
+      >
+        {message}
+      </Text>
     </View>
   );
 };

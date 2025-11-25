@@ -21,8 +21,15 @@ export const DeliveryDetailScreen: React.FC<{ navigation: any; route: any }> = (
 
   if (!delivery) {
     return (
-      <View style={styles.container}>
-        <Text>Delivery not found</Text>
+      <View
+        style={styles.container}
+        accessible={true}
+        accessibilityRole="alert"
+        accessibilityLiveRegion="assertive"
+      >
+        <Text accessible={true} accessibilityLabel="Delivery not found">
+          Delivery not found
+        </Text>
       </View>
     );
   }
@@ -58,12 +65,42 @@ export const DeliveryDetailScreen: React.FC<{ navigation: any; route: any }> = (
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Patient Information</Text>
-        <Text style={styles.patientName}>{delivery.patient.name}</Text>
-        <Text style={styles.phone}>{delivery.patient.phone}</Text>
-        <Text style={styles.address}>
+    <ScrollView
+      style={styles.container}
+      accessible={true}
+      accessibilityLabel={`Delivery details for ${delivery.patient.name}`}
+    >
+      <View
+        style={styles.section}
+        accessible={true}
+        accessibilityLabel="Patient information section"
+      >
+        <Text
+          style={styles.sectionTitle}
+          accessible={true}
+          accessibilityRole="header"
+        >
+          Patient Information
+        </Text>
+        <Text
+          style={styles.patientName}
+          accessible={true}
+          accessibilityLabel={`Patient name: ${delivery.patient.name}`}
+        >
+          {delivery.patient.name}
+        </Text>
+        <Text
+          style={styles.phone}
+          accessible={true}
+          accessibilityLabel={`Phone: ${delivery.patient.phone}`}
+        >
+          {delivery.patient.phone}
+        </Text>
+        <Text
+          style={styles.address}
+          accessible={true}
+          accessibilityLabel={`Address: ${delivery.patient.address.street}, ${delivery.patient.address.postalCode} ${delivery.patient.address.city}, ${delivery.patient.address.canton}`}
+        >
           {delivery.patient.address.street}
           {'\n'}
           {delivery.patient.address.postalCode} {delivery.patient.address.city}
@@ -71,42 +108,131 @@ export const DeliveryDetailScreen: React.FC<{ navigation: any; route: any }> = (
           {delivery.patient.address.canton}
         </Text>
         {delivery.patient.availabilityWindow && (
-          <Text style={styles.availability}>
+          <Text
+            style={styles.availability}
+            accessible={true}
+            accessibilityLabel={`Patient availability: from ${new Date(delivery.patient.availabilityWindow.start).toLocaleTimeString()} to ${new Date(delivery.patient.availabilityWindow.end).toLocaleTimeString()}`}
+          >
             Available: {new Date(delivery.patient.availabilityWindow.start).toLocaleTimeString()} -{' '}
             {new Date(delivery.patient.availabilityWindow.end).toLocaleTimeString()}
           </Text>
         )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Delivery Information</Text>
+      <View
+        style={styles.section}
+        accessible={true}
+        accessibilityLabel="Delivery information section"
+      >
+        <Text
+          style={styles.sectionTitle}
+          accessible={true}
+          accessibilityRole="header"
+        >
+          Delivery Information
+        </Text>
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Distance:</Text>
-          <Text style={styles.value}>{delivery.distance.toFixed(1)} km</Text>
+          <Text
+            style={styles.label}
+            accessible={true}
+            accessibilityLabel="Distance label"
+          >
+            Distance:
+          </Text>
+          <Text
+            style={styles.value}
+            accessible={true}
+            accessibilityLabel={`Distance: ${delivery.distance.toFixed(1)} kilometers`}
+          >
+            {delivery.distance.toFixed(1)} km
+          </Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Estimated Duration:</Text>
-          <Text style={styles.value}>{delivery.estimatedDuration} min</Text>
+          <Text
+            style={styles.label}
+            accessible={true}
+            accessibilityLabel="Estimated duration label"
+          >
+            Estimated Duration:
+          </Text>
+          <Text
+            style={styles.value}
+            accessible={true}
+            accessibilityLabel={`Estimated duration: ${delivery.estimatedDuration} minutes`}
+          >
+            {delivery.estimatedDuration} min
+          </Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Payment Method:</Text>
-          <Text style={styles.value}>{delivery.paymentMethod}</Text>
+          <Text
+            style={styles.label}
+            accessible={true}
+            accessibilityLabel="Payment method label"
+          >
+            Payment Method:
+          </Text>
+          <Text
+            style={styles.value}
+            accessible={true}
+            accessibilityLabel={`Payment method: ${delivery.paymentMethod}`}
+          >
+            {delivery.paymentMethod}
+          </Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Priority:</Text>
-          <Text style={[styles.value, styles.priority]}>{delivery.priority.toUpperCase()}</Text>
+          <Text
+            style={styles.label}
+            accessible={true}
+            accessibilityLabel="Priority label"
+          >
+            Priority:
+          </Text>
+          <Text
+            style={[styles.value, styles.priority]}
+            accessible={true}
+            accessibilityLabel={`Priority level: ${delivery.priority}`}
+          >
+            {delivery.priority.toUpperCase()}
+          </Text>
         </View>
       </View>
 
       {delivery.packages.map((pkg, idx) => (
-        <View key={pkg.id} style={styles.section}>
-          <Text style={styles.sectionTitle}>Package {idx + 1}</Text>
-          <Text style={styles.qrCode}>QR: {pkg.qrCode}</Text>
+        <View
+          key={pkg.id}
+          style={styles.section}
+          accessible={true}
+          accessibilityLabel={`Package ${idx + 1}`}
+        >
+          <Text
+            style={styles.sectionTitle}
+            accessible={true}
+            accessibilityRole="header"
+          >
+            Package {idx + 1}
+          </Text>
+          <Text
+            style={styles.qrCode}
+            accessible={true}
+            accessibilityLabel={`QR code: ${pkg.qrCode}`}
+          >
+            QR: {pkg.qrCode}
+          </Text>
 
           {pkg.specialHandling.length > 0 && (
-            <View style={styles.specialHandling}>
+            <View
+              style={styles.specialHandling}
+              accessible={true}
+              accessibilityRole="list"
+              accessibilityLabel="Special handling requirements"
+            >
               {pkg.specialHandling.map((handling) => (
-                <View key={handling} style={styles.handlingBadge}>
+                <View
+                  key={handling}
+                  style={styles.handlingBadge}
+                  accessible={true}
+                  accessibilityLabel={handling.replace('_', ' ')}
+                >
                   <Text style={styles.handlingText}>
                     {getSpecialHandlingIcon(handling)} {handling.replace('_', ' ')}
                   </Text>
@@ -115,37 +241,100 @@ export const DeliveryDetailScreen: React.FC<{ navigation: any; route: any }> = (
             </View>
           )}
 
-          <Text style={styles.medicationsTitle}>Medications:</Text>
+          <Text
+            style={styles.medicationsTitle}
+            accessible={true}
+            accessibilityRole="header"
+          >
+            Medications:
+          </Text>
           {pkg.medications.map((med) => (
-            <View key={med.id} style={styles.medication}>
-              <Text style={styles.medName}>{med.name}</Text>
-              <Text style={styles.medDetails}>
+            <View
+              key={med.id}
+              style={styles.medication}
+              accessible={true}
+              accessibilityLabel={`Medication: ${med.name}`}
+            >
+              <Text
+                style={styles.medName}
+                accessible={true}
+                accessibilityLabel={`Medication name: ${med.name}`}
+              >
+                {med.name}
+              </Text>
+              <Text
+                style={styles.medDetails}
+                accessible={true}
+                accessibilityLabel={`Quantity: ${med.quantity}, Dosage: ${med.dosage}`}
+              >
                 {med.quantity}x - {med.dosage}
               </Text>
               {med.isControlledSubstance && (
-                <Text style={styles.controlledSubstance}>⚠️ Controlled Substance</Text>
+                <Text
+                  style={styles.controlledSubstance}
+                  accessible={true}
+                  accessibilityLabel="Warning: Controlled substance"
+                >
+                  ⚠️ Controlled Substance
+                </Text>
               )}
-              {med.requiresColdChain && <Text style={styles.coldChain}>❄️ Requires Cold Chain</Text>}
+              {med.requiresColdChain && (
+                <Text
+                  style={styles.coldChain}
+                  accessible={true}
+                  accessibilityLabel="Warning: Requires cold chain"
+                >
+                  ❄️ Requires Cold Chain
+                </Text>
+              )}
             </View>
           ))}
         </View>
       ))}
 
       {delivery.specialInstructions && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Special Instructions</Text>
-          <Text style={styles.instructions}>{delivery.specialInstructions}</Text>
+        <View
+          style={styles.section}
+          accessible={true}
+          accessibilityLabel="Special instructions section"
+        >
+          <Text
+            style={styles.sectionTitle}
+            accessible={true}
+            accessibilityRole="header"
+          >
+            Special Instructions
+          </Text>
+          <Text
+            style={styles.instructions}
+            accessible={true}
+            accessibilityLabel={`Special instructions: ${delivery.specialInstructions}`}
+            accessibilityLiveRegion="polite"
+          >
+            {delivery.specialInstructions}
+          </Text>
         </View>
       )}
 
       {delivery.status === 'pending' || delivery.status === 'assigned' ? (
-        <TouchableOpacity style={styles.acceptButton} onPress={handleAccept}>
+        <TouchableOpacity
+          style={styles.acceptButton}
+          onPress={handleAccept}
+          accessible={true}
+          accessibilityLabel="Accept delivery button"
+          accessibilityHint={`Double tap to accept this delivery for ${delivery.patient.name}`}
+          accessibilityRole="button"
+        >
           <Text style={styles.acceptButtonText}>Accept Delivery</Text>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
           style={styles.viewMapButton}
           onPress={() => navigation.navigate('Map')}
+          accessible={true}
+          accessibilityLabel="View on map button"
+          accessibilityHint="Double tap to view this delivery location on the map"
+          accessibilityRole="button"
         >
           <Text style={styles.viewMapButtonText}>View on Map</Text>
         </TouchableOpacity>

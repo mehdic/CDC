@@ -93,6 +93,9 @@ export const LoginScreen: React.FC = () => {
             autoCorrect={false}
             editable={!loading}
             testID="email-input"
+            accessibilityLabel="Email address input field"
+            accessibilityHint="Enter your delivery personnel email address in the format: delivery@metapharm.ch"
+            accessibilityRole="text"
           />
 
           <Text style={styles.label}>Password</Text>
@@ -106,6 +109,9 @@ export const LoginScreen: React.FC = () => {
             autoCorrect={false}
             editable={!loading}
             testID="password-input"
+            accessibilityLabel="Password input field"
+            accessibilityHint="Enter your secure password. Your entry is hidden for security."
+            accessibilityRole="text"
           />
 
           <TouchableOpacity
@@ -113,9 +119,17 @@ export const LoginScreen: React.FC = () => {
             onPress={handleLogin}
             disabled={loading}
             testID="login-button"
+            accessibilityLabel="Login button"
+            accessibilityHint="Double tap to submit your email and password credentials"
+            accessibilityRole="button"
+            accessible={true}
           >
             {loading ? (
-              <ActivityIndicator color="#FFF" />
+              <ActivityIndicator
+                color="#FFF"
+                accessibilityLiveRegion="polite"
+                accessibilityLabel="Login in progress"
+              />
             ) : (
               <Text style={styles.buttonText}>Login</Text>
             )}
@@ -132,11 +146,21 @@ export const LoginScreen: React.FC = () => {
             onPress={handleHinEIDLogin}
             disabled={loading}
             testID="hin-eid-button"
+            accessibilityLabel="Login with HIN e-ID button"
+            accessibilityHint="Double tap to authenticate using your HIN e-ID provider credentials. This is a secure Swiss healthcare authentication method."
+            accessibilityRole="button"
+            accessible={true}
           >
             <Text style={styles.buttonTextHIN}>Login with HIN e-ID</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.forgotPassword}>
+          <TouchableOpacity
+            style={styles.forgotPassword}
+            accessibilityLabel="Forgot password link"
+            accessibilityHint="Double tap to initiate password recovery process"
+            accessibilityRole="link"
+            accessible={true}
+          >
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>

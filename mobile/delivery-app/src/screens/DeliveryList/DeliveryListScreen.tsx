@@ -51,25 +51,61 @@ export const DeliveryListScreen: React.FC<{ navigation: any }> = ({ navigation }
     <TouchableOpacity
       style={styles.card}
       onPress={() => navigation.navigate('DeliveryDetail', { deliveryId: item.id })}
+      accessibilityLabel={`Delivery for ${item.patient.name}`}
+      accessibilityHint={`${item.status} delivery. Distance: ${item.distance.toFixed(1)} km. Estimated time: ${item.estimatedDuration} minutes. Priority: ${item.priority}. Double tap to view details.`}
+      accessibilityRole="button"
+      accessible={true}
     >
       <View style={styles.cardHeader}>
-        <Text style={styles.patientName}>{item.patient.name}</Text>
-        <View style={[styles.statusBadge, getStatusColor(item.status)]}>
+        <Text
+          style={styles.patientName}
+          accessibilityRole="header"
+          accessibilityLabel={`Patient name: ${item.patient.name}`}
+        >
+          {item.patient.name}
+        </Text>
+        <View
+          style={[styles.statusBadge, getStatusColor(item.status)]}
+          accessible={true}
+          accessibilityLabel={`Delivery status: ${item.status}`}
+        >
           <Text style={styles.statusText}>{item.status}</Text>
         </View>
       </View>
-      <Text style={styles.address}>
+      <Text
+        style={styles.address}
+        accessibilityLabel={`Address: ${item.patient.address.street}, ${item.patient.address.city}`}
+      >
         {item.patient.address.street}, {item.patient.address.city}
       </Text>
       <View style={styles.cardFooter}>
-        <Text style={styles.distance}>{item.distance.toFixed(1)} km</Text>
-        <Text style={styles.duration}>{item.estimatedDuration} min</Text>
-        <View style={[styles.priorityBadge, getPriorityColor(item.priority)]}>
+        <Text
+          style={styles.distance}
+          accessibilityLabel={`Distance: ${item.distance.toFixed(1)} kilometers`}
+        >
+          {item.distance.toFixed(1)} km
+        </Text>
+        <Text
+          style={styles.duration}
+          accessibilityLabel={`Estimated duration: ${item.estimatedDuration} minutes`}
+        >
+          {item.estimatedDuration} min
+        </Text>
+        <View
+          style={[styles.priorityBadge, getPriorityColor(item.priority)]}
+          accessible={true}
+          accessibilityLabel={`Priority level: ${item.priority}`}
+        >
           <Text style={styles.priorityText}>{item.priority.toUpperCase()}</Text>
         </View>
       </View>
       {item.specialInstructions && (
-        <Text style={styles.instructions} numberOfLines={2}>
+        <Text
+          style={styles.instructions}
+          numberOfLines={2}
+          accessibilityLabel={`Special instructions: ${item.specialInstructions}`}
+          accessibilityLiveRegion="polite"
+        >
           ℹ️ {item.specialInstructions}
         </Text>
       )}
@@ -78,10 +114,20 @@ export const DeliveryListScreen: React.FC<{ navigation: any }> = ({ navigation }
 
   return (
     <View style={styles.container}>
-      <View style={styles.filterBar}>
+      <View
+        style={styles.filterBar}
+        accessible={true}
+        accessibilityRole="tablist"
+        accessibilityLabel="Delivery filter tabs"
+      >
         <TouchableOpacity
           style={[styles.filterButton, filter === 'available' && styles.filterActive]}
           onPress={() => setFilter('available')}
+          accessible={true}
+          accessibilityRole="tab"
+          accessibilityLabel="Available deliveries"
+          accessibilityHint={filter === 'available' ? 'Currently selected. Double tap to view available deliveries.' : 'Double tap to view available deliveries.'}
+          accessibilityState={{ selected: filter === 'available' }}
         >
           <Text style={filter === 'available' ? styles.filterTextActive : styles.filterText}>
             Available
@@ -90,6 +136,11 @@ export const DeliveryListScreen: React.FC<{ navigation: any }> = ({ navigation }
         <TouchableOpacity
           style={[styles.filterButton, filter === 'mine' && styles.filterActive]}
           onPress={() => setFilter('mine')}
+          accessible={true}
+          accessibilityRole="tab"
+          accessibilityLabel="My deliveries"
+          accessibilityHint={filter === 'mine' ? 'Currently selected. Double tap to view your assigned deliveries.' : 'Double tap to view your assigned deliveries.'}
+          accessibilityState={{ selected: filter === 'mine' }}
         >
           <Text style={filter === 'mine' ? styles.filterTextActive : styles.filterText}>
             My Deliveries
@@ -102,6 +153,10 @@ export const DeliveryListScreen: React.FC<{ navigation: any }> = ({ navigation }
         placeholder="Search by name or city..."
         value={searchQuery}
         onChangeText={setSearchQuery}
+        accessible={true}
+        accessibilityLabel="Search deliveries"
+        accessibilityHint="Enter patient name or city to filter the delivery list"
+        accessibilityRole="search"
       />
 
       <FlatList
@@ -109,8 +164,16 @@ export const DeliveryListScreen: React.FC<{ navigation: any }> = ({ navigation }
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        accessible={true}
+        accessibilityRole="list"
+        accessibilityLabel={`${filteredRequests.length} deliveries found`}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
+          <View
+            style={styles.emptyContainer}
+            accessible={true}
+            accessibilityLiveRegion="polite"
+            accessibilityLabel="No deliveries found"
+          >
             <Text style={styles.emptyText}>No deliveries found</Text>
           </View>
         }

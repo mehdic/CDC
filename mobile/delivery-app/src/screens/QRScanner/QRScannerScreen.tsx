@@ -48,20 +48,46 @@ export const QRScannerScreen: React.FC<{ navigation: any; route: any }> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      accessible={true}
+      accessibilityLabel="QR code scanner screen"
+    >
       <QRCodeScanner
         onRead={handleScan}
         flashMode={RNCamera.Constants.FlashMode.off}
         topContent={
-          <View style={styles.topContent}>
-            <Text style={styles.title}>Scan Package QR Code</Text>
-            <Text style={styles.subtitle}>Position the QR code within the frame</Text>
+          <View
+            style={styles.topContent}
+            accessible={true}
+            accessibilityRole="header"
+          >
+            <Text
+              style={styles.title}
+              accessible={true}
+              accessibilityRole="header"
+              accessibilityLabel="Scan Package QR Code"
+            >
+              Scan Package QR Code
+            </Text>
+            <Text
+              style={styles.subtitle}
+              accessible={true}
+              accessibilityLabel="Position the QR code within the frame for scanning"
+              accessibilityHint="Align the QR code printed on the package within the camera frame"
+            >
+              Position the QR code within the frame
+            </Text>
           </View>
         }
         bottomContent={
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={() => navigation.goBack()}
+            accessible={true}
+            accessibilityLabel="Cancel QR scan"
+            accessibilityHint="Double tap to close the scanner and go back"
+            accessibilityRole="button"
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
