@@ -15,7 +15,6 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-
 import {
   TwilioVideo,
   TwilioVideoLocalView,
@@ -55,11 +54,11 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
   const [remoteParticipants, setRemoteParticipants] = useState<Participant[]>([]);
   const [localVideoEnabled, setLocalVideoEnabled] = useState(!audioOnly);
   const [localAudioEnabled, setLocalAudioEnabled] = useState(true);
-  const [networkQuality, setNetworkQuality] = useState<number>(5); // 0-5 scale
+  const [networkQuality, setNetworkQuality] = useState<number>(5);
   const [reconnecting, setReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
-  const roomRef = useRef<any>(null);
   const maxReconnectAttempts = 3;
+  const roomRef = useRef<any>(null);
 
   useEffect(() => {
     connectToRoom();
@@ -89,7 +88,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         onConnected?.();
       });
 
-      TwilioVideo.setOnRoomDidDisconnect(() => {
+      TwilioVideo.setOnRoomDidDisconnect((event: any) => {
         handleDisconnected();
       });
 
@@ -100,12 +99,26 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         onError?.(new Error(error.error || 'Connection failed'));
       });
 
-      TwilioVideo.setOnParticipantAddedVideoTrack((participant: any) => {
-        handleParticipantConnected(participant.participant);
+      TwilioVideo.setOnParticipantAddedVideoTrack((event: any) => {
+        const newParticipant: Participant = {
+          sid: event.participant.sid,
+          identity: event.participant.identity,
+          videoEnabled: true,
+          audioEnabled: true,
+        };
+        setRemoteParticipants((prev) => {
+          const exists = prev.find((p) => p.sid === event.participant.sid);
+          if (exists) return prev;
+          return [...prev, newParticipant];
+        });
+        onParticipantConnected?.(event.participant.sid);
       });
 
-      TwilioVideo.setOnParticipantRemovedVideoTrack((participant: any) => {
-        handleParticipantDisconnected(participant.participant);
+      TwilioVideo.setOnParticipantRemovedVideoTrack((event: any) => {
+        setRemoteParticipants((prev) =>
+          prev.filter((p) => p.sid !== event.participant.sid)
+        );
+        onParticipantDisconnected?.(event.participant.sid);
       });
 
       // Network quality monitoring (INT-006)
@@ -113,21 +126,17 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         const quality = event.localQuality || 5;
         setNetworkQuality(quality);
 
-        // Auto-fallback to audio-only if network is poor (quality < 2)
+        // Suggest audio-only if poor connection
         if (quality < 2 && !audioOnly && localVideoEnabled) {
-          console.warn('Poor network quality detected, switching to audio-only');
           Alert.alert(
             'Poor Connection',
             'Video quality is poor. Switch to audio-only mode?',
             [
+              { text: 'Cancel', style: 'cancel' },
               {
-                text: 'Continue Video',
-                style: 'cancel',
-              },
-              {
-                text: 'Audio Only',
+                text: 'Switch to Audio',
                 onPress: () => {
-                  switchToAudioOnly();
+                  TwilioVideo.setLocalVideoEnabled(false);
                   setLocalVideoEnabled(false);
                 },
               },
@@ -138,54 +147,45 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
 
       // Reconnection handling (INT-006)
       TwilioVideo.setOnReconnecting((error: any) => {
-        console.warn('Room reconnecting:', error);
         setReconnecting(true);
         setReconnectAttempts((prev) => prev + 1);
+
+        if (reconnectAttempts >= maxReconnectAttempts) {
+          Alert.alert(
+            'Connection Lost',
+            'Unable to reconnect after multiple attempts. Please try again.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  disconnectFromRoom();
+                },
+              },
+            ]
+          );
+        }
       });
 
       TwilioVideo.setOnReconnected(() => {
-        console.log('Room reconnected successfully');
         setReconnecting(false);
         setReconnectAttempts(0);
-        Alert.alert('Connection Restored', 'Video call has been restored');
+        Alert.alert(
+          'Connection Restored',
+          'Video call has been restored'
+        );
       });
     } catch (error: any) {
       console.error('Failed to connect to room:', error);
       setConnecting(false);
-
-      // Enhanced error handling (INT-006)
-      if (reconnectAttempts < maxReconnectAttempts) {
-        Alert.alert(
-          'Connection Error',
-          `Failed to connect. Retry attempt ${reconnectAttempts + 1}/${maxReconnectAttempts}?`,
-          [
-            {
-              text: 'Cancel',
-              onPress: () => onError?.(error),
-            },
-            {
-              text: 'Retry',
-              onPress: () => {
-                setReconnectAttempts((prev) => prev + 1);
-                setTimeout(() => connectToRoom(), 2000);
-              },
-            },
-          ]
-        );
-      } else {
-        Alert.alert(
-          'Connection Failed',
-          'Unable to connect after multiple attempts. Please check your network and try again later.'
-        );
-        onError?.(error);
-      }
+      Alert.alert('Connection Error', 'Failed to connect to video call');
+      onError?.(error);
     }
   };
 
   const disconnectFromRoom = () => {
     TwilioVideo.disconnect();
-    roomRef.current = null;
     setConnected(false);
+    setRemoteParticipants([]);
     onDisconnected?.();
   };
 
@@ -219,18 +219,11 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
     onDisconnected?.();
   };
 
-  if (connecting || reconnecting) {
+  if (connecting) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>
-          {reconnecting ? 'Reconnecting...' : 'Connecting to video call...'}
-        </Text>
-        {reconnecting && reconnectAttempts > 0 && (
-          <Text style={styles.reconnectText}>
-            Attempt {reconnectAttempts}/{maxReconnectAttempts}
-          </Text>
-        )}
+        <Text style={styles.loadingText}>Connecting to video call...</Text>
       </View>
     );
   }
@@ -256,6 +249,10 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
             style={styles.remoteVideo}
             scaleType="fit"
           />
+          {/* Security indicator */}
+          <View style={styles.securityIndicator}>
+            <Text style={styles.securityText}>🔒 Encrypted</Text>
+          </View>
         </View>
       ) : (
         <View style={styles.waitingContainer}>
@@ -282,6 +279,16 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         <View style={styles.audioOnlyContainer}>
           <Text style={styles.audioOnlyIcon}>🎤</Text>
           <Text style={styles.audioOnlyText}>Audio Only Mode</Text>
+        </View>
+      )}
+
+      {/* Reconnecting Overlay (INT-006) */}
+      {reconnecting && (
+        <View style={styles.reconnectingOverlay}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.reconnectingText}>
+            Reconnecting... (Attempt {reconnectAttempts}/{maxReconnectAttempts})
+          </Text>
         </View>
       )}
     </View>
@@ -331,11 +338,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 16,
     fontSize: 16,
-  },
-  reconnectText: {
-    color: '#FF9500',
-    marginTop: 8,
-    fontSize: 14,
   },
   errorContainer: {
     flex: 1,
@@ -422,6 +424,37 @@ const styles = StyleSheet.create({
   audioOnlyText: {
     color: '#fff',
     fontSize: 18,
+    marginTop: 16,
+    fontWeight: '600',
+  },
+  securityIndicator: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 128, 0, 0.8)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  securityText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  reconnectingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+  },
+  reconnectingText: {
+    color: '#ffffff',
+    fontSize: 16,
     marginTop: 16,
     fontWeight: '600',
   },
