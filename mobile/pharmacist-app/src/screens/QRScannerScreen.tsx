@@ -15,15 +15,16 @@
  * - react-native-permissions (for camera access)
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, Platform, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import { scanQRCode } from '../store/inventorySlice';
 import { AppDispatch } from '../store';
+import { request, PERMISSIONS, RESULTS, check } from 'react-native-permissions';
 
 // Import from react-native-camera (production implementation)
-// import { RNCamera } from 'react-native-camera';
+import { RNCamera } from 'react-native-camera';
 
 export const QRScannerScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -34,12 +35,116 @@ export const QRScannerScreen: React.FC = () => {
   const [quantity, setQuantity] = useState<string>('1');
   const [notes, setNotes] = useState<string>('');
   const [scanning, setScanning] = useState<boolean>(true);
+  const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'blocked' | 'unavailable' | 'checking'>('checking');
+  const [showManualEntry, setShowManualEntry] = useState<boolean>(false);
+  const [manualCode, setManualCode] = useState<string>('');
+
+  // Check and request camera permission on mount
+  useEffect(() => {
+    checkCameraPermission();
+  }, []);
+
+  const checkCameraPermission = async () => {
+    try {
+      const permission = Platform.select({
+        ios: PERMISSIONS.IOS.CAMERA,
+        android: PERMISSIONS.ANDROID.CAMERA,
+      });
+
+      if (!permission) {
+        setCameraPermission('unavailable');
+        return;
+      }
+
+      const result = await check(permission);
+
+      switch (result) {
+        case RESULTS.GRANTED:
+          setCameraPermission('granted');
+          break;
+        case RESULTS.DENIED:
+          // Not yet asked, let's request
+          requestCameraPermission();
+          break;
+        case RESULTS.BLOCKED:
+          setCameraPermission('blocked');
+          break;
+        case RESULTS.UNAVAILABLE:
+          setCameraPermission('unavailable');
+          break;
+        default:
+          setCameraPermission('denied');
+      }
+    } catch (error) {
+      console.error('Permission check error:', error);
+      setCameraPermission('unavailable');
+    }
+  };
+
+  const requestCameraPermission = async () => {
+    try {
+      const permission = Platform.select({
+        ios: PERMISSIONS.IOS.CAMERA,
+        android: PERMISSIONS.ANDROID.CAMERA,
+      });
+
+      if (!permission) {
+        setCameraPermission('unavailable');
+        return;
+      }
+
+      const result = await request(permission);
+
+      switch (result) {
+        case RESULTS.GRANTED:
+          setCameraPermission('granted');
+          break;
+        case RESULTS.BLOCKED:
+          setCameraPermission('blocked');
+          showPermissionAlert();
+          break;
+        default:
+          setCameraPermission('denied');
+      }
+    } catch (error) {
+      console.error('Permission request error:', error);
+      setCameraPermission('denied');
+    }
+  };
+
+  const showPermissionAlert = () => {
+    Alert.alert(
+      'Camera Permission Required',
+      'Please enable camera permission in your device settings to scan QR codes.',
+      [
+        {
+          text: 'Open Settings',
+          onPress: () => Linking.openSettings(),
+        },
+        {
+          text: 'Use Manual Entry',
+          onPress: () => setShowManualEntry(true),
+          style: 'cancel',
+        },
+      ]
+    );
+  };
 
   const onBarCodeRead = (event: any) => {
     if (scanning && event.data) {
       setScannedCode(event.data);
       setScanning(false);
     }
+  };
+
+  const handleManualEntry = () => {
+    if (!manualCode.trim()) {
+      Alert.alert('Error', 'Please enter a QR code');
+      return;
+    }
+    setScannedCode(manualCode.trim());
+    setScanning(false);
+    setShowManualEntry(false);
   };
 
   const handleConfirmScan = async () => {
@@ -95,49 +200,126 @@ export const QRScannerScreen: React.FC = () => {
     setScanning(true);
   };
 
+  // Render permission error states
+  const renderPermissionError = () => {
+    let title = 'Camera Unavailable';
+    let message = 'Camera is not available on this device.';
+    let showRetry = false;
+
+    switch (cameraPermission) {
+      case 'checking':
+        title = 'Checking Permissions';
+        message = 'Please wait...';
+        break;
+      case 'denied':
+        title = 'Camera Permission Denied';
+        message = 'Please grant camera permission to scan QR codes.';
+        showRetry = true;
+        break;
+      case 'blocked':
+        title = 'Camera Permission Blocked';
+        message = 'Please enable camera permission in your device settings.';
+        break;
+      case 'unavailable':
+        title = 'Camera Unavailable';
+        message = 'Camera is not available on this device.';
+        break;
+    }
+
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>{title}</Text>
+        <Text style={styles.errorMessage}>{message}</Text>
+
+        {showRetry && (
+          <TouchableOpacity style={styles.retryButton} onPress={checkCameraPermission}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        )}
+
+        {cameraPermission === 'blocked' && (
+          <TouchableOpacity style={styles.settingsButton} onPress={() => Linking.openSettings()}>
+            <Text style={styles.settingsButtonText}>Open Settings</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={styles.manualEntryButton}
+          onPress={() => setShowManualEntry(true)}
+        >
+          <Text style={styles.manualEntryButtonText}>Enter Code Manually</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  // Render manual entry form
+  const renderManualEntry = () => (
+    <View style={styles.manualEntryContainer}>
+      <Text style={styles.manualEntryTitle}>Manual QR Code Entry</Text>
+      <Text style={styles.manualEntryLabel}>Enter QR Code Data:</Text>
+      <TextInput
+        style={styles.manualEntryInput}
+        value={manualCode}
+        onChangeText={setManualCode}
+        placeholder="e.g., (01)08901234567890(17)250630"
+        multiline
+        numberOfLines={3}
+      />
+      <View style={styles.manualEntryButtons}>
+        <TouchableOpacity
+          style={[styles.manualEntryButton, styles.cancelButton]}
+          onPress={() => {
+            setShowManualEntry(false);
+            setManualCode('');
+          }}
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.manualEntryButton, styles.submitButton]}
+          onPress={handleManualEntry}
+        >
+          <Text style={styles.submitButtonText}>Submit</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      {/* Camera View */}
-      {scanning && !scannedCode ? (
-        <View style={styles.cameraContainer}>
-          {/*
-          Production implementation with react-native-camera:
+      {/* Manual Entry Modal */}
+      {showManualEntry && renderManualEntry()}
 
-          <RNCamera
-            style={styles.camera}
-            onBarCodeRead={onBarCodeRead}
-            captureAudio={false}
-            type={RNCamera.Constants.Type.back}
-            flashMode={RNCamera.Constants.FlashMode.off}
-            androidCameraPermissionOptions={{
-              title: 'Permission to use camera',
-              message: 'We need your permission to scan QR codes',
-              buttonPositive: 'Ok',
-              buttonNegative: 'Cancel',
-            }}
-          >
-            <View style={styles.scanOverlay}>
-              <View style={styles.scanFrame} />
-              <Text style={styles.scanInstruction}>
-                Position QR code within the frame
-              </Text>
-            </View>
-          </RNCamera>
-          */}
-
-          {/* Placeholder for demo */}
-          <View style={styles.cameraPlaceholder}>
-            <Text style={styles.placeholderText}>📷 Camera View</Text>
-            <Text style={styles.placeholderSubtext}>Scanning for QR codes...</Text>
-            {/* Demo button to simulate scan */}
-            <TouchableOpacity
-              style={styles.demoButton}
-              onPress={() => onBarCodeRead({ data: '(01)08901234567890(17)250630(10)ABC123' })}
+      {/* Camera View or Error State */}
+      {scanning && !scannedCode && !showManualEntry ? (
+        cameraPermission === 'granted' ? (
+          <View style={styles.cameraContainer}>
+            {/* Production implementation with react-native-camera */}
+            <RNCamera
+              style={styles.camera}
+              onBarCodeRead={onBarCodeRead}
+              captureAudio={false}
+              type={RNCamera.Constants.Type.back}
+              flashMode={RNCamera.Constants.FlashMode.off}
+              androidCameraPermissionOptions={{
+                title: 'Permission to use camera',
+                message: 'We need your permission to scan QR codes',
+                buttonPositive: 'Ok',
+                buttonNegative: 'Cancel',
+              }}
             >
-              <Text style={styles.demoButtonText}>Simulate QR Scan (Demo)</Text>
-            </TouchableOpacity>
+              <View style={styles.scanOverlay}>
+                <View style={styles.scanFrame} />
+                <Text style={styles.scanInstruction}>
+                  Position QR code within the frame
+                </Text>
+              </View>
+            </RNCamera>
           </View>
-        </View>
+        ) : (
+          renderPermissionError()
+        )
       ) : (
         /* Scan Details Form */
         <View style={styles.formContainer}>
@@ -358,5 +540,123 @@ const styles = StyleSheet.create({
   rescanButtonText: {
     color: '#111827',
     fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#DC2626',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  settingsButton: {
+    backgroundColor: '#059669',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  settingsButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  manualEntryButton: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  manualEntryButtonText: {
+    color: '#111827',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  manualEntryContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    zIndex: 1000,
+  },
+  manualEntryTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 20,
+  },
+  manualEntryLabel: {
+    fontSize: 16,
+    color: '#D1D5DB',
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  manualEntryInput: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+  },
+  manualEntryButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  cancelButton: {
+    flex: 1,
+    marginRight: 8,
+    backgroundColor: '#6B7280',
+  },
+  cancelButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  submitButton: {
+    flex: 1,
+    marginLeft: 8,
+    backgroundColor: '#059669',
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
