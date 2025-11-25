@@ -6,20 +6,18 @@ module.exports = {
   // Root directories for tests
   roots: [
     '<rootDir>/shared',
-    '<rootDir>/services'
+    '<rootDir>/services',
+    '<rootDir>/tests'
   ],
 
   // Transform TypeScript files using ts-jest
   // Note: Removed preset for workspace compatibility - configure directly instead
   transform: {
     '^.+\\.ts$': ['ts-jest', {
-      tsconfig: {
-        // Disable type checking in tests for faster execution
-        isolatedModules: true,
-        // Enable decorators for TypeORM entities
-        experimentalDecorators: true,
-        emitDecoratorMetadata: true
-      }
+      tsconfig: 'tsconfig.test.json',
+      isolatedModules: true,
+      experimentalDecorators: true,
+      emitDecoratorMetadata: true
     }]
   },
 
