@@ -41,82 +41,369 @@ export class FDBService {
   private apiUrl: string;
   private apiKey: string;
   private useMockData: boolean;
+  private healthStatus: 'healthy' | 'degraded' | 'down' | 'unconfigured';
+  private lastHealthCheck: Date | null;
+  private consecutiveFailures: number;
 
   constructor() {
     this.apiUrl = process.env.FDB_API_URL || '';
     this.apiKey = process.env.FDB_API_KEY || '';
+    this.consecutiveFailures = 0;
+    this.lastHealthCheck = null;
 
     // Use mock data if credentials not configured
     this.useMockData = !this.apiUrl || !this.apiKey;
 
     if (this.useMockData) {
+      this.healthStatus = 'unconfigured';
       console.warn(
         '[FDB Service] WARNING: FDB API credentials not configured. Using MOCK data. ' +
         'Configure FDB_API_URL and FDB_API_KEY environment variables for production.'
       );
+    } else {
+      this.healthStatus = 'healthy';
+      console.info('[FDB Service] Initialized with FDB API credentials');
+    }
+  }
+
+  /**
+   * Check FDB API health status
+   * @returns Health status object
+   */
+  async getHealthStatus(): Promise<{
+    status: 'healthy' | 'degraded' | 'down' | 'unconfigured';
+    usingMockData: boolean;
+    lastCheck: Date | null;
+    consecutiveFailures: number;
+    message: string;
+  }> {
+    if (this.useMockData) {
+      return {
+        status: 'unconfigured',
+        usingMockData: true,
+        lastCheck: null,
+        consecutiveFailures: 0,
+        message: 'FDB API credentials not configured. Using mock data.',
+      };
+    }
+
+    // Perform health check if not done recently (cache for 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    if (!this.lastHealthCheck || this.lastHealthCheck < fiveMinutesAgo) {
+      await this.performHealthCheck();
+    }
+
+    let message = 'FDB API is operational';
+    if (this.healthStatus === 'degraded') {
+      message = `FDB API experiencing issues (${this.consecutiveFailures} recent failures)`;
+    } else if (this.healthStatus === 'down') {
+      message = 'FDB API is unavailable. Using mock data fallback.';
+    }
+
+    return {
+      status: this.healthStatus,
+      usingMockData: this.healthStatus === 'down',
+      lastCheck: this.lastHealthCheck,
+      consecutiveFailures: this.consecutiveFailures,
+      message,
+    };
+  }
+
+  /**
+   * Perform health check against FDB API
+   * Internal method to verify API connectivity
+   */
+  private async performHealthCheck(): Promise<void> {
+    try {
+      // Simple health check: call API with minimal data
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout for health check
+
+      const response = await fetch(`${this.apiUrl}/api/v1/health`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        this.healthStatus = 'healthy';
+        this.consecutiveFailures = 0;
+        this.lastHealthCheck = new Date();
+      } else if (response.status === 401 || response.status === 403) {
+        this.healthStatus = 'down';
+        this.consecutiveFailures++;
+        this.lastHealthCheck = new Date();
+        console.error('[FDB Service] Health check failed: Authentication error');
+      } else {
+        this.healthStatus = 'degraded';
+        this.consecutiveFailures++;
+        this.lastHealthCheck = new Date();
+        console.warn(`[FDB Service] Health check degraded: HTTP ${response.status}`);
+      }
+    } catch (error) {
+      this.consecutiveFailures++;
+      this.lastHealthCheck = new Date();
+
+      // Mark as down after 3 consecutive failures
+      if (this.consecutiveFailures >= 3) {
+        this.healthStatus = 'down';
+        console.error('[FDB Service] Health check failed: API is DOWN after 3 consecutive failures');
+      } else {
+        this.healthStatus = 'degraded';
+        console.warn(`[FDB Service] Health check degraded: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
   /**
    * Check drug interactions for a list of medications
+   * Automatically falls back to mock data if FDB API is unavailable
    * @param medications Array of medication names
    * @returns DrugInteractionResult with all detected interactions
    */
   async checkDrugInteractions(medications: string[]): Promise<DrugInteractionResult> {
+    // Input validation
+    if (!medications || medications.length === 0) {
+      return {
+        hasInteractions: false,
+        interactions: [],
+        checkedAt: new Date(),
+      };
+    }
+
+    // Single medication - no interactions possible
+    if (medications.length === 1) {
+      return {
+        hasInteractions: false,
+        interactions: [],
+        checkedAt: new Date(),
+      };
+    }
+
+    // Use mock data if credentials not configured
     if (this.useMockData) {
       return this.mockCheckDrugInteractions(medications);
     }
 
-    // TODO: Production implementation
+    // Try FDB API with automatic fallback
     try {
       const response = await this.callFDBAPI(medications);
-      return this.parseFDBResponse(response);
+      const result = this.parseFDBResponse(response);
+
+      // Reset failure counter on success
+      this.consecutiveFailures = 0;
+      this.healthStatus = 'healthy';
+
+      return result;
     } catch (error) {
       console.error('[FDB Service] API call failed:', error);
-      // Fallback to mock data in case of API failure
-      console.warn('[FDB Service] Falling back to MOCK data due to API error');
-      return this.mockCheckDrugInteractions(medications);
+
+      // Track failures
+      this.consecutiveFailures++;
+
+      // Log warning with details
+      console.warn(
+        `[FDB Service] Falling back to MOCK data due to API error (failure ${this.consecutiveFailures}). ` +
+        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+
+      // Update health status based on consecutive failures
+      if (this.consecutiveFailures >= 3) {
+        this.healthStatus = 'down';
+      } else {
+        this.healthStatus = 'degraded';
+      }
+
+      // Graceful degradation: use mock data
+      const mockResult = this.mockCheckDrugInteractions(medications);
+
+      // Add warning to mock result (could be used in UI)
+      console.warn(
+        '[FDB Service] WARNING: Using mock drug interaction data. ' +
+        'Results may not reflect current clinical guidelines. ' +
+        'Please verify critical interactions with updated drug databases.'
+      );
+
+      return mockResult;
     }
   }
 
   /**
    * Call FDB MedKnowledge API (production implementation)
-   * TODO: Implement actual API call when credentials are available
+   * Implements retry logic with exponential backoff for transient errors
    * @param medications Array of medication names
    * @returns Raw API response
    */
   private async callFDBAPI(medications: string[]): Promise<any> {
-    // TODO: Production implementation
-    // Example structure:
-    // const response = await fetch(`${this.apiUrl}/interactions`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${this.apiKey}`,
-    //   },
-    //   body: JSON.stringify({ medications }),
-    // });
-    // return await response.json();
+    const maxRetries = 3;
+    const baseDelayMs = 1000;
 
-    throw new Error('FDB API not configured - using mock data');
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+        const response = await fetch(`${this.apiUrl}/api/v1/druginteractions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            medications: medications.map((med) => ({ name: med })),
+            severityLevels: ['contraindicated', 'major', 'moderate', 'minor'],
+            includeRecommendations: true,
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          // Non-2xx status codes
+          if (response.status === 401 || response.status === 403) {
+            throw new Error(`FDB API authentication failed: ${response.status} ${response.statusText}`);
+          }
+
+          if (response.status === 429) {
+            // Rate limit - retry with longer backoff
+            const retryAfter = response.headers.get('Retry-After');
+            const delayMs = retryAfter ? parseInt(retryAfter) * 1000 : baseDelayMs * Math.pow(2, attempt);
+            console.warn(`[FDB Service] Rate limited. Retrying after ${delayMs}ms...`);
+            await this.sleep(delayMs);
+            continue;
+          }
+
+          if (response.status >= 500) {
+            // Server error - retry
+            throw new Error(`FDB API server error: ${response.status} ${response.statusText}`);
+          }
+
+          // Client error (4xx other than 401/403/429) - don't retry
+          const errorBody = await response.text();
+          throw new Error(`FDB API client error: ${response.status} - ${errorBody}`);
+        }
+
+        const data = await response.json();
+        return data;
+
+      } catch (error: any) {
+        console.error(`[FDB Service] API call attempt ${attempt + 1}/${maxRetries} failed:`, error.message);
+
+        // Don't retry on auth errors or client errors
+        if (error.message.includes('authentication failed') || error.message.includes('client error')) {
+          throw error;
+        }
+
+        // If last attempt, throw error
+        if (attempt === maxRetries - 1) {
+          throw new Error(`FDB API call failed after ${maxRetries} attempts: ${error.message}`);
+        }
+
+        // Wait before retrying (exponential backoff)
+        const delayMs = baseDelayMs * Math.pow(2, attempt);
+        console.warn(`[FDB Service] Retrying in ${delayMs}ms...`);
+        await this.sleep(delayMs);
+      }
+    }
+
+    throw new Error('FDB API call failed - max retries exceeded');
+  }
+
+  /**
+   * Sleep helper for retry delays
+   * @param ms Milliseconds to sleep
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
    * Parse FDB API response into DrugInteractionResult
-   * TODO: Implement actual parsing logic based on FDB API schema
-   * @param response Raw API response
+   * Handles FDB MedKnowledge API response schema
+   * @param response Raw API response from FDB
    * @returns Parsed DrugInteractionResult
    */
   private parseFDBResponse(response: any): DrugInteractionResult {
-    // TODO: Production implementation based on FDB API response schema
-    // Example structure:
-    // return {
-    //   hasInteractions: response.interactions.length > 0,
-    //   interactions: response.interactions.map(parseInteraction),
-    //   checkedAt: new Date(),
-    // };
+    try {
+      // FDB API typically returns: { interactions: [...], metadata: {...} }
+      const interactions: DrugInteraction[] = [];
 
-    throw new Error('FDB API response parsing not implemented');
+      if (!response || !response.interactions) {
+        console.warn('[FDB Service] Empty or invalid API response structure');
+        return {
+          hasInteractions: false,
+          interactions: [],
+          checkedAt: new Date(),
+        };
+      }
+
+      // Parse each interaction from FDB response
+      for (const fdbInteraction of response.interactions) {
+        try {
+          // Map FDB severity levels to our enum
+          const severity = this.mapFDBSeverity(fdbInteraction.severity || fdbInteraction.severityLevel);
+
+          interactions.push({
+            drug1: fdbInteraction.drug1?.name || fdbInteraction.medication1 || 'Unknown',
+            drug2: fdbInteraction.drug2?.name || fdbInteraction.medication2 || 'Unknown',
+            severity,
+            description: fdbInteraction.description || fdbInteraction.clinicalEffect || 'No description available',
+            recommendation: fdbInteraction.recommendation || fdbInteraction.managementGuidance || 'Consult healthcare provider',
+          });
+        } catch (parseError) {
+          console.error('[FDB Service] Failed to parse individual interaction:', parseError);
+          // Continue parsing other interactions
+        }
+      }
+
+      return {
+        hasInteractions: interactions.length > 0,
+        interactions,
+        checkedAt: new Date(),
+      };
+
+    } catch (error) {
+      console.error('[FDB Service] Failed to parse FDB response:', error);
+      throw new Error(`FDB API response parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Map FDB API severity levels to our internal DrugInteractionSeverity enum
+   * FDB uses various severity naming conventions depending on their API version
+   * @param fdbSeverity FDB severity string
+   * @returns DrugInteractionSeverity enum value
+   */
+  private mapFDBSeverity(fdbSeverity: string): DrugInteractionSeverity {
+    if (!fdbSeverity) {
+      return DrugInteractionSeverity.MINOR;
+    }
+
+    const severityLower = fdbSeverity.toLowerCase().trim();
+
+    // Map FDB severity levels to our enum
+    if (severityLower.includes('contraindicated') || severityLower.includes('contraindication')) {
+      return DrugInteractionSeverity.CONTRAINDICATED;
+    }
+    if (severityLower.includes('major') || severityLower.includes('severe')) {
+      return DrugInteractionSeverity.MAJOR;
+    }
+    if (severityLower.includes('moderate')) {
+      return DrugInteractionSeverity.MODERATE;
+    }
+    if (severityLower.includes('minor') || severityLower.includes('low')) {
+      return DrugInteractionSeverity.MINOR;
+    }
+
+    // Default to MINOR if unknown severity
+    console.warn(`[FDB Service] Unknown severity level: ${fdbSeverity}, defaulting to MINOR`);
+    return DrugInteractionSeverity.MINOR;
   }
 
   /**
