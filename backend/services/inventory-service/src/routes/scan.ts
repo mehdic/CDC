@@ -62,8 +62,8 @@ scanRouter.post('/', async (req: Request, res: Response) => {
     // Parse QR code
     const parsedQR = parseGS1QRCode(validatedData.qr_code);
 
-    // Set RLS context for multi-tenant isolation
-    await AppDataSource.query(`SET app.current_pharmacy_id = '${validatedData.pharmacy_id}'`);
+    // Set RLS context for multi-tenant isolation (parameterized to prevent SQL injection)
+    await AppDataSource.query('SET app.current_pharmacy_id = $1', [validatedData.pharmacy_id]);
 
     // Find or create inventory item
     const itemRepository = AppDataSource.getRepository(InventoryItem);

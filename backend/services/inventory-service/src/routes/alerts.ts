@@ -32,8 +32,8 @@ alertsRouter.get('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'pharmacy_id query parameter is required' });
     }
 
-    // Set RLS context
-    await AppDataSource.query(`SET app.current_pharmacy_id = '${pharmacy_id}'`);
+    // Set RLS context (parameterized to prevent SQL injection)
+    await AppDataSource.query('SET app.current_pharmacy_id = $1', [pharmacy_id]);
 
     const alertRepository = AppDataSource.getRepository(InventoryAlert);
     const queryBuilder = alertRepository.createQueryBuilder('alert');
@@ -103,8 +103,8 @@ alertsRouter.put('/:id/acknowledge', async (req: Request, res: Response) => {
     const { id } = req.params;
     const validatedData = acknowledgeSchema.parse(req.body);
 
-    // Set RLS context
-    await AppDataSource.query(`SET app.current_pharmacy_id = '${validatedData.pharmacy_id}'`);
+    // Set RLS context (parameterized to prevent SQL injection)
+    await AppDataSource.query('SET app.current_pharmacy_id = $1', [validatedData.pharmacy_id]);
 
     const alertRepository = AppDataSource.getRepository(InventoryAlert);
     const alert = await alertRepository.findOne({
@@ -155,8 +155,8 @@ alertsRouter.put('/:id/resolve', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'pharmacy_id is required' });
     }
 
-    // Set RLS context
-    await AppDataSource.query(`SET app.current_pharmacy_id = '${pharmacy_id}'`);
+    // Set RLS context (parameterized to prevent SQL injection)
+    await AppDataSource.query('SET app.current_pharmacy_id = $1', [pharmacy_id]);
 
     const alertRepository = AppDataSource.getRepository(InventoryAlert);
     const alert = await alertRepository.findOne({
@@ -199,8 +199,8 @@ alertsRouter.put('/:id/dismiss', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'pharmacy_id is required' });
     }
 
-    // Set RLS context
-    await AppDataSource.query(`SET app.current_pharmacy_id = '${pharmacy_id}'`);
+    // Set RLS context (parameterized to prevent SQL injection)
+    await AppDataSource.query('SET app.current_pharmacy_id = $1', [pharmacy_id]);
 
     const alertRepository = AppDataSource.getRepository(InventoryAlert);
     const alert = await alertRepository.findOne({
