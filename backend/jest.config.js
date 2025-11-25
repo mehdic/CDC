@@ -65,7 +65,10 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',           // Exclude build artifacts
-    '\\.d\\.ts$'        // Exclude TypeScript declaration files
+    '\\.d\\.ts$',       // Exclude TypeScript declaration files
+    '/tests/contract/', // Exclude contract tests (require live infrastructure)
+    '/tests/e2e/',      // Exclude end-to-end tests (require live infrastructure)
+    '/tests/load/'      // Exclude load tests (require live infrastructure)
   ],
 
   // Module file extensions

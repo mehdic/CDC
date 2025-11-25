@@ -20,7 +20,9 @@
 - `READY_FOR_QA` - Implementation complete, has integration/E2E tests
 - `READY_FOR_REVIEW` - Implementation complete, only unit tests or no tests
 - `BLOCKED` - Cannot proceed without external help
-- `PARTIAL` - Some work done, more needed
+- `PARTIAL` - Some work done, more needed (same-tier continuation)
+- `INCOMPLETE` - Partial work, can continue (same-tier retry)
+- `ESCALATE_SENIOR` - Issue too complex, **immediate** Senior Software Engineer escalation
 
 **Information to extract:**
 
@@ -102,6 +104,7 @@ Files but no test count:
 - `PASS` - All tests passed
 - `FAIL` - Some tests failed
 - `PARTIAL` - Some tests couldn't run
+- `ESCALATE_SENIOR` - Challenge Level 3+ failure requiring Senior Engineer
 
 **Information to extract:**
 
@@ -317,20 +320,27 @@ Orchestrator outputs:
 ---
 
 **Expected status values:**
+- `PLANNING_COMPLETE` - Initial planning done, ready to start execution
 - `BAZINGA` - Work complete, all requirements met
 - `CONTINUE` - More work needed
 - `NEEDS_CLARIFICATION` - User input required
 - `INVESTIGATION_ONLY` - Only questions answered, no implementation requested
+- `INVESTIGATION_NEEDED` - Blocked by unclear root cause, need investigator
 
 **Information to extract:**
 
 1. **Status** - Look for:
    ```
+   ## PM Status: PLANNING_COMPLETE
+   ## PM Status: INVESTIGATION_NEEDED
    Status: BAZINGA
    **PM Status:** CONTINUE
    PM Status: NEEDS_CLARIFICATION
    **Status:** INVESTIGATION_ONLY
    ```
+
+   **Note:** `PLANNING_COMPLETE` is PM's initial response after analyzing requirements. It includes mode decision and task groups.
+   **Note:** `INVESTIGATION_NEEDED` means PM is blocked by unclear root cause - orchestrator should spawn Investigator.
 
 2. **Mode decision** (initial PM spawn) - Look for:
    ```
@@ -353,16 +363,33 @@ Orchestrator outputs:
    Blocker Type: Missing External Data
    ```
 
-**Capsule construction (mode decision):**
+**Capsule construction (PLANNING_COMPLETE - complex multi-phase):**
+
+```markdown
+📋 **Execution Plan Ready**
+
+**Mode:** {mode} ({N} concurrent developers)
+**Tasks:** {task_count} across {phase_count} phases
+
+**Phases:**
+> Phase 1: {phase_name} - Groups {ids}
+> Phase 2: {phase_name} - Groups {ids}
+
+**Success Criteria:** {criteria_summary}
+
+Starting Phase 1...
+```
+
+**Capsule construction (PLANNING_COMPLETE - simple):**
+
+```
+📋 Planning complete | Single-group: {task_summary} | Starting development
+```
+
+**Capsule construction (mode decision - legacy/fallback):**
 
 ```
 📋 Planning complete | {N} parallel groups: {group_summaries} | Starting development → Groups {list}
-```
-
-OR
-
-```
-📋 Planning complete | Single-group execution: {task_summary} | Starting development
 ```
 
 **Capsule construction (BAZINGA):**
@@ -382,6 +409,12 @@ OR
 
 ```
 ⚠️ PM needs clarification | {blocker_type}: {question_summary} | Awaiting response (auto-proceed with fallback in 5 min)
+```
+
+**Capsule construction (INVESTIGATION_NEEDED):**
+
+```
+🔬 Investigation needed | {problem_summary} | Spawning Investigator
 ```
 
 **Fallback logic:**
