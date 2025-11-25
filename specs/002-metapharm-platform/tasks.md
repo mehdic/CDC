@@ -7,6 +7,25 @@
 
 ---
 
+## ⚠️ CODE AUDIT UPDATE (2025-11-25)
+
+**The following tasks were found to be STUB/MOCK implementations during deep code audit:**
+
+| Task | Status | Issue |
+|------|--------|-------|
+| T085 | STUB | FDB API uses hardcoded mock data |
+| T089 | PARTIAL | Missing Audit/Notification service integrations |
+| T146 | MOCK | Speech-to-text returns hardcoded text |
+| T150 | TODO | Reminder notifications not implemented |
+| T155 | STUB | Mobile Twilio Video SDK not integrated |
+| T195 | MVP | AWS Forecast uses heuristics only |
+| T201/T202 | STUB | QR camera not integrated |
+
+**Corrected completion: 65% (was incorrectly reported as 80%)**
+**See tasks2.md for complete remediation task list.**
+
+---
+
 ## Task Format
 
 ```
@@ -144,11 +163,13 @@
 - [x] [T082] [P] [US1] Implement AI confidence scoring in backend/services/prescription-service/src/utils/aiConfidence.ts
 - [x] [T083] [P] [US1] Implement low-confidence field highlighting (FR-013a) in backend/services/prescription-service/src/utils/confidence.ts
 - [x] [T084] [P] [US1] Create POST /prescriptions/:id/validate endpoint in backend/services/prescription-service/src/routes/validate.ts
-- [x] [T085] [P] [US1] Integrate FDB MedKnowledge API for drug interactions in backend/services/prescription-service/src/integrations/fdb.ts
+- [ ] [T085] [P] [US1] Integrate FDB MedKnowledge API for drug interactions in backend/services/prescription-service/src/integrations/fdb.ts
+  - **STATUS: STUB** - Currently uses hardcoded mock data (warfarin, metformin, lisinopril, simvastatin, digoxin only). Real FDB API not implemented.
 - [x] [T086] [P] [US1] Implement allergy checking against patient record in backend/services/prescription-service/src/utils/allergyCheck.ts
 - [x] [T087] [P] [US1] Implement contraindication checking in backend/services/prescription-service/src/utils/contraindications.ts
 - [x] [T088] [P] [US1] Create PUT /prescriptions/:id/approve endpoint in backend/services/prescription-service/src/routes/approve.ts
 - [x] [T089] [P] [US1] Implement pharmacist approval logic in backend/services/prescription-service/src/controllers/approveController.ts
+  - **NOTE: PARTIAL** - Core logic complete but has TODOs: Audit Service integration (lines 268-296) and Notification Service integration (lines 299-327) not implemented.
 - [x] [T090] [P] [US1] Create PUT /prescriptions/:id/reject endpoint in backend/services/prescription-service/src/routes/reject.ts
 - [x] [T091] [P] [US1] Implement treatment plan generation in backend/services/prescription-service/src/utils/treatmentPlan.ts
 - [x] [T092] [P] [US1] Create GET /prescriptions endpoint with filtering in backend/services/prescription-service/src/routes/list.ts
@@ -230,11 +251,13 @@
 - [x] [T143] [P] [US2] Create GET /teleconsultations/:id/join endpoint in backend/services/teleconsultation-service/src/routes/join.ts
 - [x] [T144] [P] [US2] Implement Twilio access token generation in backend/services/teleconsultation-service/src/controllers/joinController.ts
 - [x] [T145] [P] [US2] Create POST /teleconsultations/:id/notes endpoint in backend/services/teleconsultation-service/src/routes/notes.ts
-- [x] [T146] [P] [US2] Implement AI transcription with Twilio speech-to-text in backend/services/teleconsultation-service/src/integrations/transcription.ts
+- [ ] [T146] [P] [US2] Implement AI transcription with Twilio speech-to-text in backend/services/teleconsultation-service/src/integrations/transcription.ts
+  - **STATUS: MOCK** - Returns hardcoded "headache/ibuprofen" consultation text. Real Twilio Speech-to-Text API not implemented.
 - [x] [T147] [P] [US2] Implement consultation note editing with audit trail (FR-025a) in backend/services/teleconsultation-service/src/controllers/notesController.ts
 - [x] [T148] [P] [US2] Implement recording consent management in backend/services/teleconsultation-service/src/utils/consent.ts
 - [x] [T149] [P] [US2] Create teleconsultation state machine in backend/services/teleconsultation-service/src/utils/stateMachine.ts
-- [x] [T150] [P] [US2] Implement appointment reminder notifications in backend/services/teleconsultation-service/src/workers/reminderWorker.ts
+- [ ] [T150] [P] [US2] Implement appointment reminder notifications in backend/services/teleconsultation-service/src/workers/reminderWorker.ts
+  - **STATUS: TODO** - Reminder notification system marked TODO in book.ts (lines 154-159). Not implemented.
 - [x] [T151] [P] [US2] Write unit tests for booking logic in backend/services/teleconsultation-service/__tests__/booking.test.ts
 
 ### Teleconsultation - Mobile (Patient App)
@@ -242,7 +265,8 @@
 - [x] [T152] [P] [US2] Create Teleconsultation Booking screen in mobile/patient-app/src/screens/BookTeleconsultationScreen.tsx
 - [x] [T153] [P] [US2] Implement availability calendar in mobile/patient-app/src/components/AvailabilityCalendar.tsx
 - [x] [T154] [P] [US2] Create Video Call screen in mobile/patient-app/src/screens/VideoCallScreen.tsx
-- [x] [T155] [P] [US2] Integrate Twilio Video SDK in mobile/patient-app/src/components/TwilioVideo.tsx
+- [ ] [T155] [P] [US2] Integrate Twilio Video SDK in mobile/patient-app/src/components/TwilioVideo.tsx
+  - **STATUS: STUB** - SDK imports commented out, connection simulated with setTimeout. Web version (T171) IS complete.
 - [x] [T156] [P] [US2] Implement video controls (mute, video on/off, end call) in mobile/patient-app/src/components/VideoControls.tsx
 - [x] [T157] [P] [US2] Implement audio-only fallback in mobile/patient-app/src/components/AudioFallback.tsx
 - [x] [T158] [P] [US2] Create recording consent prompt in mobile/patient-app/src/components/RecordingConsent.tsx
@@ -301,7 +325,8 @@
 - [x] [T192] [P] [US3] Create GET /inventory/alerts endpoint in backend/services/inventory-service/src/routes/alerts.ts
 - [x] [T193] [P] [US3] Implement low stock alert generation in backend/services/inventory-service/src/workers/alertWorker.ts
 - [x] [T194] [P] [US3] Implement expiration alert generation in backend/services/inventory-service/src/workers/expirationWorker.ts
-- [x] [T195] [P] [US3] Integrate AWS Forecast for demand prediction in backend/services/inventory-service/src/integrations/forecast.ts
+- [ ] [T195] [P] [US3] Integrate AWS Forecast for demand prediction in backend/services/inventory-service/src/integrations/forecast.ts
+  - **STATUS: MVP HEURISTIC** - Uses mean/stddev calculations only. Real AWS Forecast QueryForecast API not implemented.
 - [x] [T196] [P] [US3] Implement AI-suggested reorder quantities in backend/services/inventory-service/src/utils/reorderSuggestion.ts
 - [x] [T197] [P] [US3] Implement controlled substance tracking in backend/services/inventory-service/src/utils/controlledSubstance.ts
 - [x] [T198] [P] [US3] Create inventory analytics endpoint GET /inventory/analytics in backend/services/inventory-service/src/routes/analytics.ts
@@ -310,8 +335,10 @@
 ### Inventory - Mobile (Pharmacist App)
 
 - [x] [T200] [P] [US3] Create Inventory Dashboard in mobile/pharmacist-app/src/screens/InventoryDashboardScreen.tsx
-- [x] [T201] [P] [US3] Create QR Scanner screen in mobile/pharmacist-app/src/screens/QRScannerScreen.tsx
-- [x] [T202] [P] [US3] Integrate React Native Camera for QR scanning in mobile/pharmacist-app/src/components/QRScanner.tsx
+- [ ] [T201] [P] [US3] Create QR Scanner screen in mobile/pharmacist-app/src/screens/QRScannerScreen.tsx
+  - **STATUS: STUB** - UI form exists but camera component not rendered. Only shows form fields, no camera preview.
+- [ ] [T202] [P] [US3] Integrate React Native Camera for QR scanning in mobile/pharmacist-app/src/components/QRScanner.tsx
+  - **STATUS: STUB** - RNCamera import commented out. Camera integration not implemented.
 - [x] [T203] [P] [US3] Create Inventory Alerts screen in mobile/pharmacist-app/src/screens/InventoryAlertsScreen.tsx
 - [x] [T204] [P] [US3] Create Inventory Item Detail screen in mobile/pharmacist-app/src/screens/InventoryItemScreen.tsx
 - [x] [T205] [P] [US3] Implement stock level indicators in mobile/pharmacist-app/src/components/StockLevelBadge.tsx

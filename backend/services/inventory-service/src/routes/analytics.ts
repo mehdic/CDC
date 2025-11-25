@@ -23,8 +23,8 @@ analyticsRouter.get('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'pharmacy_id query parameter is required' });
     }
 
-    // Set RLS context
-    await AppDataSource.query(`SET app.current_pharmacy_id = '${pharmacy_id}'`);
+    // Set RLS context (parameterized to prevent SQL injection)
+    await AppDataSource.query('SET app.current_pharmacy_id = $1', [pharmacy_id]);
 
     const itemRepository = AppDataSource.getRepository(InventoryItem);
     const transactionRepository = AppDataSource.getRepository(InventoryTransaction);

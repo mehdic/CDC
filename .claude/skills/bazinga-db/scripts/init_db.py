@@ -11,7 +11,7 @@ import tempfile
 import shutil
 
 # Current schema version
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 def get_schema_version(cursor) -> int:
     """Get current schema version from database."""
@@ -117,11 +117,18 @@ def init_database(db_path: str) -> None:
             # Table will be created below with CREATE TABLE IF NOT EXISTS
             print("✓ Migration to v3 complete (development_plans table added)")
 
+        # Handle v3→v4 migration (add success_criteria table)
+        if current_version == 3:
+            print("🔄 Migrating schema from v3 to v4...")
+            # No data migration needed - just add new table
+            # Table will be created below with CREATE TABLE IF NOT EXISTS
+            print("✓ Migration to v4 complete (success_criteria table added)")
+
         # Record version upgrade
         cursor.execute("""
             INSERT OR REPLACE INTO schema_version (version, description)
             VALUES (?, ?)
-        """, (SCHEMA_VERSION, f"Schema v{SCHEMA_VERSION}: Add development_plans table for multi-phase orchestrations"))
+        """, (SCHEMA_VERSION, f"Schema v{SCHEMA_VERSION}: Add success_criteria table for BAZINGA validation"))
         conn.commit()
         print(f"✓ Schema upgraded to v{SCHEMA_VERSION}")
     elif current_version == SCHEMA_VERSION:
@@ -184,9 +191,10 @@ def init_database(db_path: str) -> None:
     print("✓ Created state_snapshots table with indexes")
 
     # Task groups table (normalized from pm_state.json)
+    # PRIMARY KEY: Composite (id, session_id) allows same group ID across sessions
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS task_groups (
-            id TEXT PRIMARY KEY,
+            id TEXT NOT NULL,
             session_id TEXT NOT NULL,
             name TEXT NOT NULL,
             status TEXT CHECK(status IN ('pending', 'in_progress', 'completed', 'failed')) DEFAULT 'pending',
@@ -195,6 +203,7 @@ def init_database(db_path: str) -> None:
             last_review_status TEXT CHECK(last_review_status IN ('APPROVED', 'CHANGES_REQUESTED', NULL)),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id, session_id),
             FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE
         )
     """)
@@ -268,6 +277,31 @@ def init_database(db_path: str) -> None:
         ON development_plans(session_id)
     """)
     print("✓ Created development_plans table with indexes")
+
+    # Success criteria table (for BAZINGA validation)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS success_criteria (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            criterion TEXT NOT NULL,
+            status TEXT CHECK(status IN ('pending', 'met', 'blocked', 'failed')) DEFAULT 'pending',
+            actual TEXT,
+            evidence TEXT,
+            required_for_completion BOOLEAN DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE
+        )
+    """)
+    cursor.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_criterion
+        ON success_criteria(session_id, criterion)
+    """)
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_criteria_session_status
+        ON success_criteria(session_id, status)
+    """)
+    print("✓ Created success_criteria table with indexes")
 
     # Record schema version for new databases
     current_version = get_schema_version(cursor)
