@@ -1,7 +1,7 @@
 /**
- * Twilio Video Component - Patient App
+ * Twilio Video Component - Pharmacist App
  * Integrates Twilio Video SDK for secure video consultations
- * Task: T155
+ * Task: T163, INT-005
  * FR-023: Video calls MUST use end-to-end encryption with visible security indicators
  * FR-026: Consultations MUST support audio-only fallback for poor network conditions
  */
@@ -245,7 +245,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Remote Participant Video */}
+      {/* Remote Participant Video (Patient) */}
       {remoteParticipants.length > 0 ? (
         <View style={styles.remoteVideoContainer}>
           <TwilioVideoParticipantView
@@ -256,12 +256,18 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
             style={styles.remoteVideo}
             scaleType="fit"
           />
+          {/* Patient Name Overlay */}
+          <View style={styles.patientOverlay}>
+            <Text style={styles.patientOverlayText}>
+              {remoteParticipants[0].identity}
+            </Text>
+          </View>
         </View>
       ) : (
         <View style={styles.waitingContainer}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.waitingText}>
-            Waiting for pharmacist to join...
+            Waiting for patient to join...
           </Text>
         </View>
       )}
@@ -282,6 +288,15 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         <View style={styles.audioOnlyContainer}>
           <Text style={styles.audioOnlyIcon}>🎤</Text>
           <Text style={styles.audioOnlyText}>Audio Only Mode</Text>
+        </View>
+      )}
+
+      {/* Network Quality Indicator */}
+      {networkQuality < 3 && (
+        <View style={styles.networkWarning}>
+          <Text style={styles.networkWarningText}>
+            {networkQuality < 2 ? '⚠️ Poor Connection' : '⚡ Fair Connection'}
+          </Text>
         </View>
       )}
     </View>
@@ -354,22 +369,6 @@ const styles = StyleSheet.create({
   remoteVideo: {
     flex: 1,
   },
-  placeholderVideo: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-  },
-  placeholderText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  placeholderSubtext: {
-    color: '#999',
-    fontSize: 14,
-    marginTop: 8,
-  },
   waitingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -400,16 +399,6 @@ const styles = StyleSheet.create({
   localVideo: {
     flex: 1,
   },
-  placeholderLocalVideo: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#333',
-  },
-  placeholderLocalText: {
-    color: '#fff',
-    fontSize: 12,
-  },
   audioOnlyContainer: {
     position: 'absolute',
     top: '40%',
@@ -423,6 +412,36 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     marginTop: 16,
+    fontWeight: '600',
+  },
+  patientOverlay: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  patientOverlayText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  networkWarning: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    backgroundColor: 'rgba(255, 149, 0, 0.9)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  networkWarningText: {
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '600',
   },
 });

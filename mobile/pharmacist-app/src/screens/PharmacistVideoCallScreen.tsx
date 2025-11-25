@@ -30,6 +30,7 @@ import ConsultationStatus from '../components/ConsultationStatus';
 import PatientRecordSidebar from '../components/PatientRecordSidebar';
 import ConsultationNotes from '../components/ConsultationNotes';
 import TranscriptEditor from '../components/TranscriptEditor';
+import TwilioVideoComponent from '../components/TwilioVideo';
 
 const { width, height } = Dimensions.get('window');
 
@@ -75,9 +76,8 @@ const PharmacistVideoCallScreen: React.FC = () => {
       const joinResponse = await teleconsultationService.join(teleconsultationId);
       setJoinData(joinResponse);
 
-      // Initialize Twilio Video (TODO: Integrate Twilio SDK - see T155)
-      // This would connect to Twilio Video using the access_token
-      simulateVideoConnection();
+      // Video connection will be handled by TwilioVideoComponent
+      setLoading(false);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to load teleconsultation');
       console.error('Load teleconsultation error:', error);
@@ -87,21 +87,16 @@ const PharmacistVideoCallScreen: React.FC = () => {
     }
   };
 
-  const simulateVideoConnection = () => {
-    // Simulate Twilio Video connection
-    setTimeout(() => {
-      setVideoConnected(true);
-    }, 2000);
-  };
-
   const handleToggleMic = () => {
+    const { toggleLocalAudio } = require('../components/TwilioVideo');
+    toggleLocalAudio(!micMuted);
     setMicMuted(!micMuted);
-    // TODO: Integrate with Twilio Video SDK to mute/unmute audio
   };
 
   const handleToggleCamera = () => {
+    const { toggleLocalVideo } = require('../components/TwilioVideo');
+    toggleLocalVideo(!cameraOff);
     setCameraOff(!cameraOff);
-    // TODO: Integrate with Twilio Video SDK to enable/disable camera
   };
 
   const handleSwitchToAudioOnly = () => {
@@ -113,9 +108,10 @@ const PharmacistVideoCallScreen: React.FC = () => {
         {
           text: 'Switch',
           onPress: () => {
+            const { switchToAudioOnly } = require('../components/TwilioVideo');
+            switchToAudioOnly();
             setAudioOnly(true);
             setCameraOff(true);
-            // TODO: Disable video track in Twilio
           },
         },
       ]
@@ -141,10 +137,12 @@ const PharmacistVideoCallScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Disconnect Twilio Video
+              const { disconnectCall } = require('../components/TwilioVideo');
+              disconnectCall();
+
               // Complete teleconsultation
               await teleconsultationService.completeTeleconsultation(teleconsultationId);
-              // Disconnect Twilio Video
-              // TODO: Disconnect Twilio SDK
               navigation.goBack();
             } catch (error: any) {
               Alert.alert('Error', error.message || 'Failed to end consultation');
@@ -188,23 +186,25 @@ const PharmacistVideoCallScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Video Display Area */}
       <View style={styles.videoContainer}>
-        {!videoConnected ? (
-          <View style={styles.connectingOverlay}>
-            <ActivityIndicator size="large" color="#fff" />
-            <Text style={styles.connectingText}>Connecting...</Text>
-          </View>
-        ) : (
+        {joinData ? (
           <>
-            {/* TODO: Integrate Twilio Video View Component (see T155) */}
-            {/* TwilioVideoLocalView and TwilioVideoParticipantView would go here */}
-            <View style={styles.placeholderVideo}>
-              <Text style={styles.placeholderText}>
-                {audioOnly ? '🔊 Audio Only Mode' : '📹 Video Call Active'}
-              </Text>
-              <Text style={styles.placeholderSubtext}>
-                Twilio Video SDK Integration (T155)
-              </Text>
-            </View>
+            <TwilioVideoComponent
+              accessToken={joinData.access_token}
+              roomName={joinData.room_name}
+              audioOnly={audioOnly}
+              onConnected={() => {
+                setVideoConnected(true);
+                console.log('Video connected');
+              }}
+              onDisconnected={() => {
+                setVideoConnected(false);
+                console.log('Video disconnected');
+              }}
+              onError={(error) => {
+                console.error('Video error:', error);
+                Alert.alert('Video Error', error.message);
+              }}
+            />
 
             {/* Security Indicator (FR-023) */}
             <View style={styles.securityIndicator}>
@@ -213,14 +213,12 @@ const PharmacistVideoCallScreen: React.FC = () => {
               </View>
               <Text style={styles.securityText}>End-to-End Encrypted</Text>
             </View>
-
-            {/* Patient Name Overlay */}
-            <View style={styles.patientOverlay}>
-              <Text style={styles.patientOverlayText}>
-                {teleconsultation.patient?.first_name} {teleconsultation.patient?.last_name}
-              </Text>
-            </View>
           </>
+        ) : (
+          <View style={styles.connectingOverlay}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.connectingText}>Connecting...</Text>
+          </View>
         )}
       </View>
 
