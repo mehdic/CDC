@@ -60,6 +60,7 @@ module.exports = {
     '^@services/(.*)$': '<rootDir>/src/shared/services/$1',
     '^@utils/(.*)$': '<rootDir>/src/shared/utils/$1',
     '^@apps/(.*)$': '<rootDir>/src/apps/$1',
+    '^@routes/(.*)$': '<rootDir>/src/routes/$1',
     '^@styles/(.*)$': '<rootDir>/src/styles/$1'
   },
 

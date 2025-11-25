@@ -1,0 +1,378 @@
+import React, { Suspense, lazy } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AppShell } from '@shared/components/AppShell';
+import { FullScreenLoading } from '@shared/pages/Loading';
+import { NotFoundPage } from '@shared/pages/Error';
+import { LoginPage } from '@shared/pages/Login';
+import { logout, getUserData } from '@shared/services/authService';
+
+/**
+ * Role-based route access configuration
+ */
+export const ROLE_PERMISSIONS = {
+  pharmacist: ['dashboard', 'prescriptions', 'inventory', 'teleconsultation', 'analytics', 'marketing', 'delivery', 'settings', 'ecommerce', 'orders'],
+  doctor: ['dashboard', 'teleconsultation', 'messages'],
+  nurse: ['dashboard', 'inventory', 'deliveries', 'teleconsultation', 'messages'],
+  patient: ['dashboard', 'teleconsultation', 'ecommerce', 'orders', 'messages'],
+  delivery_person: ['deliveries', 'messages'],
+  admin: ['dashboard', 'prescriptions', 'inventory', 'teleconsultation', 'analytics', 'marketing', 'delivery', 'settings', 'ecommerce', 'orders', 'messages'],
+} as const;
+
+export type UserRole = keyof typeof ROLE_PERMISSIONS;
+
+/**
+ * Lazy load pages for code splitting
+ */
+const Dashboard = lazy(() => import('@apps/pharmacist/pages/Dashboard'));
+const PrescriptionDashboard = lazy(() => import('@apps/pharmacist/pages/PrescriptionDashboard'));
+const PrescriptionReview = lazy(() => import('@apps/pharmacist/pages/PrescriptionReview'));
+const InventoryManagement = lazy(() => import('@apps/pharmacist/pages/InventoryManagement'));
+const VideoCall = lazy(() => import('@apps/pharmacist/pages/VideoCall'));
+const PharmacyProfileManager = lazy(() => import('@apps/pharmacist/pages/pharmacy-profile/PharmacyProfileManager'));
+const MasterAccountPage = lazy(() => import('@apps/pharmacist/pages/MasterAccountPage'));
+const ProductCatalog = lazy(() => import('@apps/pharmacist/pages/ProductCatalog'));
+const OrderManagement = lazy(() => import('@apps/pharmacist/pages/OrderManagement'));
+const DeliveryManagement = lazy(() => import('@apps/pharmacist/pages/DeliveryManagement'));
+
+/**
+ * Protected route component
+ * Redirects to login if user is not authenticated
+ * Optionally checks role-based access
+ */
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRoles?: UserRole[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRoles }) => {
+  const isAuthenticated = localStorage.getItem('auth_token') !== null;
+
+  // Debug logging
+  console.log('[ProtectedRoute] Checking authentication:', {
+    hasToken: isAuthenticated,
+    token: localStorage.getItem('auth_token')?.substring(0, 20) + '...',
+    timestamp: new Date().toISOString(),
+  });
+
+  if (!isAuthenticated) {
+    console.log('[ProtectedRoute] Redirecting to login - no auth token found');
+    return <Navigate to="/login" replace />;
+  }
+
+  // Check role-based access if required roles are specified
+  if (requiredRoles && requiredRoles.length > 0) {
+    const userData = getUserData();
+    const userRole = userData?.role as UserRole | undefined;
+
+    if (!userRole || !requiredRoles.includes(userRole)) {
+      console.log('[ProtectedRoute] User does not have required role', {
+        userRole,
+        requiredRoles,
+      });
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
+
+  console.log('[ProtectedRoute] Authenticated - rendering protected content');
+  return <>{children}</>;
+};
+
+/**
+ * Get user info for AppShell
+ */
+const getUserInfo = () => {
+  const userData = getUserData();
+  if (userData) {
+    return {
+      name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email,
+      email: userData.email,
+      role: userData.role,
+    };
+  }
+  // Fallback mock user for development
+  return {
+    name: 'Dr. Martin Dupont',
+    email: 'martin.dupont@metapharm.ch',
+    role: 'pharmacist',
+  };
+};
+
+/**
+ * Layout wrapper for authenticated pages
+ * Provides AppShell with header, sidebar, and footer
+ */
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const AppLayout: React.FC<LayoutProps> = ({ children }) => {
+  const user = getUserInfo();
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/login';
+  };
+
+  const handleProfile = () => {
+    console.log('Navigate to profile');
+  };
+
+  const handleSettings = () => {
+    console.log('Navigate to settings');
+  };
+
+  return (
+    <AppShell
+      user={user}
+      onLogout={handleLogout}
+      onProfileClick={handleProfile}
+      onSettingsClick={handleSettings}
+    >
+      {children}
+    </AppShell>
+  );
+};
+
+/**
+ * Main Routes configuration
+ * Defines all application routes with authentication and role-based access control
+ */
+export const AppRoutes: React.FC = () => {
+  return (
+    <Suspense fallback={<FullScreenLoading message="Chargement de la page..." />}>
+      <Routes>
+        {/* Public routes - no authentication required, no AppShell */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Protected routes - authentication required, with AppShell */}
+
+        {/* Dashboard - Default route */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Dashboard route - alias for root */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Prescription routes - Pharmacist only */}
+        <Route
+          path="/prescriptions"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
+              <AppLayout>
+                <PrescriptionDashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/prescriptions/review"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
+              <AppLayout>
+                <PrescriptionReview />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/prescriptions/review/:id"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
+              <AppLayout>
+                <PrescriptionReview />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Inventory route - Pharmacist and Nurses */}
+        <Route
+          path="/inventory"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'nurse', 'admin']}>
+              <AppLayout>
+                <InventoryManagement />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Teleconsultation route - All authenticated users */}
+        <Route
+          path="/teleconsultation"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <VideoCall />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teleconsultation/:sessionId"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <VideoCall />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Master Account Management - Pharmacist and Admin only */}
+        <Route
+          path="/account/master"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
+              <AppLayout>
+                <MasterAccountPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Pharmacy Profile Management - Pharmacist and Admin only */}
+        <Route
+          path="/pharmacy/manage"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
+              <AppLayout>
+                <PharmacyProfileManager />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Analytics route - Pharmacist and Admin only */}
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
+              <AppLayout>
+                <div style={{ padding: '20px' }}>
+                  <h2>Analyses</h2>
+                  <p>Page d&apos;analyses - À implémenter</p>
+                </div>
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Marketing route - Pharmacist and Admin only */}
+        <Route
+          path="/marketing"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
+              <AppLayout>
+                <div style={{ padding: '20px' }}>
+                  <h2>Marketing</h2>
+                  <p>Page marketing - À implémenter</p>
+                </div>
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* E-commerce - Product Catalog */}
+        <Route
+          path="/ecommerce"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <ProductCatalog />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* E-commerce - Order Management */}
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <OrderManagement />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Delivery route - Pharmacist, Delivery Personnel, and Admin */}
+        <Route
+          path="/delivery"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'delivery_person', 'admin']}>
+              <AppLayout>
+                <DeliveryManagement />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Deliveries route - alias */}
+        <Route
+          path="/deliveries"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'delivery_person', 'admin']}>
+              <AppLayout>
+                <DeliveryManagement />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Messages route - All authenticated users */}
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <div style={{ padding: '20px' }}>
+                  <h2>Messages</h2>
+                  <p>Page de messagerie - À implémenter</p>
+                </div>
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Settings route - All authenticated users */}
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <div style={{ padding: '20px' }}>
+                  <h2>Paramètres</h2>
+                  <p>Page de paramètres - À implémenter</p>
+                </div>
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 404 Not Found - catch all */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Suspense>
+  );
+};
+
+export default AppRoutes;
