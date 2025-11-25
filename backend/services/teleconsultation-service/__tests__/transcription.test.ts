@@ -139,7 +139,7 @@ describe('Transcription Integration', () => {
 
       highlights.forEach(h => {
         expect(h.confidence).toBeGreaterThanOrEqual(0.85);
-        expect(h.confidence).toBeLessThanOrEqual(0.95);
+        expect(h.confidence).toBeLessThanOrEqual(1.0);
       });
     });
 

@@ -179,13 +179,25 @@ export function highlightMedicalTerms(text: string): Array<{
       pattern: /\b(hypertension|diabetes|asthma|COPD|pneumonia|bronchitis|sinusitis|urinary tract infection|UTI|gastroenteritis|influenza|flu|COVID-19|coronavirus|allergic rhinitis|seasonal allergies|eczema|psoriasis|arthritis|osteoarthritis|rheumatoid arthritis|gout|depression|anxiety disorder|GERD|acid reflux|hypothyroidism|hyperthyroidism|anemia|kidney disease|liver disease|heart failure|coronary artery disease|atrial fibrillation|stroke|TIA)\b/gi,
       confidence: 0.87,
     },
-    vital_signs: {
+    vital: {
       pattern: /\b(blood pressure|BP|heart rate|HR|temperature|temp|respiratory rate|RR|oxygen saturation|SpO2|pulse|\d+\/\d+\s?mmHg|\d+\s?bpm|\d+\.?\d*\s?°[CF]|\d+\s?%)\b/gi,
       confidence: 0.94,
     },
     route: {
       pattern: /\b(oral|orally|by mouth|sublingual|topical|transdermal|intravenous|IV|intramuscular|IM|subcutaneous|SC|inhaled|inhalation|nasal|ophthalmic|otic|rectal|vaginal)\b/gi,
       confidence: 0.91,
+    },
+    anatomy: {
+      pattern: /\b(heart|lung|liver|kidney|brain|stomach|intestine|colon|bladder|prostate|thyroid|pancreas|spleen|blood vessel|artery)\b/gi,
+      confidence: 0.89,
+    },
+    procedure: {
+      pattern: /\b(blood test|urine test|x-ray|CT scan|MRI|ultrasound|ECG|EKG|endoscopy|colonoscopy|biopsy|surgery|vaccination|injection|infusion)\b/gi,
+      confidence: 0.90,
+    },
+    allergy: {
+      pattern: /\b(penicillin allergy|sulfa allergy|latex allergy|peanut allergy|shellfish allergy|egg allergy|milk allergy|soy allergy|wheat allergy|allergic reaction)\b/gi,
+      confidence: 0.92,
     },
   };
 
