@@ -3,421 +3,440 @@ import { TeleconsultationPage } from '../page-objects';
 import { mockApiResponse } from '../utils/api-mock';
 
 /**
- * E2E-003: Teleconsultation Booking - Complete Patient Journey
+ * E2E-001: Patient Teleconsultation Booking Workflow
  *
- * End-to-end test covering the full patient and pharmacist teleconsultation workflow:
- * - Patient searches for available slots
- * - Patient books appointment
- * - Patient receives confirmation and reminders
- * - Pharmacist sees appointment in schedule
- * - Both parties can join the consultation at scheduled time
+ * Tests the complete booking workflow including:
+ * - Browsing available pharmacist slots
+ * - Booking appointments with date/time selection
+ * - Confirmation emails and notifications
+ * - Reminder notifications before appointments
+ * - Rescheduling and cancellation workflows
  */
-test.describe('Teleconsultation Booking - Complete Journey (E2E-003)', () => {
-  test('complete patient booking workflow', async ({ page }) => {
-    // Patient logs in
-    await mockApiResponse(page, '**/auth/login', {
-      status: 200,
-      body: {
-        success: true,
-        token: 'mock_patient_token',
-        user: {
-          id: 'patient_001',
-          email: 'patient@example.ch',
-          role: 'patient',
-          firstName: 'Sophie',
-          lastName: 'Bernard',
-        },
-      },
-    });
 
-    await page.goto('/login');
-    await page.getByLabel(/email/i).fill('patient@example.ch');
-    await page.getByLabel(/mot de passe|password/i).fill('PatientPass123!');
-    await page.getByRole('button', { name: /connexion|login/i }).click();
-
-    // Navigate to teleconsultation section
-    await page.goto('/teleconsultation');
-
-    // Mock available time slots
-    await mockApiResponse(page, '**/consultations/available-slots**', {
-      status: 200,
-      body: {
-        success: true,
-        slots: [
-          {
-            id: 'slot_001',
-            pharmacistId: 'pharmacist_001',
-            pharmacistName: 'Dr. Marie Dubois',
-            pharmacyName: 'Pharmacie de la Gare',
-            date: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-            available: true,
-          },
-          {
-            id: 'slot_002',
-            pharmacistId: 'pharmacist_001',
-            pharmacistName: 'Dr. Marie Dubois',
-            pharmacyName: 'Pharmacie de la Gare',
-            date: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
-            available: true,
-          },
-        ],
-      },
-    });
-
-    // View available slots
-    await page.getByRole('button', { name: /réserver|book/i }).click();
-    await expect(page.locator('[data-testid="available-slots"]')).toBeVisible();
-
-    // Select first available slot
-    await page.locator('[data-testid="slot-slot_001"]').click();
-
-    // Fill booking details
-    await page.getByLabel(/motif de consultation|reason/i).fill('Conseil médicamenteux');
-    await page
-      .getByLabel(/description|details/i)
-      .fill('Je souhaite des conseils sur mes médicaments pour le diabète');
-
-    // Check consent checkbox (HIPAA/GDPR requirement)
-    await page.getByLabel(/j'accepte.*téléconsultation|i consent.*teleconsultation/i).check();
-
-    // Mock booking confirmation
-    await mockApiResponse(page, '**/consultations/book', {
-      status: 201,
-      body: {
-        success: true,
-        consultationId: 'consult_new_001',
-        scheduledAt: new Date(Date.now() + 86400000).toISOString(),
-        pharmacistName: 'Dr. Marie Dubois',
-        confirmationSent: true,
-        reminderScheduled: true,
-      },
-    });
-
-    // Confirm booking
-    await page.getByRole('button', { name: /confirmer.*réservation|confirm.*booking/i }).click();
-
-    // Verify booking confirmation message
-    await expect(page.locator('[role="alert"]')).toContainText(
-      /réservation confirmée|booking confirmed/i
-    );
-    await expect(page.locator('[data-testid="confirmation-email-sent"]')).toContainText(
-      /email de confirmation|confirmation email/i
-    );
-
-    // Verify consultation appears in upcoming list
-    await expect(page.locator('[data-testid="consultation-consult_new_001"]')).toBeVisible();
-    await expect(page.locator('[data-testid="consultation-consult_new_001"]')).toContainText(
-      'Dr. Marie Dubois'
-    );
-  });
-
-  test('pharmacist views booked consultations', async ({ pharmacistPage }) => {
-    // Mock pharmacist's consultation schedule
-    await mockApiResponse(pharmacistPage, '**/consultations**', {
+test.describe('E2E-001: Patient Teleconsultation Booking', () => {
+  test.beforeEach(async ({ page }) => {
+    // Mock available pharmacist slots
+    await mockApiResponse(page, '**/teleconsultation/slots**', {
       status: 200,
       body: {
         success: true,
         data: [
           {
-            id: 'consult_001',
-            patientId: 'patient_001',
-            patientName: 'Sophie Bernard',
-            patientAge: 35,
-            reason: 'Conseil médicamenteux',
-            scheduledAt: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
-            status: 'upcoming',
-            duration: 30,
+            id: 'slot_001',
+            pharmacistId: 'pharm_001',
+            pharmacistName: 'Dr. Claire Martin',
+            date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+            startTime: '09:00',
+            endTime: '09:30',
+            available: true,
           },
           {
-            id: 'consult_002',
-            patientId: 'patient_002',
-            patientName: 'Marc Dubois',
-            patientAge: 52,
-            reason: 'Renouvellement ordonnance',
-            scheduledAt: new Date(Date.now() + 7200000).toISOString(), // 2 hours from now
-            status: 'upcoming',
+            id: 'slot_002',
+            pharmacistId: 'pharm_001',
+            pharmacistName: 'Dr. Claire Martin',
+            date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+            startTime: '10:00',
+            endTime: '10:30',
+            available: true,
+          },
+          {
+            id: 'slot_003',
+            pharmacistId: 'pharm_002',
+            pharmacistName: 'Dr. Marc Dubois',
+            date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+            startTime: '14:00',
+            endTime: '14:30',
+            available: false, // Booked
+          },
+          {
+            id: 'slot_004',
+            pharmacistId: 'pharm_001',
+            pharmacistName: 'Dr. Claire Martin',
+            date: new Date(Date.now() + 172800000).toISOString().split('T')[0], // Day after tomorrow
+            startTime: '11:00',
+            endTime: '11:30',
+            available: true,
+          },
+        ],
+        total: 4,
+      },
+    });
+
+    // Mock booking creation
+    await mockApiResponse(page, '**/teleconsultation/book', {
+      status: 201,
+      body: {
+        success: true,
+        consultationId: 'consult_new_001',
+        confirmationSent: true,
+        reminderScheduled: true,
+      },
+    });
+  });
+
+  /**
+   * Test: Browse available pharmacist slots
+   */
+  test('should display available pharmacist slots for booking', async ({ patientPage }) => {
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
+
+    // Navigate to booking section
+    await consultationPage.bookButton.click();
+
+    // Verify available slots are displayed
+    await expect(patientPage.locator('[data-testid="slot-slot_001"]')).toBeVisible();
+    await expect(patientPage.getByText('Dr. Claire Martin')).toBeVisible();
+    await expect(patientPage.getByText('09:00')).toBeVisible();
+
+    // Verify unavailable slots are marked as booked
+    await expect(patientPage.locator('[data-testid="slot-slot_003"]')).toHaveAttribute('data-available', 'false');
+  });
+
+  /**
+   * Test: Filter slots by date
+   */
+  test('should filter available slots by date', async ({ patientPage }) => {
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
+    await consultationPage.bookButton.click();
+
+    // Select tomorrow's date
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    await patientPage.getByLabel(/date|jour/i).fill(tomorrow);
+
+    // Verify filtered slots
+    await expect(patientPage.locator('[data-testid="slot-slot_001"]')).toBeVisible();
+    await expect(patientPage.locator('[data-testid="slot-slot_002"]')).toBeVisible();
+    await expect(patientPage.locator('[data-testid="slot-slot_004"]')).not.toBeVisible(); // Different date
+  });
+
+  /**
+   * Test: Filter slots by pharmacist
+   */
+  test('should filter available slots by pharmacist', async ({ patientPage }) => {
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
+    await consultationPage.bookButton.click();
+
+    // Select specific pharmacist
+    await patientPage.getByLabel(/pharmacien|pharmacist/i).selectOption('pharm_001');
+
+    // Verify only selected pharmacist's slots shown
+    await expect(patientPage.getByText('Dr. Claire Martin')).toBeVisible();
+    await expect(patientPage.getByText('Dr. Marc Dubois')).not.toBeVisible();
+  });
+
+  /**
+   * Test: Book teleconsultation appointment
+   */
+  test('should book teleconsultation appointment successfully', async ({ patientPage }) => {
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
+    await consultationPage.bookButton.click();
+
+    // Select available slot
+    await patientPage.locator('[data-testid="slot-slot_001"]').click();
+
+    // Add reason for consultation (optional)
+    await patientPage.getByLabel(/raison|reason/i).fill('Renouvellement ordonnance pour hypertension');
+
+    // Confirm booking
+    await patientPage.getByRole('button', { name: /confirmer|confirm/i }).click();
+
+    // Verify booking confirmation
+    await expect(patientPage.locator('[data-testid="success-toast"]')).toBeVisible();
+    await expect(patientPage.locator('[data-testid="success-toast"]')).toContainText(/réservé|booked/i);
+  });
+
+  /**
+   * Test: Receive confirmation email/notification
+   */
+  test('should send confirmation email after booking', async ({ patientPage }) => {
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
+    await consultationPage.bookButton.click();
+
+    // Book appointment
+    await patientPage.locator('[data-testid="slot-slot_001"]').click();
+    await patientPage.getByRole('button', { name: /confirmer|confirm/i }).click();
+
+    // Verify confirmation notification displayed
+    await expect(patientPage.locator('[data-testid="confirmation-sent"]')).toBeVisible();
+    await expect(patientPage.locator('[data-testid="confirmation-sent"]')).toContainText(/confirmation.*envoyée|confirmation.*sent/i);
+
+    // Verify confirmation details shown
+    await expect(patientPage.getByText(/demain|tomorrow/i)).toBeVisible();
+    await expect(patientPage.getByText('09:00')).toBeVisible();
+    await expect(patientPage.getByText('Dr. Claire Martin')).toBeVisible();
+  });
+
+  /**
+   * Test: Schedule reminder notifications
+   */
+  test('should schedule reminder notification before appointment', async ({ patientPage }) => {
+    await mockApiResponse(patientPage, '**/teleconsultation/*/reminders', {
+      status: 200,
+      body: {
+        success: true,
+        reminders: [
+          {
+            type: 'email',
+            scheduledFor: new Date(Date.now() + 82800000).toISOString(), // 23 hours from now
+          },
+          {
+            type: 'push',
+            scheduledFor: new Date(Date.now() + 84600000).toISOString(), // 23.5 hours from now
+          },
+        ],
+      },
+    });
+
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
+
+    // View booked consultation details
+    await patientPage.locator('[data-testid="consultation-consult_new_001"]').click();
+
+    // Verify reminders are scheduled
+    await expect(patientPage.locator('[data-testid="reminder-scheduled"]')).toBeVisible();
+    await expect(patientPage.getByText(/rappel.*1 heure|reminder.*1 hour/i)).toBeVisible();
+  });
+
+  /**
+   * Test: Reschedule appointment
+   */
+  test('should reschedule teleconsultation appointment', async ({ patientPage }) => {
+    await mockApiResponse(patientPage, '**/teleconsultation/consult_new_001/reschedule', {
+      status: 200,
+      body: {
+        success: true,
+        consultationId: 'consult_new_001',
+        newSlot: 'slot_002',
+        notificationSent: true,
+      },
+    });
+
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
+
+    // Open existing consultation
+    await patientPage.locator('[data-testid="consultation-consult_new_001"]').click();
+
+    // Click reschedule button
+    await patientPage.getByRole('button', { name: /reprogrammer|reschedule/i }).click();
+
+    // Select new slot
+    await patientPage.locator('[data-testid="slot-slot_002"]').click();
+
+    // Confirm reschedule
+    await patientPage.getByRole('button', { name: /confirmer|confirm/i }).click();
+
+    // Verify reschedule confirmation
+    await expect(patientPage.locator('[data-testid="success-toast"]')).toBeVisible();
+    await expect(patientPage.locator('[data-testid="success-toast"]')).toContainText(/reprogrammé|rescheduled/i);
+  });
+
+  /**
+   * Test: Reschedule notification sent to pharmacist
+   */
+  test('should notify pharmacist when patient reschedules', async ({ patientPage }) => {
+    await mockApiResponse(patientPage, '**/teleconsultation/consult_new_001/reschedule', {
+      status: 200,
+      body: {
+        success: true,
+        consultationId: 'consult_new_001',
+        pharmacistNotified: true,
+      },
+    });
+
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
+
+    // Reschedule appointment
+    await patientPage.locator('[data-testid="consultation-consult_new_001"]').click();
+    await patientPage.getByRole('button', { name: /reprogrammer|reschedule/i }).click();
+    await patientPage.locator('[data-testid="slot-slot_002"]').click();
+    await patientPage.getByRole('button', { name: /confirmer|confirm/i }).click();
+
+    // Verify pharmacist notification confirmed
+    await expect(patientPage.locator('[data-testid="pharmacist-notified"]')).toBeVisible();
+  });
+
+  /**
+   * Test: Cancel appointment with reason
+   */
+  test('should cancel teleconsultation appointment with reason', async ({ patientPage }) => {
+    await mockApiResponse(patientPage, '**/teleconsultation/consult_new_001/cancel', {
+      status: 200,
+      body: {
+        success: true,
+        consultationId: 'consult_new_001',
+        status: 'cancelled',
+        refundProcessed: true,
+      },
+    });
+
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
+
+    // Open consultation details
+    await patientPage.locator('[data-testid="consultation-consult_new_001"]').click();
+
+    // Click cancel button
+    await patientPage.getByRole('button', { name: /annuler|cancel/i }).click();
+
+    // Provide cancellation reason
+    await patientPage.getByLabel(/raison|reason/i).selectOption('schedule_conflict');
+    await patientPage.getByLabel(/commentaire|comment/i).fill('Conflit avec rendez-vous médical urgent');
+
+    // Confirm cancellation
+    await patientPage.getByRole('button', { name: /confirmer annulation|confirm cancellation/i }).click();
+
+    // Verify cancellation confirmation
+    await expect(patientPage.locator('[data-testid="success-toast"]')).toBeVisible();
+    await expect(patientPage.locator('[data-testid="success-toast"]')).toContainText(/annulé|cancelled/i);
+  });
+
+  /**
+   * Test: Cancellation policy enforcement
+   */
+  test('should enforce cancellation policy (24 hours notice)', async ({ patientPage }) => {
+    // Mock consultation scheduled in 12 hours (less than 24 hours notice)
+    await mockApiResponse(patientPage, '**/teleconsultation/consult_soon/cancel', {
+      status: 400,
+      body: {
+        success: false,
+        error: 'Cancellation must be at least 24 hours in advance',
+        penaltyApplied: false,
+      },
+    });
+
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
+
+    // Try to cancel consultation scheduled soon
+    await patientPage.locator('[data-testid="consultation-consult_soon"]').click();
+    await patientPage.getByRole('button', { name: /annuler|cancel/i }).click();
+    await patientPage.getByLabel(/raison|reason/i).selectOption('schedule_conflict');
+    await patientPage.getByRole('button', { name: /confirmer annulation|confirm cancellation/i }).click();
+
+    // Verify cancellation policy warning
+    await expect(patientPage.locator('[data-testid="error-toast"]')).toBeVisible();
+    await expect(patientPage.locator('[data-testid="error-toast"]')).toContainText(/24 heures|24 hours/i);
+  });
+
+  /**
+   * Test: View booking history
+   */
+  test('should display booking history for patient', async ({ patientPage }) => {
+    await mockApiResponse(patientPage, '**/teleconsultation/history**', {
+      status: 200,
+      body: {
+        success: true,
+        data: [
+          {
+            id: 'consult_past_001',
+            pharmacistName: 'Dr. Sophie Bernard',
+            date: new Date(Date.now() - 604800000).toISOString(), // 1 week ago
+            status: 'completed',
+            notes: 'Ordonnance renouvelée',
+          },
+          {
+            id: 'consult_past_002',
+            pharmacistName: 'Dr. Claire Martin',
+            date: new Date(Date.now() - 1209600000).toISOString(), // 2 weeks ago
+            status: 'cancelled',
+            cancellationReason: 'Patient unavailable',
           },
         ],
         total: 2,
       },
     });
 
-    const consultationPage = new TeleconsultationPage(pharmacistPage);
+    const consultationPage = new TeleconsultationPage(patientPage);
     await consultationPage.goto();
 
-    // Verify consultation list loaded
-    await consultationPage.expectPageLoaded();
+    // View past consultations
+    await consultationPage.viewPastConsultations();
 
-    // Verify booked consultations visible
-    await consultationPage.expectConsultationInList('consult_001');
-    await consultationPage.expectConsultationInList('consult_002');
+    // Verify past consultations displayed
+    await expect(patientPage.locator('[data-testid="consultation-consult_past_001"]')).toBeVisible();
+    await expect(patientPage.getByText('Dr. Sophie Bernard')).toBeVisible();
+    await expect(patientPage.getByText(/complété|completed/i)).toBeVisible();
 
-    // View consultation details
-    await pharmacistPage.locator('[data-testid="consultation-consult_001"]').click();
-
-    // Verify patient details visible (with PHI encryption in transit)
-    await expect(pharmacistPage.locator('[data-testid="patient-name"]')).toContainText(
-      'Sophie Bernard'
-    );
-    await expect(pharmacistPage.locator('[data-testid="consultation-reason"]')).toContainText(
-      'Conseil médicamenteux'
-    );
+    // Verify cancelled consultation shown
+    await expect(patientPage.locator('[data-testid="consultation-consult_past_002"]')).toBeVisible();
+    await expect(patientPage.getByText(/annulé|cancelled/i)).toBeVisible();
   });
 
-  test('patient receives appointment reminders', async ({ page }) => {
-    // Mock patient dashboard with upcoming consultation
-    await mockApiResponse(page, '**/consultations/upcoming', {
-      status: 200,
-      body: {
-        success: true,
-        consultations: [
-          {
-            id: 'consult_reminder_001',
-            pharmacistName: 'Dr. Marie Dubois',
-            scheduledAt: new Date(Date.now() + 1800000).toISOString(), // 30 minutes from now
-            reminder15MinSent: false,
-            reminder1HourSent: true,
-            reminder24HourSent: true,
-          },
-        ],
-      },
-    });
+  /**
+   * Test: Waiting room functionality
+   */
+  test('should display waiting room before scheduled time', async ({ patientPage }) => {
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
 
-    await page.goto('/dashboard');
+    // Try to join consultation 10 minutes early
+    await patientPage.locator('[data-testid="consultation-consult_new_001"]').click();
+    await consultationPage.joinButton.click();
 
-    // Verify reminder notification visible
-    const reminderBanner = page.locator('[data-testid="upcoming-consultation-reminder"]');
-    await expect(reminderBanner).toBeVisible();
-    await expect(reminderBanner).toContainText(/dans 30 minutes|in 30 minutes/i);
-
-    // Verify join button available
-    await expect(page.getByRole('button', { name: /rejoindre|join/i })).toBeVisible();
+    // Verify waiting room is shown
+    await expect(patientPage.locator('[data-testid="waiting-room"]')).toBeVisible();
+    await expect(patientPage.getByText(/salle d'attente|waiting room/i)).toBeVisible();
+    await expect(patientPage.getByText(/commence dans|starts in/i)).toBeVisible();
   });
 
-  test('patient can reschedule consultation', async ({ page }) => {
-    // Mock consultation to reschedule
-    await mockApiResponse(page, '**/consultations/consult_001', {
+  /**
+   * Test: Consultation becomes available at scheduled time
+   */
+  test('should allow joining consultation at scheduled time', async ({ patientPage }) => {
+    // Mock consultation starting now
+    await mockApiResponse(patientPage, '**/consultations/*/join', {
       status: 200,
       body: {
         success: true,
-        consultation: {
-          id: 'consult_001',
-          scheduledAt: new Date(Date.now() + 86400000).toISOString(),
-          status: 'upcoming',
-          canReschedule: true,
-        },
+        token: 'mock_twilio_token',
+        roomName: 'consult_now_room',
+        canJoin: true,
       },
     });
 
-    await page.goto('/teleconsultation');
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
 
-    // Find consultation and click reschedule
-    await page.locator('[data-testid="consultation-consult_001"]').hover();
-    await page.getByRole('button', { name: /reprogrammer|reschedule/i }).click();
+    // Join consultation at scheduled time
+    await patientPage.locator('[data-testid="consultation-consult_now"]').click();
+    await consultationPage.joinButton.click();
 
-    // Mock new available slots
-    await mockApiResponse(page, '**/consultations/available-slots**', {
-      status: 200,
-      body: {
-        success: true,
-        slots: [
-          {
-            id: 'slot_new_001',
-            date: new Date(Date.now() + 172800000).toISOString(),
-            available: true,
-          },
-        ],
-      },
-    });
-
-    // Select new slot
-    await page.locator('[data-testid="slot-slot_new_001"]').click();
-
-    // Mock reschedule confirmation
-    await mockApiResponse(page, '**/consultations/consult_001/reschedule', {
-      status: 200,
-      body: {
-        success: true,
-        newScheduledAt: new Date(Date.now() + 172800000).toISOString(),
-        message: 'Consultation reprogrammée avec succès',
-      },
-    });
-
-    // Confirm reschedule
-    await page.getByRole('button', { name: /confirmer/i }).click();
-
-    // Verify success message
-    await expect(page.locator('[role="alert"]')).toContainText(/reprogrammée|rescheduled/i);
+    // Verify video room opens
+    await expect(consultationPage.videoContainer).toBeVisible();
   });
 
-  test('patient can cancel consultation with valid reason', async ({ page }) => {
-    await page.goto('/teleconsultation');
-
-    // Find consultation and click cancel
-    await page.locator('[data-testid="consultation-consult_001"]').hover();
-    await page.getByRole('button', { name: /annuler|cancel/i }).click();
-
-    // Must provide cancellation reason (audit trail requirement)
-    await page.getByLabel(/raison de l'annulation|cancellation reason/i).fill('Imprévu personnel');
-
-    // Mock cancellation API
-    await mockApiResponse(page, '**/consultations/consult_001/cancel', {
+  /**
+   * Test: Late join warning
+   */
+  test('should show warning when joining consultation late', async ({ patientPage }) => {
+    // Mock consultation that started 10 minutes ago
+    await mockApiResponse(patientPage, '**/consultations/*/join', {
       status: 200,
       body: {
         success: true,
-        message: 'Consultation annulée',
-        refundProcessed: false, // No-show policy
+        token: 'mock_twilio_token',
+        roomName: 'consult_late_room',
+        minutesLate: 10,
       },
     });
 
-    // Confirm cancellation
-    await page
-      .getByRole('button', { name: /confirmer.*annulation|confirm.*cancellation/i })
-      .click();
+    const consultationPage = new TeleconsultationPage(patientPage);
+    await consultationPage.goto();
 
-    // Verify cancellation confirmed
-    await expect(page.locator('[role="alert"]')).toContainText(
-      /annulation confirmée|cancellation confirmed/i
-    );
+    // Join consultation late
+    await patientPage.locator('[data-testid="consultation-consult_late"]').click();
+    await consultationPage.joinButton.click();
 
-    // Consultation should be removed from upcoming list
-    await expect(page.locator('[data-testid="consultation-consult_001"]')).toBeHidden();
-  });
-
-  test('patient cannot book overlapping consultations', async ({ page }) => {
-    // Mock attempt to book when already has a consultation in that time slot
-    await mockApiResponse(page, '**/consultations/book', {
-      status: 409,
-      body: {
-        success: false,
-        error: 'Conflict',
-        message: 'Vous avez déjà une consultation à cette heure',
-        existingConsultationId: 'consult_existing_001',
-      },
-    });
-
-    await page.goto('/teleconsultation');
-    await page.getByRole('button', { name: /réserver|book/i }).click();
-
-    // Try to book overlapping slot
-    await page.locator('[data-testid="slot-slot_overlap"]').click();
-    await page.getByLabel(/motif/i).fill('Test');
-    await page.getByLabel(/j'accepte/i).check();
-    await page.getByRole('button', { name: /confirmer/i }).click();
-
-    // Should show conflict error
-    await expect(page.locator('[role="alert"]')).toContainText(
-      /consultation.*déjà|already.*consultation/i
-    );
-  });
-
-  test('pharmacist can set availability schedule', async ({ pharmacistPage }) => {
-    await pharmacistPage.goto('/settings/availability');
-
-    // Mock current availability
-    await mockApiResponse(pharmacistPage, '**/pharmacist/availability', {
-      status: 200,
-      body: {
-        success: true,
-        availability: {
-          monday: [
-            { start: '09:00', end: '12:00' },
-            { start: '14:00', end: '18:00' },
-          ],
-          tuesday: [{ start: '09:00', end: '12:00' }],
-          wednesday: [],
-          thursday: [{ start: '09:00', end: '18:00' }],
-          friday: [{ start: '09:00', end: '16:00' }],
-          saturday: [],
-          sunday: [],
-        },
-      },
-    });
-
-    // Verify current schedule displayed
-    await expect(pharmacistPage.locator('[data-testid="monday-schedule"]')).toContainText(
-      '09:00 - 12:00'
-    );
-
-    // Add new time slot for Wednesday
-    await pharmacistPage.getByRole('button', { name: /ajouter.*créneau.*mercredi/i }).click();
-    await pharmacistPage.getByLabel(/heure de début/i).fill('14:00');
-    await pharmacistPage.getByLabel(/heure de fin/i).fill('17:00');
-
-    // Mock save availability
-    await mockApiResponse(pharmacistPage, '**/pharmacist/availability', {
-      status: 200,
-      body: {
-        success: true,
-        message: 'Disponibilité mise à jour',
-      },
-    });
-
-    await pharmacistPage.getByRole('button', { name: /enregistrer|save/i }).click();
-
-    // Verify success
-    await expect(pharmacistPage.locator('[role="alert"]')).toContainText(/mise à jour|updated/i);
-  });
-
-  test('system sends 24-hour reminder notification', async ({ page }) => {
-    // Mock notification service call (would trigger email/SMS/push)
-    await mockApiResponse(page, '**/notifications/consultation-reminder', {
-      status: 200,
-      body: {
-        success: true,
-        notificationsSent: ['email', 'push'],
-        scheduledFor: new Date(Date.now() + 86400000).toISOString(),
-      },
-    });
-
-    // Navigate to notifications settings
-    await page.goto('/settings/notifications');
-
-    // Verify reminder settings
-    await expect(page.getByLabel(/rappel 24 heures|24-hour reminder/i)).toBeChecked();
-    await expect(page.getByLabel(/rappel 1 heure|1-hour reminder/i)).toBeChecked();
-    await expect(page.getByLabel(/rappel 15 minutes|15-minute reminder/i)).toBeChecked();
-  });
-
-  test('patient can rate consultation after completion', async ({ page }) => {
-    // Mock completed consultation
-    await mockApiResponse(page, '**/consultations/consult_completed_001', {
-      status: 200,
-      body: {
-        success: true,
-        consultation: {
-          id: 'consult_completed_001',
-          status: 'completed',
-          completedAt: new Date(Date.now() - 3600000).toISOString(),
-          canRate: true,
-          rating: null,
-        },
-      },
-    });
-
-    await page.goto('/teleconsultation/history');
-
-    // Find completed consultation
-    await page.locator('[data-testid="consultation-consult_completed_001"]').click();
-
-    // Rate consultation
-    await page.locator('[data-testid="rating-stars"]').locator('button[value="5"]').click();
-    await page.getByLabel(/commentaire|feedback/i).fill('Excellent service, très professionnel');
-
-    // Mock rating submission
-    await mockApiResponse(page, '**/consultations/consult_completed_001/rate', {
-      status: 200,
-      body: {
-        success: true,
-        message: 'Merci pour votre évaluation',
-      },
-    });
-
-    await page.getByRole('button', { name: /soumettre|submit/i }).click();
-
-    // Verify success
-    await expect(page.locator('[role="alert"]')).toContainText(
-      /merci.*évaluation|thank you.*rating/i
-    );
+    // Verify late join warning
+    await expect(patientPage.locator('[data-testid="late-join-warning"]')).toBeVisible();
+    await expect(patientPage.locator('[data-testid="late-join-warning"]')).toContainText(/10 minutes/i);
   });
 });
