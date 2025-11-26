@@ -5,9 +5,6 @@
 import { prescriptionService } from '../src/services/prescriptionService';
 import { PrescriptionStatus } from '@metapharm/api-types';
 
-// Mock axios
-jest.mock('axios');
-
 describe('PrescriptionService', () => {
   describe('API Configuration', () => {
     it('should initialize with default API base URL', () => {
