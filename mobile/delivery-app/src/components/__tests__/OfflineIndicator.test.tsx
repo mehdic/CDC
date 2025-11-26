@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, act } from '@testing-library/react-native';
 import NetInfo from '@react-native-community/netinfo';
 import {
   OfflineIndicator,
@@ -15,7 +15,35 @@ import {
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 
 // Mock NetInfo
-jest.mock('@react-native-community/netinfo');
+jest.mock('@react-native-community/netinfo', () => {
+  let listeners: Array<(state: any) => void> = [];
+
+  const mockNetInfo = {
+    addEventListener: jest.fn((callback: (state: any) => void) => {
+      listeners.push(callback);
+      // Immediately fire callback with initial state
+      callback({
+        isConnected: true,
+        isInternetReachable: true,
+        type: 'wifi',
+      });
+      return jest.fn(() => {
+        listeners = listeners.filter(l => l !== callback);
+      });
+    }),
+    fetch: jest.fn(() => Promise.resolve({
+      isConnected: true,
+      isInternetReachable: true,
+      type: 'wifi',
+    })),
+  };
+
+  return {
+    __esModule: true,
+    default: mockNetInfo,
+    ...mockNetInfo,
+  };
+});
 
 // Mock Redux hooks
 jest.mock('../../hooks/useRedux');
@@ -24,18 +52,19 @@ const mockDispatch = jest.fn();
 const mockUseAppDispatch = useAppDispatch as jest.MockedFunction<typeof useAppDispatch>;
 const mockUseAppSelector = useAppSelector as jest.MockedFunction<typeof useAppSelector>;
 
-// Setup NetInfo mock
-(NetInfo.addEventListener as jest.Mock).mockReturnValue(() => {});
-(NetInfo.fetch as jest.Mock).mockResolvedValue({
-  isConnected: true,
-  isInternetReachable: true,
-  type: 'wifi',
-});
-
 describe('OfflineIndicator Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAppDispatch.mockReturnValue(mockDispatch);
+
+    // Ensure NetInfo mock is properly reset
+    (NetInfo.addEventListener as jest.Mock).mockClear();
+    (NetInfo.fetch as jest.Mock).mockClear();
+    (NetInfo.fetch as jest.Mock).mockResolvedValue({
+      isConnected: true,
+      isInternetReachable: true,
+      type: 'wifi',
+    });
   });
 
   describe('Online Status Display', () => {
@@ -364,6 +393,14 @@ describe('ConnectionRecoveryHelper Component', () => {
 describe('Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseAppDispatch.mockReturnValue(mockDispatch);
+
+    // Ensure NetInfo mock is properly set up
+    (NetInfo.fetch as jest.Mock).mockResolvedValue({
+      isConnected: true,
+      isInternetReachable: true,
+      type: 'wifi',
+    });
   });
 
   it('should handle complete offline workflow', () => {
@@ -371,7 +408,6 @@ describe('Integration Tests', () => {
       { id: '1', type: 'status_update', timestamp: new Date().toISOString(), retryCount: 0 },
     ];
 
-    mockUseAppDispatch.mockReturnValue(mockDispatch);
     mockUseAppSelector.mockImplementation((selector: any) => {
       const state = {
         delivery: { isOnline: false, syncQueue: mockSyncQueue },
@@ -379,7 +415,7 @@ describe('Integration Tests', () => {
       return selector(state);
     });
 
-    const { UNSAFE_root } = render(
+    const result = render(
       <>
         <OfflineIndicator />
         <SyncQueueStatus />
@@ -387,11 +423,10 @@ describe('Integration Tests', () => {
       </>
     );
 
-    expect(UNSAFE_root).toBeTruthy();
+    expect(result.UNSAFE_root).toBeTruthy();
   });
 
   it('should handle complete online workflow', () => {
-    mockUseAppDispatch.mockReturnValue(mockDispatch);
     mockUseAppSelector.mockImplementation((selector: any) => {
       const state = {
         delivery: { isOnline: true, syncQueue: [] },
@@ -399,7 +434,7 @@ describe('Integration Tests', () => {
       return selector(state);
     });
 
-    const { UNSAFE_root } = render(
+    const result = render(
       <>
         <OfflineIndicator />
         <SyncQueueStatus />
@@ -407,6 +442,6 @@ describe('Integration Tests', () => {
       </>
     );
 
-    expect(UNSAFE_root).toBeTruthy();
+    expect(result.UNSAFE_root).toBeTruthy();
   });
 });

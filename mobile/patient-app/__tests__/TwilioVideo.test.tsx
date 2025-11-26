@@ -4,14 +4,63 @@
  */
 
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render, waitFor, act } from '@testing-library/react-native';
 import TwilioVideoComponent from '../src/components/TwilioVideo';
+
+// Mock the Twilio SDK with callback support
+jest.mock('react-native-twilio-video-webrtc', () => {
+  const React = require('react');
+
+  const mockTwilioVideo = {
+    connect: jest.fn(),
+    disconnect: jest.fn(),
+    setLocalVideoEnabled: jest.fn(),
+    setLocalAudioEnabled: jest.fn(),
+    setOnRoomDidConnect: jest.fn(),
+    setOnRoomDidDisconnect: jest.fn(),
+    setOnRoomDidFailToConnect: jest.fn(),
+    setOnParticipantAddedVideoTrack: jest.fn(),
+    setOnParticipantRemovedVideoTrack: jest.fn(),
+    setOnNetworkQualityLevelsChanged: jest.fn(),
+    setOnReconnecting: jest.fn(),
+    setOnReconnected: jest.fn(),
+  };
+
+  return {
+    TwilioVideo: mockTwilioVideo,
+    TwilioVideoLocalView: (props: any) => {
+      return React.createElement('TwilioVideoLocalView', props);
+    },
+    TwilioVideoParticipantView: (props: any) => {
+      return React.createElement('TwilioVideoParticipantView', props);
+    },
+  };
+});
 
 describe('TwilioVideo', () => {
   const mockProps = {
     accessToken: 'test-access-token',
     roomName: 'test-room',
   };
+
+  // Get reference to the mock object
+  const { TwilioVideo: mockTwilioVideo } = require('react-native-twilio-video-webrtc');
+
+  beforeEach(() => {
+    // Manually clear mock calls without clearing the mock implementations
+    mockTwilioVideo.connect.mockClear();
+    mockTwilioVideo.disconnect.mockClear();
+    mockTwilioVideo.setLocalVideoEnabled.mockClear();
+    mockTwilioVideo.setLocalAudioEnabled.mockClear();
+    mockTwilioVideo.setOnRoomDidConnect.mockClear();
+    mockTwilioVideo.setOnRoomDidDisconnect.mockClear();
+    mockTwilioVideo.setOnRoomDidFailToConnect.mockClear();
+    mockTwilioVideo.setOnParticipantAddedVideoTrack.mockClear();
+    mockTwilioVideo.setOnParticipantRemovedVideoTrack.mockClear();
+    mockTwilioVideo.setOnNetworkQualityLevelsChanged.mockClear();
+    mockTwilioVideo.setOnReconnecting.mockClear();
+    mockTwilioVideo.setOnReconnected.mockClear();
+  });
 
   it('renders loading state initially', () => {
     const { getByText } = render(<TwilioVideoComponent {...mockProps} />);
@@ -21,41 +70,58 @@ describe('TwilioVideo', () => {
 
   it('renders connected state after connection', async () => {
     const onConnected = jest.fn();
-    const { getByText } = render(
-      <TwilioVideoComponent {...mockProps} onConnected={onConnected} />
-    );
 
-    // Wait for simulated connection
-    await waitFor(
-      () => {
-        expect(onConnected).toHaveBeenCalled();
-      },
-      { timeout: 2000 }
-    );
+    render(<TwilioVideoComponent {...mockProps} onConnected={onConnected} />);
+
+    // Wait for setOnRoomDidConnect to be called
+    await waitFor(() => {
+      expect(mockTwilioVideo.setOnRoomDidConnect).toHaveBeenCalled();
+    });
+
+    // Extract the callback from the mock call and trigger it
+    const registeredCallback = mockTwilioVideo.setOnRoomDidConnect.mock.calls[0][0];
+    await act(async () => {
+      registeredCallback();
+    });
+
+    // Verify callback was called
+    expect(onConnected).toHaveBeenCalled();
   });
 
   it('renders audio-only mode when audioOnly prop is true', async () => {
-    const { getByText } = render(
-      <TwilioVideoComponent {...mockProps} audioOnly={true} />
-    );
+    const { getByText } = render(<TwilioVideoComponent {...mockProps} audioOnly={true} />);
 
-    await waitFor(
-      () => {
-        expect(getByText('Audio Only Mode')).toBeTruthy();
-      },
-      { timeout: 2000 }
-    );
+    // Wait for setOnRoomDidConnect to be called
+    await waitFor(() => {
+      expect(mockTwilioVideo.setOnRoomDidConnect).toHaveBeenCalled();
+    });
+
+    // Extract the callback from the mock call and trigger it
+    const registeredCallback = mockTwilioVideo.setOnRoomDidConnect.mock.calls[0][0];
+    await act(async () => {
+      registeredCallback();
+    });
+
+    // Verify audio-only mode is displayed
+    expect(getByText('Audio Only Mode')).toBeTruthy();
   });
 
   it('renders waiting state when no remote participants', async () => {
     const { getByText } = render(<TwilioVideoComponent {...mockProps} />);
 
-    await waitFor(
-      () => {
-        expect(getByText('Waiting for pharmacist to join...')).toBeTruthy();
-      },
-      { timeout: 2000 }
-    );
+    // Wait for setOnRoomDidConnect to be called
+    await waitFor(() => {
+      expect(mockTwilioVideo.setOnRoomDidConnect).toHaveBeenCalled();
+    });
+
+    // Extract the callback from the mock call and trigger it
+    const registeredCallback = mockTwilioVideo.setOnRoomDidConnect.mock.calls[0][0];
+    await act(async () => {
+      registeredCallback();
+    });
+
+    // Verify waiting state is displayed
+    expect(getByText('Waiting for pharmacist to join...')).toBeTruthy();
   });
 
   it('calls onError when connection fails', async () => {
@@ -64,12 +130,25 @@ describe('TwilioVideo', () => {
     // This would be tested in integration tests with actual Twilio SDK
   });
 
-  it('calls onDisconnected when component unmounts', () => {
+  it('calls onDisconnected when component unmounts', async () => {
     const onDisconnected = jest.fn();
+
     const { unmount } = render(
       <TwilioVideoComponent {...mockProps} onDisconnected={onDisconnected} />
     );
 
+    // Wait for setOnRoomDidConnect to be called
+    await waitFor(() => {
+      expect(mockTwilioVideo.setOnRoomDidConnect).toHaveBeenCalled();
+    });
+
+    // Extract the callback from the mock call and trigger it
+    const registeredCallback = mockTwilioVideo.setOnRoomDidConnect.mock.calls[0][0];
+    await act(async () => {
+      registeredCallback();
+    });
+
+    // Unmount and check disconnect was called
     unmount();
 
     expect(onDisconnected).toHaveBeenCalled();
@@ -80,12 +159,18 @@ describe('TwilioVideo', () => {
       <TwilioVideoComponent {...mockProps} audioOnly={false} />
     );
 
-    await waitFor(
-      () => {
-        // Local video should be visible (not audio-only mode)
-        expect(queryByText('Audio Only Mode')).toBeNull();
-      },
-      { timeout: 2000 }
-    );
+    // Wait for setOnRoomDidConnect to be called
+    await waitFor(() => {
+      expect(mockTwilioVideo.setOnRoomDidConnect).toHaveBeenCalled();
+    });
+
+    // Extract the callback from the mock call and trigger it
+    const registeredCallback = mockTwilioVideo.setOnRoomDidConnect.mock.calls[0][0];
+    await act(async () => {
+      registeredCallback();
+    });
+
+    // Local video should be visible (not audio-only mode)
+    expect(queryByText('Audio Only Mode')).toBeNull();
   });
 });
