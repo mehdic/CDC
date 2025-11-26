@@ -32,6 +32,9 @@ export type { AppType } from './navigation/RootNavigator';
 export { AuthNavigator, useAuthNavigation } from './navigation/AuthNavigator';
 export type { AuthStackParamList } from './navigation/AuthNavigator';
 
+export { MainNavigator, useMainNavigation } from './navigation/MainNavigator';
+export type { MainStackParamList } from './navigation/MainNavigator';
+
 // Services
 export {
   apiClient,
