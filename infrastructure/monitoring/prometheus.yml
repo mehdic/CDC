@@ -1,0 +1,122 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'metapharm-monitor'
+    environment: '${ENVIRONMENT:-development}'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - 'alert_rules.yml'
+  - 'recording_rules.yml'
+
+scrape_configs:
+  # Prometheus server itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API Service metrics
+  - job_name: 'metapharm-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['api:3000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__scheme__]
+        target_label: scheme
+
+  # Pharmacist Service metrics
+  - job_name: 'metapharm-pharmacist'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['pharmacist-service:3001']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__scheme__]
+        target_label: scheme
+
+  # Doctor Service metrics
+  - job_name: 'metapharm-doctor'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['doctor-service:3002']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__scheme__]
+        target_label: scheme
+
+  # Nurse Service metrics
+  - job_name: 'metapharm-nurse'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['nurse-service:3003']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__scheme__]
+        target_label: scheme
+
+  # Delivery Service metrics
+  - job_name: 'metapharm-delivery'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['delivery-service:3004']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__scheme__]
+        target_label: scheme
+
+  # Patient Service metrics
+  - job_name: 'metapharm-patient'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['patient-service:3005']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__scheme__]
+        target_label: scheme
+
+  # PostgreSQL metrics (via postgres_exporter)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # Redis metrics (via redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # Node exporter for system metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # Jaeger metrics
+  - job_name: 'jaeger'
+    static_configs:
+      - targets: ['jaeger:14269']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance

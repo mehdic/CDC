@@ -1,0 +1,115 @@
+groups:
+  - name: service_level_indicators
+    interval: 15s
+    rules:
+      # Request rate by service
+      - record: service:http_requests:rate1m
+        expr: sum(rate(metapharm_http_requests_total[1m])) by (job)
+
+      # Error rate by service
+      - record: service:http_errors:rate1m
+        expr: sum(rate(metapharm_http_requests_total{status_code=~"5.."}[1m])) by (job)
+
+      # Error percentage by service
+      - record: service:http_error_percentage:rate1m
+        expr: |
+          (sum(rate(metapharm_http_requests_total{status_code=~"5.."}[1m])) by (job)
+          / sum(rate(metapharm_http_requests_total[1m])) by (job)) * 100
+
+      # P95 latency by service
+      - record: service:http_request_duration:p95
+        expr: |
+          histogram_quantile(0.95, sum(rate(metapharm_http_request_duration_seconds_bucket[5m])) by (job, le))
+
+      # P99 latency by service
+      - record: service:http_request_duration:p99
+        expr: |
+          histogram_quantile(0.99, sum(rate(metapharm_http_request_duration_seconds_bucket[5m])) by (job, le))
+
+  - name: database_level_indicators
+    interval: 15s
+    rules:
+      # Database query rate
+      - record: database:query_rate:1m
+        expr: sum(rate(metapharm_db_query_duration_seconds_count[1m])) by (operation, table)
+
+      # Database error rate
+      - record: database:error_rate:1m
+        expr: sum(rate(metapharm_db_errors_total[1m])) by (operation)
+
+      # P95 query duration
+      - record: database:query_duration:p95
+        expr: |
+          histogram_quantile(0.95, sum(rate(metapharm_db_query_duration_seconds_bucket[5m])) by (operation, le))
+
+      # Active connections percentage
+      - record: database:connections:percentage
+        expr: metapharm_db_connections_active / 100 * 100
+
+  - name: cache_level_indicators
+    interval: 15s
+    rules:
+      # Cache hit rate
+      - record: cache:hit_rate:ratio
+        expr: |
+          sum(rate(metapharm_cache_hits_total[5m])) by (cache_name)
+          / (sum(rate(metapharm_cache_hits_total[5m])) by (cache_name)
+             + sum(rate(metapharm_cache_misses_total[5m])) by (cache_name))
+
+      # Cache operations rate
+      - record: cache:operations:rate1m
+        expr: |
+          sum(rate(metapharm_cache_hits_total[1m])) by (cache_name)
+          + sum(rate(metapharm_cache_misses_total[1m])) by (cache_name)
+
+  - name: business_metrics
+    interval: 60s
+    rules:
+      # Orders per hour
+      - record: business:orders_per_hour
+        expr: increase(metapharm_orders_created_total[1h])
+
+      # Deliveries per hour
+      - record: business:deliveries_per_hour
+        expr: increase(metapharm_deliveries_completed_total[1h])
+
+      # Consultations per hour
+      - record: business:consultations_per_hour
+        expr: increase(metapharm_consultations_started_total[1h])
+
+      # Order completion rate (completed / created)
+      - record: business:order_completion_rate
+        expr: |
+          sum(increase(metapharm_orders_completed_total[1h]))
+          / sum(increase(metapharm_orders_created_total[1h]))
+
+      # Delivery success rate
+      - record: business:delivery_success_rate
+        expr: |
+          sum(increase(metapharm_deliveries_completed_total{status="success"}[1h]))
+          / sum(increase(metapharm_deliveries_completed_total[1h]))
+
+  - name: resource_utilization
+    interval: 30s
+    rules:
+      # Memory usage percentage
+      - record: system:memory_usage_percentage
+        expr: |
+          (process_resident_memory_bytes / node_memory_MemTotal_bytes) * 100
+
+      # CPU usage percentage (1 minute average)
+      - record: system:cpu_usage_percentage
+        expr: |
+          100 - (avg(irate(node_cpu_seconds_total{mode="idle"}[1m])) * 100)
+
+      # Disk usage percentage
+      - record: system:disk_usage_percentage
+        expr: |
+          (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100
+
+      # Go runtime metrics
+      - record: runtime:goroutines
+        expr: go_goroutines
+
+      - record: runtime:gc_duration_seconds:p95
+        expr: histogram_quantile(0.95, rate(go_gc_duration_seconds_bucket[5m]))

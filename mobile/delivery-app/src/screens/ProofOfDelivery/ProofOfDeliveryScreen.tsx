@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Image } from 'react-native';
-import { launchCamera } from 'react-native-image-picker';
+// import { launchCamera } from 'react-native-image-picker'; // Package needs to be installed
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { submitProofOfDeliveryAsync, updateDeliveryStatusAsync } from '../../store/deliverySlice';
 import { ProofOfDelivery } from '../../types/delivery';
@@ -25,19 +25,23 @@ export const ProofOfDeliveryScreen: React.FC<{ navigation: any; route: any }> = 
   const [submitting, setSubmitting] = useState(false);
 
   const takePhoto = async (type: 'delivery' | 'id') => {
-    const result = await launchCamera({
-      mediaType: 'photo',
-      cameraType: 'back',
-      quality: 0.8,
-    });
+    // TODO: Install react-native-image-picker package
+    // const result = await launchCamera({
+    //   mediaType: 'photo',
+    //   cameraType: 'back',
+    //   quality: 0.8,
+    // });
 
-    if (result.assets && result.assets[0].uri) {
-      if (type === 'delivery') {
-        setPhotoUri(result.assets[0].uri);
-      } else {
-        setIdPhotoUri(result.assets[0].uri);
-      }
-    }
+    // Temporary stub for development
+    Alert.alert('Camera', 'Camera functionality requires react-native-image-picker package');
+
+    // if (result.assets && result.assets[0].uri) {
+    //   if (type === 'delivery') {
+    //     setPhotoUri(result.assets[0].uri);
+    //   } else {
+    //     setIdPhotoUri(result.assets[0].uri);
+    //   }
+    // }
   };
 
   const handleSubmit = async () => {

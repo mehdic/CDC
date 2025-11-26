@@ -1,0 +1,99 @@
+global:
+  resolve_timeout: 5m
+
+# The root route with all parameters, which are inherited by the child routes if they are not overwritten.
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  routes:
+    # Critical alerts - page on-call immediately via PagerDuty
+    - match:
+        severity: critical
+      receiver: 'pagerduty-critical'
+      group_wait: 0s
+      repeat_interval: 5m
+
+    # Error alerts - Slack notification
+    - match:
+        severity: error
+      receiver: 'slack-errors'
+      repeat_interval: 1h
+
+    # Warning alerts - Slack notification
+    - match:
+        severity: warning
+      receiver: 'slack-warnings'
+      repeat_interval: 4h
+
+    # Business metric alerts - Slack only
+    - match:
+        component: business
+      receiver: 'slack-business'
+      repeat_interval: 2h
+
+# Inhibition rules prevent alerts from being sent while other alerts are firing
+inhibit_rules:
+  # Inhibit critical database errors if database is down
+  - source_match:
+      alertname: 'DatabaseDown'
+    target_match_re:
+      alertname: 'Database.*'
+    equal: ['instance']
+
+  # Inhibit service errors if service is down
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match_re:
+      alertname: 'Service.*'
+    equal: ['job']
+
+  # Inhibit lower severity alerts if critical alert exists
+  - source_match:
+      severity: critical
+    target_match_re:
+      severity: 'warning|info'
+    equal: ['alertname', 'service']
+
+# Receivers define where and how to send alerts
+receivers:
+  - name: 'default'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#metapharm-alerts'
+        title: 'Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        description: '{{ .GroupLabels.alertname }}'
+        details:
+          firing: '{{ template "pagerduty.default.instances" .Alerts.Firing }}'
+
+  - name: 'slack-errors'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#metapharm-errors'
+        title: 'ERROR: {{ .GroupLabels.alertname }}'
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+
+  - name: 'slack-warnings'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#metapharm-warnings'
+        title: 'WARNING: {{ .GroupLabels.alertname }}'
+        color: 'warning'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+  - name: 'slack-business'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#metapharm-business-metrics'
+        title: 'Business Alert: {{ .GroupLabels.alertname }}'
+        color: '#0099FF'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'

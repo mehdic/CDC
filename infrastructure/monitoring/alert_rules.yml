@@ -1,0 +1,172 @@
+groups:
+  - name: service_health
+    interval: 30s
+    rules:
+      - alert: ServiceDown
+        expr: up{job=~"metapharm.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "{{ $labels.job }} is down"
+          description: "{{ $labels.job }} ({{ $labels.instance }}) is not responding for more than 1 minute."
+
+      - alert: HighErrorRate
+        expr: |
+          (sum(rate(metapharm_http_requests_total{status_code=~"5.."}[5m])) by (job)
+          / sum(rate(metapharm_http_requests_total[5m])) by (job)) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "High error rate detected in {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanizePercentage }} in {{ $labels.job }}"
+
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, rate(metapharm_http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "High API latency detected in {{ $labels.job }}"
+          description: "95th percentile latency is {{ $value }}s"
+
+  - name: database_health
+    interval: 30s
+    rules:
+      - alert: DatabaseConnectionPoolExhausted
+        expr: metapharm_db_connections_active > 0.95 * 100
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Active connections: {{ $value }}/100"
+
+      - alert: DatabaseQuerySlow
+        expr: |
+          histogram_quantile(0.95, rate(metapharm_db_query_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "95th percentile query time: {{ $value }}s"
+
+      - alert: DatabaseErrorRate
+        expr: |
+          (sum(rate(metapharm_db_errors_total[5m])) by (operation)
+          / sum(rate(metapharm_db_query_duration_seconds_count[5m])) by (operation)) > 0.01
+        for: 5m
+        labels:
+          severity: error
+          component: database
+        annotations:
+          summary: "High database error rate for {{ $labels.operation }}"
+          description: "Error rate: {{ $value | humanizePercentage }}"
+
+  - name: cache_health
+    interval: 30s
+    rules:
+      - alert: LowCacheHitRate
+        expr: |
+          (sum(rate(metapharm_cache_hits_total[5m])) by (cache_name)
+          / (sum(rate(metapharm_cache_hits_total[5m])) by (cache_name)
+             + sum(rate(metapharm_cache_misses_total[5m])) by (cache_name))) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Low cache hit rate for {{ $labels.cache_name }}"
+          description: "Hit rate: {{ $value | humanizePercentage }}"
+
+  - name: resource_health
+    interval: 30s
+    rules:
+      - alert: HighMemoryUsage
+        expr: |
+          (process_resident_memory_bytes / 1e9) / (node_memory_MemTotal_bytes / 1e9) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage: {{ $value | humanizePercentage }}"
+
+      - alert: CriticalMemoryUsage
+        expr: |
+          (process_resident_memory_bytes / 1e9) / (node_memory_MemTotal_bytes / 1e9) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage: {{ $value | humanizePercentage }}"
+
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage: {{ $value }}%"
+
+      - alert: DiskSpaceRunningOut
+        expr: |
+          (node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.lowerfs|squashfs|vfat"}
+          / node_filesystem_size_bytes) < 0.15
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "Disk space running out on {{ $labels.device }}"
+          description: "Available space: {{ $value | humanizePercentage }}"
+
+  - name: business_metrics
+    interval: 60s
+    rules:
+      - alert: NoOrdersProcessed
+        expr: |
+          increase(metapharm_orders_created_total[1h]) == 0
+        for: 1h
+        labels:
+          severity: warning
+          component: business
+        annotations:
+          summary: "No orders processed in the last hour"
+          description: "Order processing may be stuck"
+
+      - alert: DeliveryServiceDown
+        expr: up{job="metapharm-delivery"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: business
+          service: delivery
+        annotations:
+          summary: "Delivery service is unavailable"
+          description: "Customers cannot track deliveries"
+
+      - alert: LowConsultationRate
+        expr: |
+          rate(metapharm_consultations_started_total[1h]) < 0.1
+        for: 30m
+        labels:
+          severity: warning
+          component: business
+        annotations:
+          summary: "Low consultation rate detected"
+          description: "Fewer than 0.1 consultations per hour"

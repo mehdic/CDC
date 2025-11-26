@@ -20,7 +20,7 @@ import {
 /**
  * API Configuration
  */
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3004';
+const API_BASE_URL = 'http://localhost:3004'; // In production, use react-native-config
 const TOKEN_KEY = '@delivery_token';
 
 /**

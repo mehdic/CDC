@@ -37,7 +37,7 @@ const initialState: DeliveryState = {
  */
 export const fetchAvailableRequests = createAsyncThunk(
   'delivery/fetchAvailable',
-  async (filters?: { radius?: number; maxDistance?: number }, { rejectWithValue }) => {
+  async (filters: { radius?: number; maxDistance?: number } | undefined, { rejectWithValue }) => {
     try {
       const response = await deliveryApi.getAvailableRequests(filters);
       if (response.success && response.data) {
@@ -52,7 +52,7 @@ export const fetchAvailableRequests = createAsyncThunk(
 
 export const fetchMyDeliveries = createAsyncThunk(
   'delivery/fetchMy',
-  async (status?: DeliveryStatus, { rejectWithValue }) => {
+  async (status: DeliveryStatus | undefined, { rejectWithValue }) => {
     try {
       const response = await deliveryApi.getMyDeliveries(status);
       if (response.success && response.data) {
@@ -286,7 +286,13 @@ const deliverySlice = createSlice({
         });
       } else {
         // Update in store
-        state.updateDeliveryInList(action.payload);
+        const index = state.requests.findIndex((r) => r.id === action.payload.id);
+        if (index !== -1) {
+          state.requests[index] = action.payload;
+        }
+        if (state.activeDelivery?.id === action.payload.id) {
+          state.activeDelivery = action.payload;
+        }
       }
     });
 

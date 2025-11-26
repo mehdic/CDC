@@ -17,24 +17,22 @@ import MfaVerificationScreen from '../screens/Auth/MfaVerificationScreen';
 import PatientSearchScreen from '../screens/PatientSearch/PatientSearchScreen';
 import PatientMedicationsScreen from '../screens/PatientMedications/PatientMedicationsScreen';
 
-// Placeholder screens (to be implemented)
-const PlaceholderScreen: React.FC<{ title: string }> = ({ title }) => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text style={{ fontSize: 18, color: '#2C3E50' }}>{title}</Text>
-    <Text style={{ fontSize: 14, color: '#95A5A6', marginTop: 8 }}>Coming soon...</Text>
-  </View>
-);
+// Medication Screens
+import MedicationOrderScreen from '../screens/MedicationOrder/MedicationOrderScreen';
+import AdministrationRecordingScreen from '../screens/Administration/AdministrationRecordingScreen';
+import BarcodeScannerScreen from '../screens/BarcodeScanner/BarcodeScannerScreen';
 
-import { View, Text } from 'react-native';
+// Records & Safety Screens
+import PatientRecordsScreen from '../screens/PatientRecords/PatientRecordsScreen';
+import AdverseReactionsScreen from '../screens/Reactions/AdverseReactionsScreen';
 
-const MedicationOrderScreen = () => <PlaceholderScreen title="Medication Order" />;
-const AdministrationScreen = () => <PlaceholderScreen title="Record Administration" />;
-const PatientRecordsScreen = () => <PlaceholderScreen title="Patient Records" />;
-const ReactionsScreen = () => <PlaceholderScreen title="Report Reaction" />;
-const DeliveryTrackingScreen = () => <PlaceholderScreen title="Delivery Tracking" />;
-const MessagingScreen = () => <PlaceholderScreen title="Messages" />;
-const HandoverScreen = () => <PlaceholderScreen title="Shift Handover" />;
-const ProfileScreen = () => <PlaceholderScreen title="Profile" />;
+// Delivery & Communication Screens
+import DeliveryTrackingScreen from '../screens/DeliveryTracking/DeliveryTrackingScreen';
+import MessagingScreen from '../screens/Messaging/MessagingScreen';
+import ShiftHandoverScreen from '../screens/Handover/ShiftHandoverScreen';
+
+// Profile Screen
+import ProfileScreen from '../screens/Profile/ProfileScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -65,8 +63,13 @@ const PatientsStack = () => (
     />
     <Stack.Screen
       name="Administration"
-      component={AdministrationScreen}
+      component={AdministrationRecordingScreen}
       options={{ title: 'Record Administration' }}
+    />
+    <Stack.Screen
+      name="BarcodeScanner"
+      component={BarcodeScannerScreen}
+      options={{ title: 'Scan Barcode', headerShown: false }}
     />
     <Stack.Screen
       name="PatientRecords"
@@ -75,7 +78,7 @@ const PatientsStack = () => (
     />
     <Stack.Screen
       name="Reactions"
-      component={ReactionsScreen}
+      component={AdverseReactionsScreen}
       options={{ title: 'Report Reaction' }}
     />
   </Stack.Navigator>
@@ -100,7 +103,7 @@ const MainTabs = () => (
     />
     <Tab.Screen
       name="HandoverTab"
-      component={HandoverScreen}
+      component={ShiftHandoverScreen}
       options={{ title: 'Handover' }}
     />
     <Tab.Screen
