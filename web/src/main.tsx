@@ -6,6 +6,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SnackbarProvider } from 'notistack';
 import App from './App';
+import { register as registerServiceWorker } from '@shared/utils/serviceWorkerRegistration';
+import { performanceMonitor } from '@shared/utils/performanceMonitor';
 
 // Create Material-UI theme
 const theme = createTheme({
@@ -106,3 +108,27 @@ ReactDOM.createRoot(rootElement).render(
     </QueryClientProvider>
   </React.StrictMode>
 );
+
+// Register service worker for caching (T2-045)
+registerServiceWorker({
+  onSuccess: () => {
+    console.log('[ServiceWorker] Content cached for offline use');
+  },
+  onUpdate: () => {
+    console.log('[ServiceWorker] New content available; please refresh');
+    // Optional: Show notification to user about update
+  },
+});
+
+// Initialize performance monitoring (T2-043 to T2-048)
+if (process.env.NODE_ENV === 'development') {
+  // In development, report metrics after 10 seconds
+  setTimeout(() => {
+    const grade = performanceMonitor.getGrade();
+    console.log('[Performance] Grade:', grade.grade, `(${grade.score}/100)`);
+    if (grade.issues.length > 0) {
+      console.warn('[Performance] Issues detected:');
+      grade.issues.forEach((issue) => console.warn(`  - ${issue}`));
+    }
+  }, 10000);
+}
