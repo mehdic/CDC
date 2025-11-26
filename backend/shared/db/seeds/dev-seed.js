@@ -1,4 +1,10 @@
 "use strict";
+/**
+ * Development Seed Data
+ * Creates test users and pharmacies for local development
+ *
+ * Usage: ts-node dev-seed.ts
+ */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -6,6 +12,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.seed = seed;
 const pg_1 = require("pg");
 const bcrypt_1 = __importDefault(require("bcrypt"));
+/**
+ * Get database connection from environment
+ */
 function getDatabaseConfig() {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
@@ -16,13 +25,25 @@ function getDatabaseConfig() {
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     };
 }
+/**
+ * Mock encryption for dev environment
+ * In production, this would use AWS KMS
+ */
 function mockEncrypt(value) {
+    // For dev purposes, just encode as buffer with a prefix
+    // In production, replace with actual AWS KMS encryption
     return Buffer.from(`ENC:${value}`, 'utf-8');
 }
+/**
+ * Hash password with bcrypt
+ */
 async function hashPassword(password) {
     const saltRounds = 10;
     return bcrypt_1.default.hash(password, saltRounds);
 }
+/**
+ * Seed pharmacies
+ */
 async function seedPharmacies(client) {
     console.log('🏥 Seeding pharmacies...');
     const pharmacies = [
@@ -123,9 +144,13 @@ async function seedPharmacies(client) {
     }
     return pharmacyIds;
 }
+/**
+ * Seed users
+ */
 async function seedUsers(client, pharmacyIds) {
     console.log('👥 Seeding users...');
     const users = [
+        // Pharmacist (matches E2E test expectations)
         {
             email: 'pharmacist@test.metapharm.ch',
             password: 'TestPass123!',
@@ -137,6 +162,7 @@ async function seedUsers(client, pharmacyIds) {
             mfa_enabled: false,
             primary_pharmacy_id: pharmacyIds['Pharmacie du Lac'],
         },
+        // Doctor (matches E2E test expectations)
         {
             email: 'doctor@test.metapharm.ch',
             password: 'TestPass123!',
@@ -148,6 +174,19 @@ async function seedUsers(client, pharmacyIds) {
             mfa_enabled: false,
             primary_pharmacy_id: null,
         },
+        // Patient (matches E2E test expectations)
+        {
+            email: 'patient@test.metapharm.ch',
+            password: 'TestPass123!',
+            role: 'patient',
+            first_name: 'Sophie',
+            last_name: 'Bernard',
+            phone: '+41 79 345 6789',
+            hin_id: null,
+            mfa_enabled: false,
+            primary_pharmacy_id: pharmacyIds['Pharmacie du Lac'],
+        },
+        // Nurse
         {
             email: 'patient@test.metapharm.ch',
             password: 'TestPass123!',
@@ -170,6 +209,7 @@ async function seedUsers(client, pharmacyIds) {
             mfa_enabled: false,
             primary_pharmacy_id: null,
         },
+        // Delivery Personnel
         {
             email: 'delivery@test.com',
             password: 'Test123!',
@@ -181,6 +221,7 @@ async function seedUsers(client, pharmacyIds) {
             mfa_enabled: false,
             primary_pharmacy_id: pharmacyIds['Pharmacie du Lac'],
         },
+        // Patient 1
         {
             email: 'patient1@test.com',
             password: 'Test123!',
@@ -192,6 +233,7 @@ async function seedUsers(client, pharmacyIds) {
             mfa_enabled: false,
             primary_pharmacy_id: pharmacyIds['Pharmacie du Lac'],
         },
+        // Patient 2
         {
             email: 'patient2@test.com',
             password: 'Test123!',
@@ -203,6 +245,7 @@ async function seedUsers(client, pharmacyIds) {
             mfa_enabled: false,
             primary_pharmacy_id: pharmacyIds['Pharmacie Centrale'],
         },
+        // Pharmacist 2 (for Pharmacie Centrale)
         {
             email: 'pharmacist2@test.com',
             password: 'Test123!',
@@ -231,21 +274,27 @@ async function seedUsers(client, pharmacyIds) {
             user.hin_id,
             user.mfa_enabled,
             user.primary_pharmacy_id,
-            true,
-            'active',
+            true, // email_verified
+            'active', // status
         ]);
         console.log(`  ✅ Created user: ${user.email} (${user.role}) - ${result.rows[0].id}`);
     }
 }
+/**
+ * Main seed function
+ */
 async function seed() {
     const dbConfig = getDatabaseConfig();
     const client = new pg_1.Client(dbConfig);
     try {
         await client.connect();
         console.log('✅ Connected to PostgreSQL database');
+        // Start transaction
         await client.query('BEGIN');
+        // Seed data
         const pharmacyIds = await seedPharmacies(client);
         await seedUsers(client, pharmacyIds);
+        // Commit transaction
         await client.query('COMMIT');
         console.log('\n✅ Seed data created successfully!');
         console.log('\n📋 Test Credentials (E2E Tests):');
@@ -268,6 +317,9 @@ async function seed() {
         await client.end();
     }
 }
+/**
+ * Run seed if executed directly
+ */
 if (require.main === module) {
     seed()
         .then(() => {
