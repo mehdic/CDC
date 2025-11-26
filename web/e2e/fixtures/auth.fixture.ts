@@ -9,7 +9,7 @@ import { mockLoginSuccess } from '../utils/api-mock';
 export interface TestUser {
   email: string;
   password: string;
-  role: 'pharmacist' | 'doctor' | 'patient';
+  role: 'pharmacist' | 'doctor' | 'patient' | 'nurse' | 'delivery';
   firstName?: string;
   lastName?: string;
   pharmacyId?: string;
@@ -48,6 +48,13 @@ export const testUsers: Record<string, TestUser> = {
     firstName: 'Caroline',
     lastName: 'Leclerc',
   },
+  delivery: {
+    email: 'delivery@test.metapharm.ch',
+    password: 'TestPass123!',
+    role: 'delivery',
+    firstName: 'Marc',
+    lastName: 'Rousseau',
+  },
 };
 
 /**
@@ -58,6 +65,9 @@ type AuthFixtures = {
   authenticatedPage: Page;
   pharmacistPage: Page;
   nursePage: Page;
+  patientPage: Page;
+  doctorPage: Page;
+  deliveryPage: Page;
 };
 
 /**
@@ -83,22 +93,17 @@ export const test = base.extend<AuthFixtures>({
    * Uses storageState if available, otherwise falls back to manual login
    */
   authenticatedPage: async ({ page }, use) => {
-    // Navigate to app first to ensure context is established
+    // Mock successful login BEFORE navigating
+    await mockLoginSuccess(page, {
+      email: testUsers.pharmacist.email,
+      role: testUsers.pharmacist.role,
+      firstName: testUsers.pharmacist.firstName,
+      lastName: testUsers.pharmacist.lastName,
+      pharmacyId: testUsers.pharmacist.pharmacyId,
+    });
+
+    // Navigate to app
     await page.goto('/');
-
-    // Check if storageState was loaded (from playwright.config.ts)
-    // If yes, tokens are already available. If no, login manually.
-    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null).catch(() => false);
-
-    if (!hasAuth) {
-      // Login with real backend
-      await login(page, testUsers.pharmacist);
-
-      // Wait for navigation to complete
-      await page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, {
-        timeout: 10000,
-      });
-    }
 
     await use(page);
 
@@ -112,21 +117,17 @@ export const test = base.extend<AuthFixtures>({
    * Uses storageState if available, otherwise falls back to manual login
    */
   pharmacistPage: async ({ page }, use) => {
-    // Navigate to app first to ensure context is established
+    // Mock successful login BEFORE navigating
+    await mockLoginSuccess(page, {
+      email: testUsers.pharmacist.email,
+      role: testUsers.pharmacist.role,
+      firstName: testUsers.pharmacist.firstName,
+      lastName: testUsers.pharmacist.lastName,
+      pharmacyId: testUsers.pharmacist.pharmacyId,
+    });
+
+    // Navigate to app
     await page.goto('/');
-
-    // Check if storageState was loaded
-    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null).catch(() => false);
-
-    if (!hasAuth) {
-      // Login with real backend
-      await login(page, testUsers.pharmacist);
-
-      // Wait for pharmacist dashboard
-      await page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, {
-        timeout: 10000,
-      });
-    }
 
     await use(page);
 
@@ -140,21 +141,85 @@ export const test = base.extend<AuthFixtures>({
    * Uses storageState if available, otherwise falls back to manual login
    */
   nursePage: async ({ page }, use) => {
-    // Navigate to app first to ensure context is established
+    // Mock successful login BEFORE navigating
+    await mockLoginSuccess(page, {
+      email: testUsers.nurse.email,
+      role: testUsers.nurse.role,
+      firstName: testUsers.nurse.firstName,
+      lastName: testUsers.nurse.lastName,
+    });
+
+    // Navigate to app
     await page.goto('/');
 
-    // Check if storageState was loaded
-    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null).catch(() => false);
+    await use(page);
 
-    if (!hasAuth) {
-      // Login with real backend
-      await login(page, testUsers.nurse);
+    // Logout after test
+    await clearAuth(page);
+  },
 
-      // Wait for nurse dashboard
-      await page.waitForURL(/.*\/nurse\/(?:dashboard|patients|orders|messaging)/, {
-        timeout: 10000,
-      });
-    }
+  /**
+   * Patient authenticated page - specifically for patient role
+   *
+   * Uses storageState if available, otherwise falls back to manual login
+   */
+  patientPage: async ({ page }, use) => {
+    // Mock successful login BEFORE navigating
+    await mockLoginSuccess(page, {
+      email: testUsers.patient.email,
+      role: testUsers.patient.role,
+      firstName: testUsers.patient.firstName,
+      lastName: testUsers.patient.lastName,
+    });
+
+    // Navigate to app
+    await page.goto('/');
+
+    await use(page);
+
+    // Logout after test
+    await clearAuth(page);
+  },
+
+  /**
+   * Doctor authenticated page - specifically for doctor role
+   *
+   * Uses storageState if available, otherwise falls back to manual login
+   */
+  doctorPage: async ({ page }, use) => {
+    // Mock successful login BEFORE navigating
+    await mockLoginSuccess(page, {
+      email: testUsers.doctor.email,
+      role: testUsers.doctor.role,
+      firstName: testUsers.doctor.firstName,
+      lastName: testUsers.doctor.lastName,
+    });
+
+    // Navigate to app
+    await page.goto('/');
+
+    await use(page);
+
+    // Logout after test
+    await clearAuth(page);
+  },
+
+  /**
+   * Delivery authenticated page - specifically for delivery personnel role
+   *
+   * Uses storageState if available, otherwise falls back to manual login
+   */
+  deliveryPage: async ({ page }, use) => {
+    // Mock successful login BEFORE navigating
+    await mockLoginSuccess(page, {
+      email: testUsers.delivery.email,
+      role: testUsers.delivery.role,
+      firstName: testUsers.delivery.firstName,
+      lastName: testUsers.delivery.lastName,
+    });
+
+    // Navigate to app
+    await page.goto('/');
 
     await use(page);
 
