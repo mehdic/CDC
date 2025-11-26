@@ -30,14 +30,14 @@ MetaPharm Connect serves five distinct user roles with customized interfaces and
 ### 4. Nurses
 **Primary Focus**: Medication ordering, patient monitoring, delivery coordination
 
-- [Nurse Guide](./nurse.md) - Complete nurse user guide (coming soon)
+- [Nurse Guide](./nurse.md) - Complete nurse user guide
 - **Key Features**: Medication ordering, patient tracking, delivery management
 - **Target Users**: Healthcare nurses coordinating patient care
 
 ### 5. Delivery Personnel
 **Primary Focus**: Manage deliveries, route optimization, QR code scanning
 
-- [Delivery Guide](./delivery.md) - Complete delivery personnel guide (coming soon)
+- [Delivery Guide](./delivery.md) - Complete delivery personnel guide
 - **Key Features**: Delivery assignment, GPS tracking, QR scanning, route optimization
 - **Target Users**: Logistics personnel handling pharmacy deliveries
 
@@ -313,7 +313,7 @@ We'd love to hear from you!
 - [Patient Guide](./patient.md)
 - [Pharmacist Guide](./pharmacist.md)
 - [Doctor Guide](./doctor.md)
-- Nurse Guide (coming soon)
-- Delivery Guide (coming soon)
+- [Nurse Guide](./nurse.md)
+- [Delivery Guide](./delivery.md)
 
 **Welcome to MetaPharm Connect!** 🏥

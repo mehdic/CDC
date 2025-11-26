@@ -1,0 +1,1009 @@
+openapi: 3.0.0
+info:
+  title: MetaPharm Connect API
+  version: 1.0.0
+  description: Comprehensive REST API for MetaPharm Connect healthcare platform
+  contact:
+    name: MetaPharm Support
+    email: api-support@metapharm.com
+  license:
+    name: MIT
+
+servers:
+  - url: https://api.metapharm.com/v1
+    description: Production API
+  - url: https://staging.metapharm.com/v1
+    description: Staging API
+  - url: http://localhost:5000/v1
+    description: Development API
+
+tags:
+  - name: Authentication
+    description: User login, logout, and token management
+  - name: Users
+    description: User profile and account management
+  - name: Prescriptions
+    description: Prescription management and validation
+  - name: Messaging
+    description: Messaging and communication
+  - name: Deliveries
+    description: Delivery management and tracking
+  - name: Pharmacy
+    description: Pharmacy inventory and information
+  - name: Teleconsultation
+    description: Video call and consultation management
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token from login endpoint
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - success
+        - errors
+      properties:
+        success:
+          type: boolean
+          example: false
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                example: INVALID_REQUEST
+              message:
+                type: string
+                example: Invalid request parameters
+              field:
+                type: string
+                example: email
+              status:
+                type: integer
+                example: 400
+
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - role
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: user-123
+        email:
+          type: string
+          format: email
+          example: pharmacist@example.com
+        role:
+          type: string
+          enum: [PHARMACIST, DOCTOR, NURSE, DELIVERY, PATIENT]
+          example: PHARMACIST
+        name:
+          type: string
+          example: John Doe
+        phone:
+          type: string
+          format: phone
+          example: +41791234567
+        avatar:
+          type: string
+          format: url
+          example: https://cdn.example.com/avatar-123.jpg
+        createdAt:
+          type: string
+          format: date-time
+          example: 2025-01-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2025-11-25T08:45:00Z
+
+    Prescription:
+      type: object
+      required:
+        - id
+        - patientId
+        - drugs
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: prescription-789
+        patientId:
+          type: string
+          format: uuid
+          example: patient-456
+        doctorId:
+          type: string
+          format: uuid
+          example: doctor-123
+        pharmacistId:
+          type: string
+          format: uuid
+          example: pharmacist-123
+        drugs:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              strength:
+                type: string
+        dosage:
+          type: object
+          properties:
+            strength:
+              type: string
+            frequency:
+              type: string
+            duration:
+              type: string
+        status:
+          type: string
+          enum: [PENDING_VALIDATION, VALIDATED, DISPENSED, EXPIRED]
+          example: VALIDATED
+        createdAt:
+          type: string
+          format: date-time
+        validatedAt:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      required:
+        - id
+        - senderId
+        - recipientId
+        - content
+        - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        recipientId:
+          type: string
+          format: uuid
+        content:
+          type: string
+        type:
+          type: string
+          enum: [TEXT, FILE, VOICE]
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
+
+    Delivery:
+      type: object
+      required:
+        - id
+        - status
+        - patientId
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PENDING_ASSIGNMENT, ASSIGNED, IN_TRANSIT, DELIVERED, CANCELLED]
+        patientId:
+          type: string
+          format: uuid
+        prescriptionId:
+          type: string
+          format: uuid
+        deliveryPersonnelId:
+          type: string
+          format: uuid
+        deliveryAddress:
+          type: object
+          properties:
+            street:
+              type: string
+            city:
+              type: string
+            zipCode:
+              type: string
+            country:
+              type: string
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+            longitude:
+              type: number
+        preferredDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        drugId:
+          type: string
+        drugName:
+          type: string
+        strength:
+          type: string
+        quantity:
+          type: integer
+        minStock:
+          type: integer
+        expiryDate:
+          type: string
+          format: date
+        lastRestocked:
+          type: string
+          format: date-time
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                      refreshToken:
+                        type: string
+                      user:
+                        $ref: '#/components/schemas/User'
+                      expiresIn:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Users
+      summary: Update user profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                preferences:
+                  type: object
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /prescriptions:
+    post:
+      tags:
+        - Prescriptions
+      summary: Create prescription
+      security:
+        - bearerAuth: []
+      description: Create a new prescription (Doctors only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patientId
+                - drugIds
+                - dosage
+              properties:
+                patientId:
+                  type: string
+                  format: uuid
+                drugIds:
+                  type: array
+                  items:
+                    type: string
+                dosage:
+                  type: object
+                  properties:
+                    strength:
+                      type: string
+                    frequency:
+                      type: string
+                    duration:
+                      type: string
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Prescription created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Prescription'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+    get:
+      tags:
+        - Prescriptions
+      summary: List prescriptions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING_VALIDATION, VALIDATED, DISPENSED, EXPIRED]
+        - name: patientId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of prescriptions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Prescription'
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /prescriptions/{id}:
+    get:
+      tags:
+        - Prescriptions
+      summary: Get prescription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Prescription details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Prescription'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /prescriptions/{id}/validate:
+    post:
+      tags:
+        - Prescriptions
+      summary: Validate prescription
+      security:
+        - bearerAuth: []
+      description: Validate prescription for drug interactions (Pharmacist only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                validationNotes:
+                  type: string
+                approved:
+                  type: boolean
+      responses:
+        '200':
+          description: Prescription validated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Prescription'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /messages:
+    post:
+      tags:
+        - Messaging
+      summary: Send message
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipientId
+                - content
+                - type
+              properties:
+                recipientId:
+                  type: string
+                  format: uuid
+                content:
+                  type: string
+                type:
+                  type: string
+                  enum: [TEXT, FILE, VOICE]
+      responses:
+        '201':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Message'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /messages/{userId}:
+    get:
+      tags:
+        - Messaging
+      summary: Get message history
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Message history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /deliveries:
+    post:
+      tags:
+        - Deliveries
+      summary: Create delivery order
+      security:
+        - bearerAuth: []
+      description: Create a new delivery order (Pharmacist only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patientId
+                - deliveryAddress
+              properties:
+                patientId:
+                  type: string
+                  format: uuid
+                prescriptionId:
+                  type: string
+                  format: uuid
+                deliveryAddress:
+                  type: object
+                  properties:
+                    street:
+                      type: string
+                    city:
+                      type: string
+                    zipCode:
+                      type: string
+                    country:
+                      type: string
+                preferredDate:
+                  type: string
+                  format: date-time
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Delivery order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Delivery'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /deliveries/{id}:
+    get:
+      tags:
+        - Deliveries
+      summary: Get delivery details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Delivery details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Delivery'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /deliveries/{id}/status:
+    put:
+      tags:
+        - Deliveries
+      summary: Update delivery status
+      security:
+        - bearerAuth: []
+      description: Update delivery status with location (Delivery personnel only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [IN_TRANSIT, DELIVERED, CANCELLED]
+                location:
+                  type: object
+                  properties:
+                    latitude:
+                      type: number
+                    longitude:
+                      type: number
+      responses:
+        '200':
+          description: Delivery status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Delivery'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /deliveries/{id}/tracking:
+    get:
+      tags:
+        - Deliveries
+      summary: Get delivery tracking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Delivery tracking information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Delivery'
+                      - type: object
+                        properties:
+                          route:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                timestamp:
+                                  type: string
+                                  format: date-time
+                                latitude:
+                                  type: number
+                                longitude:
+                                  type: number
+                          estimatedArrival:
+                            type: string
+                            format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /pharmacies/{id}:
+    get:
+      tags:
+        - Pharmacy
+      summary: Get pharmacy info
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Pharmacy information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      address:
+                        type: object
+                        properties:
+                          street:
+                            type: string
+                          city:
+                            type: string
+                          zipCode:
+                            type: string
+                          country:
+                            type: string
+                      phone:
+                        type: string
+                      email:
+                        type: string
+                      hours:
+                        type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /pharmacies/{id}/inventory:
+    get:
+      tags:
+        - Pharmacy
+      summary: Get pharmacy inventory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Pharmacy inventory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventoryItem'
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+security:
+  - bearerAuth: []
