@@ -1,6 +1,7 @@
 import { test as base, Page } from '@playwright/test';
 import { LoginPage } from '../page-objects/LoginPage';
 import { login, clearAuth } from '../utils/auth-helpers';
+import { mockLoginSuccess } from '../utils/api-mock';
 
 /**
  * Test user credentials for authentication testing
