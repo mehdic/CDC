@@ -1,0 +1,1262 @@
+openapi: 3.0.0
+info:
+  title: MetaPharm Connect API
+  description: |
+    Comprehensive healthcare platform API connecting pharmacists, doctors, nurses,
+    delivery personnel, and patients. Provides secure, encrypted endpoints for
+    prescription management, teleconsultation, delivery tracking, and healthcare records.
+
+    **Security**: All endpoints require authentication. Healthcare data is encrypted
+    end-to-end and complies with HIPAA, GDPR, and Swiss data protection laws.
+  version: 1.0.0
+  contact:
+    name: MetaPharm Connect Support
+    email: support@metapharm.com
+    url: https://metapharm.com/support
+  license:
+    name: Proprietary
+    url: https://metapharm.com/license
+
+servers:
+  - url: https://api.metapharm.com/v1
+    description: Production server
+  - url: https://staging-api.metapharm.com/v1
+    description: Staging server
+  - url: http://localhost:3000/v1
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Users
+    description: User account management
+  - name: Prescriptions
+    description: Prescription creation, validation, and management
+  - name: Teleconsultation
+    description: Video consultation scheduling and management
+  - name: Deliveries
+    description: Delivery request and tracking
+  - name: Inventory
+    description: Pharmacy inventory management
+  - name: Messaging
+    description: Secure messaging between users
+  - name: Health Records
+    description: Patient medical records access
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user account
+      description: Create a new user account with role-based access (patient, pharmacist, doctor, nurse, delivery)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - role
+                - firstName
+                - lastName
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john.doe@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 12
+                  example: SecureP@ssw0rd123
+                role:
+                  type: string
+                  enum: [patient, pharmacist, doctor, nurse, delivery]
+                  example: patient
+                firstName:
+                  type: string
+                  example: John
+                lastName:
+                  type: string
+                  example: Doe
+                phoneNumber:
+                  type: string
+                  example: +41791234567
+                dateOfBirth:
+                  type: string
+                  format: date
+                  example: 1985-05-15
+                licenseNumber:
+                  type: string
+                  description: Required for healthcare professionals
+                  example: PHARM-CH-123456
+      responses:
+        '201':
+          description: User account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request data
+        '409':
+          description: Email already exists
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                mfaCode:
+                  type: string
+                  description: Two-factor authentication code (if MFA enabled)
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+        '403':
+          description: Account not verified or suspended
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Invalidate current session token
+      responses:
+        '200':
+          description: Logout successful
+        '401':
+          description: Unauthorized
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Get new access token using refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid refresh token
+
+  # User Management Endpoints
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Retrieve authenticated user's profile information
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+
+    put:
+      tags:
+        - Users
+      summary: Update current user profile
+      description: Update authenticated user's profile information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phoneNumber:
+                  type: string
+                profilePicture:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /users/{userId}:
+    get:
+      tags:
+        - Users
+      summary: Get user by ID
+      description: Retrieve user profile by user ID (limited information based on role)
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+        '403':
+          description: Access denied
+
+  # Prescription Endpoints
+  /prescriptions:
+    get:
+      tags:
+        - Prescriptions
+      summary: List prescriptions
+      description: Get list of prescriptions (filtered by role and permissions)
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, validated, rejected, filled, delivered]
+        - in: query
+          name: patientId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Prescriptions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prescriptions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Prescription'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Unauthorized
+
+    post:
+      tags:
+        - Prescriptions
+      summary: Create prescription
+      description: Create new prescription (doctors only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - patientId
+                - medications
+              properties:
+                patientId:
+                  type: string
+                  format: uuid
+                medications:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - drugName
+                      - dosage
+                      - frequency
+                      - duration
+                    properties:
+                      drugName:
+                        type: string
+                      dosage:
+                        type: string
+                      frequency:
+                        type: string
+                      duration:
+                        type: string
+                      instructions:
+                        type: string
+                pharmacyId:
+                  type: string
+                  format: uuid
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Prescription created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+        '400':
+          description: Invalid request data
+        '403':
+          description: Unauthorized - Doctors only
+
+  /prescriptions/{prescriptionId}:
+    get:
+      tags:
+        - Prescriptions
+      summary: Get prescription by ID
+      description: Retrieve prescription details
+      parameters:
+        - in: path
+          name: prescriptionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Prescription retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+        '404':
+          description: Prescription not found
+        '403':
+          description: Access denied
+
+  /prescriptions/{prescriptionId}/validate:
+    post:
+      tags:
+        - Prescriptions
+      summary: Validate prescription
+      description: Pharmacist validates or rejects prescription
+      parameters:
+        - in: path
+          name: prescriptionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [validated, rejected, change_requested]
+                notes:
+                  type: string
+                alternativeMedications:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Prescription validation updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+        '403':
+          description: Unauthorized - Pharmacists only
+        '404':
+          description: Prescription not found
+
+  # Teleconsultation Endpoints
+  /teleconsultations:
+    get:
+      tags:
+        - Teleconsultation
+      summary: List teleconsultations
+      description: Get list of teleconsultation appointments
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [scheduled, in_progress, completed, cancelled]
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Teleconsultations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Teleconsultation'
+
+    post:
+      tags:
+        - Teleconsultation
+      summary: Schedule teleconsultation
+      description: Create new teleconsultation appointment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - providerId
+                - patientId
+                - scheduledAt
+                - type
+              properties:
+                providerId:
+                  type: string
+                  format: uuid
+                  description: Doctor or Pharmacist ID
+                patientId:
+                  type: string
+                  format: uuid
+                scheduledAt:
+                  type: string
+                  format: date-time
+                type:
+                  type: string
+                  enum: [consultation, follow_up, prescription_review]
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Teleconsultation scheduled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teleconsultation'
+
+  /teleconsultations/{consultationId}:
+    get:
+      tags:
+        - Teleconsultation
+      summary: Get teleconsultation by ID
+      parameters:
+        - in: path
+          name: consultationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Teleconsultation retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teleconsultation'
+
+  /teleconsultations/{consultationId}/start:
+    post:
+      tags:
+        - Teleconsultation
+      summary: Start teleconsultation
+      description: Begin video call session
+      parameters:
+        - in: path
+          name: consultationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                  videoToken:
+                    type: string
+                  audioToken:
+                    type: string
+
+  # Delivery Endpoints
+  /deliveries:
+    get:
+      tags:
+        - Deliveries
+      summary: List deliveries
+      description: Get list of delivery orders
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, assigned, in_transit, delivered, failed]
+        - in: query
+          name: deliveryPersonnelId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deliveries retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Delivery'
+
+    post:
+      tags:
+        - Deliveries
+      summary: Create delivery request
+      description: Create new delivery order (pharmacists only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderId
+                - patientId
+                - deliveryAddress
+              properties:
+                orderId:
+                  type: string
+                  format: uuid
+                patientId:
+                  type: string
+                  format: uuid
+                deliveryAddress:
+                  $ref: '#/components/schemas/Address'
+                specialHandling:
+                  type: array
+                  items:
+                    type: string
+                    enum: [cold_chain, controlled_substance, fragile, signature_required]
+                scheduledDelivery:
+                  type: string
+                  format: date-time
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Delivery created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+
+  /deliveries/{deliveryId}:
+    get:
+      tags:
+        - Deliveries
+      summary: Get delivery by ID
+      parameters:
+        - in: path
+          name: deliveryId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Delivery retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+
+    patch:
+      tags:
+        - Deliveries
+      summary: Update delivery status
+      parameters:
+        - in: path
+          name: deliveryId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [assigned, in_transit, delivered, failed]
+                location:
+                  $ref: '#/components/schemas/Location'
+                deliveredAt:
+                  type: string
+                  format: date-time
+                signature:
+                  type: string
+                  format: byte
+                  description: Base64 encoded signature image
+                photoProof:
+                  type: string
+                  format: byte
+                  description: Base64 encoded photo proof
+                failureReason:
+                  type: string
+      responses:
+        '200':
+          description: Delivery updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+
+  /deliveries/{deliveryId}/track:
+    get:
+      tags:
+        - Deliveries
+      summary: Track delivery in real-time
+      description: Get real-time delivery location and ETA
+      parameters:
+        - in: path
+          name: deliveryId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Delivery tracking information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deliveryId:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  currentLocation:
+                    $ref: '#/components/schemas/Location'
+                  estimatedArrival:
+                    type: string
+                    format: date-time
+                  deliveryPersonnel:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      phoneNumber:
+                        type: string
+
+  # Inventory Endpoints
+  /inventory:
+    get:
+      tags:
+        - Inventory
+      summary: List inventory items
+      description: Get pharmacy inventory (pharmacists only)
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: lowStock
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Inventory retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryItem'
+
+    post:
+      tags:
+        - Inventory
+      summary: Add inventory item
+      description: Add new item to inventory (pharmacists only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+      responses:
+        '201':
+          description: Inventory item added successfully
+
+  /inventory/{itemId}:
+    get:
+      tags:
+        - Inventory
+      summary: Get inventory item by ID
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Inventory item retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryItem'
+
+    put:
+      tags:
+        - Inventory
+      summary: Update inventory item
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+      responses:
+        '200':
+          description: Inventory item updated successfully
+
+  # Messaging Endpoints
+  /messages:
+    get:
+      tags:
+        - Messaging
+      summary: List conversations
+      description: Get all conversations for current user
+      responses:
+        '200':
+          description: Conversations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Conversation'
+
+    post:
+      tags:
+        - Messaging
+      summary: Send message
+      description: Send new message to user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipientId
+                - content
+              properties:
+                recipientId:
+                  type: string
+                  format: uuid
+                content:
+                  type: string
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                    format: uri
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+
+  /messages/{conversationId}:
+    get:
+      tags:
+        - Messaging
+      summary: Get conversation messages
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  # Health Records Endpoints
+  /health-records/{patientId}:
+    get:
+      tags:
+        - Health Records
+      summary: Get patient health records
+      description: Retrieve patient medical records (with proper authorization)
+      parameters:
+        - in: path
+          name: patientId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Health records retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthRecord'
+        '403':
+          description: Access denied - Proper authorization required
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: Token expiration time in seconds
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [patient, pharmacist, doctor, nurse, delivery]
+        phoneNumber:
+          type: string
+        profilePicture:
+          type: string
+          format: uri
+        licenseNumber:
+          type: string
+        verified:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Prescription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        pharmacistId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, validated, rejected, filled, delivered]
+        medications:
+          type: array
+          items:
+            type: object
+            properties:
+              drugName:
+                type: string
+              dosage:
+                type: string
+              frequency:
+                type: string
+              duration:
+                type: string
+              instructions:
+                type: string
+        validationNotes:
+          type: string
+        interactions:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        validatedAt:
+          type: string
+          format: date-time
+
+    Teleconsultation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        providerId:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, in_progress, completed, cancelled]
+        type:
+          type: string
+          enum: [consultation, follow_up, prescription_review]
+        duration:
+          type: integer
+          description: Duration in minutes
+        notes:
+          type: string
+        recordingUrl:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+
+    Delivery:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        pharmacyId:
+          type: string
+          format: uuid
+        deliveryPersonnelId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, assigned, in_transit, delivered, failed]
+        deliveryAddress:
+          $ref: '#/components/schemas/Address'
+        currentLocation:
+          $ref: '#/components/schemas/Location'
+        specialHandling:
+          type: array
+          items:
+            type: string
+        scheduledDelivery:
+          type: string
+          format: date-time
+        deliveredAt:
+          type: string
+          format: date-time
+        qrCode:
+          type: string
+        signature:
+          type: string
+          format: byte
+        photoProof:
+          type: string
+          format: byte
+        failureReason:
+          type: string
+        estimatedArrival:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        drugName:
+          type: string
+        genericName:
+          type: string
+        category:
+          type: string
+        quantity:
+          type: integer
+        unit:
+          type: string
+        minimumStock:
+          type: integer
+        expiryDate:
+          type: string
+          format: date
+        batchNumber:
+          type: string
+        qrCode:
+          type: string
+        price:
+          type: number
+          format: float
+        supplier:
+          type: string
+        storageRequirements:
+          type: string
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        lastMessage:
+          $ref: '#/components/schemas/Message'
+        unreadCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversationId:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        content:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+            format: uri
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    HealthRecord:
+      type: object
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        allergies:
+          type: array
+          items:
+            type: string
+        chronicConditions:
+          type: array
+          items:
+            type: string
+        currentMedications:
+          type: array
+          items:
+            type: object
+            properties:
+              drugName:
+                type: string
+              dosage:
+                type: string
+              startDate:
+                type: string
+                format: date
+        prescriptionHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/Prescription'
+        lastUpdated:
+          type: string
+          format: date-time
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        additionalInfo:
+          type: string
+
+    Location:
+      type: object
+      properties:
+        latitude:
+          type: number
+          format: float
+        longitude:
+          type: number
+          format: float
+        accuracy:
+          type: number
+          format: float
+        timestamp:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+        totalPages:
+          type: integer
+        totalItems:
+          type: integer
+        itemsPerPage:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
