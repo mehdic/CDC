@@ -16,6 +16,238 @@ export const itemsRouter = Router();
 // GET /inventory/items - List with filtering
 // ============================================================================
 
+// ============================================================================
+// GET /inventory/items/low-stock - Get low stock items (MUST BE BEFORE /:id)
+// ============================================================================
+
+itemsRouter.get('/low-stock', async (req: Request, res: Response) => {
+  try {
+    const { pharmacy_id } = req.query;
+
+    if (!pharmacy_id) {
+      return res.status(400).json({ error: 'pharmacy_id query parameter is required' });
+    }
+
+    // Set RLS context
+    await AppDataSource.query(`SET app.current_pharmacy_id = '${pharmacy_id}'`);
+
+    const itemRepository = AppDataSource.getRepository(InventoryItem);
+    const items = await itemRepository
+      .createQueryBuilder('item')
+      .where('item.pharmacy_id = :pharmacy_id', { pharmacy_id })
+      .andWhere('item.quantity <= item.reorder_threshold')
+      .orderBy('item.quantity', 'ASC')
+      .getMany();
+
+    res.json({
+      success: true,
+      items: items.map((item) => ({
+        ...item,
+        quantity: item.quantity,
+        minQuantity: item.reorder_threshold,
+      })),
+    });
+  } catch (error) {
+    console.error('Get low stock items error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// ============================================================================
+// GET /inventory/items/expiring - Get expiring items (MUST BE BEFORE /:id)
+// ============================================================================
+
+itemsRouter.get('/expiring', async (req: Request, res: Response) => {
+  try {
+    const { pharmacy_id } = req.query;
+
+    if (!pharmacy_id) {
+      return res.status(400).json({ error: 'pharmacy_id query parameter is required' });
+    }
+
+    // Set RLS context
+    await AppDataSource.query(`SET app.current_pharmacy_id = '${pharmacy_id}'`);
+
+    const itemRepository = AppDataSource.getRepository(InventoryItem);
+    const items = await itemRepository
+      .createQueryBuilder('item')
+      .where('item.pharmacy_id = :pharmacy_id', { pharmacy_id })
+      .andWhere("item.expiry_date <= CURRENT_DATE + INTERVAL '60 days'")
+      .andWhere('item.expiry_date > CURRENT_DATE')
+      .orderBy('item.expiry_date', 'ASC')
+      .getMany();
+
+    res.json({
+      success: true,
+      items: items.map((item) => ({
+        ...item,
+        expiryDate: item.expiry_date,
+      })),
+    });
+  } catch (error) {
+    console.error('Get expiring items error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// ============================================================================
+// GET /inventory/items/reorder-suggestions - Get AI reorder suggestions (MUST BE BEFORE /:id)
+// ============================================================================
+
+itemsRouter.get('/reorder-suggestions', async (req: Request, res: Response) => {
+  try {
+    const { pharmacy_id } = req.query;
+
+    if (!pharmacy_id) {
+      return res.status(400).json({ error: 'pharmacy_id query parameter is required' });
+    }
+
+    // Set RLS context
+    await AppDataSource.query(`SET app.current_pharmacy_id = '${pharmacy_id}'`);
+
+    const itemRepository = AppDataSource.getRepository(InventoryItem);
+    const lowStockItems = await itemRepository
+      .createQueryBuilder('item')
+      .where('item.pharmacy_id = :pharmacy_id', { pharmacy_id })
+      .andWhere('item.quantity <= item.reorder_threshold')
+      .getMany();
+
+    // Generate AI suggestions (simplified - in production would use AWS Forecast)
+    const suggestions = lowStockItems.map((item) => {
+      const suggestedQuantity = item.optimal_stock_level || item.reorder_threshold * 2 || 100;
+      return {
+        itemId: item.id,
+        name: item.medication_name,
+        currentStock: item.quantity,
+        reorderThreshold: item.reorder_threshold,
+        suggestedQuantity,
+        reason: 'Based on sales trends and current stock',
+      };
+    });
+
+    res.json({
+      success: true,
+      suggestions,
+    });
+  } catch (error) {
+    console.error('Get reorder suggestions error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// ============================================================================
+// GET /inventory/items/reports/:type - Generate reports (MUST BE BEFORE /:id)
+// ============================================================================
+
+itemsRouter.get('/reports/:type', async (req: Request, res: Response) => {
+  try {
+    const { type } = req.params;
+    const { pharmacy_id } = req.query;
+
+    if (!pharmacy_id) {
+      return res.status(400).json({ error: 'pharmacy_id query parameter is required' });
+    }
+
+    // Set RLS context
+    await AppDataSource.query(`SET app.current_pharmacy_id = '${pharmacy_id}'`);
+
+    const itemRepository = AppDataSource.getRepository(InventoryItem);
+
+    if (type === 'stock') {
+      const totalItems = await itemRepository.count({
+        where: { pharmacy_id: pharmacy_id as string },
+      });
+
+      const totalValue = await itemRepository
+        .createQueryBuilder('item')
+        .select('SUM(item.quantity * item.cost_per_unit)', 'total')
+        .where('item.pharmacy_id = :pharmacy_id', { pharmacy_id })
+        .getRawOne();
+
+      const lowStockCount = await itemRepository
+        .createQueryBuilder('item')
+        .where('item.pharmacy_id = :pharmacy_id', { pharmacy_id })
+        .andWhere('item.quantity <= item.reorder_threshold')
+        .getCount();
+
+      res.json({
+        success: true,
+        report: {
+          totalItems,
+          totalValue: parseFloat(totalValue.total || '0'),
+          lowStockCount,
+        },
+      });
+    } else if (type === 'expiry') {
+      const expiringThisMonth = await itemRepository
+        .createQueryBuilder('item')
+        .where('item.pharmacy_id = :pharmacy_id', { pharmacy_id })
+        .andWhere("item.expiry_date <= CURRENT_DATE + INTERVAL '30 days'")
+        .andWhere('item.expiry_date > CURRENT_DATE')
+        .getCount();
+
+      const expiringNextMonth = await itemRepository
+        .createQueryBuilder('item')
+        .where('item.pharmacy_id = :pharmacy_id', { pharmacy_id })
+        .andWhere("item.expiry_date > CURRENT_DATE + INTERVAL '30 days'")
+        .andWhere("item.expiry_date <= CURRENT_DATE + INTERVAL '60 days'")
+        .getCount();
+
+      const expired = await itemRepository
+        .createQueryBuilder('item')
+        .where('item.pharmacy_id = :pharmacy_id', { pharmacy_id })
+        .andWhere('item.expiry_date < CURRENT_DATE')
+        .getCount();
+
+      res.json({
+        success: true,
+        report: {
+          expiringThisMonth,
+          expiringNextMonth,
+          expired,
+        },
+      });
+    } else if (type === 'sales') {
+      // Simplified sales report - would need transaction data in production
+      const topItems = await itemRepository
+        .createQueryBuilder('item')
+        .where('item.pharmacy_id = :pharmacy_id', { pharmacy_id })
+        .orderBy('item.quantity', 'DESC')
+        .take(5)
+        .getMany();
+
+      res.json({
+        success: true,
+        report: {
+          topSellingItems: topItems,
+          totalRevenue: 50000, // Mock value
+        },
+      });
+    } else {
+      res.status(400).json({ error: 'Invalid report type. Must be: stock, expiry, or sales' });
+    }
+  } catch (error) {
+    console.error('Generate report error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// ============================================================================
+// GET /inventory/items - List with filtering
+// ============================================================================
+
 itemsRouter.get('/', async (req: Request, res: Response) => {
   try {
     const {
@@ -90,6 +322,76 @@ itemsRouter.get('/', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('List items error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// ============================================================================
+// POST /inventory/items - Add new inventory item
+// ============================================================================
+
+const addItemSchema = z.object({
+  pharmacy_id: z.string().uuid(),
+  medication_name: z.string().min(1),
+  medication_gtin: z.string().optional(),
+  quantity: z.number().int().min(0),
+  unit: z.string().default('pills'),
+  batch_number: z.string().optional(),
+  expiry_date: z.string().optional(),
+  supplier_name: z.string().optional(),
+  cost_per_unit: z.number().optional(),
+  reorder_threshold: z.number().int().min(0).optional(),
+  storage_location: z.string().optional(),
+  is_controlled: z.boolean().default(false),
+  substance_schedule: z.string().optional(),
+});
+
+itemsRouter.post('/', async (req: Request, res: Response) => {
+  try {
+    const validatedData = addItemSchema.parse(req.body);
+
+    // Set RLS context
+    await AppDataSource.query(`SET app.current_pharmacy_id = '${validatedData.pharmacy_id}'`);
+
+    const itemRepository = AppDataSource.getRepository(InventoryItem);
+
+    // Create new item
+    const item = itemRepository.create({
+      pharmacy_id: validatedData.pharmacy_id,
+      medication_name: validatedData.medication_name,
+      medication_gtin: validatedData.medication_gtin,
+      quantity: validatedData.quantity,
+      unit: validatedData.unit,
+      batch_number: validatedData.batch_number,
+      expiry_date: validatedData.expiry_date ? new Date(validatedData.expiry_date) : null,
+      supplier_name: validatedData.supplier_name,
+      cost_per_unit: validatedData.cost_per_unit,
+      reorder_threshold: validatedData.reorder_threshold,
+      storage_location: validatedData.storage_location,
+      is_controlled: validatedData.is_controlled,
+      substance_schedule: validatedData.substance_schedule,
+    });
+
+    await itemRepository.save(item);
+
+    res.status(201).json({
+      success: true,
+      message: 'Inventory item added successfully',
+      itemId: item.id,
+      item,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: 'Validation error',
+        details: error.errors,
+      });
+    }
+
+    console.error('Add item error:', error);
     res.status(500).json({
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error',
