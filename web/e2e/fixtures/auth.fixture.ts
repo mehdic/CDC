@@ -40,6 +40,13 @@ export const testUsers: Record<string, TestUser> = {
     firstName: 'Sophie',
     lastName: 'Bernard',
   },
+  nurse: {
+    email: 'nurse@test.metapharm.ch',
+    password: 'TestPass123!',
+    role: 'nurse',
+    firstName: 'Caroline',
+    lastName: 'Leclerc',
+  },
 };
 
 /**
@@ -49,6 +56,7 @@ type AuthFixtures = {
   loginPage: LoginPage;
   authenticatedPage: Page;
   pharmacistPage: Page;
+  nursePage: Page;
 };
 
 /**
@@ -115,6 +123,34 @@ export const test = base.extend<AuthFixtures>({
 
       // Wait for pharmacist dashboard
       await page.waitForURL(/.*\/(?:dashboard|prescriptions|inventory)/, {
+        timeout: 10000,
+      });
+    }
+
+    await use(page);
+
+    // Logout after test
+    await clearAuth(page);
+  },
+
+  /**
+   * Nurse authenticated page - specifically for nurse role
+   *
+   * Uses storageState if available, otherwise falls back to manual login
+   */
+  nursePage: async ({ page }, use) => {
+    // Navigate to app first to ensure context is established
+    await page.goto('/');
+
+    // Check if storageState was loaded
+    const hasAuth = await page.evaluate(() => localStorage.getItem('auth_token') !== null).catch(() => false);
+
+    if (!hasAuth) {
+      // Login with real backend
+      await login(page, testUsers.nurse);
+
+      // Wait for nurse dashboard
+      await page.waitForURL(/.*\/nurse\/(?:dashboard|patients|orders|messaging)/, {
         timeout: 10000,
       });
     }

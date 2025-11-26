@@ -15,3 +15,4 @@ export { DeliveryPage } from './DeliveryPage';
 export { MasterAccountPage } from './MasterAccountPage';
 export { PharmacyPageManagement } from './PharmacyPageManagement';
 export { EcommercePage } from './EcommercePage';
+export { NursePage } from './NursePage';
