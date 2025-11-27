@@ -110,7 +110,7 @@ describe('FDBService', () => {
 
       expect(result.hasInteractions).toBe(true);
       expect(result.interactions[0].severity).toBe(DrugInteractionSeverity.CONTRAINDICATED);
-      expect(result.interactions[0].recommendation).toContain('Do NOT use together');
+      expect(result.interactions[0].recommendation).toContain('DO NOT use together');
     });
 
     it('should return no interactions for medications without known interactions', async () => {

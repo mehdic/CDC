@@ -160,6 +160,165 @@ export class FDBService {
   }
 
   /**
+   * Look up drug information by name, NDC, or RxCUI
+   * Searches comprehensive drug database
+   * @param query Drug name, NDC code, or RxCUI
+   * @param queryType Type of query ('name', 'ndc', 'rxcui', or 'auto')
+   * @returns Drug information or null if not found
+   */
+  async lookupDrug(
+    query: string,
+    queryType: 'name' | 'ndc' | 'rxcui' | 'atc' | 'auto' = 'auto'
+  ): Promise<any | null> {
+    const { DRUG_DATABASE } = require('./drug-database');
+
+    const queryLower = query.toLowerCase().trim();
+
+    // Auto-detect query type if not specified
+    if (queryType === 'auto') {
+      // NDC codes are typically 10-11 digits with hyphens
+      if (/^\d{5}-\d{3,4}/.test(query)) {
+        queryType = 'ndc';
+      }
+      // RxCUI codes are typically 4-7 digits
+      else if (/^\d{4,7}$/.test(query)) {
+        queryType = 'rxcui';
+      }
+      // ATC codes are typically alphanumeric like "C09AA03"
+      else if (/^[A-Z]\d{2}[A-Z]{2}\d{2}$/i.test(query)) {
+        queryType = 'atc';
+      }
+      // Default to name search
+      else {
+        queryType = 'name';
+      }
+    }
+
+    // Search by specified field
+    for (const [key, drugInfo] of Object.entries(DRUG_DATABASE)) {
+      const drug = drugInfo as any;
+
+      switch (queryType) {
+        case 'name':
+          // Check generic name, brand names, and key
+          if (
+            drug.name?.toLowerCase() === queryLower ||
+            drug.genericName?.toLowerCase() === queryLower ||
+            key.toLowerCase() === queryLower ||
+            drug.brandNames?.some((brand: string) => brand.toLowerCase() === queryLower)
+          ) {
+            return { ...drug, matchedBy: 'name' };
+          }
+          break;
+
+        case 'ndc':
+          if (drug.ndcCode === query) {
+            return { ...drug, matchedBy: 'ndc' };
+          }
+          break;
+
+        case 'rxcui':
+          if (drug.rxcui === query) {
+            return { ...drug, matchedBy: 'rxcui' };
+          }
+          break;
+
+        case 'atc':
+          if (drug.atcCode?.toUpperCase() === query.toUpperCase()) {
+            return { ...drug, matchedBy: 'atc' };
+          }
+          break;
+      }
+    }
+
+    // Not found - return null
+    return null;
+  }
+
+  /**
+   * Search for drugs matching a partial query
+   * Useful for autocomplete/typeahead functionality
+   * @param query Partial drug name
+   * @param limit Maximum number of results to return
+   * @returns Array of matching drug information
+   */
+  async searchDrugs(query: string, limit: number = 10): Promise<any[]> {
+    const { DRUG_DATABASE } = require('./drug-database');
+
+    const queryLower = query.toLowerCase().trim();
+    const results: any[] = [];
+
+    // Search all drugs
+    for (const [key, drugInfo] of Object.entries(DRUG_DATABASE)) {
+      const drug = drugInfo as any;
+
+      // Check if query matches name, generic name, or brand names
+      const matchesName =
+        drug.name?.toLowerCase().includes(queryLower) ||
+        drug.genericName?.toLowerCase().includes(queryLower) ||
+        key.toLowerCase().includes(queryLower);
+
+      const matchesBrand = drug.brandNames?.some((brand: string) =>
+        brand.toLowerCase().includes(queryLower)
+      );
+
+      if (matchesName || matchesBrand) {
+        results.push({
+          ...drug,
+          relevance: this.calculateRelevance(query, drug),
+        });
+
+        // Stop if we have enough results
+        if (results.length >= limit * 2) break; // Get extra for sorting
+      }
+    }
+
+    // Sort by relevance and return top results
+    return results
+      .sort((a, b) => b.relevance - a.relevance)
+      .slice(0, limit)
+      .map(({ relevance, ...drug }) => drug); // Remove relevance score
+  }
+
+  /**
+   * Calculate search relevance score for autocomplete
+   * Higher score = better match
+   * @param query Search query
+   * @param drug Drug info object
+   * @returns Relevance score
+   */
+  private calculateRelevance(query: string, drug: any): number {
+    const queryLower = query.toLowerCase();
+    let score = 0;
+
+    // Exact match on generic name or primary name
+    if (drug.name?.toLowerCase() === queryLower || drug.genericName?.toLowerCase() === queryLower) {
+      score += 100;
+    }
+    // Starts with query
+    else if (drug.name?.toLowerCase().startsWith(queryLower) || drug.genericName?.toLowerCase().startsWith(queryLower)) {
+      score += 50;
+    }
+    // Contains query
+    else if (drug.name?.toLowerCase().includes(queryLower) || drug.genericName?.toLowerCase().includes(queryLower)) {
+      score += 25;
+    }
+
+    // Bonus for brand name matches
+    if (drug.brandNames?.some((brand: string) => brand.toLowerCase().startsWith(queryLower))) {
+      score += 20;
+    }
+
+    // Bonus for common categories (prioritize frequently used drugs)
+    const commonCategories = ['Antibiotic', 'Analgesic', 'Antiplatelet', 'Statin', 'NSAID'];
+    if (commonCategories.includes(drug.category)) {
+      score += 10;
+    }
+
+    return score;
+  }
+
+  /**
    * Check drug interactions for a list of medications
    * Automatically falls back to mock data if FDB API is unavailable
    * @param medications Array of medication names
@@ -408,75 +567,44 @@ export class FDBService {
 
   /**
    * Mock implementation for drug interaction checking
-   * Provides sample data for testing purposes
+   * Uses comprehensive drug database with 100+ drugs and interactions
+   * Provides extensive sample data for testing purposes
    * @param medications Array of medication names
    * @returns Mock DrugInteractionResult
    */
   private mockCheckDrugInteractions(medications: string[]): DrugInteractionResult {
     const interactions: DrugInteraction[] = [];
 
-    // Mock data: Common drug interactions
-    const knownInteractions: Record<string, Record<string, Omit<DrugInteraction, 'drug1' | 'drug2'>>> = {
-      warfarin: {
-        aspirin: {
-          severity: DrugInteractionSeverity.MAJOR,
-          description: 'Increased risk of bleeding when warfarin is combined with aspirin',
-          recommendation: 'Monitor INR closely. Consider alternative antiplatelet therapy or adjust warfarin dose.',
-        },
-        ibuprofen: {
-          severity: DrugInteractionSeverity.MAJOR,
-          description: 'NSAIDs may increase bleeding risk when combined with warfarin',
-          recommendation: 'Avoid concomitant use if possible. If necessary, monitor INR and watch for signs of bleeding.',
-        },
-      },
-      metformin: {
-        contrast: {
-          severity: DrugInteractionSeverity.MAJOR,
-          description: 'Iodinated contrast media may increase risk of lactic acidosis with metformin',
-          recommendation: 'Discontinue metformin before contrast administration and restart 48 hours after if renal function is normal.',
-        },
-      },
-      lisinopril: {
-        potassium: {
-          severity: DrugInteractionSeverity.MODERATE,
-          description: 'ACE inhibitors may increase serum potassium levels',
-          recommendation: 'Monitor serum potassium levels. Avoid potassium supplements unless medically necessary.',
-        },
-      },
-      simvastatin: {
-        clarithromycin: {
-          severity: DrugInteractionSeverity.CONTRAINDICATED,
-          description: 'Macrolide antibiotics significantly increase simvastatin levels, increasing risk of rhabdomyolysis',
-          recommendation: 'Do NOT use together. Temporarily discontinue simvastatin during clarithromycin therapy.',
-        },
-      },
-      digoxin: {
-        furosemide: {
-          severity: DrugInteractionSeverity.MODERATE,
-          description: 'Loop diuretics may cause hypokalemia, increasing digoxin toxicity risk',
-          recommendation: 'Monitor serum potassium and digoxin levels. Supplement potassium if needed.',
-        },
-      },
-    };
+    // Import comprehensive interaction database
+    const { INTERACTION_DATABASE } = require('./drug-database');
 
-    // Check all pairs of medications
-    for (let i = 0; i < medications.length; i++) {
-      for (let j = i + 1; j < medications.length; j++) {
-        const med1 = medications[i].toLowerCase().trim();
-        const med2 = medications[j].toLowerCase().trim();
+    // Normalize medication names for comparison
+    const normalizedMeds = medications.map(med => this.normalizeDrugName(med));
 
-        // Check if interaction exists in mock database
-        if (knownInteractions[med1]?.[med2]) {
+    // Check all pairs of medications against the comprehensive database
+    for (let i = 0; i < normalizedMeds.length; i++) {
+      for (let j = i + 1; j < normalizedMeds.length; j++) {
+        const med1 = normalizedMeds[i];
+        const med2 = normalizedMeds[j];
+
+        // Search interaction database for this pair
+        const foundInteraction = INTERACTION_DATABASE.find((interaction: any) => {
+          const int1 = this.normalizeDrugName(interaction.drug1);
+          const int2 = this.normalizeDrugName(interaction.drug2);
+
+          return (
+            (int1 === med1 && int2 === med2) ||
+            (int1 === med2 && int2 === med1)
+          );
+        });
+
+        if (foundInteraction) {
           interactions.push({
             drug1: medications[i],
             drug2: medications[j],
-            ...knownInteractions[med1][med2],
-          });
-        } else if (knownInteractions[med2]?.[med1]) {
-          interactions.push({
-            drug1: medications[j],
-            drug2: medications[i],
-            ...knownInteractions[med2][med1],
+            severity: foundInteraction.severity,
+            description: foundInteraction.description,
+            recommendation: foundInteraction.recommendation,
           });
         }
       }
@@ -487,6 +615,19 @@ export class FDBService {
       interactions,
       checkedAt: new Date(),
     };
+  }
+
+  /**
+   * Normalize drug name for comparison
+   * Handles variations in drug naming (generic, brand, case, spacing)
+   * @param drugName Drug name to normalize
+   * @returns Normalized drug name
+   */
+  private normalizeDrugName(drugName: string): string {
+    return drugName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]/g, ''); // Remove non-alphanumeric characters
   }
 
   /**
