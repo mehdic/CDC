@@ -71,7 +71,7 @@ export const OrderHistory: React.FC = () => {
       : ordersData?.orders || [];
 
   // Get status color
-  const getStatusColor = (status: OrderStatus) => {
+  const getStatusColor = (status: OrderStatus): 'success' | 'error' | 'warning' | 'info' | 'default' => {
     switch (status) {
       case OrderStatus.COMPLETED:
         return 'success';
@@ -206,7 +206,7 @@ export const OrderHistory: React.FC = () => {
                       <Chip
                         icon={getStatusIcon(order.status)}
                         label={order.status.replace(/_/g, ' ')}
-                        color={getStatusColor(order.status) as any}
+                        color={getStatusColor(order.status)}
                         data-testid={`order-status-${order.id}`}
                       />
                     </Grid>

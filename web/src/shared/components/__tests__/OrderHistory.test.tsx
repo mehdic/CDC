@@ -215,15 +215,17 @@ describe('OrderHistory Component', () => {
 
       render(<OrderHistory />);
 
-      const statusFilter = screen.getByTestId('status-filter') as HTMLSelectElement;
-      await userEvent.selectOption(statusFilter, OrderStatus.COMPLETED);
+      const statusFilter = screen.getByTestId('status-filter').querySelector('select') as HTMLSelectElement;
+      fireEvent.change(statusFilter, { target: { value: OrderStatus.COMPLETED } });
 
-      // Verify filter was applied
-      expect(useOrdersHook.useOrders).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: [OrderStatus.COMPLETED],
-        })
-      );
+      await waitFor(() => {
+        // Verify filter was applied
+        expect(useOrdersHook.useOrders).toHaveBeenCalledWith(
+          expect.objectContaining({
+            status: [OrderStatus.COMPLETED],
+          })
+        );
+      });
     });
 
     it('should search orders by query', async () => {
@@ -235,7 +237,7 @@ describe('OrderHistory Component', () => {
 
       render(<OrderHistory />);
 
-      const searchInput = screen.getByTestId('search-input') as HTMLInputElement;
+      const searchInput = screen.getByTestId('search-input').querySelector('input') as HTMLInputElement;
       await userEvent.type(searchInput, 'Paracétamol');
 
       await waitFor(() => {
@@ -253,15 +255,17 @@ describe('OrderHistory Component', () => {
 
       render(<OrderHistory />);
 
-      const statusFilter = screen.getByTestId('status-filter') as HTMLSelectElement;
-      await userEvent.selectOption(statusFilter, OrderStatus.CONFIRMED);
+      const statusFilter = screen.getByTestId('status-filter').querySelector('select') as HTMLSelectElement;
+      fireEvent.change(statusFilter, { target: { value: OrderStatus.CONFIRMED } });
 
-      // Verify the hook was called with offset: 0 (page 1)
-      expect(useOrdersHook.useOrders).toHaveBeenCalledWith(
-        expect.objectContaining({
-          offset: 0,
-        })
-      );
+      await waitFor(() => {
+        // Verify the hook was called with offset: 0 (page 1)
+        expect(useOrdersHook.useOrders).toHaveBeenCalledWith(
+          expect.objectContaining({
+            offset: 0,
+          })
+        );
+      });
     });
   });
 
@@ -337,9 +341,9 @@ describe('OrderHistory Component', () => {
     it('should display order creation date', () => {
       render(<OrderHistory />);
 
-      // Date should be formatted as per locale
+      // Date should be formatted as per locale (Swiss format)
       const orderCards = screen.getAllByTestId(/^order-order-/);
-      expect(orderCards[0]).toHaveTextContent(/nov/i);
+      expect(orderCards[0]).toHaveTextContent(/20\.11\.2025|11\/20\/2025/i);
     });
   });
 
