@@ -3,7 +3,7 @@
  * Tests for core scanner service and camera provider abstraction
  */
 
-import { QRScannerService, QRScanResult } from '../qrScannerService';
+import { QRScannerService } from '../qrScannerService';
 import { MockCameraProvider } from '../MockCameraProvider';
 
 describe('QRScannerService', () => {

@@ -5,7 +5,7 @@
  * Uses service-based architecture for camera management
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -19,15 +19,15 @@ import {
   TextField,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { QRScannerService } from '../../../../shared/services/qrScannerService';
+import { QRScannerService, QRScanResult } from '../../../../shared/services/qrScannerService';
 import { Html5QrcodeCameraProvider } from '../../../../shared/services/Html5QrcodeProvider';
-import { InventoryScannerService } from '../../../../shared/services/inventoryScannerService';
+import { InventoryScannerService, ScanResultData } from '../../../../shared/services/inventoryScannerService';
 import { getUserData } from '../../../../shared/services/authService';
 
 interface QRScannerDialogProps {
   open: boolean;
   onClose: () => void;
-  onScan: (data: Record<string, unknown>) => void;
+  onScan: (data: ScanResultData | undefined) => void;
 }
 
 export function QRScannerDialog({ open, onClose, onScan }: QRScannerDialogProps) {
@@ -115,7 +115,7 @@ export function QRScannerDialog({ open, onClose, onScan }: QRScannerDialogProps)
     setScanning(false);
   };
 
-  const handleScanSuccess = async (result: Record<string, unknown>) => {
+  const handleScanSuccess = async (result: QRScanResult | Record<string, unknown>) => {
     setProcessing(true);
 
     try {
@@ -123,8 +123,16 @@ export function QRScannerDialog({ open, onClose, onScan }: QRScannerDialogProps)
         throw new Error('Inventory scanner not initialized');
       }
 
+      // Convert result to QRScanResult if needed
+      const scanResult: QRScanResult = {
+        code: (result.code as string) || '',
+        format: (result.format as string) || 'UNKNOWN',
+        timestamp: (result.timestamp as number) || Date.now(),
+        rawResult: result as Record<string, unknown>,
+      };
+
       // Validate QR code
-      const validation = inventoryScannerRef.current.validateQRCode(result.code);
+      const validation = inventoryScannerRef.current.validateQRCode(scanResult.code);
       if (!validation.valid) {
         enqueueSnackbar(validation.error || 'Invalid QR code', { variant: 'error' });
         setProcessing(false);
@@ -132,7 +140,7 @@ export function QRScannerDialog({ open, onClose, onScan }: QRScannerDialogProps)
       }
 
       // Process the scan
-      const scanResponse = await inventoryScannerRef.current.processScan(result);
+      const scanResponse = await inventoryScannerRef.current.processScan(scanResult);
 
       if (scanResponse.success) {
         enqueueSnackbar('QR Code scanned successfully', { variant: 'success' });

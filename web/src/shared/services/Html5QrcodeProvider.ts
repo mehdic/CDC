@@ -4,7 +4,7 @@
  * Provides real camera-based QR code scanning
  */
 
-import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
+import { Html5QrcodeScanner, Html5QrcodeScanType, Html5QrcodeSupportedFormats, Html5QrcodeResult } from 'html5-qrcode';
 import { ICameraProvider, QRScannerConfig, QRScanResult } from './qrScannerService';
 
 export class Html5QrcodeCameraProvider implements ICameraProvider {
@@ -18,6 +18,7 @@ export class Html5QrcodeCameraProvider implements ICameraProvider {
     // Clean up existing scanner if any
     await this.clear();
 
+    // Store container ID for cleanup purposes
     this.containerId = containerId;
 
     // Create new scanner
@@ -32,15 +33,15 @@ export class Html5QrcodeCameraProvider implements ICameraProvider {
         showZoomSliderIfSupported: config.showZoom,
         // Support multiple barcode formats
         formatsToSupport: [
-          'QR_CODE',
-          'CODE_128',
-          'CODE_39',
-          'EAN_13',
-          'EAN_8',
-          'UPC_A',
-          'UPC_E',
-          'AZTEC',
-          'DATA_MATRIX',
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.AZTEC,
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
         ],
       },
       false // verbose mode
@@ -54,12 +55,12 @@ export class Html5QrcodeCameraProvider implements ICameraProvider {
 
     return new Promise((resolve) => {
       this.scanner!.render(
-        (decodedText: string, decodedResult: Record<string, unknown>) => {
+        (decodedText: string, decodedResult: Html5QrcodeResult) => {
           this.handleScanSuccess(decodedText, decodedResult);
           resolve();
         },
-        (error: unknown) => {
-          this.handleScanError(error);
+        (errorMessage: string) => {
+          this.handleScanError(errorMessage);
         }
       );
     });
@@ -88,7 +89,10 @@ export class Html5QrcodeCameraProvider implements ICameraProvider {
       console.warn('Error clearing scanner:', error);
     } finally {
       this.scanner = null;
-      this.containerId = null;
+      // Reset container ID tracking
+      if (this.containerId) {
+        this.containerId = null;
+      }
     }
   }
 
@@ -149,7 +153,7 @@ export class Html5QrcodeCameraProvider implements ICameraProvider {
   /**
    * Handle successful scan
    */
-  private handleScanSuccess(decodedText: string, decodedResult: Record<string, unknown>): void {
+  private handleScanSuccess(decodedText: string, decodedResult: Html5QrcodeResult): void {
     if (!this.onScanCallback) {
       return;
     }
@@ -158,7 +162,7 @@ export class Html5QrcodeCameraProvider implements ICameraProvider {
       code: decodedText,
       format: decodedResult?.result?.format?.formatName || 'UNKNOWN',
       timestamp: Date.now(),
-      rawResult: decodedResult,
+      rawResult: decodedResult as unknown as Record<string, unknown>,
     };
 
     this.onScanCallback(result);
@@ -176,7 +180,7 @@ export class Html5QrcodeCameraProvider implements ICameraProvider {
    */
   private handleScanError(error: unknown): void {
     // Only report non-NotFoundException errors to avoid spam
-    if (error && !(error as Record<string, unknown>).includes?.('NotFoundException')) {
+    if (error && typeof error === 'string' && !error.includes('NotFoundException')) {
       if (this.onErrorCallback) {
         this.onErrorCallback(error);
       }

@@ -4,7 +4,6 @@
  */
 
 import { MockCameraProvider } from '../MockCameraProvider';
-import { QRScanResult } from '../qrScannerService';
 
 describe('MockCameraProvider', () => {
   let provider: MockCameraProvider;
