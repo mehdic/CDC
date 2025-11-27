@@ -4,7 +4,7 @@
  * T3-035: Cart Frontend Components
  */
 
-import { useApiMutation, useFetchList, useFetchItem } from './useApi';
+import { useApiMutation, useFetchList } from './useApi';
 import { Product } from './useProducts';
 
 // ============================================================================
@@ -115,7 +115,7 @@ export function useApplyDiscountCode() {
  * Clear cart
  */
 export function useClearCart() {
-  return useApiMutation<CartResponse, {}>('/cart/clear', {
+  return useApiMutation<CartResponse, Record<string, never>>('/cart/clear', {
     method: 'DELETE',
   });
 }
