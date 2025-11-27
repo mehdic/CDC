@@ -17,6 +17,7 @@ import {
 } from 'typeorm';
 import { Pharmacy } from './Pharmacy';
 import { AuditTrailEntry } from './AuditTrailEntry';
+import { Cart } from './Cart';
 
 export enum UserRole {
   PHARMACIST = 'pharmacist',
@@ -138,6 +139,9 @@ export class User {
 
   @OneToMany(() => AuditTrailEntry, (auditEntry) => auditEntry.user)
   audit_trail_entries: AuditTrailEntry[];
+
+  @OneToMany(() => Cart, (cart) => cart.user)
+  carts: Cart[];
 
   // TODO: Add relationships for Prescription, Teleconsultation, etc. in later migrations
 

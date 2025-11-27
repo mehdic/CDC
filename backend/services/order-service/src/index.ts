@@ -18,8 +18,11 @@ import { Order } from '../../../shared/models/Order';
 import { User } from '../../../shared/models/User';
 import { Pharmacy } from '../../../shared/models/Pharmacy';
 import { AuditTrailEntry } from '../../../shared/models/AuditTrailEntry';
+import { Cart } from '../../../shared/models/Cart';
+import { CartItem } from '../../../shared/models/CartItem';
 import { authenticateJWT } from '../../../shared/middleware/auth';
 import ordersRouter from './routes/orders';
+import cartRouter from './routes/cart';
 
 const app = express();
 const PORT = process.env.ORDER_SERVICE_PORT || 4007;
@@ -42,7 +45,7 @@ const dataSource = new DataSource(
         // Use SQLite in-memory database for testing
         type: 'better-sqlite3',
         database: ':memory:',
-        entities: [Order, User, Pharmacy, AuditTrailEntry],
+        entities: [Order, User, Pharmacy, AuditTrailEntry, Cart, CartItem],
         synchronize: true, // Auto-create tables in test mode
         logging: false,
         dropSchema: true, // Clean database for each test run
@@ -51,7 +54,7 @@ const dataSource = new DataSource(
         // Use PostgreSQL for development/production
         type: 'postgres',
         url: process.env.DATABASE_URL,
-        entities: [Order, User, Pharmacy, AuditTrailEntry],
+        entities: [Order, User, Pharmacy, AuditTrailEntry, Cart, CartItem],
         synchronize: false, // Use migrations instead in production
         logging: process.env.NODE_ENV === 'development',
       }
@@ -93,6 +96,12 @@ app.get('/health', (req: Request, res: Response) => {
 // ============================================================================
 
 app.use('/orders', authenticateJWT as RequestHandler, ordersRouter);
+
+// ============================================================================
+// Cart Routes with Authentication
+// ============================================================================
+
+app.use('/cart', authenticateJWT as RequestHandler, cartRouter);
 
 // ============================================================================
 // Error Handling
