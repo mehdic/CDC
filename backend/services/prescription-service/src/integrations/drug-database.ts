@@ -1200,6 +1200,26 @@ export const DRUG_DATABASE: Record<string, DrugInfo> = {
     category: 'Beta Blocker',
     commonUses: 'Hypertension, angina, migraine prevention',
   },
+  theophylline: {
+    name: 'theophylline',
+    genericName: 'theophylline',
+    brandNames: ['Theo-24', 'Uniphyl'],
+    ndcCode: '00591-0372',
+    rxcui: '10438',
+    atcCode: 'R03DA04',
+    category: 'Bronchodilator',
+    commonUses: 'Asthma, COPD, bronchospasm',
+  },
+  lithium: {
+    name: 'lithium',
+    genericName: 'lithium carbonate',
+    brandNames: ['Lithobid', 'Eskalith'],
+    ndcCode: '00298-0605',
+    rxcui: '6448',
+    atcCode: 'N05AN01',
+    category: 'Mood Stabilizer',
+    commonUses: 'Bipolar disorder, depression, mania',
+  },
 };
 
 /**
