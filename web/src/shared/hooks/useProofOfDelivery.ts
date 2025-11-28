@@ -77,9 +77,21 @@ export function useProofOfDelivery() {
           throw new Error(data.message || 'Failed to upload proof');
         }
 
-        // Fetch and cache the created proof
-        const proofData = await fetchProof(data.proofId);
-        return proofData;
+        // Fetch proof by ID (inline to avoid circular dependency)
+        const proofResponse = await fetch(`${API_BASE_URL}/proofs/${data.proofId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (proofResponse.ok) {
+          const proofData: ProofOfDelivery = await proofResponse.json();
+          setProof(proofData);
+          return proofData;
+        }
+
+        return null;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to upload proof';
         setError(errorMessage);
@@ -162,7 +174,7 @@ export function useProofOfDelivery() {
         setLoading(false);
       }
     },
-    []
+    [] // No external dependencies needed
   );
 
   return {

@@ -28,7 +28,6 @@ interface SignatureCaptureProps {
 export const SignatureCapture: React.FC<SignatureCaptureProps> = ({
   onSignatureCapture,
   onCancel,
-  isRequired = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);

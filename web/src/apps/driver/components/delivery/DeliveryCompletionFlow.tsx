@@ -15,9 +15,6 @@ import {
   Button,
   Box,
   Typography,
-  Stepper,
-  Step,
-  StepLabel,
   TextField,
   Alert,
   CircularProgress,
@@ -25,9 +22,8 @@ import {
   RadioGroup,
   FormControlLabel,
   FormControl,
-  FormLabel,
 } from '@mui/material';
-import { Delivery, DeliveryStatus } from '../../../../shared/hooks/useDelivery';
+import { Delivery } from '../../../../shared/hooks/useDelivery';
 import { SignatureCapture } from './SignatureCapture';
 import { PhotoCapture } from './PhotoCapture';
 import { SignatureData, PhotoData, DeliveryCompletionPayload } from '../../../../shared/types/proofOfDelivery';
@@ -53,15 +49,6 @@ interface CompletionState {
     accuracy: number;
   };
 }
-
-const STEPS: Record<CompletionStep, string> = {
-  recipient: 'Recipient Name',
-  'proof-type': 'Proof Type',
-  signature: 'Signature',
-  photo: 'Photo',
-  notes: 'Additional Notes',
-  review: 'Review & Confirm',
-};
 
 export const DeliveryCompletionFlow: React.FC<DeliveryCompletionFlowProps> = ({
   open,
@@ -264,7 +251,7 @@ export const DeliveryCompletionFlow: React.FC<DeliveryCompletionFlowProps> = ({
             <FormControl fullWidth>
               <RadioGroup
                 value={state.proofType}
-                onChange={(e) => setState({ ...state, proofType: e.target.value as any })}
+                onChange={(e) => setState({ ...state, proofType: e.target.value as 'signature' | 'photo' | 'both' })}
               >
                 <FormControlLabel
                   value="signature"

@@ -69,7 +69,7 @@ export const ProofOfDeliveryDisplay: React.FC<ProofOfDeliveryDisplayProps> = ({
           <Chip
             icon={<CheckIcon />}
             label={proof.status.charAt(0).toUpperCase() + proof.status.slice(1)}
-            color={getStatusColor(proof.status) as any}
+            color={getStatusColor(proof.status) as 'default' | 'error' | 'info' | 'success' | 'warning' | 'primary' | 'secondary'}
           />
         </Box>
       </DialogTitle>

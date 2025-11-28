@@ -23,7 +23,6 @@ import {
   TableHead,
   TableRow,
   Chip,
-  IconButton,
   Tooltip,
 } from '@mui/material';
 import {
@@ -36,7 +35,7 @@ import { useDeliveryData, Delivery, DeliveryStatus } from '../../../shared/hooks
 import { useProofOfDelivery } from '../../../shared/hooks/useProofOfDelivery';
 import { DeliveryCompletionFlow } from '../components/delivery/DeliveryCompletionFlow';
 import { ProofOfDeliveryDisplay } from '../components/delivery/ProofOfDeliveryDisplay';
-import { DeliveryCompletionPayload, ProofOfDelivery } from '../../../shared/types/proofOfDelivery';
+import { DeliveryCompletionPayload } from '../../../shared/types/proofOfDelivery';
 
 export const DeliveryDashboard: React.FC = () => {
   const {
@@ -49,7 +48,6 @@ export const DeliveryDashboard: React.FC = () => {
 
   const {
     proof,
-    loading: proofLoading,
     uploadProof,
     fetchProofByDeliveryId,
   } = useProofOfDelivery();
@@ -125,7 +123,7 @@ export const DeliveryDashboard: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: DeliveryStatus) => {
+  const getStatusColor = (status: DeliveryStatus): 'default' | 'error' | 'info' | 'success' | 'warning' | 'primary' | 'secondary' => {
     switch (status) {
       case DeliveryStatus.DELIVERED:
         return 'success';
@@ -236,7 +234,7 @@ export const DeliveryDashboard: React.FC = () => {
                   <TableCell>
                     <Chip
                       label={delivery.status.replace('_', ' ').toUpperCase()}
-                      color={getStatusColor(delivery.status) as any}
+                      color={getStatusColor(delivery.status)}
                       size="small"
                     />
                   </TableCell>

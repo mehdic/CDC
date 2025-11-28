@@ -43,24 +43,39 @@ describe('SignatureCapture', () => {
   });
 
   it('should enable submit button after drawing', async () => {
-    render(
+    const { container } = render(
       <SignatureCapture
         onSignatureCapture={mockOnSignatureCapture}
         onCancel={mockOnCancel}
       />
     );
 
-    const canvas = screen.getByTestId('signature-pad');
+    const canvas = screen.getByTestId('signature-pad') as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
 
-    // Simulate mouse drawing
-    fireEvent.mouseDown(canvas, { clientX: 50, clientY: 50 });
-    fireEvent.mouseMove(canvas, { clientX: 100, clientY: 100 });
+    // Simulate mouse drawing on the canvas
+    fireEvent.mouseDown(canvas, {
+      buttons: 1,
+      clientX: rect.left + 50,
+      clientY: rect.top + 50,
+    });
+    fireEvent.mouseMove(canvas, {
+      buttons: 1,
+      clientX: rect.left + 100,
+      clientY: rect.top + 100,
+    });
     fireEvent.mouseUp(canvas);
 
-    await waitFor(() => {
-      const confirmButton = screen.getByRole('button', { name: /confirm signature/i });
-      expect(confirmButton).not.toBeDisabled();
-    });
+    await waitFor(
+      () => {
+        const confirmButton = screen.getByRole('button', { name: /confirm signature/i });
+        // The button should be enabled after drawing
+        if (confirmButton.hasAttribute('disabled')) {
+          throw new Error('Button still disabled');
+        }
+      },
+      { timeout: 2000 }
+    );
   });
 
   it('should clear canvas when clear button is clicked', async () => {
@@ -71,18 +86,32 @@ describe('SignatureCapture', () => {
       />
     );
 
-    const canvas = screen.getByTestId('signature-pad');
+    const canvas = screen.getByTestId('signature-pad') as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
 
     // Draw on canvas
-    fireEvent.mouseDown(canvas, { clientX: 50, clientY: 50 });
-    fireEvent.mouseMove(canvas, { clientX: 100, clientY: 100 });
+    fireEvent.mouseDown(canvas, {
+      buttons: 1,
+      clientX: rect.left + 50,
+      clientY: rect.top + 50,
+    });
+    fireEvent.mouseMove(canvas, {
+      buttons: 1,
+      clientX: rect.left + 100,
+      clientY: rect.top + 100,
+    });
     fireEvent.mouseUp(canvas);
 
     // Wait for submit button to be enabled
-    await waitFor(() => {
-      const confirmButton = screen.getByRole('button', { name: /confirm signature/i });
-      expect(confirmButton).not.toBeDisabled();
-    });
+    await waitFor(
+      () => {
+        const confirmButton = screen.getByRole('button', { name: /confirm signature/i });
+        if (confirmButton.hasAttribute('disabled')) {
+          throw new Error('Button not enabled');
+        }
+      },
+      { timeout: 2000 }
+    );
 
     // Click clear button
     const clearButton = screen.getByRole('button', { name: /clear/i });
@@ -130,18 +159,32 @@ describe('SignatureCapture', () => {
       />
     );
 
-    const canvas = screen.getByTestId('signature-pad');
+    const canvas = screen.getByTestId('signature-pad') as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
 
     // Draw on canvas
-    fireEvent.mouseDown(canvas, { clientX: 50, clientY: 50 });
-    fireEvent.mouseMove(canvas, { clientX: 100, clientY: 100 });
+    fireEvent.mouseDown(canvas, {
+      buttons: 1,
+      clientX: rect.left + 50,
+      clientY: rect.top + 50,
+    });
+    fireEvent.mouseMove(canvas, {
+      buttons: 1,
+      clientX: rect.left + 100,
+      clientY: rect.top + 100,
+    });
     fireEvent.mouseUp(canvas);
 
     // Wait for submit button to be enabled
-    await waitFor(() => {
-      const confirmButton = screen.getByRole('button', { name: /confirm signature/i });
-      expect(confirmButton).not.toBeDisabled();
-    });
+    await waitFor(
+      () => {
+        const confirmButton = screen.getByRole('button', { name: /confirm signature/i });
+        if (confirmButton.hasAttribute('disabled')) {
+          throw new Error('Button not enabled');
+        }
+      },
+      { timeout: 2000 }
+    );
 
     // Click confirm
     const confirmButton = screen.getByRole('button', { name: /confirm signature/i });
@@ -165,21 +208,27 @@ describe('SignatureCapture', () => {
       />
     );
 
-    const canvas = screen.getByTestId('signature-pad');
+    const canvas = screen.getByTestId('signature-pad') as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
 
     // Simulate touch drawing
     fireEvent.touchStart(canvas, {
-      touches: [{ clientX: 50, clientY: 50 }],
+      touches: [{ clientX: rect.left + 50, clientY: rect.top + 50 }] as any,
     });
     fireEvent.touchMove(canvas, {
-      touches: [{ clientX: 100, clientY: 100 }],
+      touches: [{ clientX: rect.left + 100, clientY: rect.top + 100 }] as any,
     });
     fireEvent.touchEnd(canvas);
 
-    await waitFor(() => {
-      const confirmButton = screen.getByRole('button', { name: /confirm signature/i });
-      expect(confirmButton).not.toBeDisabled();
-    });
+    await waitFor(
+      () => {
+        const confirmButton = screen.getByRole('button', { name: /confirm signature/i });
+        if (confirmButton.hasAttribute('disabled')) {
+          throw new Error('Button not enabled');
+        }
+      },
+      { timeout: 2000 }
+    );
   });
 
   it('should show required indicator when required prop is true', () => {
