@@ -33,6 +33,8 @@ const MasterAccountPage = lazy(() => import('@apps/pharmacist/pages/MasterAccoun
 const ProductCatalog = lazy(() => import('@apps/pharmacist/pages/ProductCatalog'));
 const OrderManagement = lazy(() => import('@apps/pharmacist/pages/OrderManagement'));
 const DeliveryManagement = lazy(() => import('@apps/pharmacist/pages/DeliveryManagement'));
+const Checkout = lazy(() => import('@apps/patient/pages/checkout/Checkout'));
+const OrderConfirmation = lazy(() => import('@apps/patient/pages/checkout/OrderConfirmation'));
 
 /**
  * Protected route component
@@ -309,6 +311,30 @@ export const AppRoutes: React.FC = () => {
             <ProtectedRoute>
               <AppLayout>
                 <OrderManagement />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Checkout - Patient and Pharmacist */}
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute requiredRoles={['patient', 'pharmacist', 'admin']}>
+              <AppLayout>
+                <Checkout />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Order Confirmation - Patient and Pharmacist */}
+        <Route
+          path="/checkout/confirmation"
+          element={
+            <ProtectedRoute requiredRoles={['patient', 'pharmacist', 'admin']}>
+              <AppLayout>
+                <OrderConfirmation />
               </AppLayout>
             </ProtectedRoute>
           }
