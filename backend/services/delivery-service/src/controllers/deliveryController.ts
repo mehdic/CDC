@@ -126,6 +126,17 @@ export async function createDelivery(req: Request, res: Response): Promise<void>
       delivery_address_encrypted,
       delivery_notes_encrypted,
       scheduled_at,
+      // Cold chain fields (T3-066)
+      requires_temperature_control,
+      temperature_range_min,
+      temperature_range_max,
+      max_delivery_duration_minutes,
+      special_handling_instructions,
+      // Controlled substance fields (T3-067)
+      contains_controlled_substance,
+      substance_schedule,
+      requires_signature,
+      age_verification_required,
     } = req.body;
 
     // Validation
@@ -143,6 +154,39 @@ export async function createDelivery(req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Validation for cold chain requirements
+    if (requires_temperature_control) {
+      if (!temperature_range_min || !temperature_range_max) {
+        res.status(400).json({
+          error: 'temperature_range_min and temperature_range_max are required for temperature-controlled deliveries',
+        });
+        return;
+      }
+      if (!max_delivery_duration_minutes) {
+        res.status(400).json({
+          error: 'max_delivery_duration_minutes is required for temperature-controlled deliveries',
+        });
+        return;
+      }
+    }
+
+    // Validation for controlled substance requirements
+    if (contains_controlled_substance) {
+      if (!substance_schedule) {
+        res.status(400).json({
+          error: 'substance_schedule is required for controlled substance deliveries',
+        });
+        return;
+      }
+      // Controlled substances always require signature
+      if (!requires_signature) {
+        res.status(400).json({
+          error: 'requires_signature must be true for controlled substance deliveries',
+        });
+        return;
+      }
+    }
+
     // Create delivery
     const delivery = deliveryRepo.create({
       user_id,
@@ -153,7 +197,25 @@ export async function createDelivery(req: Request, res: Response): Promise<void>
         : null,
       scheduled_at: scheduled_at ? new Date(scheduled_at) : null,
       status: DeliveryStatus.PENDING,
+      // Cold chain fields (T3-066)
+      requires_temperature_control: requires_temperature_control || false,
+      temperature_range_min: temperature_range_min || null,
+      temperature_range_max: temperature_range_max || null,
+      max_delivery_duration_minutes: max_delivery_duration_minutes || null,
+      special_handling_instructions: special_handling_instructions || null,
+      // Controlled substance fields (T3-067)
+      contains_controlled_substance: contains_controlled_substance || false,
+      substance_schedule: substance_schedule || null,
+      requires_signature: requires_signature || false,
+      age_verification_required: age_verification_required || false,
     });
+
+    // Add initial compliance log entry
+    delivery.addComplianceLog(
+      'delivery_created',
+      `Delivery created with special handling flags: cold_chain=${requires_temperature_control}, controlled_substance=${contains_controlled_substance}`,
+      'system'
+    );
 
     await deliveryRepo.save(delivery);
 
@@ -193,6 +255,13 @@ export async function updateDelivery(req: Request, res: Response): Promise<void>
       tracking_info,
       tracking_number,
       failure_reason,
+      // Controlled substance operations (T3-067)
+      signature_image_encrypted,
+      signed_by_name,
+      age_verification_requested,
+      verified_age_minimum,
+      id_scan_data_encrypted,
+      scanned_by_person_id,
     } = req.body;
 
     // Update fields
@@ -202,12 +271,36 @@ export async function updateDelivery(req: Request, res: Response): Promise<void>
       // Update timestamps based on status
       if (status === DeliveryStatus.IN_TRANSIT && !delivery.picked_up_at) {
         delivery.picked_up_at = new Date();
+        // Check for cold chain violation at pickup (T3-066)
+        if (delivery.requires_temperature_control) {
+          delivery.addComplianceLog(
+            'pickup',
+            'Delivery picked up - temperature control required',
+            'system'
+          );
+        }
       } else if (status === DeliveryStatus.DELIVERED && !delivery.delivered_at) {
+        // Check controlled substance requirements before delivery (T3-067)
+        if (delivery.contains_controlled_substance) {
+          if (!delivery.areControlledSubstanceRequirementsMet()) {
+            res.status(400).json({
+              error: 'Cannot mark delivery as delivered: controlled substance requirements not met',
+              missing_requirements: {
+                signature: !delivery.isSignatureMet(),
+                age_verified: delivery.age_verification_required && !delivery.isAgeVerified(),
+                id_scanned: delivery.id_scanned && !delivery.isIdScanned(),
+              },
+            });
+            return;
+          }
+        }
         delivery.delivered_at = new Date();
+        delivery.addComplianceLog('delivery_completed', 'Delivery marked as completed', 'system');
       } else if (status === DeliveryStatus.FAILED && !delivery.failed_at) {
         delivery.failed_at = new Date();
         if (failure_reason) {
           delivery.failure_reason = failure_reason;
+          delivery.addComplianceLog('delivery_failed', `Failure reason: ${failure_reason}`, 'system');
         }
       }
     }
@@ -222,6 +315,43 @@ export async function updateDelivery(req: Request, res: Response): Promise<void>
 
     if (tracking_number !== undefined) {
       delivery.tracking_number = tracking_number;
+    }
+
+    // Handle signature recording for controlled substances (T3-067)
+    if (signature_image_encrypted) {
+      if (!delivery.requires_signature) {
+        res.status(400).json({
+          error: 'Signature not required for this delivery',
+        });
+        return;
+      }
+      delivery.recordSignature(signature_image_encrypted, signed_by_name);
+    }
+
+    // Handle age verification for controlled substances (T3-067)
+    if (age_verification_requested && verified_age_minimum) {
+      if (!delivery.age_verification_required) {
+        res.status(400).json({
+          error: 'Age verification not required for this delivery',
+        });
+        return;
+      }
+      delivery.verifyAge(verified_age_minimum);
+    }
+
+    // Handle ID scan for controlled substances (T3-067)
+    if (id_scan_data_encrypted) {
+      delivery.scanId(id_scan_data_encrypted, scanned_by_person_id);
+    }
+
+    // Cold chain monitoring - check if delivery is taking too long (T3-066)
+    if (delivery.requires_temperature_control && delivery.isExceedingMaxDuration()) {
+      if (!delivery.temperature_alert_sent_at) {
+        const maxMinutes = delivery.max_delivery_duration_minutes;
+        delivery.triggerColdChainAlert(
+          `Delivery exceeds maximum duration of ${maxMinutes} minutes. Temperature control may be compromised.`
+        );
+      }
     }
 
     await deliveryRepo.save(delivery);
@@ -297,6 +427,27 @@ function sanitizeDelivery(delivery: Delivery): any {
     failure_reason: delivery.failure_reason,
     created_at: delivery.created_at,
     updated_at: delivery.updated_at,
-    // Note: Encrypted fields are excluded for security
+    // Cold chain fields (T3-066)
+    requires_temperature_control: delivery.requires_temperature_control,
+    temperature_range_min: delivery.temperature_range_min,
+    temperature_range_max: delivery.temperature_range_max,
+    temperature_range_display: delivery.getTemperatureRangeDisplay(),
+    max_delivery_duration_minutes: delivery.max_delivery_duration_minutes,
+    temperature_alert_sent_at: delivery.temperature_alert_sent_at,
+    temperature_alert_reason: delivery.temperature_alert_reason,
+    special_handling_instructions: delivery.special_handling_instructions,
+    // Controlled substance fields (T3-067)
+    contains_controlled_substance: delivery.contains_controlled_substance,
+    substance_schedule: delivery.substance_schedule,
+    requires_signature: delivery.requires_signature,
+    signature_obtained_at: delivery.signature_obtained_at,
+    age_verification_required: delivery.age_verification_required,
+    age_verified_at: delivery.age_verified_at,
+    verified_age_minimum: delivery.verified_age_minimum,
+    id_scanned: delivery.id_scanned,
+    id_scanned_at: delivery.id_scanned_at,
+    // Compliance
+    compliance_log: delivery.getComplianceLog(),
+    // Note: Encrypted fields (signature_image_encrypted, id_scan_data_encrypted, delivery_address_encrypted) are excluded for security
   };
 }
