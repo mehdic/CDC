@@ -292,8 +292,8 @@ export async function getDeliveryTracking(req: Request, res: Response): Promise<
     // For now, we'll use a placeholder. In production, decrypt delivery_address_encrypted
     // and geocode it to get coordinates
     const destinationCoords: Coordinates = {
-      latitude: 46.8182, // Placeholder
-      longitude: 8.2275, // Placeholder
+      latitude: 47.3769, // Zurich - different location for testing
+      longitude: 8.5417, // Zurich coordinates
       timestamp: new Date().toISOString(),
     };
 
