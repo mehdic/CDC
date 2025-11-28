@@ -20,6 +20,7 @@ const PRESCRIPTION_SERVICE_URL = process.env['PRESCRIPTION_SERVICE_URL'] || 'htt
 const TELECONSULTATION_SERVICE_URL = process.env['TELECONSULTATION_SERVICE_URL'] || 'http://localhost:4003';
 const INVENTORY_SERVICE_URL = process.env['INVENTORY_SERVICE_URL'] || 'http://localhost:4004';
 const NOTIFICATION_SERVICE_URL = process.env['NOTIFICATION_SERVICE_URL'] || 'http://localhost:4005';
+const ORDER_SERVICE_URL = process.env['ORDER_SERVICE_URL'] || 'http://localhost:4007';
 
 console.info('Proxy Configuration:', {
   authService: AUTH_SERVICE_URL,
@@ -27,6 +28,7 @@ console.info('Proxy Configuration:', {
   teleconsultationService: TELECONSULTATION_SERVICE_URL,
   inventoryService: INVENTORY_SERVICE_URL,
   notificationService: NOTIFICATION_SERVICE_URL,
+  orderService: ORDER_SERVICE_URL,
 });
 
 /**
@@ -196,6 +198,19 @@ export const notificationProxy = createProxyMiddleware({
 });
 
 /**
+ * Order & Cart Service Proxy
+ * Routes: /api/orders/* and /api/cart/*
+ */
+export const orderProxy = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: ORDER_SERVICE_URL,
+  pathRewrite: {
+    '^/api/orders': '/orders', // Strip /api, keep /orders for backend
+    '^/api/cart': '/cart', // Strip /api, keep /cart for backend
+  },
+});
+
+/**
  * Service health status cache
  * Used by health check endpoint
  */
@@ -205,4 +220,5 @@ export const serviceEndpoints = [
   { name: 'teleconsultation', url: TELECONSULTATION_SERVICE_URL },
   { name: 'inventory', url: INVENTORY_SERVICE_URL },
   { name: 'notification', url: NOTIFICATION_SERVICE_URL },
+  { name: 'order', url: ORDER_SERVICE_URL },
 ];

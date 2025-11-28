@@ -1,3 +1,7 @@
+---
+description: Configure BAZINGA testing framework (full/minimal/skip modes, QA Expert settings)
+---
+
 # Bazinga Configure Testing
 
 You are helping the user configure the BAZINGA testing framework. This controls how much testing and quality assurance is applied during development.
@@ -313,7 +317,7 @@ Quality level: LOW 🚀
 
 If `bazinga/testing_config.json` doesn't exist:
 1. Show message: "Testing config not found. Running initialization..."
-2. Run: `bash scripts/init-orchestration.sh`
+2. Run: `bash bazinga/scripts/init-orchestration.sh`
 3. Confirm file created, then continue
 
 If file is corrupted (invalid JSON):

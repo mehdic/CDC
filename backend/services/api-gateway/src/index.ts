@@ -43,6 +43,7 @@ import {
   teleconsultationProxy,
   inventoryProxy,
   notificationProxy,
+  orderProxy,
 } from './routes/proxy';
 
 // Configuration
@@ -179,6 +180,12 @@ app.use('/inventory', authenticateJWT, inventoryProxy);
 app.use('/api/notifications', authenticateJWT, notificationProxy);
 app.use('/notifications', authenticateJWT, notificationProxy);
 
+// Order & Cart Service
+app.use('/api/orders', authenticateJWT, orderProxy);
+app.use('/orders', authenticateJWT, orderProxy);
+app.use('/api/cart', authenticateJWT, orderProxy);
+app.use('/cart', authenticateJWT, orderProxy);
+
 // ============================================================================
 // Error Handling
 // ============================================================================
@@ -252,6 +259,7 @@ export function startServer(): Promise<void> {
         console.info(`  - Teleconsultation Service: ${process.env['TELECONSULTATION_SERVICE_URL'] || 'http://localhost:4003'}`);
         console.info(`  - Inventory Service: ${process.env['INVENTORY_SERVICE_URL'] || 'http://localhost:4004'}`);
         console.info(`  - Notification Service: ${process.env['NOTIFICATION_SERVICE_URL'] || 'http://localhost:4005'}`);
+        console.info(`  - Order Service: ${process.env['ORDER_SERVICE_URL'] || 'http://localhost:4007'}`);
         console.info('='.repeat(60));
         console.info('Health Check: http://localhost:' + PORT + '/health');
         console.info('='.repeat(60));
