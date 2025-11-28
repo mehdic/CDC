@@ -23,6 +23,7 @@ import { Delivery, DeliveryStatus } from '@models/Delivery';
 import { User } from '@models/User';
 import { Pharmacy } from '@models/Pharmacy';
 import { AuditTrailEntry } from '@models/AuditTrailEntry';
+import trackingRoutes from './routes/tracking';
 
 // ============================================================================
 // Configuration
@@ -75,6 +76,12 @@ if (NODE_ENV === 'development') {
   });
 }
 
+// Middleware to inject dataSource into req.app.locals
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  req.app.locals.dataSource = dataSource;
+  next();
+});
+
 // ============================================================================
 // Repository Helper
 // ============================================================================
@@ -108,6 +115,9 @@ app.get('/health', (_req: Request, res: Response) => {
 // ============================================================================
 // API Routes
 // ============================================================================
+
+// Tracking routes
+app.use('/tracking', trackingRoutes);
 
 /**
  * POST /deliveries - Create new delivery
