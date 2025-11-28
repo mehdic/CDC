@@ -1,6 +1,6 @@
 /**
  * Delivery Routes
- * CRUD operations for deliveries
+ * CRUD operations for deliveries and route optimization
  * Batch 3 Phase 4 - Delivery Service
  */
 
@@ -12,6 +12,11 @@ import {
   updateDelivery,
   deleteDelivery,
 } from '../controllers/deliveryController';
+import {
+  optimizeRouteController,
+  updateRouteProgressController,
+  recalculateRouteController,
+} from '../controllers/routeController';
 
 const router = Router();
 
@@ -66,5 +71,38 @@ router.put('/:id', updateDelivery);
  * Delete a delivery (only if pending or cancelled)
  */
 router.delete('/:id', deleteDelivery);
+
+/**
+ * Route Optimization Endpoints
+ */
+
+/**
+ * POST /deliveries/route/optimize
+ * Optimize a list of deliveries into an efficient route
+ *
+ * Body:
+ * - deliveryIds: string[] (required)
+ * - startLocation?: { latitude: number, longitude: number } (optional)
+ */
+router.post('/route/optimize', optimizeRouteController);
+
+/**
+ * PUT /deliveries/route/:routeId/progress
+ * Update route progress (current waypoint)
+ *
+ * Body:
+ * - waypointIndex: number (required)
+ */
+router.put('/route/:routeId/progress', updateRouteProgressController);
+
+/**
+ * POST /deliveries/route/:routeId/recalculate
+ * Recalculate route from current position
+ *
+ * Body:
+ * - currentLocation: { latitude: number, longitude: number } (required)
+ * - remainingDeliveryIds: string[] (required)
+ */
+router.post('/route/:routeId/recalculate', recalculateRouteController);
 
 export default router;
