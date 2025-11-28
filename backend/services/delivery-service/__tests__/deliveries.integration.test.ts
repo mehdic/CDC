@@ -75,18 +75,40 @@ describe('Delivery Service Integration Tests', () => {
   };
 
   // Helper function to create a test delivery
-  const createTestDelivery = async (overrides = {}) => {
-    const deliveryAddress = overrides['deliveryAddress'] || '456 Patient Ave, Lausanne';
-    const deliveryData = {
+  const createTestDelivery = async (overrides: any = {}) => {
+    const deliveryAddress = overrides.deliveryAddress || '456 Patient Ave, Lausanne';
+    const deliveryData: any = {
       user_id: 'patient-001',
       order_id: 'ORDER-123',
       delivery_address_encrypted: encryptAddress(deliveryAddress),
       scheduled_at: new Date().toISOString(),
-      ...overrides,
     };
 
-    // Remove non-API fields
-    delete deliveryData['deliveryAddress'];
+    // Add cold chain fields if provided
+    if (overrides.requires_temperature_control) {
+      deliveryData.requires_temperature_control = overrides.requires_temperature_control;
+      deliveryData.temperature_range_min = overrides.temperature_range_min;
+      deliveryData.temperature_range_max = overrides.temperature_range_max;
+      deliveryData.max_delivery_duration_minutes = overrides.max_delivery_duration_minutes;
+      if (overrides.special_handling_instructions) {
+        deliveryData.special_handling_instructions = overrides.special_handling_instructions;
+      }
+    }
+
+    // Add controlled substance fields if provided
+    if (overrides.contains_controlled_substance) {
+      deliveryData.contains_controlled_substance = overrides.contains_controlled_substance;
+      deliveryData.substance_schedule = overrides.substance_schedule;
+      deliveryData.requires_signature = overrides.requires_signature;
+      if (overrides.age_verification_required !== undefined) {
+        deliveryData.age_verification_required = overrides.age_verification_required;
+      }
+    }
+
+    // Override order_id if provided
+    if (overrides.order_id) {
+      deliveryData.order_id = overrides.order_id;
+    }
 
     const response = await request(app)
       .post('/deliveries')
@@ -304,6 +326,365 @@ describe('Delivery Service Integration Tests', () => {
 
       expect(response.body).toHaveProperty('error');
       expect(response.body.error).toContain('not found');
+    });
+  });
+
+  // ============================================================================
+  // Cold Chain Tests (T3-066)
+  // ============================================================================
+
+  describe('Cold Chain Management (T3-066)', () => {
+
+    it('should create delivery with cold chain requirements', async () => {
+      const deliveryData = {
+        user_id: 'patient-001',
+        order_id: 'COLD-001',
+        delivery_address_encrypted: encryptAddress('Cold Storage Location'),
+        requires_temperature_control: true,
+        temperature_range_min: '2',
+        temperature_range_max: '8',
+        max_delivery_duration_minutes: 30,
+        special_handling_instructions: 'Keep refrigerated. Do not freeze.',
+      };
+
+      const response = await request(app)
+        .post('/deliveries')
+        .set('Authorization', 'Bearer test-token')
+        .send(deliveryData)
+        .expect(201);
+
+      expect(response.body).toMatchObject({
+        requires_temperature_control: true,
+        temperature_range_min: '2',
+        temperature_range_max: '8',
+        temperature_range_display: '2°C - 8°C',
+        max_delivery_duration_minutes: 30,
+        special_handling_instructions: 'Keep refrigerated. Do not freeze.',
+      });
+    });
+
+    it('should reject cold chain delivery without temperature range', async () => {
+      const deliveryData = {
+        user_id: 'patient-001',
+        order_id: 'COLD-002',
+        delivery_address_encrypted: encryptAddress('Location'),
+        requires_temperature_control: true,
+        max_delivery_duration_minutes: 30,
+        // Missing temperature_range_min and max
+      };
+
+      const response = await request(app)
+        .post('/deliveries')
+        .set('Authorization', 'Bearer test-token')
+        .send(deliveryData)
+        .expect(400);
+
+      expect(response.body.error).toContain('temperature_range');
+    });
+
+    it('should reject cold chain delivery without max duration', async () => {
+      const deliveryData = {
+        user_id: 'patient-001',
+        order_id: 'COLD-003',
+        delivery_address_encrypted: encryptAddress('Location'),
+        requires_temperature_control: true,
+        temperature_range_min: '2',
+        temperature_range_max: '8',
+        // Missing max_delivery_duration_minutes
+      };
+
+      const response = await request(app)
+        .post('/deliveries')
+        .set('Authorization', 'Bearer test-token')
+        .send(deliveryData)
+        .expect(400);
+
+      expect(response.body.error).toContain('max_delivery_duration_minutes');
+    });
+
+    it('should trigger cold chain alert when delivery exceeds max duration', async () => {
+      // Create a cold chain delivery
+      const createResponse = await createTestDelivery({
+        order_id: 'COLD-004',
+        requires_temperature_control: true,
+        temperature_range_min: '2',
+        temperature_range_max: '8',
+        max_delivery_duration_minutes: 1, // Very short duration
+      });
+      const deliveryId = createResponse.body.id;
+
+      // Move to in_transit (sets picked_up_at to current time)
+      await request(app)
+        .put(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .send({ status: 'in_transit', delivery_personnel_id: 'driver-001' })
+        .expect(200);
+
+      // Wait a moment and then update (should detect alert)
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const updateResponse = await request(app)
+        .put(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .send({ tracking_info: { lat: 45.5, lng: 73.5 } })
+        .expect(200);
+
+      // Check if cold chain alert was triggered
+      const deliveryResponse = await request(app)
+        .get(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .expect(200);
+
+      expect(deliveryResponse.body.requires_temperature_control).toBe(true);
+      expect(deliveryResponse.body.compliance_log).toBeDefined();
+      expect(Array.isArray(deliveryResponse.body.compliance_log)).toBe(true);
+      expect(deliveryResponse.body.compliance_log.length).toBeGreaterThan(0);
+    });
+
+    it('should include compliance log entries for cold chain events', async () => {
+      const createResponse = await createTestDelivery({
+        order_id: 'COLD-005',
+        requires_temperature_control: true,
+        temperature_range_min: '2',
+        temperature_range_max: '8',
+        max_delivery_duration_minutes: 60,
+      });
+      const deliveryId = createResponse.body.id;
+
+      const response = await request(app)
+        .get(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .expect(200);
+
+      const complianceLog = response.body.compliance_log;
+      expect(complianceLog).toBeDefined();
+      expect(Array.isArray(complianceLog)).toBe(true);
+
+      // Should have delivery_created entry
+      const createdEntry = complianceLog.find((e: any) => e.event === 'delivery_created');
+      expect(createdEntry).toBeDefined();
+      expect(createdEntry.event).toBe('delivery_created');
+      expect(createdEntry.timestamp).toBeDefined();
+      expect(createdEntry.details).toContain('cold_chain=true');
+    });
+  });
+
+  // ============================================================================
+  // Controlled Substance Tests (T3-067)
+  // ============================================================================
+
+  describe('Controlled Substance Handling (T3-067)', () => {
+
+    it('should create delivery with controlled substance requirements', async () => {
+      const deliveryData = {
+        user_id: 'patient-001',
+        order_id: 'CTRL-001',
+        delivery_address_encrypted: encryptAddress('Secure Location'),
+        contains_controlled_substance: true,
+        substance_schedule: 'II',
+        requires_signature: true,
+        age_verification_required: true,
+      };
+
+      const response = await request(app)
+        .post('/deliveries')
+        .set('Authorization', 'Bearer test-token')
+        .send(deliveryData)
+        .expect(201);
+
+      expect(response.body).toMatchObject({
+        contains_controlled_substance: true,
+        substance_schedule: 'II',
+        requires_signature: true,
+        age_verification_required: true,
+      });
+    });
+
+    it('should reject controlled substance delivery without substance_schedule', async () => {
+      const deliveryData = {
+        user_id: 'patient-001',
+        order_id: 'CTRL-002',
+        delivery_address_encrypted: encryptAddress('Location'),
+        contains_controlled_substance: true,
+        requires_signature: true,
+        // Missing substance_schedule
+      };
+
+      const response = await request(app)
+        .post('/deliveries')
+        .set('Authorization', 'Bearer test-token')
+        .send(deliveryData)
+        .expect(400);
+
+      expect(response.body.error).toContain('substance_schedule');
+    });
+
+    it('should enforce signature requirement for controlled substances', async () => {
+      const deliveryData = {
+        user_id: 'patient-001',
+        order_id: 'CTRL-003',
+        delivery_address_encrypted: encryptAddress('Location'),
+        contains_controlled_substance: true,
+        substance_schedule: 'III',
+        requires_signature: false, // Invalid: controlled substances must have signature
+      };
+
+      const response = await request(app)
+        .post('/deliveries')
+        .set('Authorization', 'Bearer test-token')
+        .send(deliveryData)
+        .expect(400);
+
+      expect(response.body.error).toContain('requires_signature');
+    });
+
+    it('should record signature for controlled substance delivery', async () => {
+      const createResponse = await createTestDelivery({
+        order_id: 'CTRL-004',
+        contains_controlled_substance: true,
+        substance_schedule: 'II',
+        requires_signature: true,
+      });
+      const deliveryId = createResponse.body.id;
+
+      const signatureData = Buffer.from('signature-image-data').toString('base64');
+
+      const response = await request(app)
+        .put(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          signature_image_encrypted: signatureData,
+          signed_by_name: 'John Doe',
+        })
+        .expect(200);
+
+      expect(response.body.signature_obtained_at).toBeTruthy();
+
+      // Verify compliance log includes signature event
+      expect(response.body.compliance_log).toBeDefined();
+      const signatureEntry = response.body.compliance_log.find((e: any) => e.event === 'signature_obtained');
+      expect(signatureEntry).toBeDefined();
+    });
+
+    it('should verify age for age-restricted controlled substances', async () => {
+      const createResponse = await createTestDelivery({
+        order_id: 'CTRL-005',
+        contains_controlled_substance: true,
+        substance_schedule: 'IV',
+        requires_signature: true,
+        age_verification_required: true,
+      });
+      const deliveryId = createResponse.body.id;
+
+      const response = await request(app)
+        .put(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          age_verification_requested: true,
+          verified_age_minimum: 18,
+        })
+        .expect(200);
+
+      expect(response.body.age_verified_at).toBeTruthy();
+      expect(response.body.verified_age_minimum).toBe('18');
+
+      // Verify compliance log includes age verification event
+      const ageEntry = response.body.compliance_log.find((e: any) => e.event === 'age_verified');
+      expect(ageEntry).toBeDefined();
+    });
+
+    it('should scan ID for controlled substance delivery', async () => {
+      const createResponse = await createTestDelivery({
+        order_id: 'CTRL-006',
+        contains_controlled_substance: true,
+        substance_schedule: 'II',
+        requires_signature: true,
+      });
+      const deliveryId = createResponse.body.id;
+
+      const idScanData = Buffer.from('id-scan-data').toString('base64');
+
+      const response = await request(app)
+        .put(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          id_scan_data_encrypted: idScanData,
+          scanned_by_person_id: 'driver-001',
+        })
+        .expect(200);
+
+      expect(response.body.id_scanned).toBe(true);
+      expect(response.body.id_scanned_at).toBeTruthy();
+
+      // Verify compliance log includes ID scan event
+      const idEntry = response.body.compliance_log.find((e: any) => e.event === 'id_scanned');
+      expect(idEntry).toBeDefined();
+    });
+
+    it('should prevent delivery of controlled substance without meeting all requirements', async () => {
+      const createResponse = await createTestDelivery({
+        order_id: 'CTRL-007',
+        contains_controlled_substance: true,
+        substance_schedule: 'II',
+        requires_signature: true,
+        age_verification_required: true,
+      });
+      const deliveryId = createResponse.body.id;
+
+      // Try to mark as delivered without completing requirements
+      const response = await request(app)
+        .put(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .send({ status: 'delivered' })
+        .expect(400);
+
+      expect(response.body.error).toContain('controlled substance requirements');
+      expect(response.body.missing_requirements).toBeDefined();
+      expect(response.body.missing_requirements.signature).toBe(true);
+      expect(response.body.missing_requirements.age_verified).toBe(true);
+    });
+
+    it('should allow delivery after all controlled substance requirements are met', async () => {
+      const createResponse = await createTestDelivery({
+        order_id: 'CTRL-008',
+        contains_controlled_substance: true,
+        substance_schedule: 'II',
+        requires_signature: true,
+        age_verification_required: true,
+      });
+      const deliveryId = createResponse.body.id;
+
+      const signatureData = Buffer.from('sig').toString('base64');
+
+      // Record signature
+      await request(app)
+        .put(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          signature_image_encrypted: signatureData,
+          signed_by_name: 'Jane Doe',
+        })
+        .expect(200);
+
+      // Verify age
+      await request(app)
+        .put(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          age_verification_requested: true,
+          verified_age_minimum: 18,
+        })
+        .expect(200);
+
+      // Now should be able to mark as delivered
+      const response = await request(app)
+        .put(`/deliveries/${deliveryId}`)
+        .set('Authorization', 'Bearer test-token')
+        .send({ status: 'delivered' })
+        .expect(200);
+
+      expect(response.body.status).toBe('delivered');
+      expect(response.body.delivered_at).toBeTruthy();
     });
   });
 

@@ -103,6 +103,80 @@ export class Delivery {
   failure_reason: string | null;
 
   // ============================================================================
+  // Cold Chain Management (T3-066)
+  // ============================================================================
+
+  @Column({ type: 'boolean', default: false })
+  requires_temperature_control: boolean; // Medication requires refrigeration/cold chain
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  temperature_range_min: string | null; // e.g., "2" for 2-8°C storage
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  temperature_range_max: string | null; // e.g., "8" for 2-8°C storage
+
+  @Column({ type: 'integer', nullable: true })
+  max_delivery_duration_minutes: number | null; // Max time between pickup and delivery
+
+  @Column({ type: 'datetime', nullable: true })
+  temperature_alert_sent_at: Date | null; // When temperature/time alert was triggered
+
+  @Column({ type: 'text', nullable: true })
+  temperature_alert_reason: string | null; // Reason for alert (e.g., "Delivery taking too long")
+
+  // ============================================================================
+  // Controlled Substance Handling (T3-067)
+  // ============================================================================
+
+  @Column({ type: 'boolean', default: false })
+  contains_controlled_substance: boolean; // Delivery includes controlled substances
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  substance_schedule: string | null; // I, II, III, IV, V (Swiss classification)
+
+  @Column({ type: 'boolean', default: false })
+  requires_signature: boolean; // Signature required on delivery
+
+  @Column({ type: 'datetime', nullable: true })
+  signature_obtained_at: Date | null; // When signature was obtained
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  signature_image_encrypted: string | null; // Base64 encrypted signature
+
+  @Column({ type: 'boolean', default: false })
+  age_verification_required: boolean; // Age verification needed (18+ medications)
+
+  @Column({ type: 'datetime', nullable: true })
+  age_verified_at: Date | null; // When age verification was completed
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  verified_age_minimum: string | null; // Minimum verified age (e.g., "18")
+
+  @Column({ type: 'boolean', default: false })
+  id_scanned: boolean; // ID was scanned for verification
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  id_scan_data_encrypted: string | null; // Encrypted ID scan results
+
+  @Column({ type: 'datetime', nullable: true })
+  id_scanned_at: Date | null; // When ID was scanned
+
+  @Column({ type: 'text', nullable: true })
+  special_handling_instructions: string | null; // Special instructions (e.g., "Do not refrigerate", "Keep away from light")
+
+  // ============================================================================
+  // Compliance Logging (T3-067)
+  // ============================================================================
+
+  @Column({ type: 'simple-json', nullable: true })
+  compliance_log: Array<{
+    timestamp: string;
+    event: string;
+    details: string;
+    verified_by?: string;
+  }> | null; // Audit trail of compliance checks
+
+  // ============================================================================
   // Metadata
   // ============================================================================
 
@@ -197,5 +271,169 @@ export class Delivery {
    */
   cancel(): void {
     this.status = DeliveryStatus.CANCELLED;
+  }
+
+  // ============================================================================
+  // Cold Chain Helper Methods (T3-066)
+  // ============================================================================
+
+  /**
+   * Check if delivery is exceeding max duration
+   */
+  isExceedingMaxDuration(): boolean {
+    if (!this.max_delivery_duration_minutes || !this.picked_up_at) {
+      return false;
+    }
+    const now = new Date();
+    const elapsedMinutes = (now.getTime() - this.picked_up_at.getTime()) / (1000 * 60);
+    return elapsedMinutes > this.max_delivery_duration_minutes;
+  }
+
+  /**
+   * Trigger cold chain alert
+   */
+  triggerColdChainAlert(reason: string): void {
+    this.temperature_alert_sent_at = new Date();
+    this.temperature_alert_reason = reason;
+    this.addComplianceLog('cold_chain_alert', reason, 'system');
+  }
+
+  /**
+   * Get temperature range as display string
+   */
+  getTemperatureRangeDisplay(): string | null {
+    if (!this.temperature_range_min || !this.temperature_range_max) {
+      return null;
+    }
+    return `${this.temperature_range_min}°C - ${this.temperature_range_max}°C`;
+  }
+
+  // ============================================================================
+  // Controlled Substance Helper Methods (T3-067)
+  // ============================================================================
+
+  /**
+   * Check if age verification is complete
+   */
+  isAgeVerified(): boolean {
+    if (!this.age_verification_required) {
+      return false;
+    }
+    return this.age_verified_at !== null && this.age_verified_at !== undefined;
+  }
+
+  /**
+   * Check if ID has been scanned
+   */
+  isIdScanned(): boolean {
+    if (!this.id_scanned) {
+      return false;
+    }
+    return this.id_scanned_at !== null && this.id_scanned_at !== undefined;
+  }
+
+  /**
+   * Verify recipient age
+   */
+  verifyAge(minimumAge: number): void {
+    if (!this.age_verification_required) {
+      return;
+    }
+    this.age_verified_at = new Date();
+    this.verified_age_minimum = minimumAge.toString();
+    this.addComplianceLog(
+      'age_verified',
+      `Age verification completed for minimum age ${minimumAge}`,
+      'system'
+    );
+  }
+
+  /**
+   * Record ID scan
+   */
+  scanId(encryptedScanData: string, scannedByPersonId?: string): void {
+    this.id_scanned = true;
+    this.id_scanned_at = new Date();
+    this.id_scan_data_encrypted = encryptedScanData;
+    this.addComplianceLog(
+      'id_scanned',
+      'ID scanned for controlled substance verification',
+      scannedByPersonId || 'system'
+    );
+  }
+
+  /**
+   * Record signature
+   */
+  recordSignature(encryptedSignatureImage: string, signedByName?: string): void {
+    this.signature_obtained_at = new Date();
+    this.signature_image_encrypted = encryptedSignatureImage;
+    this.addComplianceLog(
+      'signature_obtained',
+      `Signature obtained from ${signedByName || 'recipient'}`,
+      'system'
+    );
+  }
+
+  /**
+   * Check if all controlled substance requirements are met
+   */
+  areControlledSubstanceRequirementsMet(): boolean {
+    if (!this.contains_controlled_substance) {
+      return true;
+    }
+
+    // Signature always required for controlled substances
+    if (!this.isSignatureMet()) {
+      return false;
+    }
+
+    // If age verification is required, must be completed
+    if (this.age_verification_required && !this.isAgeVerified()) {
+      return false;
+    }
+
+    // If ID scan is required, must be completed
+    if (this.id_scanned && !this.isIdScanned()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if signature requirement is met
+   */
+  isSignatureMet(): boolean {
+    if (!this.requires_signature) {
+      return false;
+    }
+    return this.signature_obtained_at !== null && this.signature_obtained_at !== undefined;
+  }
+
+  // ============================================================================
+  // Compliance Logging
+  // ============================================================================
+
+  /**
+   * Add entry to compliance log
+   */
+  addComplianceLog(event: string, details: string, verifiedBy: string = 'system'): void {
+    if (!this.compliance_log) {
+      this.compliance_log = [];
+    }
+    this.compliance_log.push({
+      timestamp: new Date().toISOString(),
+      event,
+      details,
+      verified_by: verifiedBy,
+    });
+  }
+
+  /**
+   * Get compliance log
+   */
+  getComplianceLog(): Array<{ timestamp: string; event: string; details: string; verified_by?: string }> {
+    return this.compliance_log || [];
   }
 }
