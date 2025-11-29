@@ -13,11 +13,11 @@
  */
 
 import { AppDataSource } from '../index';
-import { User } from '../../../shared/models/User';
-import { Prescription } from '../../../shared/models/Prescription';
-import { PrescriptionItem } from '../../../shared/models/PrescriptionItem';
-import { Order } from '../../../shared/models/Order';
-import { OrderItem } from '../../../shared/models/OrderItem';
+import { User } from '../../../../shared/models/User';
+import { Prescription } from '../../../../shared/models/Prescription';
+import { PrescriptionItem } from '../../../../shared/models/PrescriptionItem';
+import { Order } from '../../../../shared/models/Order';
+import { OrderItem } from '../../../../shared/models/OrderItem';
 
 // ============================================================================
 // Types & Interfaces

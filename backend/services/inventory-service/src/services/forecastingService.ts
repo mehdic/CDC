@@ -14,8 +14,8 @@
  */
 
 import { AppDataSource } from '../index';
-import { InventoryTransaction } from '../../../shared/models/InventoryTransaction';
-import { InventoryItem } from '../../../shared/models/InventoryItem';
+import { InventoryTransaction } from '../../../../shared/models/InventoryTransaction';
+import { InventoryItem } from '../../../../shared/models/InventoryItem';
 
 // ============================================================================
 // Types & Interfaces

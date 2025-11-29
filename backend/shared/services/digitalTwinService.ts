@@ -17,6 +17,8 @@ import { AppDataSource } from '../../services/user-service/src/index';
 import { User } from '../models/User';
 import { Prescription } from '../models/Prescription';
 import { Order } from '../models/Order';
+import { PrescriptionItem } from '../models/PrescriptionItem';
+import { OrderItem } from '../models/OrderItem';
 
 // ============================================================================
 // Types & Interfaces
@@ -167,9 +169,12 @@ export async function getDigitalTwinProfile(patient_id: string): Promise<Digital
     const demographic = calculateDemographic(patient);
 
     // Build complete profile
+    const firstName = patient.first_name_encrypted ? patient.first_name_encrypted.toString() : 'Unknown';
+    const lastName = patient.last_name_encrypted ? patient.last_name_encrypted.toString() : '';
+
     const profile: DigitalTwinProfile = {
       patient_id,
-      patient_name: `${patient.first_name_encrypted || 'Unknown'} ${patient.last_name_encrypted || ''}`.trim(),
+      patient_name: `${firstName} ${lastName}`.trim(),
       age: null, // TODO: Calculate from date_of_birth if available
       demographic,
       medical_history: medicalHistory,
