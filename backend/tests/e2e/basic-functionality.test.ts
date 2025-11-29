@@ -13,12 +13,12 @@ describe('E2E: Basic Service Functionality', () => {
   describe('Inventory Service - Basic Routes', () => {
     it('should return 404 for non-existent route', async () => {
       const response = await request(inventoryApp).get('/non-existent-route');
-      expect([404, 500]).toContain(response.status);
+      expect(response.status).toBe(404);
     });
 
     it('should handle GET request to base path', async () => {
       const response = await request(inventoryApp).get('/');
-      expect([200, 404]).toContain(response.status);
+      expect([200, 404]).toContain(response.status); // Root endpoint may not exist
     });
 
     it('should accept JSON payloads', async () => {
@@ -27,8 +27,8 @@ describe('E2E: Basic Service Functionality', () => {
         .send({ test: 'data' })
         .set('Content-Type', 'application/json');
 
-      // Should process request (may return error due to validation, but not 500)
-      expect([200, 400, 401, 404]).toContain(response.status);
+      // Should process request - expect 400 for invalid payload or 200 for success
+      expect([200, 400]).toContain(response.status);
     });
   });
 
@@ -41,8 +41,8 @@ describe('E2E: Basic Service Functionality', () => {
 
     it('should handle GET request to legacy API', async () => {
       const response = await request(prescriptionApp).get('/api/prescriptions');
-      // May fail with DB error, but should not crash
-      expect([200, 500, 503]).toContain(response.status);
+      // Should return 200 with data or 500 for server error, but not other codes
+      expect([200, 500]).toContain(response.status);
     });
 
     it('should validate POST request to legacy API', async () => {
@@ -191,12 +191,14 @@ describe('E2E: Basic Service Functionality', () => {
         .patch('/api/prescriptions/non-existent-id/status')
         .send({ status: 'dispensed' });
 
+      // Should return 404 or 500 if database unavailable
       expect([404, 500]).toContain(response.status);
     });
 
     it('should return 404 for GET non-existent prescription', async () => {
       const response = await request(prescriptionApp).get('/api/prescriptions/non-existent-id');
 
+      // Should return 404 or 500 if database unavailable
       expect([404, 500]).toContain(response.status);
     });
   });
@@ -208,6 +210,7 @@ describe('E2E: Basic Service Functionality', () => {
         .send('not-json')
         .set('Content-Type', 'application/json');
 
+      // Should return 400 for bad request or 500 for server error
       expect([400, 500]).toContain(response.status);
     });
 
@@ -217,6 +220,7 @@ describe('E2E: Basic Service Functionality', () => {
         .send('not-json')
         .set('Content-Type', 'application/json');
 
+      // Should return 400 for bad request or 500 for server error
       expect([400, 500]).toContain(response.status);
     });
 
@@ -239,8 +243,8 @@ describe('E2E: Basic Service Functionality', () => {
         .post('/api/prescriptions')
         .send(largePayload);
 
-      // Should handle it without crashing
-      expect([200, 400, 500, 503]).toContain(response.status);
+      // Should handle large payload without crashing (200, 400, or 500)
+      expect([200, 400, 500]).toContain(response.status);
     });
   });
 
@@ -276,29 +280,33 @@ describe('E2E: Basic Service Functionality', () => {
   describe('HTTP Methods', () => {
     it('prescription service should support GET method', async () => {
       const response = await request(prescriptionApp).get('/health');
+      // Health check may return 200 or 503 depending on dependencies
       expect([200, 503]).toContain(response.status);
     });
 
     it('prescription service should support POST method', async () => {
       const response = await request(prescriptionApp).post('/api/prescriptions').send({});
-      expect([200, 400, 500]).toContain(response.status);
+      // Empty payload should return 400
+      expect(response.status).toBe(400);
     });
 
     it('prescription service should support PATCH method', async () => {
       const response = await request(prescriptionApp)
         .patch('/api/prescriptions/test-id/status')
         .send({});
-      expect([200, 400, 404, 500]).toContain(response.status);
+      // Empty payload should return 400
+      expect(response.status).toBe(400);
     });
 
     it('inventory service should support GET method', async () => {
       const response = await request(inventoryApp).get('/health');
-      expect([200, 503]).toContain(response.status);
+      expect(response.status).toBe(200); // Health check should return 200
     });
 
     it('inventory service should support POST method', async () => {
       const response = await request(inventoryApp).post('/inventory/scan').send({});
-      expect([200, 400, 401, 404, 500]).toContain(response.status);
+      // Empty payload should return 400
+      expect(response.status).toBe(400);
     });
   });
 });
