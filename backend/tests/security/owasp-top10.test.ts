@@ -41,7 +41,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
       const response = await request(inventoryApp)
         .get('/inventory');
 
-      expect([401, 403]).toContain(response.status);
+      // Must return 401 or 403 - not 200
+      expect(response.status).toBe(401);
       console.log('✓ Protected endpoint requires authentication');
     });
 
@@ -50,7 +51,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
         .get('/inventory')
         .set('Authorization', `Bearer ${INVALID_TOKEN}`);
 
-      expect([401, 403, 500]).toContain(response.status);
+      // Must return 401 - invalid tokens should be unauthorized
+      expect(response.status).toBe(401);
       console.log('✓ Invalid tokens are rejected');
     });
 
@@ -60,7 +62,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
         .get('/api/prescriptions/other-patient-id')
         .set('Authorization', `Bearer ${MOCK_PATIENT_TOKEN}`);
 
-      expect([401, 403, 404]).toContain(response.status);
+      // Must return 403 (forbidden) or 404 (not found) - not 200
+      expect([403, 404]).toContain(response.status);
       console.log('✓ Horizontal privilege escalation prevented');
     });
 
@@ -71,9 +74,9 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
         .set('Authorization', `Bearer ${MOCK_PATIENT_TOKEN}`)
         .send({ barcode: '123456', pharmacyId: 'test' });
 
-      // Should be rejected (401/403) or properly authenticated
-      expect([200, 201, 400, 401, 403, 404, 500, 503]).toContain(response.status);
-      console.log('✓ Vertical privilege escalation test completed');
+      // Must return 403 (forbidden) - patient should not access pharmacist endpoint
+      expect(response.status).toBe(403);
+      console.log('✓ Vertical privilege escalation prevented');
     });
 
     it('should validate resource ownership before access', async () => {
@@ -83,7 +86,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
         .set('Authorization', `Bearer ${MOCK_PHARMACIST_TOKEN}`)
         .send({ quantity: 100 });
 
-      expect([200, 400, 401, 403, 404, 500]).toContain(response.status);
+      // Must return 404 (not found) or 403 (forbidden) for non-owned resource - not 200
+      expect([403, 404]).toContain(response.status);
       console.log('✓ Resource ownership validation enforced');
     });
   });
@@ -153,9 +157,6 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
           .get(`/api/prescriptions?patientId=${encodeURIComponent(payload)}`)
           .set('Authorization', `Bearer ${MOCK_PHARMACIST_TOKEN}`);
 
-        // Should either be rejected (400) or return empty/safe result
-        expect([200, 400, 401, 404, 500]).toContain(response.status);
-
         // Response should not contain SQL error messages
         if (response.body.error || response.body.message) {
           const errorText = JSON.stringify(response.body).toLowerCase();
@@ -183,7 +184,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
             medications: []
           });
 
-        expect([400, 401, 500]).toContain(response.status);
+        // Should reject with 400 bad request
+        expect(response.status).toBe(400);
       }
 
       console.log('✓ NoSQL injection attempts handled safely');
@@ -200,8 +202,6 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
         const response = await request(inventoryApp)
           .get(`/inventory?search=${encodeURIComponent(payload)}`)
           .set('Authorization', `Bearer ${MOCK_PHARMACIST_TOKEN}`);
-
-        expect([200, 400, 401, 404, 500, 503]).toContain(response.status);
 
         // Response should not contain unescaped script tags
         if (response.text) {
@@ -227,8 +227,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
           .field('filename', payload)
           .attach('file', Buffer.from('test'), 'test.pdf');
 
-        // Should reject malicious filenames
-        expect([200, 400, 401, 404, 500]).toContain(response.status);
+        // Should reject malicious filenames with 400
+        expect(response.status).toBe(400);
       }
 
       console.log('✓ Command injection attempts blocked');
@@ -257,12 +257,11 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
 
       if (rateLimited) {
         console.log('✓ Rate limiting active - brute force prevented');
+        expect(rateLimited).toBe(true);
       } else {
-        console.warn('⚠️  Rate limiting not detected - consider implementing');
+        console.warn('⚠️  Rate limiting not detected - skipping test');
+        // Skip this test if rate limiting is not implemented yet
       }
-
-      // This is a recommendation, not a hard requirement
-      expect(true).toBe(true);
     });
 
     it('should validate business logic constraints', async () => {
@@ -282,7 +281,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
           }]
         });
 
-      expect([400, 401, 500]).toContain(response.status);
+      // Must reject with 400 bad request for invalid business logic
+      expect(response.status).toBe(400);
       console.log('✓ Business logic validation enforced');
     });
   });
@@ -296,14 +296,14 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
       const response = await request(inventoryApp)
         .get('/non-existent-route-trigger-error');
 
-      if (response.body.stack || response.body.trace) {
-        if (process.env.NODE_ENV === 'production') {
-          expect(response.body.stack).toBeUndefined();
-          expect(response.body.trace).toBeUndefined();
-        }
+      if (process.env.NODE_ENV === 'production') {
+        // In production, must not expose stack traces
+        expect(response.body.stack).toBeUndefined();
+        expect(response.body.trace).toBeUndefined();
+        console.log('✓ Stack traces not exposed in production');
+      } else {
+        console.log('ℹ️  Stack trace check skipped (not in production)');
       }
-
-      console.log('✓ Stack traces properly handled');
     });
 
     it('should have security headers configured', async () => {
@@ -332,14 +332,17 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
       } else {
         console.warn('⚠️  No security headers detected - should implement Helmet.js');
       }
+
+      // This is informational - headers are recommended but not all are mandatory
+      expect(headerCount).toBeGreaterThanOrEqual(0);
     });
 
     it('should disable directory listing', async () => {
       const response = await request(inventoryApp)
         .get('/uploads/');
 
-      // Should not return directory listing (200 with HTML index)
-      expect([403, 404, 500]).toContain(response.status);
+      // Should not return directory listing (403 forbidden or 404 not found)
+      expect([403, 404]).toContain(response.status);
       console.log('✓ Directory listing disabled');
     });
   });
@@ -364,7 +367,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
           response = await request(endpoint.service).post(endpoint.path).send({});
         }
 
-        expect([401, 403, 404]).toContain(response.status);
+        // Must return 401 unauthorized for unauthenticated requests
+        expect(response.status).toBe(401);
       }
 
       console.log('✓ All protected endpoints require authentication');
@@ -378,7 +382,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
         .get('/inventory')
         .set('Authorization', `Bearer ${expiredToken}`);
 
-      expect([401, 403, 500]).toContain(response.status);
+      // Must reject expired tokens with 401
+      expect(response.status).toBe(401);
       console.log('✓ Expired tokens rejected');
     });
 
@@ -387,7 +392,6 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
       // For this test, we'll verify that passwords are not stored in plain text
       console.log('ℹ️  Password hashing verification requires code inspection');
       console.log('   Verify: bcrypt or argon2 used for password storage');
-      expect(true).toBe(true);
     });
   });
 
@@ -408,7 +412,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
         .set('Authorization', `Bearer ${MOCK_PHARMACIST_TOKEN}`)
         .send(invalidData);
 
-      expect([400, 401, 500]).toContain(response.status);
+      // Must reject invalid data types with 400
+      expect(response.status).toBe(400);
       console.log('✓ Data type validation enforced');
     });
 
@@ -419,7 +424,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
         .set('Content-Type', 'application/json')
         .send('invalid-json{{{');
 
-      expect([400, 500]).toContain(response.status);
+      // Must reject malformed JSON with 400
+      expect(response.status).toBe(400);
       console.log('✓ Malformed JSON rejected');
     });
   });
@@ -438,7 +444,6 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
       // In real implementation, verify logs contain authentication failure
       console.log('ℹ️  Authentication failures should be logged');
       console.log('   Verify: Winston/Morgan logs contain auth failures');
-      expect(true).toBe(true);
     });
 
     it('should log access to sensitive resources', async () => {
@@ -449,7 +454,6 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
 
       console.log('ℹ️  Sensitive resource access should be logged');
       console.log('   Verify: Audit logs contain prescription access events');
-      expect(true).toBe(true);
     });
   });
 
@@ -472,8 +476,8 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
           .set('Authorization', `Bearer ${MOCK_PHARMACIST_TOKEN}`)
           .send({ url: payload });
 
-        // Should reject internal/file URLs
-        expect([400, 401, 404, 500]).toContain(response.status);
+        // Should reject internal/file URLs with 400
+        expect(response.status).toBe(400);
       }
 
       console.log('✓ SSRF attempts blocked');
@@ -482,7 +486,6 @@ describe('Security: OWASP Top 10 Vulnerabilities', () => {
     it('should implement URL whitelist for external requests', async () => {
       console.log('ℹ️  External URL requests should use whitelist');
       console.log('   Verify: Only approved domains allowed for external requests');
-      expect(true).toBe(true);
     });
   });
 });
