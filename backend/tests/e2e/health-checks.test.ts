@@ -24,6 +24,7 @@ describe('E2E: Service Health Checks', () => {
     it('should respond to health check', async () => {
       const response = await request(prescriptionApp).get('/health');
 
+      // Health check may return 200 or 503 depending on dependencies
       expect([200, 503]).toContain(response.status);
       expect(response.body).toHaveProperty('service', 'prescription-service');
     });

@@ -469,7 +469,7 @@ describe('E2E: Teleconsultation Service', () => {
         .post('/api/teleconsultation/sessions')
         .send({ pharmacyId: 'pharmacy-method-test' });
 
-      expect([201, 400]).toContain(response.status);
+      expect(response.status).toBe(201); // POST should create resource
     });
 
     it('should support GET method for session retrieval', async () => {
@@ -477,7 +477,7 @@ describe('E2E: Teleconsultation Service', () => {
         '/api/teleconsultation/sessions/1'
       );
 
-      expect([200, 404]).toContain(response.status);
+      expect(response.status).toBe(404); // Session ID 1 does not exist
     });
 
     it('should support PATCH method for session updates', async () => {
@@ -485,7 +485,7 @@ describe('E2E: Teleconsultation Service', () => {
         .patch('/api/teleconsultation/sessions/1')
         .send({ notes: 'test' });
 
-      expect([200, 404]).toContain(response.status);
+      expect(response.status).toBe(404); // Session ID 1 does not exist
     });
 
     it('should support DELETE method for participant removal', async () => {
@@ -493,7 +493,7 @@ describe('E2E: Teleconsultation Service', () => {
         '/api/teleconsultation/sessions/1/participants/1'
       );
 
-      expect([200, 404, 409, 500]).toContain(response.status);
+      expect(response.status).toBe(404); // Session and participant do not exist
     });
   });
 });
