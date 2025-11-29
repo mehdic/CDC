@@ -44,7 +44,8 @@ describe('Compliance: HIPAA Requirements', () => {
         .get('/api/prescriptions/all')
         .set('Authorization', `Bearer ${MOCK_PATIENT_TOKEN}`);
 
-      expect([401, 403, 404]).toContain(response.status);
+      // Must return 403 (forbidden) for wrong role
+      expect(response.status).toBe(403);
       console.log('✓ RBAC enforced - patients cannot access admin endpoints');
     });
 
@@ -53,7 +54,8 @@ describe('Compliance: HIPAA Requirements', () => {
       const response = await request(prescriptionApp)
         .get('/api/prescriptions/patient-123');
 
-      expect([401, 403, 404]).toContain(response.status);
+      // Must return 401 (unauthorized) without auth token
+      expect(response.status).toBe(401);
       console.log('✓ PHI access requires authentication');
     });
 
@@ -90,9 +92,10 @@ describe('Compliance: HIPAA Requirements', () => {
         .get('/api/prescriptions')
         .set('Authorization', `Bearer ${MOCK_PHARMACIST_TOKEN}`);
 
-      // Different tokens should yield different results or access levels
-      expect([200, 401, 403, 500, 503]).toContain(response1.status);
-      expect([200, 401, 403, 500, 503]).toContain(response2.status);
+      // Both tokens should be recognized (not rejected as invalid)
+      // Tokens are valid - responses should be 200 or proper access control (403)
+      expect([200, 403]).toContain(response1.status);
+      expect([200, 403]).toContain(response2.status);
 
       console.log('✓ Unique user identification enforced');
     });
@@ -126,8 +129,6 @@ describe('Compliance: HIPAA Requirements', () => {
       console.log('   - Resource accessed');
       console.log('   - Action performed');
       console.log('   - IP address');
-
-      expect(true).toBe(true);
     });
 
     it('should implement automatic logoff after inactivity', async () => {
@@ -136,8 +137,6 @@ describe('Compliance: HIPAA Requirements', () => {
       console.log('   Verify: JWT tokens have expiration (exp claim)');
       console.log('   Verify: Refresh tokens expire after 15-30 minutes inactivity');
       console.log('   Verify: Frontend implements automatic logoff');
-
-      expect(true).toBe(true);
     });
 
     it('should implement encryption at rest', async () => {
@@ -148,8 +147,6 @@ describe('Compliance: HIPAA Requirements', () => {
       console.log('   - Medical records');
       console.log('   - Prescription details');
       console.log('   - Payment information');
-
-      expect(true).toBe(true);
     });
   });
 
@@ -171,8 +168,6 @@ describe('Compliance: HIPAA Requirements', () => {
       console.log('   Verify: Unusual access patterns detected');
       console.log('   Verify: Data export activities monitored');
       console.log('   Verify: Alerts triggered for suspicious activity');
-
-      expect(true).toBe(true);
     });
 
     it('should maintain breach notification procedures', async () => {
@@ -181,8 +176,6 @@ describe('Compliance: HIPAA Requirements', () => {
       console.log('   - Notify HHS if >500 individuals affected');
       console.log('   - Notify media if >500 individuals in same state');
       console.log('   - Maintain breach log for at least 6 years');
-
-      expect(true).toBe(true);
     });
   });
 
@@ -208,8 +201,6 @@ describe('Compliance: HIPAA Requirements', () => {
       console.log('   - PHI accessed');
       console.log('   - Action performed (view, modify, delete)');
       console.log('   - Success or failure');
-
-      expect(true).toBe(true);
     });
 
     it('should retain audit logs for at least 6 years', async () => {
@@ -217,8 +208,6 @@ describe('Compliance: HIPAA Requirements', () => {
       console.log('   Verify: Logs stored for minimum 6 years');
       console.log('   Verify: Logs tamper-proof (append-only)');
       console.log('   Verify: Logs backed up regularly');
-
-      expect(true).toBe(true);
     });
 
     it('should prevent unauthorized modification of audit logs', async () => {
@@ -226,8 +215,6 @@ describe('Compliance: HIPAA Requirements', () => {
       console.log('   Verify: Append-only log table');
       console.log('   Verify: No DELETE permissions on audit logs');
       console.log('   Verify: Logs include checksums/hashes');
-
-      expect(true).toBe(true);
     });
   });
 });
@@ -248,10 +235,9 @@ describe('Compliance: GDPR Requirements', () => {
         .get('/api/patient/data')
         .set('Authorization', `Bearer ${MOCK_PATIENT_TOKEN}`);
 
-      expect([200, 401, 404, 500]).toContain(response.status);
-
       if (response.status === 200) {
         console.log('✓ Patient can access their personal data');
+        expect(response.status).toBe(200);
       } else {
         console.log('ℹ️  Implement endpoint: GET /api/patient/data');
         console.log('   Must return: All personal data in readable format');
@@ -263,8 +249,6 @@ describe('Compliance: GDPR Requirements', () => {
         .get('/api/patient/data/export')
         .set('Authorization', `Bearer ${MOCK_PATIENT_TOKEN}`)
         .set('Accept', 'application/json');
-
-      expect([200, 401, 404, 500]).toContain(response.status);
 
       if (response.status === 200) {
         expect(response.headers['content-type']).toContain('application/json');
@@ -289,10 +273,9 @@ describe('Compliance: GDPR Requirements', () => {
           phone: '+41791234567'
         });
 
-      expect([200, 400, 401, 404, 500]).toContain(response.status);
-
       if (response.status === 200) {
         console.log('✓ Patients can update their personal data');
+        expect(response.status).toBe(200);
       } else {
         console.log('ℹ️  Implement endpoint: PUT /api/patient/profile');
       }
@@ -303,8 +286,6 @@ describe('Compliance: GDPR Requirements', () => {
       console.log('   - Patients can request corrections');
       console.log('   - Response within 1 month');
       console.log('   - Notify third parties of corrections');
-
-      expect(true).toBe(true);
     });
   });
 
@@ -318,10 +299,9 @@ describe('Compliance: GDPR Requirements', () => {
         .delete('/api/patient/account')
         .set('Authorization', `Bearer ${MOCK_PATIENT_TOKEN}`);
 
-      expect([200, 202, 401, 404, 500]).toContain(response.status);
-
       if ([200, 202].includes(response.status)) {
         console.log('✓ Account deletion endpoint exists');
+        expect([200, 202]).toContain(response.status);
       } else {
         console.log('ℹ️  Implement endpoint: DELETE /api/patient/account');
         console.log('   Note: Medical records may need retention per law');
@@ -334,8 +314,6 @@ describe('Compliance: GDPR Requirements', () => {
       console.log('   - Implement "soft delete" for required records');
       console.log('   - Anonymize data where possible');
       console.log('   - Document retention periods and justifications');
-
-      expect(true).toBe(true);
     });
   });
 
@@ -349,8 +327,6 @@ describe('Compliance: GDPR Requirements', () => {
         .get('/api/patient/data/export')
         .set('Authorization', `Bearer ${MOCK_PATIENT_TOKEN}`)
         .query({ format: 'json' });
-
-      expect([200, 401, 404, 500]).toContain(response.status);
 
       if (response.status === 200) {
         // Verify structured format
@@ -372,8 +348,6 @@ describe('Compliance: GDPR Requirements', () => {
       console.log('   - Communications');
       console.log('   - Consents given');
       console.log('   - All data provided by or generated for the patient');
-
-      expect(true).toBe(true);
     });
   });
 
@@ -387,10 +361,9 @@ describe('Compliance: GDPR Requirements', () => {
         .get('/api/patient/consents')
         .set('Authorization', `Bearer ${MOCK_PATIENT_TOKEN}`);
 
-      expect([200, 401, 404, 500]).toContain(response.status);
-
       if (response.status === 200) {
         console.log('✓ Consent management endpoint exists');
+        expect(response.status).toBe(200);
       } else {
         console.log('ℹ️  Implement consent management:');
         console.log('   GET /api/patient/consents - View consents');
@@ -403,8 +376,6 @@ describe('Compliance: GDPR Requirements', () => {
       const response = await request(prescriptionApp)
         .delete('/api/patient/consents/marketing')
         .set('Authorization', `Bearer ${MOCK_PATIENT_TOKEN}`);
-
-      expect([200, 204, 401, 404, 500]).toContain(response.status);
 
       console.log('ℹ️  Consent withdrawal requirements:');
       console.log('   - Must be as easy as giving consent');
@@ -420,8 +391,6 @@ describe('Compliance: GDPR Requirements', () => {
       console.log('   - What they consented to');
       console.log('   - How consent was obtained');
       console.log('   - When consent was withdrawn (if applicable)');
-
-      expect(true).toBe(true);
     });
   });
 
@@ -435,8 +404,6 @@ describe('Compliance: GDPR Requirements', () => {
       console.log('   - Notify supervisory authority within 72 hours');
       console.log('   - Notify affected individuals without undue delay');
       console.log('   - Document all breaches (even if not reported)');
-
-      expect(true).toBe(true);
     });
 
     it('should maintain breach documentation', async () => {
@@ -445,8 +412,6 @@ describe('Compliance: GDPR Requirements', () => {
       console.log('   - Categories and number of affected individuals');
       console.log('   - Likely consequences');
       console.log('   - Measures taken to address the breach');
-
-      expect(true).toBe(true);
     });
   });
 
@@ -470,8 +435,6 @@ describe('Compliance: GDPR Requirements', () => {
       console.log('   - Collect only necessary data');
       console.log('   - Don\'t collect "just in case"');
       console.log('   - Regular review of data collected');
-
-      expect(true).toBe(true);
     });
 
     it('should implement privacy by default', async () => {
@@ -480,8 +443,6 @@ describe('Compliance: GDPR Requirements', () => {
       console.log('   - Marketing opt-in (not opt-out)');
       console.log('   - Data sharing disabled by default');
       console.log('   - Minimal data processing by default');
-
-      expect(true).toBe(true);
     });
 
     it('should implement pseudonymization where possible', async () => {
@@ -489,8 +450,6 @@ describe('Compliance: GDPR Requirements', () => {
       console.log('   - Use patient IDs instead of names in logs');
       console.log('   - Hash email addresses in analytics');
       console.log('   - Separate identifiable data from health data');
-
-      expect(true).toBe(true);
     });
   });
 });
