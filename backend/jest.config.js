@@ -7,7 +7,8 @@ module.exports = {
   roots: [
     '<rootDir>/shared',
     '<rootDir>/services',
-    '<rootDir>/tests'
+    '<rootDir>/tests',
+    '<rootDir>/__tests__'
   ],
 
   // Transform TypeScript files using ts-jest
@@ -40,9 +41,9 @@ module.exports = {
   collectCoverageFrom: [
     'shared/**/*.ts',
     'services/**/*.ts',
+    '__tests__/**/*.ts',
     '!**/*.test.ts',
     '!**/*.spec.ts',
-    '!**/__tests__/**',
     '!**/__mocks__/**',
     '!**/node_modules/**',
     '!**/dist/**'

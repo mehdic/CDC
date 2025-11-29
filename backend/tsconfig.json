@@ -55,7 +55,9 @@
   "include": [
     "src/**/*",
     "shared/**/*",
-    "services/**/*"
+    "services/**/*",
+    "shared/types/**/*.d.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
