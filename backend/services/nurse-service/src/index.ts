@@ -1,9 +1,20 @@
 /**
  * Nurse Service
- * Microservice for nurse profile management
+ * Microservice for nurse order management, profiles, and credentials
  * HIPAA/GDPR Compliant - Healthcare professional data
  *
- * Endpoints:
+ * Order Management Endpoints:
+ * - POST /api/nurse/orders - Create medication order
+ * - GET /api/nurse/orders - List orders (with filters)
+ * - GET /api/nurse/orders/:id - Get order by ID
+ * - PATCH /api/nurse/orders/:id - Update order status
+ * - DELETE /api/nurse/orders/:id - Cancel order
+ *
+ * Patient Management Endpoints:
+ * - GET /api/nurse/patients - List assigned patients
+ * - GET /api/nurse/patients/:id - Get patient details
+ *
+ * Profile Management Endpoints:
  * - GET /nurses - List all nurses (paginated)
  * - GET /nurses/search - Search nurses by specialization
  * - GET /nurses/certifications/expiring - Get nurses with expiring certifications
@@ -13,6 +24,13 @@
  * - PUT /nurses/:id - Update nurse profile
  * - POST /nurses/:id/verify - Verify nurse credentials
  * - DELETE /nurses/:id - Soft delete nurse profile
+ *
+ * WebSocket Events:
+ * - order:created - New order created
+ * - order:status_updated - Order status changed
+ * - delivery:notification - Delivery created/updated
+ * - patient:assigned - Patient assigned to nurse
+ *
  * - GET /health - Health check
  */
 
@@ -20,12 +38,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express, { Express, Request, Response, NextFunction } from 'express';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import { DataSource } from 'typeorm';
 import { Nurse } from './models/Nurse';
+import { NurseOrder } from './models/NurseOrder';
 import { User } from '@shared/models/User';
 import nurseRouter from './routes/nurses';
+import orderRouter from './routes/orders';
+import patientRouter from './routes/patients';
+import { initializeSocketEvents } from './websocket/events';
 
 // ============================================================================
 // Configuration
@@ -48,8 +72,8 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || 'metapharm',
   password: process.env.DATABASE_PASSWORD || 'metapharm_dev_password',
   database: process.env.DATABASE_NAME || 'metapharm',
-  entities: [Nurse, User],
-  synchronize: false, // Never auto-sync - use migrations
+  entities: [Nurse, NurseOrder, User],
+  synchronize: NODE_ENV === 'development', // Auto-sync in development only
   logging: NODE_ENV === 'development',
   ssl: NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
@@ -59,6 +83,29 @@ export const AppDataSource = new DataSource({
 // ============================================================================
 
 const app: Express = express();
+const httpServer = createServer(app);
+
+// ============================================================================
+// Socket.IO Setup
+// ============================================================================
+
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: CORS_ORIGIN,
+    credentials: true,
+    methods: ['GET', 'POST'],
+  },
+});
+
+// Initialize Socket.IO event handlers
+initializeSocketEvents(io);
+
+// Make Socket.IO available to routes
+app.locals.io = io;
+
+// ============================================================================
+// Middleware
+// ============================================================================
 
 // Security middleware
 app.use(helmet());
@@ -68,7 +115,7 @@ app.use(
   cors({
     origin: CORS_ORIGIN,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
@@ -85,6 +132,12 @@ if (NODE_ENV === 'development') {
   });
 }
 
+// Inject dataSource into app.locals
+app.use((req: Request, res: Response, next: NextFunction) => {
+  req.app.locals.dataSource = AppDataSource;
+  next();
+});
+
 // ============================================================================
 // Health Check
 // ============================================================================
@@ -98,6 +151,7 @@ app.get('/health', async (req: Request, res: Response) => {
         status: 'unhealthy',
         service: 'nurse-service',
         database: 'disconnected',
+        websocket: 'active',
         timestamp: new Date().toISOString(),
       });
     }
@@ -109,6 +163,7 @@ app.get('/health', async (req: Request, res: Response) => {
       status: 'healthy',
       service: 'nurse-service',
       database: 'connected',
+      websocket: 'active',
       timestamp: new Date().toISOString(),
       version: '1.0.0',
     });
@@ -118,6 +173,7 @@ app.get('/health', async (req: Request, res: Response) => {
       status: 'unhealthy',
       service: 'nurse-service',
       error: 'Database connection failed',
+      websocket: 'active',
       timestamp: new Date().toISOString(),
     });
   }
@@ -127,7 +183,14 @@ app.get('/health', async (req: Request, res: Response) => {
 // API Routes
 // ============================================================================
 
+// Nurse profile management routes
 app.use('/nurses', nurseRouter);
+
+// Nurse order management routes
+app.use('/api/nurse/orders', orderRouter);
+
+// Nurse patient management routes
+app.use('/api/nurse/patients', patientRouter);
 
 // ============================================================================
 // Error Handling
@@ -166,25 +229,30 @@ async function startServer() {
     await AppDataSource.initialize();
     console.log('✅ Database connected successfully');
 
-    const server = app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`🚀 Nurse Service running on port ${PORT}`);
       console.log(`📊 Environment: ${NODE_ENV}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`🔌 WebSocket server active`);
     });
 
     // Graceful shutdown
     const shutdown = async () => {
       console.log('\n🛑 Shutting down gracefully...');
 
-      server.close(async () => {
+      httpServer.close(async () => {
         console.log('✅ HTTP server closed');
 
         try {
           await AppDataSource.destroy();
           console.log('✅ Database connection closed');
-          process.exit(0);
+
+          io.close(() => {
+            console.log('✅ WebSocket server closed');
+            process.exit(0);
+          });
         } catch (error) {
-          console.error('❌ Error closing database:', error);
+          console.error('❌ Error closing connections:', error);
           process.exit(1);
         }
       });
@@ -208,3 +276,4 @@ if (require.main === module) {
 }
 
 export default app;
+export { io };
