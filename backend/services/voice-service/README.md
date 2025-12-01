@@ -10,11 +10,13 @@ The Voice Service handles:
 - Language detection (French, German, Italian, Romansh)
 - Medical terminology analysis
 - Service statistics and analytics
+- Real-time waveform visualization
+- WebSocket streaming transcription
 
 ## Technology Stack
 
 - **Runtime**: Node.js with TypeScript
-- **Framework**: Express.js
+- **Framework**: Express.js with WebSocket support
 - **Database**: PostgreSQL with TypeORM
 - **Testing**: Jest
 - **AI Integration**: OpenAI Whisper API (stub implementation for production integration)
@@ -26,9 +28,11 @@ The Voice Service handles:
 - Support for multiple audio formats (MP3, WAV, OGG, FLAC, M4A)
 - Metadata tracking (user, role, conversation, appointment context)
 - Recording status tracking (PENDING, PROCESSING, COMPLETED, FAILED)
+- Real-time waveform visualization
 
 ### Transcription
 - Automatic transcription of audio files
+- WebSocket streaming transcription for real-time processing
 - Language detection and validation
 - Confidence scoring
 - Medical terminology detection (doctor/healthcare terms, pharmaceutical terms)
@@ -46,21 +50,44 @@ The Voice Service handles:
 - Identifies pharmaceutical-related terminology
 - Extracts relevant keywords for healthcare context
 
+## Architecture
+
+### Backend Service (`src/`)
+
+- **Entities**: VoiceRecording, Transcription
+- **Services**:
+  - `voice.service.ts` - Main business logic
+  - `ai-transcription.service.ts` - AI integration (stub for external API)
+  - `language-detection.service.ts` - Swiss language detection
+  - `medical-terminology.service.ts` - Medical term recognition
+- **Controllers**: `voice.controller.ts` - HTTP endpoints
+- **Routes**: `voice.routes.ts` - Express route definitions
+
+### Frontend Components (`web/src/shared/features/voice/`)
+
+- `VoiceRecorder.tsx` - Audio recording component with visualization
+- `TranscriptionDisplay.tsx` - Transcription result display
+- `VoiceNotePlayer.tsx` - Audio playback component
+- `hooks/useVoiceRecording.ts` - React hook for voice recording workflow
+
 ## API Endpoints
 
-### Recordings
-- `POST /api/voice/recordings` - Create a voice recording
+### Recording Management
+
+- `POST /api/voice/recordings` - Create recording
 - `GET /api/voice/recordings/:id` - Get recording by ID
 - `GET /api/voice/recordings` - List recordings with filters
 - `DELETE /api/voice/recordings/:id` - Delete recording
 
-### Transcriptions
+### Transcription
+
 - `POST /api/voice/transcribe` - Process recording and generate transcription
 - `GET /api/voice/transcriptions/:id` - Get transcription by ID
 - `GET /api/voice/transcriptions` - List transcriptions with filters
 - `GET /api/voice/transcriptions/recording/:recordingId` - Get transcription for recording
 
 ### Statistics
+
 - `GET /api/voice/statistics` - Get service statistics
 - `GET /health` - Health check
 
@@ -114,6 +141,8 @@ See `src/services/ai-transcription.service.ts` for integration points.
 ### Run Tests
 ```bash
 npm test
+npm run test:watch     # Watch mode
+npm run test:coverage  # With coverage
 ```
 
 ### Test Coverage
@@ -133,6 +162,15 @@ npm test
    - Confidence scoring
    - Default language handling
    - Multiple language scenarios
+
+## Installation
+
+```bash
+cd backend/services/voice-service
+npm install
+npm run build
+npm start
+```
 
 ## Development
 
@@ -158,19 +196,28 @@ npm run test:watch     # Watch mode
 npm run test:coverage  # With coverage
 ```
 
+### Linting
+```bash
+npm run lint      # Run linter
+npm run lint:fix  # Fix linting issues
+```
+
 ## Environment Variables
 
-```
+```env
+# Database
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=metapharm_voice
 
-AI_API_KEY=your-api-key
+# AI Service
+AI_API_KEY=your-openai-api-key
 AI_API_BASE_URL=https://api.openai.com/v1
 AI_MODEL=whisper-1
 
+# Server
 PORT=3009
 NODE_ENV=development
 ```
@@ -253,16 +300,86 @@ HTTP Status Codes:
 - **Healthcare**: Designed for HIPAA/GDPR compliance (audit logging ready)
 - **Multitenant**: Supports multi-tenant architecture with user/role separation
 
-## Future Enhancements
+## Frontend Integration
 
-1. **Real AI Integration**: Replace stub with production API calls
-2. **WebSocket Streaming**: Real-time transcription streaming
-3. **Advanced Filtering**: Enhanced search and filter capabilities
-4. **Webhook Integration**: Event notifications for completed transcriptions
-5. **Batch Processing**: Background job queue for bulk transcriptions
-6. **Caching**: Redis caching for frequently accessed transcriptions
-7. **Analytics Dashboard**: Enhanced statistics and reporting
-8. **Custom Vocabulary**: Domain-specific medical terminology support
+### React Hook
+
+```typescript
+import { useVoiceRecording } from '@/shared/features/voice';
+
+function MyComponent() {
+  const {
+    recordingId,
+    isRecording,
+    isTranscribing,
+    transcription,
+    error,
+    completeWorkflow,
+    deleteRecording,
+  } = useVoiceRecording({
+    userId: 'user-123',
+    userRole: 'pharmacist',
+    language: 'fr-CH',
+  });
+
+  // Use hook methods...
+}
+```
+
+### Components
+
+```typescript
+import {
+  VoiceRecorder,
+  TranscriptionDisplay,
+  VoiceNotePlayer,
+} from '@/shared/features/voice';
+
+// Render components
+<VoiceRecorder
+  onRecordingComplete={(blob, metadata) => {...}}
+  language="fr-CH"
+/>
+
+<TranscriptionDisplay
+  transcription={transcription}
+  onSave={(text, notes) => {...}}
+/>
+
+<VoiceNotePlayer
+  audioUrl="https://..."
+  duration={120}
+/>
+```
+
+## Next Steps
+
+1. **AI Service Integration**: Replace stub `ai-transcription.service.ts` with real OpenAI Whisper API calls
+2. **WebSocket Implementation**: Add real-time streaming transcription via WebSocket at `/ws/voice/stream`
+3. **Database Setup**: Configure PostgreSQL for VoiceRecording and Transcription entities
+4. **File Storage**: Implement S3/Azure Blob storage for audio files
+5. **Healthcare Compliance**: Add HIPAA/GDPR audit logging
+6. **Performance**: Implement caching and optimization for transcription queries
+
+## Dependencies
+
+- **Express**: HTTP framework
+- **TypeORM**: Database ORM
+- **axios**: HTTP client for AI services
+- **multer**: File upload handling
+- **jest**: Unit testing
+- **TypeScript**: Type safety
+
+## Task Reference
+
+Implemented as part of P3-VOICE voice transcription service:
+
+- [T1] VoiceRecording entity - Store voice recordings metadata
+- [T2] TranscriptionService - Convert voice to text (AI stub)
+- [T3] Real-time transcription - WebSocket streaming (placeholder)
+- [T4] Language detection - French/German/Italian/Romansh support
+- [T5] Medical terminology - Enhanced recognition for medical terms
+- [T6] Transcription UI - React components for pharmacist/doctor apps
 
 ## License
 

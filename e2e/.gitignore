@@ -1,0 +1,18 @@
+node_modules/
+dist/
+build/
+.DS_Store
+*.log
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+.auth/
+
+# Screenshots and videos
+screenshots/
+videos/
+
+# Node
+package-lock.json
