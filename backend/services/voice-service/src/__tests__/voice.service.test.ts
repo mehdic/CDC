@@ -283,8 +283,18 @@ describe('VoiceService', () => {
 
       recordingRepository.findOne.mockResolvedValue(mockRecording);
       recordingRepository.save.mockResolvedValue(mockRecording);
-      transcriptionRepository.create.mockReturnValue({});
-      transcriptionRepository.save.mockResolvedValue({});
+      const mockTranscription: any = {
+        id: 'trans-123',
+        recordingId: 'rec-123',
+        userId: 'user-123',
+        userRole: 'pharmacist',
+        status: TranscriptionStatus.PENDING,
+        confidence: 0,
+        hasDoctor: false,
+        hasPharmaTerms: false,
+      };
+      transcriptionRepository.create.mockReturnValue(mockTranscription);
+      transcriptionRepository.save.mockResolvedValue(mockTranscription);
 
       aiService.validateAudioFile.mockRejectedValue(
         new Error('Invalid audio file'),
