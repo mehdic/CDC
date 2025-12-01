@@ -23,6 +23,7 @@ import {
   Alert,
   Button,
   Stack,
+  Snackbar,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -217,6 +218,7 @@ interface TreatmentViewProps {
 
 export const TreatmentView: React.FC<TreatmentViewProps> = ({ patientId }) => {
   const [tabValue, setTabValue] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { data: treatmentData, isLoading, error } = usePatientTreatments(patientId);
   const renewMutation = useRenewPrescription();
 
@@ -227,8 +229,12 @@ export const TreatmentView: React.FC<TreatmentViewProps> = ({ patientId }) => {
     try {
       await renewMutation.mutateAsync(prescriptionId);
     } catch (err) {
-      console.error('Error renewing prescription:', err);
+      setErrorMessage('Erreur lors du renouvellement de l\'ordonnance');
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setErrorMessage(null);
   };
 
   if (isLoading) {
@@ -338,6 +344,15 @@ export const TreatmentView: React.FC<TreatmentViewProps> = ({ patientId }) => {
           <Alert severity="info">Aucun historique de traitement</Alert>
         )}
       </TabPanel>
+
+      {/* Error Snackbar */}
+      <Snackbar
+        open={!!errorMessage}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        message={errorMessage}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 };

@@ -212,7 +212,7 @@ export const ObservanceStats: React.FC = () => {
 
   const handleExportReport = () => {
     // In a real application, this would generate a CSV or PDF
-    console.log('Exporting observance report...');
+    // Export functionality would be implemented here
   };
 
   if (isLoading) {
