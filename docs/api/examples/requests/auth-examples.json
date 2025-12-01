@@ -1,0 +1,110 @@
+{
+  "loginExample": {
+    "title": "User Login",
+    "endpoint": "POST /api/auth/login",
+    "request": {
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "email": "pharmacist@metapharm.ch",
+        "password": "SecurePassword123!"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsImVtYWlsIjoicGhhcm1hY2lzdEBtZXRhcGhhcm0uY2giLCJyb2xlIjoiUEhBUk1BQ0lTVCIsImlhdCI6MTcwMTQzMjAwMCwiZXhwIjoxNzAxNDM1NjAwfQ.Ks5JPGwxJ...",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzAxNDMyMDAwLCJleHAiOjE3MDIwMzcwMDB9.qN8fhQx2Z...",
+        "expiresIn": 3600,
+        "user": {
+          "id": "550e8400-e29b-41d4-a716-446655440000",
+          "email": "pharmacist@metapharm.ch",
+          "role": "PHARMACIST",
+          "firstName": "Jean",
+          "lastName": "Dupont",
+          "pharmacyId": "pharm-001"
+        }
+      }
+    }
+  },
+  "loginWithMFAExample": {
+    "title": "Login with MFA Required",
+    "endpoint": "POST /api/auth/login",
+    "request": {
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "email": "doctor@metapharm.ch",
+        "password": "SecurePassword123!"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "requiresMFA": true,
+        "tempToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsInR5cGUiOiJ0ZW1wIiwiaWF0IjoxNzAxNDMyMDAwLCJleHAiOjE3MDE0MzI2MDB9.aB1cDeFg...",
+        "mfaMethod": "totp"
+      }
+    }
+  },
+  "mfaVerifyExample": {
+    "title": "Verify MFA Code",
+    "endpoint": "POST /api/auth/mfa/verify",
+    "request": {
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "tempToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsInR5cGUiOiJ0ZW1wIiwiaWF0IjoxNzAxNDMyMDAwLCJleHAiOjE3MDE0MzI2MDB9.aB1cDeFg...",
+        "code": "123456"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsImVtYWlsIjoiZG9jdG9yQG1ldGFwaGFybS5jaCIsInJvbGUiOiJET0NUT1IiLCJpYXQiOjE3MDE0MzIwMDAsImV4cCI6MTcwMTQzNTYwMH0.mN5oPqRx...",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsInR5cGUiOiJyZWZyZXNoIiwiaWF0IjoxNzAxNDMyMDAwLCJleHAiOjE3MDIwMzcwMDB9.tP9rIySy...",
+        "expiresIn": 3600
+      }
+    }
+  },
+  "mfaSetupExample": {
+    "title": "Setup MFA",
+    "endpoint": "POST /api/auth/mfa/setup",
+    "request": {
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "secret": "JBSWY3DPEBLW64TMMQ======",
+        "qrCode": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "manualEntryKey": "JBSWY3DPEBLW64TMMQ======"
+      }
+    }
+  },
+  "logoutExample": {
+    "title": "User Logout",
+    "endpoint": "DELETE /api/auth/logout",
+    "request": {
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "message": "Logout successful"
+      }
+    }
+  }
+}

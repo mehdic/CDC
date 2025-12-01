@@ -1,21 +1,52 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: MetaPharm Connect API
   version: 1.0.0
-  description: Comprehensive REST API for MetaPharm Connect healthcare platform
+  description: |
+    Comprehensive REST API for MetaPharm Connect - A healthcare platform connecting pharmacists, doctors, nurses, delivery personnel, and patients.
+
+    ## Features
+
+    - **Multi-Role Support**: Authentication and endpoints for 5 distinct user roles
+    - **Healthcare Integration**: Prescription management, teleconsultation, e-Santé integration
+    - **Security**: JWT authentication, MFA, HIN e-ID, encryption, audit logging
+    - **Real-time**: WebSocket support for messaging, notifications, delivery tracking
+    - **Compliance**: HIPAA/GDPR compliance, Swiss healthcare regulations
+
+    ## Authentication
+
+    The API uses JWT (JSON Web Tokens) for authentication. All protected endpoints require an `Authorization` header with a Bearer token.
+
+    ### Types
+    - **JWT Bearer Token**: Standard authentication for all protected endpoints
+    - **MFA (Multi-Factor Authentication)**: Required for healthcare professionals
+    - **HIN e-ID**: Swiss healthcare ID authentication for enhanced security
+
+    ### Rate Limiting
+    - **General**: 100 requests per minute per IP
+    - **Auth**: 5 login attempts per 15 minutes per IP (production)
+    - **Auth**: 1000 login attempts per 15 minutes (development)
+
   contact:
     name: MetaPharm Support
     email: api-support@metapharm.com
   license:
-    name: MIT
+    name: Proprietary
+    url: https://metapharm.ch/license
+  x-logo:
+    url: https://metapharm.ch/logo.png
+    altText: MetaPharm Connect
 
 servers:
-  - url: https://api.metapharm.com/v1
+  - url: http://localhost:4000
+    description: Development (API Gateway)
+    variables:
+      port:
+        default: '4000'
+  - url: https://api.metapharm.ch
     description: Production API
-  - url: https://staging.metapharm.com/v1
+  - url: https://staging.metapharm.ch
     description: Staging API
-  - url: http://localhost:5000/v1
-    description: Development API
 
 tags:
   - name: Authentication
