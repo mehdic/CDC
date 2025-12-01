@@ -1,0 +1,120 @@
+{
+  "app_name": "MetaPharm Connect",
+  "app_description": "Piattaforma sanitaria integrata per farmacisti, medici e pazienti",
+  "language": "Italiano",
+  "language_code": "it-CH",
+
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Pannello di controllo",
+    "profile": "Profilo",
+    "messages": "Messaggi",
+    "appointments": "Appuntamenti",
+    "prescriptions": "Ricette",
+    "settings": "Impostazioni",
+    "logout": "Esci",
+    "inventory": "Inventario",
+    "orders": "Ordini",
+    "delivery": "Consegna",
+    "analytics": "Analytics",
+    "help": "Aiuto"
+  },
+
+  "common": {
+    "cancel": "Annulla",
+    "save": "Salva",
+    "delete": "Elimina",
+    "edit": "Modifica",
+    "add": "Aggiungi",
+    "update": "Aggiorna",
+    "back": "Indietro",
+    "next": "Prossimo",
+    "previous": "Precedente",
+    "close": "Chiudi",
+    "loading": "Caricamento...",
+    "error": "Errore",
+    "success": "Successo",
+    "warning": "Avvertenza",
+    "info": "Informazione",
+    "confirm": "Conferma",
+    "yes": "Sì",
+    "no": "No",
+    "search": "Cerca",
+    "filter": "Filtra",
+    "sort": "Ordina",
+    "apply": "Applica",
+    "clear": "Cancella"
+  },
+
+  "actions": {
+    "view": "Visualizza",
+    "download": "Scarica",
+    "upload": "Carica",
+    "print": "Stampa",
+    "share": "Condividi",
+    "copy": "Copia",
+    "paste": "Incolla",
+    "select_all": "Seleziona tutto",
+    "deselect_all": "Deseleziona tutto"
+  },
+
+  "validation": {
+    "required": "Questo campo è obbligatorio",
+    "invalid_email": "Indirizzo e-mail non valido",
+    "invalid_phone": "Numero di telefono non valido",
+    "password_too_short": "La password deve contenere almeno 8 caratteri",
+    "passwords_dont_match": "Le password non corrispondono",
+    "field_error": "Errore del campo"
+  },
+
+  "time": {
+    "today": "Oggi",
+    "tomorrow": "Domani",
+    "yesterday": "Ieri",
+    "this_week": "Questa settimana",
+    "this_month": "Questo mese",
+    "january": "Gennaio",
+    "february": "Febbraio",
+    "march": "Marzo",
+    "april": "Aprile",
+    "may": "Maggio",
+    "june": "Giugno",
+    "july": "Luglio",
+    "august": "Agosto",
+    "september": "Settembre",
+    "october": "Ottobre",
+    "november": "Novembre",
+    "december": "Dicembre",
+    "monday": "Lunedì",
+    "tuesday": "Martedì",
+    "wednesday": "Mercoledì",
+    "thursday": "Giovedì",
+    "friday": "Venerdì",
+    "saturday": "Sabato",
+    "sunday": "Domenica"
+  },
+
+  "currency": {
+    "chf": "CHF",
+    "format": "CHF {{amount}}"
+  },
+
+  "pagination": {
+    "of": "di",
+    "to": "a",
+    "results": "risultati",
+    "show_entries": "Mostra {{number}} voci",
+    "no_results": "Nessun risultato trovato"
+  },
+
+  "accessibility": {
+    "skip_to_main": "Passa al contenuto principale",
+    "skip_to_navigation": "Passa alla navigazione",
+    "close_menu": "Chiudi menu",
+    "open_menu": "Apri menu",
+    "expand": "Espandi",
+    "collapse": "Comprimi",
+    "menu": "Menu",
+    "submenu": "Sottomenu"
+  }
+}

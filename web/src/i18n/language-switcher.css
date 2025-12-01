@@ -1,0 +1,357 @@
+/**
+ * LanguageSwitcher Styles
+ * Accessible language selection component
+ */
+
+.language-switcher {
+  display: inline-block;
+}
+
+/* =======================
+   Dropdown Variant
+   ======================= */
+
+.language-switcher.dropdown {
+  position: relative;
+}
+
+.language-switcher-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: transparent;
+  border: 2px solid #bdbdbd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #212121;
+  transition: all 0.2s ease;
+
+  /* Touch target size */
+  min-width: 48px;
+  min-height: 48px;
+  justify-content: center;
+}
+
+.language-switcher-toggle:hover {
+  border-color: #1976d2;
+  background-color: rgba(25, 118, 210, 0.04);
+}
+
+.language-switcher-toggle:focus {
+  outline: 3px solid #4A90E2;
+  outline-offset: 2px;
+  border-color: #1976d2;
+}
+
+.language-switcher-toggle[aria-expanded="true"] {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.dropdown-arrow {
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.language-switcher-toggle[aria-expanded="true"] .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.language-switcher-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  border: 2px solid #1976d2;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 100%;
+}
+
+.language-switcher-menu li {
+  margin: 0;
+  padding: 0;
+}
+
+.language-option {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #212121;
+  transition: background-color 0.2s ease;
+
+  /* Touch target size */
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.language-option:hover {
+  background-color: #f5f5f5;
+}
+
+.language-option:focus {
+  outline: 3px solid #4A90E2;
+  outline-offset: -2px;
+}
+
+.language-option.active {
+  background-color: rgba(25, 118, 210, 0.1);
+  font-weight: 600;
+  color: #1976d2;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .language-switcher-toggle {
+    background-color: transparent;
+    border-color: #424242;
+    color: #e0e0e0;
+  }
+
+  .language-switcher-toggle:hover {
+    border-color: #64b5f6;
+    background-color: rgba(100, 181, 246, 0.04);
+  }
+
+  .language-switcher-menu {
+    background-color: #1e1e1e;
+    border-color: #64b5f6;
+    color: #e0e0e0;
+  }
+
+  .language-option {
+    color: #e0e0e0;
+  }
+
+  .language-option:hover {
+    background-color: #2a2a2a;
+  }
+
+  .language-option.active {
+    background-color: rgba(100, 181, 246, 0.1);
+    color: #64b5f6;
+  }
+}
+
+/* =======================
+   Button Group Variant
+   ======================= */
+
+.language-switcher.button-group {
+  display: inline-block;
+}
+
+.language-switcher.button-group fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.language-switcher.button-group legend {
+  margin-bottom: 8px;
+}
+
+.button-group-buttons {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.language-button {
+  padding: 10px 16px;
+  background-color: #f5f5f5;
+  border: 2px solid #bdbdbd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #212121;
+  transition: all 0.2s ease;
+
+  /* Touch target size */
+  min-width: 48px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.language-button:hover:not(.active) {
+  border-color: #1976d2;
+  background-color: #eeeeee;
+}
+
+.language-button:focus {
+  outline: 3px solid #4A90E2;
+  outline-offset: 2px;
+  border-color: #1976d2;
+}
+
+.language-button.active {
+  background-color: #1976d2;
+  color: #ffffff;
+  border-color: #1976d2;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .language-button {
+    background-color: #2a2a2a;
+    border-color: #424242;
+    color: #e0e0e0;
+  }
+
+  .language-button:hover:not(.active) {
+    background-color: #3a3a3a;
+    border-color: #64b5f6;
+  }
+
+  .language-button.active {
+    background-color: #2196f3;
+    border-color: #2196f3;
+    color: #ffffff;
+  }
+}
+
+/* =======================
+   Inline Variant
+   ======================= */
+
+.language-switcher.inline {
+  display: inline-block;
+}
+
+.language-switcher.inline nav {
+  padding: 0;
+  margin: 0;
+}
+
+.language-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.language-current {
+  font-weight: 600;
+  color: #1976d2;
+  padding: 8px 12px;
+  border-bottom: 2px solid #1976d2;
+}
+
+@media (prefers-color-scheme: dark) {
+  .language-current {
+    color: #64b5f6;
+    border-bottom-color: #64b5f6;
+  }
+}
+
+.language-link {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  color: #1976d2;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+
+  /* Touch target size */
+  min-width: 48px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.language-link:hover {
+  color: #1565c0;
+  text-decoration-thickness: 2px;
+}
+
+.language-link:focus {
+  outline: 3px solid #4A90E2;
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .language-link {
+    color: #64b5f6;
+  }
+
+  .language-link:hover {
+    color: #42a5f5;
+  }
+}
+
+/* =======================
+   Responsive
+   ======================= */
+
+@media (max-width: 600px) {
+  .language-switcher-toggle,
+  .language-option,
+  .language-button,
+  .language-link {
+    min-width: 56px;
+    min-height: 56px;
+  }
+
+  .button-group-buttons {
+    gap: 6px;
+  }
+
+  .language-list {
+    gap: 8px;
+  }
+}
+
+/* =======================
+   Reduced Motion
+   ======================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .language-switcher-toggle,
+  .language-option,
+  .language-button,
+  .language-link,
+  .dropdown-arrow {
+    transition: none;
+  }
+}
+
+/* =======================
+   High Contrast Mode
+   ======================= */
+
+@media (prefers-contrast: more) {
+  .language-switcher-toggle,
+  .language-button,
+  .language-link {
+    border-width: 3px;
+  }
+
+  .language-switcher-menu {
+    border-width: 3px;
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "appointments": {
+    "title": "Rendez-vous",
+    "my_appointments": "Mes rendez-vous",
+    "book_appointment": "Prendre rendez-vous",
+    "upcoming": "À venir",
+    "past": "Passés",
+    "cancelled": "Annulés",
+    "no_appointments": "Aucun rendez-vous"
+  },
+
+  "booking": {
+    "select_date": "Sélectionner une date",
+    "select_time": "Sélectionner une heure",
+    "select_provider": "Sélectionner un prestataire",
+    "select_type": "Type de consultation",
+    "reason": "Motif de la consultation",
+    "notes": "Notes supplémentaires",
+    "available_slots": "Créneaux disponibles",
+    "book": "Prendre rendez-vous",
+    "confirm_booking": "Confirmer le rendez-vous"
+  },
+
+  "appointment_types": {
+    "consultation": "Consultation",
+    "teleconsultation": "Téléconsultation",
+    "pharmacy_consultation": "Conseil pharmaceutique",
+    "medication_review": "Révision des médicaments",
+    "follow_up": "Suivi"
+  },
+
+  "provider": {
+    "pharmacist": "Pharmacien",
+    "doctor": "Médecin",
+    "nurse": "Infirmière",
+    "specialist": "Spécialiste"
+  },
+
+  "details": {
+    "date": "Date",
+    "time": "Heure",
+    "provider": "Prestataire",
+    "type": "Type",
+    "location": "Localisation",
+    "duration": "Durée",
+    "status": "Statut",
+    "reminder": "Rappel"
+  },
+
+  "actions": {
+    "reschedule": "Reprogrammer",
+    "cancel": "Annuler",
+    "join_consultation": "Rejoindre la consultation",
+    "reschedule_confirm": "Êtes-vous sûr de vouloir reprogrammer ce rendez-vous?"
+  },
+
+  "status": {
+    "confirmed": "Confirmé",
+    "pending": "En attente",
+    "completed": "Terminé",
+    "cancelled": "Annulé",
+    "rescheduled": "Reprogrammé",
+    "no_show": "Non présenté"
+  },
+
+  "reminders": {
+    "title": "Rappels",
+    "email": "Rappel par e-mail",
+    "sms": "Rappel par SMS",
+    "notification": "Notification de l'application",
+    "time_before": "Rappeler {{time}} avant le rendez-vous"
+  },
+
+  "messages": {
+    "booked_successfully": "Rendez-vous pris avec succès",
+    "cancelled_successfully": "Rendez-vous annulé",
+    "rescheduled_successfully": "Rendez-vous reprogrammé",
+    "confirmation_sent": "Confirmation envoyée à {{email}}"
+  }
+}
