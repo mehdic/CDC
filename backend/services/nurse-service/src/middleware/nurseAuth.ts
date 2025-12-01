@@ -6,6 +6,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '@shared/middleware/auth';
 import { UserRole } from '@shared/models/User';
+import { extractTokenFromHeader, verifyAccessToken, JWTPayload } from '@shared/utils/jwt';
 
 export { AuthenticatedRequest };
 
@@ -30,30 +31,29 @@ export function requireNurseRole(
     return;
   }
 
-  // In production, validate JWT token here
-  // For now, we'll do a simple check
+  // Extract token from header
+  const token = extractTokenFromHeader(authHeader);
+
+  if (!token) {
+    res.status(401).json({
+      error: 'Unauthorized',
+      message: 'Invalid token format',
+      timestamp: new Date().toISOString(),
+    });
+    return;
+  }
+
+  // Verify JWT token
   try {
-    // Mock user extraction from token
-    // TODO: Implement proper JWT validation
-    const token = authHeader.replace('Bearer ', '');
+    const decoded = verifyAccessToken(token);
 
-    if (!token) {
-      res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Invalid token format',
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
-
-    // Mock user object
-    // In production, decode JWT and extract user info
+    // Attach user to request
     req.user = {
-      userId: 'nurse-user-id', // Extract from JWT
-      role: UserRole.NURSE, // Extract from JWT
-      email: 'nurse@example.com', // Extract from JWT
-      pharmacyId: null,
-      tokenPayload: {} as any,
+      userId: decoded.userId,
+      role: decoded.role,
+      email: decoded.email,
+      pharmacyId: decoded.pharmacyId || null,
+      tokenPayload: decoded,
     };
 
     // Verify user has nurse role
@@ -68,9 +68,10 @@ export function requireNurseRole(
 
     next();
   } catch (error) {
+    const errorMessage = (error as Error).message;
     res.status(401).json({
       error: 'Unauthorized',
-      message: 'Invalid or expired token',
+      message: errorMessage || 'Invalid or expired token',
       timestamp: new Date().toISOString(),
     });
   }
@@ -85,7 +86,7 @@ export function logAuthenticatedRequest(
   next: NextFunction
 ): void {
   if (req.user) {
-    console.log(
+    console.info(
       `[Auth] ${req.method} ${req.path} - User: ${req.user.userId} (${req.user.role})`
     );
   }

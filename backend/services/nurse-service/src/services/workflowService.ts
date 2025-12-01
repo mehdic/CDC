@@ -24,6 +24,24 @@ export interface DeliveryCreationResult {
   estimatedDelivery?: Date;
 }
 
+// API response types
+interface InventoryCheckResponse {
+  available: boolean;
+  currentStock: number;
+}
+
+interface PrescriptionValidationResponse {
+  valid: boolean;
+  prescriptionId?: string;
+  message?: string;
+}
+
+interface DeliveryResponse {
+  id: string;
+  tracking_number: string;
+  scheduled_at?: string;
+}
+
 export class WorkflowService {
   private inventoryServiceUrl: string;
   private prescriptionServiceUrl: string;
@@ -40,7 +58,7 @@ export class WorkflowService {
    */
   async checkStock(medication: string, quantity: number, pharmacyId?: string): Promise<StockCheckResult> {
     try {
-      const response = await axios.post(
+      const response = await axios.post<InventoryCheckResponse>(
         `${this.inventoryServiceUrl}/api/inventory/check`,
         {
           medication,
@@ -77,7 +95,7 @@ export class WorkflowService {
     dosage: string
   ): Promise<PrescriptionValidationResult> {
     try {
-      const response = await axios.post(
+      const response = await axios.post<PrescriptionValidationResponse>(
         `${this.prescriptionServiceUrl}/api/prescriptions/validate`,
         {
           patientId,
@@ -109,7 +127,7 @@ export class WorkflowService {
    */
   async createDelivery(order: NurseOrder): Promise<DeliveryCreationResult> {
     try {
-      const response = await axios.post(
+      const response = await axios.post<DeliveryResponse>(
         `${this.deliveryServiceUrl}/deliveries`,
         {
           user_id: order.patientId,

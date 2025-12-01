@@ -18,13 +18,14 @@ export function initializeSocketEvents(io: SocketIOServer): void {
     console.log(`[WebSocket] Client connected: ${socket.id}`);
 
     // Handle nurse authentication
-    socket.on('auth:nurse', (data: { nurseId: string; token: string }) => {
+    socket.on('auth:nurse', async (data: { nurseId: string; token: string }) => {
+      try {
       // TODO: Validate token
       console.log(`[WebSocket] Nurse authenticated: ${data.nurseId}`);
 
       // Join nurse room
-      socket.join(`nurse:${data.nurseId}`);
-      socket.join('nurses'); // Global nurses room
+      await socket.join(`nurse:${data.nurseId}`);
+      await socket.join('nurses'); // Global nurses room
 
       // Store user data in socket
       socket.data = {
@@ -36,46 +37,77 @@ export function initializeSocketEvents(io: SocketIOServer): void {
         message: 'Authenticated successfully',
         nurseId: data.nurseId,
       });
+      } catch (error) {
+        console.error(`[WebSocket] Auth error: ${socket.id}`, error);
+        socket.emit('auth:error', {
+          message: 'Authentication failed',
+        });
+      }
     });
 
     // Handle patient room join
-    socket.on('patient:join', (data: { patientId: string }) => {
+    socket.on('patient:join', async (data: { patientId: string }) => {
+      try{
       console.log(`[WebSocket] Joining patient room: ${data.patientId}`);
-      socket.join(`patient:${data.patientId}`);
+      await socket.join(`patient:${data.patientId}`);
 
       socket.emit('patient:joined', {
         patientId: data.patientId,
       });
+      } catch (error) {
+        console.error(`[WebSocket] Patient join error: ${socket.id}`, error);
+        socket.emit('patient:join_error', {
+          message: 'Failed to join patient room',
+        });
+      }
     });
 
     // Handle order subscription
-    socket.on('order:subscribe', (data: { orderId: string }) => {
+    socket.on('order:subscribe', async (data: { orderId: string }) => {
+      try {
       console.log(`[WebSocket] Subscribing to order: ${data.orderId}`);
-      socket.join(`order:${data.orderId}`);
+      await socket.join(`order:${data.orderId}`);
 
       socket.emit('order:subscribed', {
         orderId: data.orderId,
       });
+      } catch (error) {
+        console.error(`[WebSocket] Order subscribe error: ${socket.id}`, error);
+        socket.emit('order:subscribe_error', {
+          message: 'Failed to subscribe to order',
+        });
+      }
     });
 
     // Handle order unsubscribe
-    socket.on('order:unsubscribe', (data: { orderId: string }) => {
+    socket.on('order:unsubscribe', async (data: { orderId: string }) => {
+      try {
       console.log(`[WebSocket] Unsubscribing from order: ${data.orderId}`);
-      socket.leave(`order:${data.orderId}`);
+      await socket.leave(`order:${data.orderId}`);
 
       socket.emit('order:unsubscribed', {
         orderId: data.orderId,
       });
+      } catch (error) {
+        console.error(`[WebSocket] Order unsubscribe error: ${socket.id}`, error);
+      }
     });
 
     // Handle delivery tracking subscription
-    socket.on('delivery:subscribe', (data: { deliveryId: string }) => {
+    socket.on('delivery:subscribe', async (data: { deliveryId: string }) => {
+      try {
       console.log(`[WebSocket] Subscribing to delivery: ${data.deliveryId}`);
-      socket.join(`delivery:${data.deliveryId}`);
+      await socket.join(`delivery:${data.deliveryId}`);
 
       socket.emit('delivery:subscribed', {
         deliveryId: data.deliveryId,
       });
+      } catch (error) {
+        console.error(`[WebSocket] Delivery subscribe error: ${socket.id}`, error);
+        socket.emit('delivery:subscribe_error', {
+          message: 'Failed to subscribe to delivery',
+        });
+      }
     });
 
     // Handle ping/pong for connection health

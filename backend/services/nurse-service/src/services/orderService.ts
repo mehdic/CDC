@@ -204,15 +204,19 @@ export class OrderService {
    * Get order count by status
    */
   async getOrderCountByStatus(nurseId?: string): Promise<Record<OrderStatus, number>> {
-    const queryBuilder = this.orderRepo.createQueryBuilder('order');
+    const queryBuilder = this.orderRepo.createQueryBuilder('order')
+      .select('order.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('order.status');
 
     if (nurseId) {
       queryBuilder.where('order.nurseId = :nurseId', { nurseId });
     }
 
-    const orders = await queryBuilder.getMany();
+    const results = await queryBuilder.getRawMany<{ status: OrderStatus; count: string }>();
 
-    const counts = {
+    // Initialize all statuses with 0
+    const counts: Record<OrderStatus, number> = {
       [OrderStatus.PENDING]: 0,
       [OrderStatus.APPROVED]: 0,
       [OrderStatus.PREPARING]: 0,
@@ -221,8 +225,9 @@ export class OrderService {
       [OrderStatus.CANCELLED]: 0,
     };
 
-    orders.forEach(order => {
-      counts[order.status]++;
+    // Fill in actual counts
+    results.forEach(result => {
+      counts[result.status] = parseInt(result.count, 10);
     });
 
     return counts;

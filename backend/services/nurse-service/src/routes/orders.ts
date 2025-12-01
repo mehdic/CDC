@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { OrderService } from '../services/orderService';
 import { WorkflowService } from '../services/workflowService';
 import { NotificationService } from '../services/notificationService';
@@ -12,6 +13,24 @@ import { OrderStatus, OrderUrgency } from '../models/NurseOrder';
 import { CreateOrderDTO, UpdateOrderDTO, OrderFilters } from '../types';
 
 const router = Router();
+
+// Validation schemas
+const createOrderSchema = z.object({
+  patientId: z.string().uuid({ message: 'Invalid patient ID format' }),
+  medication: z.string().min(1, 'Medication name required').max(500, 'Medication name too long'),
+  dosage: z.string().min(1, 'Dosage required').max(200, 'Dosage too long'),
+  quantity: z.number().int().positive().max(10000, 'Quantity too large'),
+  urgency: z.enum(['routine', 'urgent', 'stat']).optional(),
+  instructions: z.string().max(2000, 'Instructions too long').optional(),
+  nurseNotes: z.string().max(2000, 'Nurse notes too long').optional(),
+});
+
+const updateOrderSchema = z.object({
+  status: z.nativeEnum(OrderStatus).optional(),
+  pharmacyId: z.string().uuid().optional(),
+  deliveryId: z.string().uuid().optional(),
+  pharmacistNotes: z.string().max(2000).optional(),
+});
 
 /**
  * POST /api/nurse/orders - Create new medication order
@@ -35,6 +54,21 @@ router.post(
       const workflowService = new WorkflowService();
       const notificationService = new NotificationService(req.app.locals.io);
 
+      // Validate request body with Zod
+      const validationResult = createOrderSchema.safeParse(req.body);
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: 'Validation Error',
+          message: 'Invalid request data',
+          details: validationResult.error.errors.map(err => ({
+            field: err.path.join('.'),
+            message: err.message,
+          })),
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       const {
         patientId,
         medication,
@@ -43,16 +77,7 @@ router.post(
         urgency,
         instructions,
         nurseNotes,
-      } = req.body;
-
-      // Validate required fields
-      if (!patientId || !medication || !dosage || !quantity) {
-        return res.status(400).json({
-          error: 'Validation Error',
-          message: 'Missing required fields: patientId, medication, dosage, quantity',
-          timestamp: new Date().toISOString(),
-        });
-      }
+      } = validationResult.data;
 
       // Create order DTO
       const dto: CreateOrderDTO = {
@@ -211,6 +236,21 @@ router.patch(
       const notificationService = new NotificationService(req.app.locals.io);
       const { id } = req.params;
 
+      // Validate request body with Zod
+      const validationResult = updateOrderSchema.safeParse(req.body);
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: 'Validation Error',
+          message: 'Invalid request data',
+          details: validationResult.error.errors.map(err => ({
+            field: err.path.join('.'),
+            message: err.message,
+          })),
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       // Get current order
       const currentOrder = await orderService.getOrderById(id);
 
@@ -225,12 +265,7 @@ router.patch(
       const previousStatus = currentOrder.status;
 
       // Create update DTO
-      const dto: UpdateOrderDTO = {
-        status: req.body.status as OrderStatus,
-        pharmacyId: req.body.pharmacyId,
-        deliveryId: req.body.deliveryId,
-        pharmacistNotes: req.body.pharmacistNotes,
-      };
+      const dto: UpdateOrderDTO = validationResult.data;
 
       // Update order
       const updatedOrder = await orderService.updateOrder(id, dto);
