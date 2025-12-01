@@ -1,0 +1,35 @@
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.env.example
+
+# Testing
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
