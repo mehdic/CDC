@@ -1,0 +1,36 @@
+{
+  "name": "metapharm-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end tests for MetaPharm Connect platform",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:chrome": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:webkit": "playwright test --project=webkit",
+    "test:mobile": "playwright test --project=mobile-chrome --project=mobile-safari",
+    "test:auth": "playwright test tests/auth",
+    "test:patient": "playwright test tests/patient",
+    "test:pharmacist": "playwright test tests/pharmacist",
+    "test:doctor": "playwright test tests/doctor",
+    "test:nurse": "playwright test tests/nurse",
+    "test:delivery": "playwright test tests/delivery",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "e2e",
+    "testing",
+    "playwright",
+    "healthcare",
+    "pharmacy"
+  ],
+  "author": "MetaPharm Connect Team",
+  "license": "PROPRIETARY"
+}

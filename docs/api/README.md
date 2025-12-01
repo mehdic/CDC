@@ -1,765 +1,315 @@
-# API Documentation
+# API Documentation - MetaPharm Connect
 
-Complete REST API reference for MetaPharm Connect backend.
+Comprehensive API reference for the MetaPharm Connect healthcare platform connecting pharmacists, doctors, nurses, delivery personnel, and patients.
 
-## Quick Start
+## Quick Links
 
-**Base URL**: `https://api.metapharm.com/v1`
+- **Interactive Documentation**: [Swagger UI](/api-docs)
+- **OpenAPI Specification**: [openapi.yaml](./openapi.yaml) or [JSON](/api-docs.json)
+- **Comprehensive Guide**: [COMPREHENSIVE_GUIDE.md](./COMPREHENSIVE_GUIDE.md)
+- **Error Codes**: [ERROR_CODES.md](./ERROR_CODES.md)
+- **All Endpoints**: [ENDPOINTS.md](./ENDPOINTS.md)
 
-**Authentication**: All endpoints require JWT token in Authorization header:
+## Overview
+
+### Base URLs
+
+```
+Development:  http://localhost:4000
+Production:   https://api.metapharm.ch
+Staging:      https://staging.metapharm.ch
+```
+
+### Key Features
+
+- **5 User Roles**: PHARMACIST, DOCTOR, NURSE, DELIVERY, PATIENT
+- **Authentication**: JWT Bearer tokens, MFA, HIN e-ID OAuth2
+- **Security**: End-to-end encryption, audit logging, HIPAA/GDPR compliance
+- **Real-time**: WebSocket support for messaging, notifications, delivery tracking
+- **Healthcare**: Prescriptions, teleconsultation, e-Santé integration, controlled substances
+- **E-commerce**: Shopping cart, orders, insurance integration
+
+## Authentication
+
+All protected endpoints require JWT Bearer token:
+
 ```
 Authorization: Bearer <your-jwt-token>
 ```
 
-**Content-Type**: All requests/responses are JSON:
+### Login Flow
+
+1. **POST /api/auth/login** - Authenticate with email/password
+2. **If MFA required**: Verify TOTP code at **POST /api/auth/mfa/verify**
+3. **Receive tokens**: Access token (1 hour) + Refresh token (7 days)
+4. **Use access token** for all API requests
+
+**Example Login Request**:
+```json
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "pharmacist@metapharm.ch",
+  "password": "SecurePassword123!"
+}
+```
+
+**Example Login Response**:
+```json
+{
+  "success": true,
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 3600,
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "pharmacist@metapharm.ch",
+    "role": "PHARMACIST",
+    "firstName": "Jean",
+    "lastName": "Dupont",
+    "pharmacyId": "pharm-001"
+  }
+}
+```
+
+## API Endpoints by Category
+
+### Health & Status
+- `GET /` - API Gateway status
+- `GET /health` - Service health check
+
+### Authentication
+- `POST /api/auth/login` - User login with email/password
+- `POST /api/auth/mfa/verify` - Verify MFA code
+- `POST /api/auth/mfa/setup` - Initialize MFA setup
+- `POST /api/auth/mfa/enable` - Enable MFA
+- `DELETE /api/auth/mfa/disable` - Disable MFA
+- `GET /api/auth/sessions` - List active sessions
+- `DELETE /api/auth/logout` - Logout user
+- `GET /api/auth/hin/authorize` - Initiate HIN e-ID OAuth
+- `GET /api/auth/hin/callback` - HIN e-ID callback
+
+### Prescriptions
+- `POST /api/prescriptions` - Create prescription
+- `GET /api/prescriptions` - List prescriptions (role-filtered)
+- `GET /api/prescriptions/{id}` - Get prescription details
+- `PATCH /api/prescriptions/{id}/status` - Update prescription status
+
+### Inventory
+- `GET /api/inventory` - List pharmacy inventory
+- `GET /api/inventory/{id}` - Get inventory item
+- `PATCH /api/inventory/{id}` - Update stock level
+
+### Orders & Cart
+- `GET /api/cart` - Get shopping cart
+- `POST /api/cart/add` - Add item to cart
+- `POST /api/cart/remove` - Remove item from cart
+- `POST /api/orders` - Create order
+- `GET /api/orders` - List orders
+- `GET /api/orders/{id}` - Get order details
+
+### Teleconsultation
+- `POST /api/teleconsultations` - Schedule consultation
+- `GET /api/teleconsultations` - List consultations
+- `GET /api/teleconsultations/{id}` - Get consultation details
+
+### Notifications
+- `GET /api/notifications` - List notifications
+- `PATCH /api/notifications/{id}/read` - Mark as read
+
+## Request Format
+
+### Headers
+
 ```
 Content-Type: application/json
+Authorization: Bearer <jwt-token>           # For protected endpoints
+X-Request-ID: <unique-id>                  # Optional, for tracing
 ```
 
-## Table of Contents
+### Query Parameters
 
-1. [Authentication](#authentication)
-2. [Users](#users)
-3. [Prescriptions](#prescriptions)
-4. [Messaging](#messaging)
-5. [Deliveries](#deliveries)
-6. [Pharmacy & Inventory](#pharmacy--inventory)
-7. [Error Handling](#error-handling)
-8. [Rate Limiting](#rate-limiting)
-9. [Try-It-Out](#try-it-out)
+List endpoints support pagination and filtering:
 
----
-
-## Authentication
-
-### Login
-
-**POST** `/auth/login`
-
-Login with email and password to receive JWT tokens.
-
-**Request**:
-```json
-{
-  "email": "pharmacist@example.com",
-  "password": "securePassword123"
-}
+```
+GET /api/prescriptions?page=1&limit=20&status=pending&sort=-createdAt
 ```
 
-**Response** (200 OK):
+Parameters:
+- `page` (integer, default: 1) - Page number
+- `limit` (integer, default: 20, max: 100) - Items per page
+- `sort` (string) - Sort field, prefix with `-` for descending
+- `filter` (varies) - Additional filter parameters
+
+## Response Format
+
+### Success Response (2xx)
+
 ```json
 {
   "success": true,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": "user-123",
-      "email": "pharmacist@example.com",
-      "role": "PHARMACIST",
-      "name": "John Doe"
-    },
-    "expiresIn": 900
-  }
-}
-```
-
-**Error** (401 Unauthorized):
-```json
-{
-  "success": false,
-  "errors": [
-    {
-      "code": "INVALID_CREDENTIALS",
-      "message": "Invalid email or password"
-    }
-  ]
-}
-```
-
-### Refresh Token
-
-**POST** `/auth/refresh`
-
-Get a new access token using refresh token.
-
-**Request**:
-```json
-{
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expiresIn": 900
-  }
-}
-```
-
-### Logout
-
-**POST** `/auth/logout`
-
-Invalidate the current session.
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Logged out successfully"
-  }
-}
-```
-
----
-
-## Users
-
-### Get Current User
-
-**GET** `/users/me`
-
-Get information about the authenticated user.
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "user-123",
-    "email": "pharmacist@example.com",
-    "role": "PHARMACIST",
-    "name": "John Doe",
-    "phone": "+41791234567",
-    "avatar": "https://cdn.example.com/avatar-123.jpg",
-    "createdAt": "2025-01-15T10:30:00Z",
-    "updatedAt": "2025-11-25T08:45:00Z"
-  }
-}
-```
-
-### Update Profile
-
-**PUT** `/users/:id`
-
-Update user profile information.
-
-**Request**:
-```json
-{
-  "name": "Jane Doe",
-  "phone": "+41791234567",
-  "preferences": {
-    "language": "fr",
-    "notifications": true
-  }
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "user-123",
-    "name": "Jane Doe",
-    "phone": "+41791234567",
-    "preferences": {
-      "language": "fr",
-      "notifications": true
-    },
-    "updatedAt": "2025-11-25T10:15:00Z"
-  }
-}
-```
-
-### List Users (Admin Only)
-
-**GET** `/users?role=PHARMACIST&limit=20&offset=0`
-
-List all users with optional filtering.
-
-**Query Parameters**:
-- `role`: Filter by role (PHARMACIST, DOCTOR, NURSE, DELIVERY, PATIENT)
-- `limit`: Number of results (default: 20, max: 100)
-- `offset`: Pagination offset (default: 0)
-- `search`: Search by name or email
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "user-123",
-      "email": "pharmacist@example.com",
-      "role": "PHARMACIST",
-      "name": "John Doe"
-    }
-  ],
+  "data": { /* response data */ },
   "meta": {
-    "total": 150,
-    "limit": 20,
-    "offset": 0
+    "timestamp": "2025-12-01T18:00:00Z",
+    "requestId": "req-123"
   }
 }
 ```
 
----
+### Error Response (4xx, 5xx)
 
-## Prescriptions
-
-### Create Prescription
-
-**POST** `/prescriptions`
-
-Create a new prescription (Doctors only).
-
-**Request**:
 ```json
 {
-  "patientId": "patient-456",
-  "drugIds": ["drug-001", "drug-002"],
-  "dosage": {
-    "strength": "500mg",
-    "frequency": "2x daily",
-    "duration": "7 days"
-  },
-  "notes": "After meals, do not mix with alcohol"
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "prescription-789",
-    "patientId": "patient-456",
-    "doctorId": "doctor-123",
-    "drugs": [
-      {
-        "id": "drug-001",
-        "name": "Aspirin",
-        "strength": "500mg"
-      }
-    ],
-    "dosage": {
-      "strength": "500mg",
-      "frequency": "2x daily",
-      "duration": "7 days"
-    },
-    "status": "PENDING_VALIDATION",
-    "createdAt": "2025-11-25T09:00:00Z"
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "code": "VALIDATION_ERROR",
+  "details": {
+    "field": "email",
+    "issue": "Invalid email format"
   }
 }
 ```
-
-### Validate Prescription
-
-**POST** `/prescriptions/:id/validate`
-
-Validate prescription for drug interactions (Pharmacist only).
-
-**Request**:
-```json
-{
-  "validationNotes": "No interactions detected",
-  "approved": true
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "prescription-789",
-    "status": "VALIDATED",
-    "validatedBy": "pharmacist-123",
-    "validationNotes": "No interactions detected",
-    "validatedAt": "2025-11-25T09:15:00Z"
-  }
-}
-```
-
-### Get Prescription
-
-**GET** `/prescriptions/:id`
-
-Get prescription details.
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "prescription-789",
-    "patientId": "patient-456",
-    "doctorId": "doctor-123",
-    "pharmacistId": "pharmacist-123",
-    "drugs": [
-      {
-        "id": "drug-001",
-        "name": "Aspirin",
-        "strength": "500mg"
-      }
-    ],
-    "dosage": {
-      "strength": "500mg",
-      "frequency": "2x daily",
-      "duration": "7 days"
-    },
-    "status": "VALIDATED",
-    "createdAt": "2025-11-25T09:00:00Z",
-    "validatedAt": "2025-11-25T09:15:00Z"
-  }
-}
-```
-
-### List Prescriptions
-
-**GET** `/prescriptions?status=VALIDATED&limit=20&offset=0`
-
-List prescriptions with filtering.
-
-**Query Parameters**:
-- `status`: PENDING_VALIDATION, VALIDATED, DISPENSED, EXPIRED
-- `patientId`: Filter by patient
-- `doctorId`: Filter by doctor
-- `limit`: Results per page
-- `offset`: Pagination offset
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "prescription-789",
-      "patientId": "patient-456",
-      "status": "VALIDATED"
-    }
-  ],
-  "meta": {
-    "total": 45,
-    "limit": 20,
-    "offset": 0
-  }
-}
-```
-
----
-
-## Messaging
-
-### Send Message
-
-**POST** `/messages`
-
-Send a message to another user.
-
-**Request**:
-```json
-{
-  "recipientId": "user-456",
-  "content": "Hello, how are you?",
-  "type": "TEXT"
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "message-001",
-    "senderId": "user-123",
-    "recipientId": "user-456",
-    "content": "Hello, how are you?",
-    "type": "TEXT",
-    "read": false,
-    "createdAt": "2025-11-25T10:00:00Z"
-  }
-}
-```
-
-### Get Messages
-
-**GET** `/messages/:userId?limit=50&offset=0`
-
-Get message history with a user.
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "message-001",
-      "senderId": "user-123",
-      "recipientId": "user-456",
-      "content": "Hello, how are you?",
-      "type": "TEXT",
-      "read": true,
-      "createdAt": "2025-11-25T10:00:00Z"
-    }
-  ],
-  "meta": {
-    "total": 127,
-    "limit": 50,
-    "offset": 0
-  }
-}
-```
-
-### Mark Message as Read
-
-**PUT** `/messages/:id/read`
-
-Mark a message as read.
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "message-001",
-    "read": true,
-    "readAt": "2025-11-25T10:05:00Z"
-  }
-}
-```
-
----
-
-## Deliveries
-
-### Create Delivery Order
-
-**POST** `/deliveries`
-
-Create a new delivery order (Pharmacist only).
-
-**Request**:
-```json
-{
-  "patientId": "patient-456",
-  "prescriptionId": "prescription-789",
-  "deliveryAddress": {
-    "street": "123 Main St",
-    "city": "Zurich",
-    "zipCode": "8000",
-    "country": "CH"
-  },
-  "preferredDate": "2025-11-26T14:00:00Z",
-  "notes": "Ring doorbell twice"
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "delivery-001",
-    "status": "PENDING_ASSIGNMENT",
-    "patientId": "patient-456",
-    "prescriptionId": "prescription-789",
-    "deliveryAddress": {
-      "street": "123 Main St",
-      "city": "Zurich",
-      "zipCode": "8000",
-      "country": "CH"
-    },
-    "preferredDate": "2025-11-26T14:00:00Z",
-    "createdAt": "2025-11-25T10:30:00Z"
-  }
-}
-```
-
-### Assign Delivery Personnel
-
-**PUT** `/deliveries/:id/assign`
-
-Assign delivery to personnel.
-
-**Request**:
-```json
-{
-  "deliveryPersonnelId": "delivery-123"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "delivery-001",
-    "status": "ASSIGNED",
-    "deliveryPersonnelId": "delivery-123",
-    "assignedAt": "2025-11-25T10:35:00Z"
-  }
-}
-```
-
-### Update Delivery Status
-
-**PUT** `/deliveries/:id/status`
-
-Update delivery status with location (Delivery personnel only).
-
-**Request**:
-```json
-{
-  "status": "IN_TRANSIT",
-  "location": {
-    "latitude": 47.3669,
-    "longitude": 8.5500
-  }
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "delivery-001",
-    "status": "IN_TRANSIT",
-    "location": {
-      "latitude": 47.3669,
-      "longitude": 8.5500
-    },
-    "updatedAt": "2025-11-25T10:45:00Z"
-  }
-}
-```
-
-### Get Delivery Tracking
-
-**GET** `/deliveries/:id/tracking`
-
-Get real-time delivery tracking.
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "delivery-001",
-    "status": "IN_TRANSIT",
-    "currentLocation": {
-      "latitude": 47.3669,
-      "longitude": 8.5500
-    },
-    "estimatedArrival": "2025-11-26T14:30:00Z",
-    "route": [
-      {
-        "timestamp": "2025-11-26T13:00:00Z",
-        "latitude": 47.3700,
-        "longitude": 8.5400
-      }
-    ]
-  }
-}
-```
-
----
-
-## Pharmacy & Inventory
-
-### Get Pharmacy Info
-
-**GET** `/pharmacies/:id`
-
-Get pharmacy information and details.
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "pharmacy-001",
-    "name": "Pharmacy Zurich Central",
-    "address": {
-      "street": "Bahnhofstrasse 1",
-      "city": "Zurich",
-      "zipCode": "8000",
-      "country": "CH"
-    },
-    "phone": "+41442000000",
-    "email": "info@zurich-pharmacy.ch",
-    "hours": {
-      "monday": "08:00-19:00",
-      "tuesday": "08:00-19:00"
-    },
-    "createdAt": "2024-01-01T00:00:00Z"
-  }
-}
-```
-
-### Get Inventory
-
-**GET** `/pharmacies/:id/inventory?limit=100`
-
-Get pharmacy drug inventory.
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "inv-001",
-      "drugId": "drug-001",
-      "drugName": "Aspirin",
-      "strength": "500mg",
-      "quantity": 150,
-      "minStock": 50,
-      "expiryDate": "2026-12-31",
-      "lastRestocked": "2025-11-20T10:00:00Z"
-    }
-  ],
-  "meta": {
-    "total": 250,
-    "limit": 100,
-    "offset": 0
-  }
-}
-```
-
-### Update Stock
-
-**PUT** `/pharmacies/:id/inventory/:drugId`
-
-Update drug stock quantity.
-
-**Request**:
-```json
-{
-  "quantity": 200,
-  "reason": "RESTOCK",
-  "batchNumber": "BATCH-2025-001"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "inv-001",
-    "quantity": 200,
-    "updatedAt": "2025-11-25T11:00:00Z"
-  }
-}
-```
-
----
 
 ## Error Handling
 
-### Standard Error Response
-
-**Format**:
-```json
-{
-  "success": false,
-  "errors": [
-    {
-      "code": "ERROR_CODE",
-      "message": "Human readable message",
-      "field": "fieldName",
-      "status": 400
-    }
-  ]
-}
-```
-
 ### Common Error Codes
 
-| Code | Status | Description |
-|------|--------|-------------|
-| INVALID_REQUEST | 400 | Malformed request |
-| VALIDATION_ERROR | 422 | Validation failed |
-| UNAUTHORIZED | 401 | Authentication required |
-| FORBIDDEN | 403 | Access denied |
-| NOT_FOUND | 404 | Resource not found |
-| CONFLICT | 409 | Resource already exists |
-| RATE_LIMITED | 429 | Too many requests |
-| SERVER_ERROR | 500 | Internal server error |
+| Code | HTTP | Description |
+|------|------|-------------|
+| INVALID_TOKEN | 401 | Token is invalid or expired |
+| INSUFFICIENT_PERMISSIONS | 403 | User lacks required permissions |
+| NOT_FOUND | 404 | Resource doesn't exist |
+| VALIDATION_ERROR | 400 | Input validation failed |
+| RATE_LIMIT_EXCEEDED | 429 | Too many requests |
+| SERVICE_UNAVAILABLE | 503 | Service is down |
 
----
+See [ERROR_CODES.md](./ERROR_CODES.md) for complete error reference.
 
 ## Rate Limiting
 
-All API requests are rate-limited:
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| General endpoints | 100 requests | 1 minute |
+| Login | 5 attempts | 15 minutes |
+| Password reset | 3 attempts | 1 hour |
 
-- **Authenticated users**: 1000 requests per hour
-- **Public endpoints**: 100 requests per hour
-- **Rate limit headers**:
-  ```
-  X-RateLimit-Limit: 1000
-  X-RateLimit-Remaining: 999
-  X-RateLimit-Reset: 1700899200
-  ```
+Rate limit info in response headers:
+```
+RateLimit-Limit: 100
+RateLimit-Remaining: 95
+RateLimit-Reset: 1701432000
+```
 
----
+## Code Examples
 
-## Try-It-Out
+### JavaScript/TypeScript
 
-### Using cURL
+```javascript
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+
+// Get prescriptions
+const response = await fetch(
+  'http://localhost:4000/api/prescriptions',
+  {
+    headers: { Authorization: `Bearer ${token}` }
+  }
+);
+
+const data = await response.json();
+console.log(data);
+```
+
+### Python
+
+```python
+import requests
+
+token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+
+# Get prescriptions
+response = requests.get(
+  'http://localhost:4000/api/prescriptions',
+  headers={'Authorization': f'Bearer {token}'}
+)
+
+data = response.json()
+print(data)
+```
+
+### cURL
 
 ```bash
-# Login
-curl -X POST https://api.metapharm.com/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "pharmacist@example.com",
-    "password": "securePassword123"
-  }'
+TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-# Get current user (use token from login)
-curl -X GET https://api.metapharm.com/v1/users/me \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+# Get prescriptions
+curl -X GET http://localhost:4000/api/prescriptions \
+  -H "Authorization: Bearer $TOKEN"
 
 # Create prescription
-curl -X POST https://api.metapharm.com/v1/prescriptions \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -X POST http://localhost:4000/api/prescriptions \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "patientId": "patient-456",
-    "drugIds": ["drug-001"],
-    "dosage": {
-      "strength": "500mg",
-      "frequency": "2x daily",
-      "duration": "7 days"
-    }
+    "patientId": "patient-123",
+    "medications": [
+      {
+        "name": "Amoxicilline",
+        "dosage": "500mg",
+        "quantity": 10,
+        "instructions": "One tablet three times daily"
+      }
+    ]
   }'
 ```
 
-### Using Postman
+## Documentation Files
 
-1. Import collection: `docs/api/postman-collection.json`
-2. Set variable `BASE_URL` = `https://api.metapharm.com/v1`
-3. Run Login request to get token
-4. Token auto-populates in `{{ACCESS_TOKEN}}` variable
-5. Execute any endpoint
+### In This Directory
 
-### Interactive API Testing
+- **openapi.yaml** - OpenAPI 3.1.0 specification
+- **COMPREHENSIVE_GUIDE.md** - Complete API guide with examples
+- **ERROR_CODES.md** - All error codes and solutions
+- **ENDPOINTS.md** - Detailed endpoint documentation
+- **examples/** - Request/response examples by feature
 
-See `docs/api/openapi.yaml` for Swagger UI integration.
+### Generated Documentation
 
----
+- **Swagger UI** - Interactive API explorer at `/api-docs`
+- **OpenAPI JSON** - Machine-readable spec at `/api-docs.json`
+- **OpenAPI YAML** - YAML format spec at `/api-docs.yaml`
 
-**For complete OpenAPI specification**, see [openapi.yaml](./openapi.yaml)
+## Support
 
-**Need help?** Check [Troubleshooting Guide](../troubleshooting/README.md)
+- **Email**: api-support@metapharm.ch
+- **Status Page**: https://status.metapharm.ch
+- **Documentation**: https://metapharm.ch/api-docs
+- **Issues**: Report via GitHub Issues
+
+## Versioning
+
+**Current Version**: 1.0.0
+
+API follows semantic versioning. Breaking changes result in new major version with 6-month deprecation notice.
+
+## Getting Started
+
+1. **Read**: Start with [COMPREHENSIVE_GUIDE.md](./COMPREHENSIVE_GUIDE.md)
+2. **Explore**: Try endpoints in [Swagger UI](/api-docs)
+3. **Code**: Use examples in `examples/` directory
+4. **Debug**: Check [ERROR_CODES.md](./ERROR_CODES.md) for issues
+5. **Refer**: Check [ENDPOINTS.md](./ENDPOINTS.md) for details
+
+## Security
+
+- Always use HTTPS in production
+- Store tokens securely (not in localStorage for sensitive apps)
+- Implement proper error handling
+- Log security events
+- Use strong passwords and MFA
+- Keep API key rotation schedule
+- Never commit credentials to version control
+
+## Last Updated
+
+December 1, 2025

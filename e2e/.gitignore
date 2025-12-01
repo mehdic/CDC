@@ -1,0 +1,36 @@
+node_modules/
+dist/
+build/
+.DS_Store
+*.log
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+.env.local
+.env.*.local
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+.auth/
+
+# Screenshots and videos
+screenshots/
+videos/
+
+# Node
+package-lock.json
+yarn.lock
+
+# IDE
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

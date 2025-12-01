@@ -1,0 +1,196 @@
+{
+  "createPrescriptionExample": {
+    "title": "Create New Prescription",
+    "endpoint": "POST /api/prescriptions",
+    "request": {
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      },
+      "body": {
+        "patientId": "patient-123",
+        "medications": [
+          {
+            "name": "Amoxicilline",
+            "dosage": "500mg",
+            "quantity": 10,
+            "instructions": "One tablet three times daily with meals",
+            "duration": "7 days",
+            "refills": 2
+          },
+          {
+            "name": "Ibuprofen",
+            "dosage": "400mg",
+            "quantity": 20,
+            "instructions": "Take as needed for pain, max 3 tablets per day",
+            "refills": 1
+          }
+        ],
+        "notes": "Patient allergic to penicillin - use alternative if needed",
+        "pharmacyId": "pharm-001"
+      }
+    },
+    "response": {
+      "statusCode": 201,
+      "body": {
+        "success": true,
+        "data": {
+          "id": "presc-550e8400-e29b-41d4",
+          "patientId": "patient-123",
+          "doctorId": "doctor-456",
+          "pharmacyId": "pharm-001",
+          "medications": [
+            {
+              "name": "Amoxicilline",
+              "dosage": "500mg",
+              "quantity": 10,
+              "instructions": "One tablet three times daily with meals"
+            }
+          ],
+          "status": "pending",
+          "createdAt": "2025-12-01T18:00:00Z",
+          "updatedAt": "2025-12-01T18:00:00Z",
+          "expiresAt": "2026-12-01T18:00:00Z"
+        }
+      }
+    }
+  },
+  "listPrescriptionsExample": {
+    "title": "List Prescriptions with Filters",
+    "endpoint": "GET /api/prescriptions?status=pending&page=1&limit=20",
+    "request": {
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      },
+      "queryParameters": {
+        "status": "pending",
+        "page": 1,
+        "limit": 20
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "data": [
+          {
+            "id": "presc-550e8400-e29b-41d4",
+            "patientId": "patient-123",
+            "doctorId": "doctor-456",
+            "status": "pending",
+            "medications": [
+              {
+                "name": "Amoxicilline",
+                "dosage": "500mg",
+                "quantity": 10
+              }
+            ],
+            "createdAt": "2025-12-01T18:00:00Z"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 45,
+          "pages": 3
+        }
+      }
+    }
+  },
+  "getPrescriptionDetailsExample": {
+    "title": "Get Prescription Details",
+    "endpoint": "GET /api/prescriptions/presc-550e8400-e29b-41d4",
+    "request": {
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "data": {
+          "id": "presc-550e8400-e29b-41d4",
+          "patientId": "patient-123",
+          "doctorId": "doctor-456",
+          "pharmacyId": "pharm-001",
+          "medications": [
+            {
+              "name": "Amoxicilline",
+              "dosage": "500mg",
+              "quantity": 10,
+              "instructions": "One tablet three times daily with meals",
+              "duration": "7 days",
+              "refills": 2
+            }
+          ],
+          "status": "pending",
+          "createdAt": "2025-12-01T18:00:00Z",
+          "updatedAt": "2025-12-01T18:00:00Z",
+          "expiresAt": "2026-12-01T18:00:00Z",
+          "notes": "Patient allergic to penicillin"
+        }
+      }
+    }
+  },
+  "updatePrescriptionStatusExample": {
+    "title": "Update Prescription Status to Dispensed",
+    "endpoint": "PATCH /api/prescriptions/presc-550e8400-e29b-41d4/status",
+    "request": {
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      },
+      "body": {
+        "status": "dispensed"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "data": {
+          "id": "presc-550e8400-e29b-41d4",
+          "patientId": "patient-123",
+          "status": "dispensed",
+          "medications": [
+            {
+              "name": "Amoxicilline",
+              "dosage": "500mg",
+              "quantity": 10
+            }
+          ],
+          "dispensedAt": "2025-12-01T18:30:00Z",
+          "dispensedBy": "pharmacist-789"
+        }
+      }
+    }
+  },
+  "rejectPrescriptionExample": {
+    "title": "Reject Prescription",
+    "endpoint": "PATCH /api/prescriptions/presc-550e8400-e29b-41d4/status",
+    "request": {
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      },
+      "body": {
+        "status": "rejected",
+        "reason": "Patient is allergic to one of the medications"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "data": {
+          "id": "presc-550e8400-e29b-41d4",
+          "status": "rejected",
+          "rejectionReason": "Patient is allergic to one of the medications",
+          "rejectedAt": "2025-12-01T18:30:00Z",
+          "rejectedBy": "pharmacist-789"
+        }
+      }
+    }
+  }
+}

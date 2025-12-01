@@ -1,0 +1,254 @@
+{
+  "getCartExample": {
+    "title": "Get Shopping Cart",
+    "endpoint": "GET /api/cart",
+    "request": {
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "data": {
+          "id": "cart-550e8400",
+          "userId": "patient-123",
+          "items": [
+            {
+              "id": "item-1",
+              "productId": "prod-ibuprofen",
+              "name": "Ibuprofen 400mg",
+              "description": "Pain relief tablets",
+              "price": 12.50,
+              "quantity": 2,
+              "subtotal": 25.00,
+              "image": "https://cdn.metapharm.ch/ibuprofen.jpg"
+            },
+            {
+              "id": "item-2",
+              "productId": "prod-paracetamol",
+              "name": "Paracetamol 500mg",
+              "description": "Fever and pain relief",
+              "price": 8.99,
+              "quantity": 1,
+              "subtotal": 8.99,
+              "image": "https://cdn.metapharm.ch/paracetamol.jpg"
+            }
+          ],
+          "subtotal": 33.99,
+          "tax": 3.40,
+          "discount": 0,
+          "total": 37.39,
+          "itemCount": 2,
+          "totalQuantity": 3,
+          "status": "active",
+          "createdAt": "2025-12-01T17:00:00Z",
+          "updatedAt": "2025-12-01T18:00:00Z"
+        }
+      }
+    }
+  },
+  "addToCartExample": {
+    "title": "Add Item to Cart",
+    "endpoint": "POST /api/cart/add",
+    "request": {
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      },
+      "body": {
+        "productId": "prod-vitamin-c",
+        "quantity": 1,
+        "product": {
+          "id": "prod-vitamin-c",
+          "name": "Vitamin C 1000mg",
+          "price": 15.99,
+          "availableStock": 100,
+          "requiresPrescription": false
+        }
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "data": {
+          "id": "cart-550e8400",
+          "items": [
+            {
+              "id": "item-new",
+              "productId": "prod-vitamin-c",
+              "name": "Vitamin C 1000mg",
+              "quantity": 1,
+              "price": 15.99,
+              "subtotal": 15.99
+            }
+          ],
+          "subtotal": 49.98,
+          "tax": 5.00,
+          "total": 54.98,
+          "itemCount": 3,
+          "totalQuantity": 4
+        }
+      }
+    }
+  },
+  "createOrderExample": {
+    "title": "Create Order from Cart",
+    "endpoint": "POST /api/orders",
+    "request": {
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      },
+      "body": {
+        "items": [
+          {
+            "productId": "prod-ibuprofen",
+            "quantity": 2
+          },
+          {
+            "productId": "prod-paracetamol",
+            "quantity": 1
+          }
+        ],
+        "shippingAddress": {
+          "street": "Rue de la Pharmacie 42",
+          "city": "Lausanne",
+          "postalCode": "1000",
+          "country": "Switzerland",
+          "state": "VD"
+        },
+        "paymentMethod": "credit_card"
+      }
+    },
+    "response": {
+      "statusCode": 201,
+      "body": {
+        "success": true,
+        "data": {
+          "id": "order-550e8400-e29b",
+          "userId": "patient-123",
+          "items": [
+            {
+              "productId": "prod-ibuprofen",
+              "name": "Ibuprofen 400mg",
+              "quantity": 2,
+              "price": 12.50,
+              "subtotal": 25.00
+            }
+          ],
+          "status": "confirmed",
+          "subtotal": 33.99,
+          "tax": 3.40,
+          "total": 37.39,
+          "shippingAddress": {
+            "street": "Rue de la Pharmacie 42",
+            "city": "Lausanne",
+            "postalCode": "1000",
+            "country": "Switzerland"
+          },
+          "trackingNumber": "CH123456789",
+          "paymentMethod": "credit_card",
+          "createdAt": "2025-12-01T18:00:00Z",
+          "estimatedDelivery": "2025-12-03T18:00:00Z"
+        }
+      }
+    }
+  },
+  "listOrdersExample": {
+    "title": "List User's Orders",
+    "endpoint": "GET /api/orders?page=1&limit=10",
+    "request": {
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      },
+      "queryParameters": {
+        "page": 1,
+        "limit": 10,
+        "status": "delivered"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "data": [
+          {
+            "id": "order-550e8400-e29b",
+            "userId": "patient-123",
+            "items": [
+              {
+                "productId": "prod-ibuprofen",
+                "name": "Ibuprofen 400mg",
+                "quantity": 2,
+                "price": 12.50
+              }
+            ],
+            "status": "delivered",
+            "total": 37.39,
+            "trackingNumber": "CH123456789",
+            "createdAt": "2025-12-01T18:00:00Z",
+            "deliveryDate": "2025-12-03T14:30:00Z"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 10,
+          "total": 25,
+          "pages": 3
+        }
+      }
+    }
+  },
+  "getOrderDetailsExample": {
+    "title": "Get Order Details",
+    "endpoint": "GET /api/orders/order-550e8400-e29b",
+    "request": {
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      }
+    },
+    "response": {
+      "statusCode": 200,
+      "body": {
+        "success": true,
+        "data": {
+          "id": "order-550e8400-e29b",
+          "userId": "patient-123",
+          "items": [
+            {
+              "id": "item-1",
+              "productId": "prod-ibuprofen",
+              "name": "Ibuprofen 400mg",
+              "quantity": 2,
+              "price": 12.50,
+              "subtotal": 25.00
+            }
+          ],
+          "status": "delivered",
+          "subtotal": 33.99,
+          "tax": 3.40,
+          "discount": 0,
+          "total": 37.39,
+          "shippingAddress": {
+            "street": "Rue de la Pharmacie 42",
+            "city": "Lausanne",
+            "postalCode": "1000",
+            "country": "Switzerland"
+          },
+          "trackingNumber": "CH123456789",
+          "paymentMethod": "credit_card",
+          "paymentStatus": "completed",
+          "createdAt": "2025-12-01T18:00:00Z",
+          "confirmedAt": "2025-12-01T18:30:00Z",
+          "shippedAt": "2025-12-02T08:00:00Z",
+          "deliveryDate": "2025-12-03T14:30:00Z",
+          "shippingProvider": "DPD",
+          "lastUpdate": "2025-12-03T14:30:00Z"
+        }
+      }
+    }
+  }
+}
