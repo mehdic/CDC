@@ -30,6 +30,7 @@ import {
   Close as CloseIcon,
 } from '@mui/icons-material';
 import { useDoctorMessageThreads, useDoctorMessageThread, useSendMessage } from '../hooks/useDoctor';
+import { getUserData } from '@shared/services/authService';
 import type { MessageThread, Message } from '../types/doctor';
 
 // ============================================================================
@@ -183,6 +184,9 @@ export const SecureMessaging: React.FC = () => {
   const [messageContent, setMessageContent] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Get current user
+  const currentUser = getUserData();
 
   // API hooks
   const { data: threadsData, isLoading: threadsLoading } = useDoctorMessageThreads();
@@ -341,7 +345,7 @@ export const SecureMessaging: React.FC = () => {
                         <MessageBubble
                           key={message.id}
                           message={message}
-                          isOwn={message.senderId === 'current-user-id'} // Would be replaced with actual current user
+                          isOwn={message.senderId === currentUser?.id}
                         />
                       ))}
                       <div ref={messagesEndRef} />
