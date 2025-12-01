@@ -1,0 +1,80 @@
+{
+  "appointments": {
+    "title": "Termine",
+    "my_appointments": "Meine Termine",
+    "book_appointment": "Termin buchen",
+    "upcoming": "Anstehend",
+    "past": "Vergangen",
+    "cancelled": "Storniert",
+    "no_appointments": "Keine Termine"
+  },
+
+  "booking": {
+    "select_date": "Datum auswählen",
+    "select_time": "Uhrzeit auswählen",
+    "select_provider": "Anbieter auswählen",
+    "select_type": "Beratungstyp",
+    "reason": "Grund für die Beratung",
+    "notes": "Zusätzliche Notizen",
+    "available_slots": "Verfügbare Zeitfenster",
+    "book": "Termin buchen",
+    "confirm_booking": "Termin bestätigen"
+  },
+
+  "appointment_types": {
+    "consultation": "Beratung",
+    "teleconsultation": "Teleberatung",
+    "pharmacy_consultation": "Apothekerberatung",
+    "medication_review": "Medikamentenüberprüfung",
+    "follow_up": "Nachuntersuchung"
+  },
+
+  "provider": {
+    "pharmacist": "Apotheker",
+    "doctor": "Arzt",
+    "nurse": "Krankenschwester",
+    "specialist": "Facharzt"
+  },
+
+  "details": {
+    "date": "Datum",
+    "time": "Uhrzeit",
+    "provider": "Anbieter",
+    "type": "Typ",
+    "location": "Standort",
+    "duration": "Dauer",
+    "status": "Status",
+    "reminder": "Erinnerung"
+  },
+
+  "actions": {
+    "reschedule": "Umbuchen",
+    "cancel": "Stornieren",
+    "join_consultation": "Beratung beitreten",
+    "reschedule_confirm": "Möchten Sie diesen Termin wirklich umbuchene?"
+  },
+
+  "status": {
+    "confirmed": "Bestätigt",
+    "pending": "Ausstehend",
+    "completed": "Abgeschlossen",
+    "cancelled": "Storniert",
+    "rescheduled": "Umgebucht",
+    "no_show": "Nicht erschienen"
+  },
+
+  "reminders": {
+    "title": "Erinnerungen",
+    "email": "E-Mail-Erinnerung",
+    "sms": "SMS-Erinnerung",
+    "notification": "App-Benachrichtigung",
+    "time_before": "{{time}} vor dem Termin erinnern"
+  },
+
+  "messages": {
+    "booked_successfully": "Termin erfolgreich gebucht",
+    "cancelled_successfully": "Termin storniert",
+    "rescheduled_successfully": "Termin umgebucht",
+    "confirmation_sent": "Bestätigung an {{email}} gesendet"
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "messaging": {
+    "title": "Messages",
+    "inbox": "Boîte de réception",
+    "sent": "Envoyés",
+    "drafts": "Brouillons",
+    "archived": "Archivés",
+    "new_message": "Nouveau message",
+    "compose": "Composer",
+    "no_messages": "Aucun message"
+  },
+
+  "conversation": {
+    "with": "Conversation avec",
+    "reply": "Répondre",
+    "reply_all": "Répondre à tous",
+    "forward": "Transférer",
+    "mark_read": "Marquer comme lu",
+    "mark_unread": "Marquer comme non lu",
+    "archive": "Archiver",
+    "delete": "Supprimer",
+    "spam": "Marquer comme spam",
+    "search_messages": "Rechercher dans les messages"
+  },
+
+  "compose": {
+    "to": "À",
+    "cc": "Cc",
+    "bcc": "Cci",
+    "subject": "Sujet",
+    "body": "Message",
+    "attachment": "Pièce jointe",
+    "send": "Envoyer",
+    "save_draft": "Enregistrer le brouillon",
+    "cancel": "Annuler",
+    "formatting": "Formatage",
+    "bold": "Gras",
+    "italic": "Italique",
+    "underline": "Souligné",
+    "link": "Lien"
+  },
+
+  "features": {
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier",
+    "labels": "Étiquettes",
+    "priority": "Priorité",
+    "schedule_send": "Programmer l'envoi",
+    "disappearing_messages": "Messages éphémères",
+    "read_receipts": "Accusés de réception",
+    "typing_indicator": "Indicateur de saisie"
+  },
+
+  "status": {
+    "sent": "Envoyé",
+    "delivered": "Livré",
+    "read": "Lu",
+    "pending": "En attente",
+    "failed": "Échec de l'envoi"
+  },
+
+  "notifications": {
+    "new_message": "Nouveau message",
+    "new_message_from": "Nouveau message de {{from}}",
+    "message_sent": "Message envoyé",
+    "message_delivered": "Message livré",
+    "message_read": "Message lu par {{name}}"
+  },
+
+  "errors": {
+    "message_too_long": "Le message est trop long",
+    "invalid_recipient": "Destinataire invalide",
+    "failed_to_send": "Impossible d'envoyer le message",
+    "network_error": "Erreur réseau. Veuillez réessayer"
+  },
+
+  "healthcare_features": {
+    "prescription_sharing": "Partage d'ordonnance",
+    "medical_record_sharing": "Partage de dossier médical",
+    "consultation_notes": "Notes de consultation",
+    "lab_results": "Résultats de laboratoire",
+    "encrypted": "Chiffré de bout en bout"
+  }
+}

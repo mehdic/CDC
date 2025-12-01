@@ -1,0 +1,85 @@
+{
+  "messaging": {
+    "title": "Messaggi",
+    "inbox": "Inbox",
+    "sent": "Inviati",
+    "drafts": "Bozze",
+    "archived": "Archiviati",
+    "new_message": "Nuovo messaggio",
+    "compose": "Componi",
+    "no_messages": "Nessun messaggio"
+  },
+
+  "conversation": {
+    "with": "Conversazione con",
+    "reply": "Rispondi",
+    "reply_all": "Rispondi a tutti",
+    "forward": "Inoltra",
+    "mark_read": "Segna come letto",
+    "mark_unread": "Segna come non letto",
+    "archive": "Archivia",
+    "delete": "Elimina",
+    "spam": "Segna come spam",
+    "search_messages": "Cerca nei messaggi"
+  },
+
+  "compose": {
+    "to": "A",
+    "cc": "Cc",
+    "bcc": "Ccn",
+    "subject": "Oggetto",
+    "body": "Messaggio",
+    "attachment": "Allegato",
+    "send": "Invia",
+    "save_draft": "Salva bozza",
+    "cancel": "Annulla",
+    "formatting": "Formattazione",
+    "bold": "Grassetto",
+    "italic": "Corsivo",
+    "underline": "Sottolineato",
+    "link": "Link"
+  },
+
+  "features": {
+    "search": "Cerca",
+    "filter": "Filtra",
+    "sort": "Ordina",
+    "labels": "Etichette",
+    "priority": "Priorità",
+    "schedule_send": "Pianifica invio",
+    "disappearing_messages": "Messaggi effimeri",
+    "read_receipts": "Ricevute di lettura",
+    "typing_indicator": "Indicatore di digitazione"
+  },
+
+  "status": {
+    "sent": "Inviato",
+    "delivered": "Consegnato",
+    "read": "Letto",
+    "pending": "In sospeso",
+    "failed": "Invio non riuscito"
+  },
+
+  "notifications": {
+    "new_message": "Nuovo messaggio",
+    "new_message_from": "Nuovo messaggio da {{from}}",
+    "message_sent": "Messaggio inviato",
+    "message_delivered": "Messaggio consegnato",
+    "message_read": "Messaggio letto da {{name}}"
+  },
+
+  "errors": {
+    "message_too_long": "Il messaggio è troppo lungo",
+    "invalid_recipient": "Destinatario non valido",
+    "failed_to_send": "Impossibile inviare il messaggio",
+    "network_error": "Errore di rete. Riprova"
+  },
+
+  "healthcare_features": {
+    "prescription_sharing": "Condivisione ricetta",
+    "medical_record_sharing": "Condivisione cartella medica",
+    "consultation_notes": "Note di consulenza",
+    "lab_results": "Risultati di laboratorio",
+    "encrypted": "Crittografato da capo a capo"
+  }
+}

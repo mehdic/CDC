@@ -1,0 +1,56 @@
+/**
+ * Skip Link Styles
+ * WCAG 2.1 AA Compliant
+ *
+ * Skip links are hidden by default and only visible on keyboard focus
+ * This ensures a clear visual indicator for keyboard navigation
+ */
+
+.skip-link {
+  /* Hidden by default, visible on focus */
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 8px 16px;
+  text-decoration: none;
+  z-index: 9999;
+  font-weight: bold;
+  font-size: 14px;
+  border-radius: 0 0 4px 0;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+
+  /* Minimum touch target size (48px) */
+  min-height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Ensure sufficient contrast ratio (WCAG AA: 4.5:1 for normal text) */
+  color: #ffffff;
+  background: #000000;
+}
+
+/* Make visible on focus (keyboard navigation) */
+.skip-link:focus {
+  top: 0;
+  transition: top 0.2s ease-out;
+}
+
+/* Ensure high contrast in high contrast mode */
+@media (prefers-contrast: more) {
+  .skip-link {
+    border: 3px solid #fff;
+    font-weight: 900;
+  }
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .skip-link:focus {
+    transition: none;
+  }
+}

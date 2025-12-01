@@ -1,0 +1,80 @@
+{
+  "appointments": {
+    "title": "Appuntamenti",
+    "my_appointments": "I miei appuntamenti",
+    "book_appointment": "Prenota appuntamento",
+    "upcoming": "Imminenti",
+    "past": "Passati",
+    "cancelled": "Cancellati",
+    "no_appointments": "Nessun appuntamento"
+  },
+
+  "booking": {
+    "select_date": "Seleziona data",
+    "select_time": "Seleziona ora",
+    "select_provider": "Seleziona fornitore",
+    "select_type": "Tipo di consulenza",
+    "reason": "Motivo della consulenza",
+    "notes": "Note aggiuntive",
+    "available_slots": "Slot disponibili",
+    "book": "Prenota appuntamento",
+    "confirm_booking": "Conferma appuntamento"
+  },
+
+  "appointment_types": {
+    "consultation": "Consulenza",
+    "teleconsultation": "Teleconsulenza",
+    "pharmacy_consultation": "Consulenza farmaceutica",
+    "medication_review": "Revisione farmaci",
+    "follow_up": "Visita di follow-up"
+  },
+
+  "provider": {
+    "pharmacist": "Farmacista",
+    "doctor": "Medico",
+    "nurse": "Infermiera",
+    "specialist": "Specialista"
+  },
+
+  "details": {
+    "date": "Data",
+    "time": "Ora",
+    "provider": "Fornitore",
+    "type": "Tipo",
+    "location": "Posizione",
+    "duration": "Durata",
+    "status": "Stato",
+    "reminder": "Promemoria"
+  },
+
+  "actions": {
+    "reschedule": "Riprogramma",
+    "cancel": "Annulla",
+    "join_consultation": "Entra nella consulenza",
+    "reschedule_confirm": "Sei sicuro di voler riprogrammare questo appuntamento?"
+  },
+
+  "status": {
+    "confirmed": "Confermato",
+    "pending": "In sospeso",
+    "completed": "Completato",
+    "cancelled": "Annullato",
+    "rescheduled": "Riprogrammato",
+    "no_show": "Non presentato"
+  },
+
+  "reminders": {
+    "title": "Promemoria",
+    "email": "Promemoria email",
+    "sms": "Promemoria SMS",
+    "notification": "Notifica app",
+    "time_before": "Ricordami {{time}} prima dell'appuntamento"
+  },
+
+  "messages": {
+    "booked_successfully": "Appuntamento prenotato con successo",
+    "cancelled_successfully": "Appuntamento annullato",
+    "rescheduled_successfully": "Appuntamento riprogrammato",
+    "confirmation_sent": "Conferma inviata a {{email}}"
+  }
+}

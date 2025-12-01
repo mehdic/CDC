@@ -1,0 +1,85 @@
+{
+  "messaging": {
+    "title": "Nachrichten",
+    "inbox": "Posteingang",
+    "sent": "Gesendet",
+    "drafts": "Entwürfe",
+    "archived": "Archiviert",
+    "new_message": "Neue Nachricht",
+    "compose": "Verfassen",
+    "no_messages": "Keine Nachrichten"
+  },
+
+  "conversation": {
+    "with": "Unterhaltung mit",
+    "reply": "Antworten",
+    "reply_all": "Allen antworten",
+    "forward": "Weiterleiten",
+    "mark_read": "Als gelesen markieren",
+    "mark_unread": "Als ungelesen markieren",
+    "archive": "Archivieren",
+    "delete": "Löschen",
+    "spam": "Als Spam markieren",
+    "search_messages": "Nachrichten durchsuchen"
+  },
+
+  "compose": {
+    "to": "An",
+    "cc": "Cc",
+    "bcc": "Bcc",
+    "subject": "Betreff",
+    "body": "Nachricht",
+    "attachment": "Anlage",
+    "send": "Senden",
+    "save_draft": "Entwurf speichern",
+    "cancel": "Abbrechen",
+    "formatting": "Formatierung",
+    "bold": "Fett",
+    "italic": "Kursiv",
+    "underline": "Unterstrichen",
+    "link": "Link"
+  },
+
+  "features": {
+    "search": "Suchen",
+    "filter": "Filtern",
+    "sort": "Sortieren",
+    "labels": "Etiketten",
+    "priority": "Priorität",
+    "schedule_send": "Versand planen",
+    "disappearing_messages": "Verschwindende Nachrichten",
+    "read_receipts": "Lesebestätigungen",
+    "typing_indicator": "Tippanzeige"
+  },
+
+  "status": {
+    "sent": "Gesendet",
+    "delivered": "Zugestellt",
+    "read": "Gelesen",
+    "pending": "Ausstehend",
+    "failed": "Versand fehlgeschlagen"
+  },
+
+  "notifications": {
+    "new_message": "Neue Nachricht",
+    "new_message_from": "Neue Nachricht von {{from}}",
+    "message_sent": "Nachricht gesendet",
+    "message_delivered": "Nachricht zugestellt",
+    "message_read": "Nachricht gelesen von {{name}}"
+  },
+
+  "errors": {
+    "message_too_long": "Die Nachricht ist zu lang",
+    "invalid_recipient": "Ungültiger Empfänger",
+    "failed_to_send": "Nachricht konnte nicht gesendet werden",
+    "network_error": "Netzwerkfehler. Bitte versuchen Sie es erneut"
+  },
+
+  "healthcare_features": {
+    "prescription_sharing": "Rezeptfreigabe",
+    "medical_record_sharing": "Patientenaktenfreigabe",
+    "consultation_notes": "Beratungsnotizen",
+    "lab_results": "Laborergebnisse",
+    "encrypted": "Ende-zu-Ende-verschlüsselt"
+  }
+}
