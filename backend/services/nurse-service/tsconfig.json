@@ -11,6 +11,6 @@
     "declaration": false,
     "declarationMap": false
   },
-  "include": ["src/**/*", "../../shared/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "../../shared/**/__tests__/**"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
