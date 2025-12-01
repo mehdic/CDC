@@ -1,0 +1,214 @@
+/* RefillRequest Component Styles */
+
+.refill-request-container {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.refill-request-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+}
+
+.refill-request-card h2 {
+  margin: 0 0 20px;
+  font-size: 24px;
+  color: #333;
+}
+
+.medication-info {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.medication-info h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #555;
+}
+
+.medication-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.medication-item {
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  border-left: 4px solid #4CAF50;
+}
+
+.med-name {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.med-dosage {
+  font-size: 14px;
+  color: #666;
+  margin-right: 12px;
+}
+
+.med-quantity {
+  font-size: 14px;
+  color: #666;
+}
+
+.refill-status {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-item .label {
+  font-size: 14px;
+  color: #666;
+}
+
+.status-item .value {
+  font-weight: 600;
+  font-size: 18px;
+  color: #333;
+}
+
+.status-item .value.error {
+  color: #d32f2f;
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.alert-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.alert-error {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef5350;
+}
+
+.alert-success {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #66bb6a;
+}
+
+.alert-warning {
+  background: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffb74d;
+}
+
+.refill-form {
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 6px;
+  color: #999;
+  font-size: 13px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #4CAF50;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.btn-refill {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+}
+
+.refill-info {
+  background: #f9f9f9;
+  padding: 16px;
+  border-radius: 6px;
+  margin-top: 20px;
+}
+
+.refill-info h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #333;
+}
+
+.refill-info ol {
+  margin: 0;
+  padding-left: 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.refill-info li {
+  margin-bottom: 8px;
+}
