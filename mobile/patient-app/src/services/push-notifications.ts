@@ -209,8 +209,7 @@ export class PushNotificationsService {
   }
 
   /**
-   * Subscribe to device token updates
-   * In production, this would be called after getting FCM token from Firebase
+   * Get device token
    */
   async getDeviceToken(): Promise<string | null> {
     try {
