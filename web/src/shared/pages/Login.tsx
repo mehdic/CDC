@@ -9,9 +9,15 @@ import {
   Alert,
   CircularProgress,
   Container,
+  Divider,
 } from '@mui/material';
 import { TextField } from '@shared/components/Form/TextField';
 import { login, type AuthError, isAuthenticated } from '@shared/services/authService';
+
+/**
+ * User roles that can use HIN authentication
+ */
+type HINSupportedRole = 'doctor' | 'pharmacist' | 'nurse';
 
 /**
  * Form validation errors
@@ -24,8 +30,16 @@ interface ValidationErrors {
 /**
  * Login Page Component
  * Handles user authentication with email and password
+ * Also supports HIN e-ID authentication for healthcare professionals
  */
-export const LoginPage: React.FC = () => {
+interface LoginPageProps {
+  /**
+   * User role (if specified, shows HIN login option for healthcare professionals)
+   */
+  userRole?: HINSupportedRole;
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ userRole }) => {
   const navigate = useNavigate();
 
   // Form state
@@ -158,6 +172,20 @@ export const LoginPage: React.FC = () => {
   };
 
   /**
+   * Handle HIN e-ID login
+   */
+  const handleHINLogin = () => {
+    // Redirect to backend HIN authorization endpoint
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001';
+    window.location.href = `${backendUrl}/auth/hin/authorize`;
+  };
+
+  /**
+   * Check if HIN login should be shown
+   */
+  const showHINLogin = userRole && ['doctor', 'pharmacist', 'nurse'].includes(userRole);
+
+  /**
    * Handle input change and clear field-specific error
    */
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,6 +260,35 @@ export const LoginPage: React.FC = () => {
               <Alert severity="error" sx={{ mb: 3 }}>
                 {apiError}
               </Alert>
+            )}
+
+            {/* HIN e-ID Login (for healthcare professionals only) */}
+            {showHINLogin && (
+              <>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  onClick={handleHINLogin}
+                  disabled={loading}
+                  sx={{
+                    mb: 2,
+                    py: 1.5,
+                    bgcolor: '#0066CC',
+                    '&:hover': {
+                      bgcolor: '#0052A3',
+                    },
+                  }}
+                >
+                  Se connecter avec HIN e-ID
+                </Button>
+
+                <Divider sx={{ my: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    ou avec email et mot de passe
+                  </Typography>
+                </Divider>
+              </>
             )}
 
             {/* Login Form */}
