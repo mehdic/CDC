@@ -89,6 +89,15 @@ export class MedicalTerminologyService {
       'allergie',
       'intolerance',
       'intolérance',
+      // Swiss drug brands
+      'dafalgan',
+      'voltaren',
+      'metformine',
+      'amlodipine',
+      'simvastatine',
+      'oméprazole',
+      'ramipril',
+      'levothyroxine',
     ];
   }
 
