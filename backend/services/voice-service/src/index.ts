@@ -51,13 +51,12 @@ async function startServer(): Promise<void> {
     const recordingRepository = AppDataSource.getRepository(VoiceRecording);
     const transcriptionRepository = AppDataSource.getRepository(Transcription);
 
-    // Initialize AI Service
+    // Initialize Azure Speech Service
     const aiService = new AITranscriptionService({
-      apiKey: process.env.AI_API_KEY || 'stub-key',
-      apiBaseUrl: process.env.AI_API_BASE_URL || 'https://api.openai.com/v1',
-      model: process.env.AI_MODEL || 'whisper-1',
+      apiKey: process.env.AZURE_SPEECH_KEY || 'your-azure-key',
+      region: process.env.AZURE_SPEECH_REGION || 'switzerlandnorth',
       maxRetries: 3,
-      timeout: 30000,
+      timeout: 60000, // 60 seconds for transcription
     });
 
     // Initialize Language Detection Service

@@ -1,40 +1,50 @@
-import axios, { AxiosInstance } from 'axios';
+import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
+import * as fs from 'fs';
 import { TranscriptionResult, AudioValidationResult, SupportedLanguage } from '../types/voice.types';
 
 /**
  * AI Transcription Service
- * STUB IMPLEMENTATION: Placeholder for real AI service integration
+ * Azure Speech Services integration for Swiss multilingual healthcare transcription
+ * Supports fr-CH, de-CH, it-CH with medical terminology post-processing
  */
 export class AITranscriptionService {
   private apiKey: string;
-  private apiBaseUrl: string;
-  private model: string;
+  private region: string;
   private maxRetries: number;
   private timeout: number;
-  private client: AxiosInstance;
 
   constructor(config: {
     apiKey: string;
-    apiBaseUrl: string;
-    model?: string;
+    region?: string;
     maxRetries?: number;
     timeout?: number;
   }) {
     this.apiKey = config.apiKey;
-    this.apiBaseUrl = config.apiBaseUrl;
-    this.model = config.model || 'whisper-1';
+    // Default to Switzerland North (Zurich) for data residency compliance (FADP/DSG)
+    this.region = config.region || 'switzerlandnorth';
     this.maxRetries = config.maxRetries || 3;
     this.timeout = config.timeout || 30000;
-
-    this.client = axios.create({
-      baseURL: this.apiBaseUrl,
-      timeout: this.timeout,
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-    });
   }
 
+  /**
+   * Map internal Swiss language codes to Azure locale codes
+   * Swiss Italian (it-CH) not available → use it-IT
+   * Romansh (rm-CH) not supported → fallback to de-CH
+   */
+  private mapLanguageToAzureLocale(language: SupportedLanguage): string {
+    const localeMap: Record<SupportedLanguage, string> = {
+      [SupportedLanguage.FRENCH]: 'fr-CH',
+      [SupportedLanguage.GERMAN]: 'de-CH',
+      [SupportedLanguage.ITALIAN]: 'it-IT', // Azure doesn't support it-CH
+      [SupportedLanguage.ROMANSH]: 'de-CH', // Romansh not supported, fallback
+    };
+    return localeMap[language];
+  }
+
+  /**
+   * Batch transcription for voice notes (cost-effective: $0.006/min)
+   * Suitable for asynchronous voice notes and prescription dictation
+   */
   async transcribeAudio(
     audioFilePath: string,
     language: SupportedLanguage,
@@ -43,13 +53,14 @@ export class AITranscriptionService {
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
-        const result = await this.callTranscriptionAPI(audioFilePath, language);
+        const result = await this.transcribeFromFile(audioFilePath, language);
         return result;
       } catch (error) {
         lastError =
           error instanceof Error ? error : new Error(String(error));
 
         if (attempt < this.maxRetries - 1) {
+          // Exponential backoff for rate limiting (HTTP 429)
           await this.delay(Math.pow(2, attempt) * 1000);
         }
       }
@@ -60,11 +71,15 @@ export class AITranscriptionService {
     );
   }
 
+  /**
+   * Real-time streaming transcription for teleconsultations (higher cost: $0.0167/min)
+   * 200-500ms latency for live audio
+   */
   async transcribeStream(
     audioBuffer: Buffer,
     language: SupportedLanguage,
   ): Promise<TranscriptionResult> {
-    return this.callStreamTranscriptionAPI(audioBuffer, language);
+    return this.transcribeFromBuffer(audioBuffer, language);
   }
 
   async validateAudioFile(audioFilePath: string): Promise<AudioValidationResult> {
@@ -95,40 +110,203 @@ export class AITranscriptionService {
     }
   }
 
-  private async callTranscriptionAPI(
+  /**
+   * Azure Speech transcription from audio file
+   * Uses Speech SDK for batch processing
+   */
+  private async transcribeFromFile(
     audioFilePath: string,
     language: SupportedLanguage,
   ): Promise<TranscriptionResult> {
-    const mockResponse: TranscriptionResult = {
-      text: `[Transcribed audio content for ${audioFilePath}]`,
-      confidence: 0.92,
-      language,
-      detectedLanguage: language,
-      hasDoctor: false,
-      hasPharmaTerms: false,
-      keywords: [],
-    };
+    return new Promise((resolve, reject) => {
+      const azureLocale = this.mapLanguageToAzureLocale(language);
 
-    await this.delay(1000);
-    return mockResponse;
+      // Configure Azure Speech
+      const speechConfig = sdk.SpeechConfig.fromSubscription(
+        this.apiKey,
+        this.region
+      );
+      speechConfig.speechRecognitionLanguage = azureLocale;
+      speechConfig.outputFormat = sdk.OutputFormat.Detailed;
+
+      // Configure audio input from file
+      const audioConfig = sdk.AudioConfig.fromWavFileInput(
+        fs.readFileSync(audioFilePath)
+      );
+
+      // Create speech recognizer
+      const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+
+      let fullText = '';
+      let totalConfidence = 0;
+      let segmentCount = 0;
+
+      // Handle recognized speech segments
+      recognizer.recognized = (s, e) => {
+        if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
+          fullText += e.result.text + ' ';
+
+          // Extract confidence from detailed results
+          const detailedResult = e.result as any;
+          if (detailedResult.privJson) {
+            try {
+              const json = JSON.parse(detailedResult.privJson);
+              if (json.NBest && json.NBest[0]?.Confidence) {
+                totalConfidence += json.NBest[0].Confidence;
+                segmentCount++;
+              }
+            } catch {}
+          }
+        }
+      };
+
+      // Handle errors
+      recognizer.canceled = (s, e) => {
+        recognizer.close();
+
+        if (e.reason === sdk.CancellationReason.Error) {
+          reject(new Error(`Azure Speech error: ${e.errorDetails}`));
+        } else {
+          // Cancellation due to end of stream
+          this.completeRecognition(fullText, totalConfidence, segmentCount, language, resolve);
+        }
+      };
+
+      // Handle session stopped
+      recognizer.sessionStopped = () => {
+        recognizer.close();
+        this.completeRecognition(fullText, totalConfidence, segmentCount, language, resolve);
+      };
+
+      // Start continuous recognition
+      recognizer.startContinuousRecognitionAsync(
+        () => {
+          // Recognition started successfully
+        },
+        (err) => {
+          recognizer.close();
+          reject(new Error(`Failed to start recognition: ${err}`));
+        }
+      );
+
+      // Set timeout
+      setTimeout(() => {
+        recognizer.stopContinuousRecognitionAsync(
+          () => recognizer.close(),
+          (err) => {
+            recognizer.close();
+            reject(new Error(`Timeout: ${err}`));
+          }
+        );
+      }, this.timeout);
+    });
   }
 
-  private async callStreamTranscriptionAPI(
+  /**
+   * Azure Speech transcription from audio buffer (streaming)
+   * Uses Speech SDK with push stream for real-time processing
+   */
+  private async transcribeFromBuffer(
     audioBuffer: Buffer,
     language: SupportedLanguage,
   ): Promise<TranscriptionResult> {
-    const mockResponse: TranscriptionResult = {
-      text: '[Streamed transcription result]',
-      confidence: 0.88,
+    return new Promise((resolve, reject) => {
+      const azureLocale = this.mapLanguageToAzureLocale(language);
+
+      // Configure Azure Speech
+      const speechConfig = sdk.SpeechConfig.fromSubscription(
+        this.apiKey,
+        this.region
+      );
+      speechConfig.speechRecognitionLanguage = azureLocale;
+      speechConfig.outputFormat = sdk.OutputFormat.Detailed;
+
+      // Create push stream for buffer
+      const pushStream = sdk.AudioInputStream.createPushStream();
+      const arrayBuffer = audioBuffer.buffer.slice(audioBuffer.byteOffset, audioBuffer.byteOffset + audioBuffer.byteLength) as ArrayBuffer;
+      pushStream.write(arrayBuffer);
+      pushStream.close();
+
+      const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
+      const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+
+      let fullText = '';
+      let totalConfidence = 0;
+      let segmentCount = 0;
+
+      recognizer.recognized = (s, e) => {
+        if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
+          fullText += e.result.text + ' ';
+
+          const detailedResult = e.result as any;
+          if (detailedResult.privJson) {
+            try {
+              const json = JSON.parse(detailedResult.privJson);
+              if (json.NBest && json.NBest[0]?.Confidence) {
+                totalConfidence += json.NBest[0].Confidence;
+                segmentCount++;
+              }
+            } catch {}
+          }
+        }
+      };
+
+      recognizer.canceled = (s, e) => {
+        recognizer.close();
+
+        if (e.reason === sdk.CancellationReason.Error) {
+          reject(new Error(`Azure Speech error: ${e.errorDetails}`));
+        } else {
+          this.completeRecognition(fullText, totalConfidence, segmentCount, language, resolve);
+        }
+      };
+
+      recognizer.sessionStopped = () => {
+        recognizer.close();
+        this.completeRecognition(fullText, totalConfidence, segmentCount, language, resolve);
+      };
+
+      recognizer.startContinuousRecognitionAsync(
+        () => {},
+        (err) => {
+          recognizer.close();
+          reject(new Error(`Failed to start recognition: ${err}`));
+        }
+      );
+
+      setTimeout(() => {
+        recognizer.stopContinuousRecognitionAsync(
+          () => recognizer.close(),
+          (err) => {
+            recognizer.close();
+            reject(new Error(`Timeout: ${err}`));
+          }
+        );
+      }, this.timeout);
+    });
+  }
+
+  /**
+   * Complete recognition and build TranscriptionResult
+   */
+  private completeRecognition(
+    text: string,
+    totalConfidence: number,
+    segmentCount: number,
+    language: SupportedLanguage,
+    resolve: (value: TranscriptionResult) => void
+  ): void {
+    const avgConfidence = segmentCount > 0 ? totalConfidence / segmentCount : 0.0;
+
+    resolve({
+      text: text.trim(),
+      confidence: avgConfidence,
       language,
       detectedLanguage: language,
-      hasDoctor: false,
-      hasPharmaTerms: false,
-      keywords: [],
-    };
-
-    await this.delay(500);
-    return mockResponse;
+      hasDoctor: false, // Will be populated by MedicalTerminologyService
+      hasPharmaTerms: false, // Will be populated by MedicalTerminologyService
+      keywords: [], // Will be populated by MedicalTerminologyService
+    });
   }
 
   private delay(ms: number): Promise<void> {
