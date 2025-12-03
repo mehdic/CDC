@@ -1,0 +1,190 @@
+/* Referral Page Styles */
+
+.referral-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.referral-page.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 500px;
+}
+
+.page-header {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.page-header h1 {
+  font-size: 32px;
+  margin: 0 0 8px 0;
+  color: #1890ff;
+}
+
+.page-header .subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+/* Referral Code Card */
+.referral-code-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.code-section h2 {
+  margin-bottom: 16px;
+  font-size: 20px;
+}
+
+.code-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  border: 2px dashed #1890ff;
+}
+
+.code-display .code {
+  font-size: 24px;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  color: #1890ff;
+  flex: 1;
+  text-align: center;
+}
+
+.code-display .copy-button {
+  flex-shrink: 0;
+}
+
+.share-options {
+  margin-top: 24px;
+}
+
+.share-options h3 {
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.share-button {
+  flex: 0 0 auto;
+  min-width: 100px;
+}
+
+@media (max-width: 768px) {
+  .button-group {
+    justify-content: space-between;
+  }
+
+  .share-button {
+    flex: 0 0 calc(50% - 4px);
+    min-width: auto;
+  }
+}
+
+.share-url {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.share-url label {
+  font-weight: 500;
+  color: #333;
+}
+
+.share-url input {
+  font-family: 'Courier New', monospace;
+}
+
+/* History Card */
+.history-card {
+  margin-top: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.history-card :global(.ant-table) {
+  font-size: 14px;
+}
+
+.history-card :global(.ant-tag) {
+  margin-right: 0;
+}
+
+/* Share Modal */
+.share-modal-content {
+  padding: 16px;
+}
+
+.share-modal-content p {
+  margin-bottom: 16px;
+  color: #666;
+}
+
+.share-modal-content code {
+  background: #f5f5f5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #1890ff;
+  font-weight: bold;
+}
+
+.social-share {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.social-share :global(.ant-btn) {
+  margin-bottom: 8px;
+}
+
+.social-share :global(.ant-btn:last-child) {
+  margin-bottom: 0;
+}
+
+.mb-2 {
+  margin-bottom: 8px !important;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .referral-page {
+    padding: 16px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .code-display {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .code-display .code {
+    font-size: 20px;
+  }
+
+  .code-display .copy-button {
+    width: 100%;
+  }
+}

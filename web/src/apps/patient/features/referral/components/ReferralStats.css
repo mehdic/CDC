@@ -1,0 +1,227 @@
+/* Referral Stats Component Styles */
+
+.referral-stats {
+  margin: 24px 0;
+}
+
+.stats-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.stats-card :global(.ant-card-head-title) {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Stat Boxes */
+.stat-box {
+  padding: 16px;
+  border-radius: 6px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+  border-color: #d9d9d9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.total-referrals .stat-icon {
+  color: #1890ff;
+}
+
+.pending-referrals .stat-icon {
+  color: #faad14;
+}
+
+.completed-referrals .stat-icon {
+  color: #52c41a;
+}
+
+.conversion-rate {
+  background: #f6f8ff;
+  border: 1px solid #e6f1ff;
+}
+
+.stat-box :global(.ant-statistic-title) {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.stat-box :global(.ant-statistic-content) {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Rewards Section */
+.rewards-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.reward-box,
+.milestone-box {
+  padding: 16px;
+  border-radius: 6px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+}
+
+.reward-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.reward-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.reward-icon {
+  font-size: 24px;
+  color: #faad14;
+}
+
+.reward-amount {
+  text-align: center;
+  margin: 16px 0;
+}
+
+.amount {
+  font-size: 32px;
+  font-weight: bold;
+  color: #52c41a;
+}
+
+.reward-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.breakdown-item .label {
+  color: #666;
+  font-size: 14px;
+}
+
+.breakdown-item .value {
+  font-weight: 600;
+}
+
+.breakdown-item .value.applied {
+  color: #52c41a;
+}
+
+.breakdown-item .value.pending {
+  color: #faad14;
+}
+
+/* Milestone Box */
+.milestone-box h3 {
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.milestone-progress {
+  padding: 16px;
+  background: white;
+  border-radius: 4px;
+}
+
+.milestone-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.milestone-label.success {
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.milestone-progress :global(.ant-progress) {
+  margin-top: 8px;
+}
+
+/* Benefits Info */
+.benefits-info {
+  margin-top: 32px;
+  padding: 16px;
+  background: #e6f7ff;
+  border-radius: 6px;
+  border-left: 4px solid #1890ff;
+}
+
+.benefits-info h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #1890ff;
+  font-size: 16px;
+}
+
+.benefits-info ul {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.benefits-info li {
+  margin-bottom: 8px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.benefits-info strong {
+  color: #1890ff;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stat-box {
+    padding: 12px;
+  }
+
+  .stat-icon {
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+
+  .stat-box :global(.ant-statistic-content) {
+    font-size: 20px;
+  }
+
+  .amount {
+    font-size: 24px;
+  }
+
+  .reward-breakdown {
+    gap: 6px;
+  }
+
+  .breakdown-item {
+    font-size: 13px;
+  }
+}
