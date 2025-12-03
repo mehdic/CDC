@@ -8,6 +8,8 @@ import { Payment } from '../../../../shared/models/Payment';
 import { User } from '../../../../shared/models/User';
 import { AuditLog } from '../../../../shared/models/AuditLog';
 import { Pharmacy } from '../../../../shared/models/Pharmacy';
+import { CODTransaction } from '../../../../shared/models/CODTransaction';
+import { DriverSettlement } from '../../../../shared/models/DriverSettlement';
 
 export const AppDataSource = new DataSource(
   process.env.NODE_ENV === 'test'
@@ -15,7 +17,7 @@ export const AppDataSource = new DataSource(
         // Use SQLite in-memory database for testing
         type: 'better-sqlite3',
         database: ':memory:',
-        entities: [Payment, User, AuditLog, Pharmacy],
+        entities: [Payment, User, AuditLog, Pharmacy, CODTransaction, DriverSettlement],
         synchronize: true, // Auto-create tables in test mode
         logging: false,
         dropSchema: true, // Clean database for each test run
@@ -32,7 +34,7 @@ export const AppDataSource = new DataSource(
         database: process.env.DB_NAME || 'metapharm_payments',
         synchronize: process.env.NODE_ENV === 'development', // Auto-sync in dev only
         logging: process.env.NODE_ENV === 'development',
-        entities: [Payment, User, AuditLog, Pharmacy],
+        entities: [Payment, User, AuditLog, Pharmacy, CODTransaction, DriverSettlement],
         migrations: [],
         subscribers: [],
       }
