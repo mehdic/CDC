@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { screen, fireEvent, render } from '../../__tests__/test-utils';
 import { Modal, ConfirmModal, DeleteConfirmModal } from '../Modal';
 
 // Use React type to satisfy linter
