@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: digital-twin-service-sa
+  namespace: metapharm
+  labels:
+    app: digital-twin-service

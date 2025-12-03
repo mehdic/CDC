@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: insurance-service-sa
+  namespace: metapharm
+  labels:
+    app: insurance-service

@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calendar-service-deployment
+  namespace: metapharm
+  labels:
+    app: calendar-service
+    tier: medium
+    component: microservice
+    version: v1
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: calendar-service
+      version: v1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: calendar-service
+        tier: medium
+        version: v1
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '3014'
+        prometheus.io/path: /metrics
+    spec:
+      serviceAccountName: calendar-service-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: calendar-service
+        image: metapharm/calendar-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 3014
+          protocol: TCP
+        env:
+        - name: PORT
+          value: '3014'
+        - name: SERVICE_NAME
+          value: calendar-service
+        envFrom:
+        - configMapRef:
+            name: common-config
+        - secretRef:
+            name: metapharm-db-credentials
+        - secretRef:
+            name: metapharm-jwt-secret
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - calendar-service
+              topologyKey: kubernetes.io/hostname

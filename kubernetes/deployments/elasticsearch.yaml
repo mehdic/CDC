@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-deployment
+  namespace: metapharm
+  labels:
+    app: elasticsearch
+    tier: medium
+    component: infrastructure
+    version: v1
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: elasticsearch
+      version: v1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+        tier: medium
+        version: v1
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9200'
+        prometheus.io/path: /metrics
+    spec:
+      serviceAccountName: elasticsearch-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: elasticsearch
+        image: metapharm/elasticsearch:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 9200
+          protocol: TCP
+        env:
+        - name: PORT
+          value: '9200'
+        - name: SERVICE_NAME
+          value: elasticsearch
+        envFrom:
+        - configMapRef:
+            name: common-config
+        - secretRef:
+            name: metapharm-db-credentials
+        - secretRef:
+            name: metapharm-jwt-secret
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - elasticsearch
+              topologyKey: kubernetes.io/hostname

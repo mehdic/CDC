@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: recycling-service-sa
+  namespace: metapharm
+  labels:
+    app: recycling-service

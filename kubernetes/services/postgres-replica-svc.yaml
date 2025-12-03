@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-replica-svc
+  namespace: metapharm
+  labels:
+    app: postgres-replica
+    service: 'true'
+  annotations:
+    service.kubernetes.io/topology-aware-hints: auto
+spec:
+  selector:
+    app: postgres-replica
+  ports:
+  - name: http
+    protocol: TCP
+    port: 5432
+    targetPort: http
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  type: ClusterIP

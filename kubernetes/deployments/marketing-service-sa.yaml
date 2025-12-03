@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: marketing-service-sa
+  namespace: metapharm
+  labels:
+    app: marketing-service

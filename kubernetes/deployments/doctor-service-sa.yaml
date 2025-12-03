@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: doctor-service-sa
+  namespace: metapharm
+  labels:
+    app: doctor-service

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: medical-records-service-sa
+  namespace: metapharm
+  labels:
+    app: medical-records-service

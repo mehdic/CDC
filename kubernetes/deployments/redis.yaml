@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  namespace: metapharm
+  labels:
+    app: redis
+    tier: medium
+    component: infrastructure
+    version: v1
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: redis
+      version: v1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: redis
+        tier: medium
+        version: v1
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '6379'
+        prometheus.io/path: /metrics
+    spec:
+      serviceAccountName: redis-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: redis
+        image: metapharm/redis:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 6379
+          protocol: TCP
+        env:
+        - name: PORT
+          value: '6379'
+        - name: SERVICE_NAME
+          value: redis
+        envFrom:
+        - configMapRef:
+            name: common-config
+        - secretRef:
+            name: metapharm-db-credentials
+        - secretRef:
+            name: metapharm-jwt-secret
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - redis
+              topologyKey: kubernetes.io/hostname

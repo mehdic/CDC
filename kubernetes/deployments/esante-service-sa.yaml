@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: esante-service-sa
+  namespace: metapharm
+  labels:
+    app: esante-service

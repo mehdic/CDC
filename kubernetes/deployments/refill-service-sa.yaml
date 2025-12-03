@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: refill-service-sa
+  namespace: metapharm
+  labels:
+    app: refill-service

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: controlled-substance-service-sa
+  namespace: metapharm
+  labels:
+    app: controlled-substance-service

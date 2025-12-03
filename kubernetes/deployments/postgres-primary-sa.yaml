@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: postgres-primary-sa
+  namespace: metapharm
+  labels:
+    app: postgres-primary

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nurse-service-sa
+  namespace: metapharm
+  labels:
+    app: nurse-service

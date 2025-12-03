@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-primary-deployment
+  namespace: metapharm
+  labels:
+    app: postgres-primary
+    tier: high
+    component: infrastructure
+    version: v1
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-primary
+      version: v1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: postgres-primary
+        tier: high
+        version: v1
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '5432'
+        prometheus.io/path: /metrics
+    spec:
+      serviceAccountName: postgres-primary-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: postgres-primary
+        image: metapharm/postgres-primary:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 5432
+          protocol: TCP
+        env:
+        - name: PORT
+          value: '5432'
+        - name: SERVICE_NAME
+          value: postgres-primary
+        envFrom:
+        - configMapRef:
+            name: common-config
+        - secretRef:
+            name: metapharm-db-credentials
+        - secretRef:
+            name: metapharm-jwt-secret
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

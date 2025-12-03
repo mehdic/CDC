@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: notification-service-sa
+  namespace: metapharm
+  labels:
+    app: notification-service

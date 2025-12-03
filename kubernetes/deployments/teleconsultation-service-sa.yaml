@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: teleconsultation-service-sa
+  namespace: metapharm
+  labels:
+    app: teleconsultation-service

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ecommerce-service-sa
+  namespace: metapharm
+  labels:
+    app: ecommerce-service

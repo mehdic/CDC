@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prescription-service-sa
+  namespace: metapharm
+  labels:
+    app: prescription-service
