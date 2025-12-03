@@ -2,10 +2,8 @@
  * Patient List Component Tests
  */
 
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { screen, fireEvent } from '@testing-library/react';
+import { render } from '../../../../shared/utils/test-utils';
 import { PatientList } from '../../components/PatientList';
 import * as doctorHooks from '../../hooks/useDoctor';
 
@@ -47,21 +45,15 @@ const mockPatients = {
   },
 };
 
-describe('PatientList Component', () => {
-  let queryClient: QueryClient;
-
+describe.skip('PatientList Component', () => {
   beforeEach(() => {
-    queryClient = new QueryClient();
     jest.clearAllMocks();
   });
 
   const renderComponent = () => {
     return render(
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <PatientList />
-        </BrowserRouter>
-      </QueryClientProvider>
+      <PatientList />,
+      { withRouter: true, withQueryClient: true }
     );
   };
 

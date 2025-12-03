@@ -2,7 +2,7 @@
  * Unit Tests for NurseDashboard Component
  */
 
-import { render, screen, waitFor } from '../../../shared/__tests__/test-utils';
+import { render, screen, waitFor } from '../../../shared/utils/test-utils';
 import NurseDashboard from '../components/NurseDashboard';
 import * as nurseApi from '../services/nurseApi';
 import * as useOrdersHook from '../hooks/useOrders';

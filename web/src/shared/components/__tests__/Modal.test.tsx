@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, fireEvent, render } from '../../__tests__/test-utils';
+import { screen, fireEvent, render } from '../../utils/test-utils';
 import { Modal, ConfirmModal, DeleteConfirmModal } from '../Modal';
 
 // Use React type to satisfy linter
