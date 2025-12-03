@@ -13,6 +13,7 @@ import dotenv from 'dotenv';
 import paymentRoutes from './routes/paymentRoutes';
 import { initializeDatabase, AppDataSource } from './config/database';
 import { createCODRoutes } from './routes/cod/codRoutes';
+import { createTerminalRoutes } from './routes/terminal/terminalRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -112,6 +113,12 @@ app.use('/', paymentRoutes);
 // ============================================================================
 
 app.use('/api/v1', createCODRoutes(AppDataSource));
+
+// ============================================================================
+// Terminal Routes
+// ============================================================================
+
+app.use('/api/v1', createTerminalRoutes(AppDataSource));
 
 // ============================================================================
 // Error Handling Middleware
