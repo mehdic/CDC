@@ -13,12 +13,15 @@ import { Teleconsultation, TeleconsultationStatus } from '../../models/Teleconsu
 import { addHours, subHours } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 
-// Mock date-fns-tz
-jest.mock('date-fns-tz', () => ({
-  toZonedTime: jest.fn((date) => date),
-  fromZonedTime: jest.fn((date) => date),
-  formatInTimeZone: jest.fn(() => 'Vendredi, 27 novembre 2025 à 14:30'),
-}));
+// Mock date-fns-tz - need to handle timezone conversions
+jest.mock('date-fns-tz', () => {
+  const actualModule = jest.requireActual('date-fns-tz');
+  return {
+    toZonedTime: jest.fn((date) => date),
+    fromZonedTime: jest.fn((date) => date),
+    formatInTimeZone: jest.fn(() => 'Vendredi, 27 novembre 2025 à 14:30'),
+  };
+});
 
 describe('AppointmentReminderService', () => {
   let dataSource: DataSource;
@@ -31,7 +34,7 @@ describe('AppointmentReminderService', () => {
     patient_id: 'patient-456',
     pharmacist_id: 'pharmacist-789',
     pharmacy_id: 'pharmacy-111',
-    scheduled_at: new Date('2025-11-27T14:30:00Z'),
+    scheduled_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // exactly 24 hours from now
     duration_minutes: 15,
     status: TeleconsultationStatus.SCHEDULED,
     patient: {
@@ -247,6 +250,14 @@ describe('AppointmentReminderService', () => {
     it('should build 1-hour reminder message', async () => {
       const config = [{ hoursBeforeAppointment: 1, enabled: true }];
 
+      // Create appointment that will match 1-hour reminder window
+      const appointmentIn1Hour = {
+        ...mockAppointment,
+        scheduled_at: new Date(Date.now() + 1 * 60 * 60 * 1000), // 1 hour from now
+      };
+
+      mockTeleconsultationRepo.find = jest.fn().mockResolvedValue([appointmentIn1Hour]);
+
       const customService = new AppointmentReminderService(
         dataSource,
         notificationService,
@@ -306,14 +317,22 @@ describe('AppointmentReminderService', () => {
 
       mockTeleconsultationRepo.find = jest.fn().mockResolvedValue([incompleteAppointment]);
 
-      // Should not throw
-      await expect(reminderService.processReminders()).rejects.toThrow();
+      // Should handle gracefully (catch error and continue)
+      await expect(reminderService.processReminders()).resolves.not.toThrow();
     });
   });
 
   describe('Priority Setting', () => {
     it('should set HIGH priority for 1-hour reminders', async () => {
       const config = [{ hoursBeforeAppointment: 1, enabled: true }];
+
+      // Create appointment that will match 1-hour reminder window
+      const appointmentIn1Hour = {
+        ...mockAppointment,
+        scheduled_at: new Date(Date.now() + 1 * 60 * 60 * 1000), // 1 hour from now
+      };
+
+      mockTeleconsultationRepo.find = jest.fn().mockResolvedValue([appointmentIn1Hour]);
 
       const customService = new AppointmentReminderService(
         dataSource,
