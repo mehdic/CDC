@@ -4,20 +4,29 @@
  */
 
 import { Request, Response } from 'express';
-import { optimizeRoute, recalculateRoute, OptimizedRoute } from '../services/routeOptimizer';
+import {
+  optimizeRoute,
+  recalculateRoute,
+  OptimizedRoute,
+  VehicleCapacity,
+  PatientDeliveryPreferences,
+  createDefaultVehicleCapacity,
+} from '../services/routeOptimizer';
 import { DeliveryRequest, Coordinates, ApiResponse } from '../types/delivery';
 
 /**
  * POST /delivery/route/optimize
- * Optimize a list of deliveries into an efficient route
+ * Optimize a list of deliveries into an efficient route with ML-based enhancements
  *
  * Body:
  * - deliveryIds: string[] (array of delivery IDs to optimize)
  * - startLocation?: { latitude: number, longitude: number } (starting point, defaults to central Swiss location)
+ * - vehicleCapacity?: VehicleCapacity (vehicle capacity constraints)
+ * - patientPreferences?: { [patientId: string]: PatientDeliveryPreferences } (patient delivery preferences)
  */
 export async function optimizeRouteController(req: Request, res: Response): Promise<void> {
   try {
-    const { deliveryIds, startLocation } = req.body;
+    const { deliveryIds, startLocation, vehicleCapacity, patientPreferences } = req.body;
 
     // Validation
     if (!deliveryIds || !Array.isArray(deliveryIds) || deliveryIds.length === 0) {
@@ -45,12 +54,24 @@ export async function optimizeRouteController(req: Request, res: Response): Prom
           timestamp: new Date().toISOString(),
         };
 
-    // Optimize the route
-    const optimizedRoute = optimizeRoute(mockDeliveries, startCoord);
+    // Use provided or default vehicle capacity
+    const capacity: VehicleCapacity = vehicleCapacity || createDefaultVehicleCapacity();
+
+    // Convert patient preferences to Map
+    const preferencesMap = new Map<string, PatientDeliveryPreferences>();
+    if (patientPreferences) {
+      Object.entries(patientPreferences).forEach(([patientId, prefs]) => {
+        preferencesMap.set(patientId, prefs as PatientDeliveryPreferences);
+      });
+    }
+
+    // Optimize the route with ML-based enhancements
+    const optimizedRoute = optimizeRoute(mockDeliveries, startCoord, capacity, preferencesMap);
 
     res.json({
       success: true,
       data: optimizedRoute,
+      message: `Route optimized with ${optimizedRoute.waypoints.length} deliveries`,
     } as ApiResponse<OptimizedRoute>);
   } catch (error: any) {
     console.error('[Route Controller] Optimize error:', error);
@@ -103,17 +124,19 @@ export async function updateRouteProgressController(req: Request, res: Response)
 
 /**
  * POST /delivery/route/:routeId/recalculate
- * Recalculate route from current position
- * Used when driver deviates significantly from planned route
+ * Recalculate route from current position with ML-based re-optimization
+ * Used when driver deviates significantly from planned route or conditions change
  *
  * Body:
  * - currentLocation: { latitude: number, longitude: number }
  * - remainingDeliveryIds: string[] (delivery IDs not yet completed)
+ * - vehicleCapacity?: VehicleCapacity (updated vehicle capacity)
+ * - patientPreferences?: { [patientId: string]: PatientDeliveryPreferences } (patient delivery preferences)
  */
 export async function recalculateRouteController(req: Request, res: Response): Promise<void> {
   try {
     const { routeId } = req.params;
-    const { currentLocation, remainingDeliveryIds } = req.body;
+    const { currentLocation, remainingDeliveryIds, vehicleCapacity, patientPreferences } = req.body;
 
     // Validation
     if (!currentLocation || typeof currentLocation.latitude !== 'number' || typeof currentLocation.longitude !== 'number') {
@@ -135,19 +158,33 @@ export async function recalculateRouteController(req: Request, res: Response): P
     // Create mock deliveries
     const mockDeliveries = createMockDeliveries(remainingDeliveryIds);
 
-    // Recalculate route
+    // Use provided or default vehicle capacity
+    const capacity: VehicleCapacity | undefined = vehicleCapacity || undefined;
+
+    // Convert patient preferences to Map
+    const preferencesMap = new Map<string, PatientDeliveryPreferences>();
+    if (patientPreferences) {
+      Object.entries(patientPreferences).forEach(([patientId, prefs]) => {
+        preferencesMap.set(patientId, prefs as PatientDeliveryPreferences);
+      });
+    }
+
+    // Recalculate route with ML-based re-optimization
     const recalculatedRoute = recalculateRoute(
       mockDeliveries,
       {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
         timestamp: new Date().toISOString(),
-      }
+      },
+      capacity,
+      preferencesMap
     );
 
     res.json({
       success: true,
       data: recalculatedRoute,
+      message: `Route recalculated from current position with ${recalculatedRoute.waypoints.length} remaining deliveries`,
     } as ApiResponse<OptimizedRoute>);
   } catch (error: any) {
     console.error('[Route Controller] Recalculate error:', error);

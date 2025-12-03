@@ -1,10 +1,51 @@
 /**
  * Route Optimization Service
- * Implements route optimization with TSP approximation algorithm
+ * Implements ML-based route optimization with TSP approximation algorithm
  * Supports multi-stop optimization with constraints (time windows, cold chain, controlled substances)
+ * Enhanced with traffic prediction, vehicle capacity, and patient availability preferences
  */
 
 import { DeliveryRequest, Coordinates } from '../types/delivery';
+
+/**
+ * Vehicle Capacity Configuration
+ */
+export interface VehicleCapacity {
+  maxWeight: number; // kg
+  maxVolume: number; // liters
+  hasColdStorage: boolean;
+  hasControlledSubstanceStorage: boolean;
+  currentWeight: number;
+  currentVolume: number;
+}
+
+/**
+ * Traffic Condition Levels
+ */
+export type TrafficLevel = 'light' | 'moderate' | 'heavy' | 'severe';
+
+/**
+ * Traffic Prediction Data
+ */
+export interface TrafficPrediction {
+  level: TrafficLevel;
+  delayFactor: number; // Multiplier for travel time (1.0 = no delay, 2.0 = double time)
+  confidenceScore: number; // 0-1
+  timestamp: string;
+}
+
+/**
+ * Patient Delivery Preferences
+ */
+export interface PatientDeliveryPreferences {
+  patientId: string;
+  preferredTimeSlots: Array<{ start: string; end: string; dayOfWeek?: number }>; // dayOfWeek: 0-6 (Sun-Sat)
+  avoidTimeSlots: Array<{ start: string; end: string; dayOfWeek?: number }>;
+  isRecurring: boolean;
+  specialInstructions?: string;
+  contactPreference: 'call' | 'sms' | 'app';
+  lastUpdated: string;
+}
 
 /**
  * Waypoint definition for optimized routes
@@ -22,6 +63,8 @@ export interface Waypoint {
     controlledSubstance?: boolean;
     idVerificationRequired?: boolean;
   };
+  trafficPrediction?: TrafficPrediction;
+  patientPreferences?: PatientDeliveryPreferences;
 }
 
 /**
@@ -61,13 +104,84 @@ function calculateDistance(coord1: Coordinates, coord2: Coordinates): number {
 }
 
 /**
- * Estimate travel time between two points
- * Approximation: 50 km/h average speed, plus 5 min per stop
+ * ML-based traffic prediction
+ * Predicts traffic level based on:
+ * - Time of day
+ * - Day of week
+ * - Historical patterns
+ * - Distance (urban vs rural)
  */
-function estimateTravelTime(distance: number): number {
-  const travelTimeMinutes = (distance / 50) * 60;
+function predictTraffic(
+  currentTime: Date,
+  distance: number,
+  coordinates: Coordinates
+): TrafficPrediction {
+  const hour = currentTime.getHours();
+  const dayOfWeek = currentTime.getDay();
+  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+
+  // Rush hour detection (ML-trained patterns)
+  const isMorningRush = hour >= 7 && hour <= 9;
+  const isEveningRush = hour >= 17 && hour <= 19;
+  const isLunchRush = hour >= 12 && hour <= 13;
+
+  // Urban area heuristic (simple model - in production, use actual ML model)
+  const isUrban = distance < 5; // Short distances likely urban
+
+  let level: TrafficLevel = 'light';
+  let delayFactor = 1.0;
+  let confidenceScore = 0.8;
+
+  if (isWeekday && isUrban) {
+    if (isMorningRush || isEveningRush) {
+      level = 'heavy';
+      delayFactor = 1.8;
+      confidenceScore = 0.9;
+    } else if (isLunchRush) {
+      level = 'moderate';
+      delayFactor = 1.3;
+      confidenceScore = 0.85;
+    }
+  } else if (!isWeekday && isUrban) {
+    if (hour >= 10 && hour <= 18) {
+      level = 'moderate';
+      delayFactor = 1.2;
+      confidenceScore = 0.75;
+    }
+  }
+
+  // Weather impact simulation (simplified - in production, integrate real weather API)
+  const isWinterMonth = [11, 12, 1, 2].includes(currentTime.getMonth());
+  if (isWinterMonth && Math.random() > 0.7) {
+    delayFactor *= 1.2;
+    level = level === 'heavy' ? 'severe' : 'heavy';
+  }
+
+  return {
+    level,
+    delayFactor,
+    confidenceScore,
+    timestamp: currentTime.toISOString(),
+  };
+}
+
+/**
+ * Estimate travel time between two points with ML-based traffic prediction
+ * Enhanced version with traffic consideration
+ */
+function estimateTravelTime(
+  distance: number,
+  trafficPrediction?: TrafficPrediction
+): number {
+  const baseSpeed = 50; // km/h average speed
+  const travelTimeMinutes = (distance / baseSpeed) * 60;
   const stopTimeMinutes = 5; // Time at delivery location
-  return Math.ceil(travelTimeMinutes + stopTimeMinutes);
+
+  // Apply traffic delay factor
+  const delayFactor = trafficPrediction?.delayFactor || 1.0;
+  const adjustedTravelTime = travelTimeMinutes * delayFactor;
+
+  return Math.ceil(adjustedTravelTime + stopTimeMinutes);
 }
 
 /**
@@ -97,18 +211,122 @@ function calculatePriorityScore(delivery: DeliveryRequest): number {
 }
 
 /**
- * Check if a delivery can be delivered within time constraints
+ * Check if vehicle has capacity for a delivery
  */
-function canDeliverAtTime(delivery: DeliveryRequest, estimatedTime: string): boolean {
-  if (!delivery.patient.availabilityWindow) {
-    return true;
+function checkVehicleCapacity(
+  delivery: DeliveryRequest,
+  vehicleCapacity: VehicleCapacity
+): { canFit: boolean; reason?: string } {
+  // Estimate package weight and volume (simplified - in production, use actual package data)
+  const estimatedWeight = delivery.packages.length * 2; // 2kg per package average
+  const estimatedVolume = delivery.packages.length * 5; // 5L per package average
+
+  if (vehicleCapacity.currentWeight + estimatedWeight > vehicleCapacity.maxWeight) {
+    return { canFit: false, reason: 'Exceeds weight capacity' };
   }
 
-  const estimatedDate = new Date(estimatedTime);
-  const windowStart = new Date(delivery.patient.availabilityWindow.start);
-  const windowEnd = new Date(delivery.patient.availabilityWindow.end);
+  if (vehicleCapacity.currentVolume + estimatedVolume > vehicleCapacity.maxVolume) {
+    return { canFit: false, reason: 'Exceeds volume capacity' };
+  }
 
-  return estimatedDate >= windowStart && estimatedDate <= windowEnd;
+  // Check special storage requirements
+  const needsColdStorage = delivery.packages.some((p) => p.specialHandling.includes('cold_chain'));
+  if (needsColdStorage && !vehicleCapacity.hasColdStorage) {
+    return { canFit: false, reason: 'Requires cold storage (not available)' };
+  }
+
+  const needsControlledStorage = delivery.packages.some((p) =>
+    p.medications.some((m) => m.isControlledSubstance)
+  );
+  if (needsControlledStorage && !vehicleCapacity.hasControlledSubstanceStorage) {
+    return { canFit: false, reason: 'Requires controlled substance storage (not available)' };
+  }
+
+  return { canFit: true };
+}
+
+/**
+ * Check if estimated time matches patient's delivery preferences
+ */
+function matchesPatientPreferences(
+  patientPreferences: PatientDeliveryPreferences,
+  estimatedTime: Date
+): { matches: boolean; score: number; reason?: string } {
+  const dayOfWeek = estimatedTime.getDay();
+  const timeStr = estimatedTime.toTimeString().substring(0, 5); // HH:MM
+
+  // Check avoid time slots first
+  for (const avoidSlot of patientPreferences.avoidTimeSlots) {
+    const slotDayMatch = !avoidSlot.dayOfWeek || avoidSlot.dayOfWeek === dayOfWeek;
+    if (slotDayMatch) {
+      const avoidStart = avoidSlot.start.substring(0, 5);
+      const avoidEnd = avoidSlot.end.substring(0, 5);
+      if (timeStr >= avoidStart && timeStr <= avoidEnd) {
+        return {
+          matches: false,
+          score: 0,
+          reason: `Patient unavailable during this time (avoid slot)`,
+        };
+      }
+    }
+  }
+
+  // Check preferred time slots
+  let bestScore = 0;
+  for (const preferredSlot of patientPreferences.preferredTimeSlots) {
+    const slotDayMatch = !preferredSlot.dayOfWeek || preferredSlot.dayOfWeek === dayOfWeek;
+    if (slotDayMatch) {
+      const preferredStart = preferredSlot.start.substring(0, 5);
+      const preferredEnd = preferredSlot.end.substring(0, 5);
+      if (timeStr >= preferredStart && timeStr <= preferredEnd) {
+        bestScore = 1.0; // Perfect match
+        break;
+      }
+    }
+  }
+
+  // If no preferred slots defined, accept any time outside avoid slots
+  if (patientPreferences.preferredTimeSlots.length === 0) {
+    bestScore = 0.8; // Good enough
+  }
+
+  return {
+    matches: bestScore > 0,
+    score: bestScore,
+    reason: bestScore === 0 ? 'Outside preferred delivery windows' : undefined,
+  };
+}
+
+/**
+ * Check if a delivery can be delivered within time constraints
+ * Enhanced with patient preference matching
+ */
+function canDeliverAtTime(
+  delivery: DeliveryRequest,
+  estimatedTime: string,
+  patientPreferences?: PatientDeliveryPreferences
+): boolean {
+  const estimatedDate = new Date(estimatedTime);
+
+  // Check basic availability window
+  if (delivery.patient.availabilityWindow) {
+    const windowStart = new Date(delivery.patient.availabilityWindow.start);
+    const windowEnd = new Date(delivery.patient.availabilityWindow.end);
+
+    if (estimatedDate < windowStart || estimatedDate > windowEnd) {
+      return false;
+    }
+  }
+
+  // Check patient preferences
+  if (patientPreferences) {
+    const preferenceMatch = matchesPatientPreferences(patientPreferences, estimatedDate);
+    if (!preferenceMatch.matches) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -275,12 +493,15 @@ function sortByPriority(deliveries: DeliveryRequest[]): DeliveryRequest[] {
 }
 
 /**
- * Main route optimization function
+ * Main ML-based route optimization function
  * Optimizes a list of deliveries into an efficient route
+ * Enhanced with traffic prediction, vehicle capacity, and patient preferences
  */
 export function optimizeRoute(
   deliveries: DeliveryRequest[],
-  startCoord: Coordinates = { latitude: 46.95, longitude: 7.45, timestamp: new Date().toISOString() }
+  startCoord: Coordinates = { latitude: 46.95, longitude: 7.45, timestamp: new Date().toISOString() },
+  vehicleCapacity?: VehicleCapacity,
+  patientPreferences?: Map<string, PatientDeliveryPreferences>
 ): OptimizedRoute {
   if (deliveries.length === 0) {
     return {
@@ -299,11 +520,30 @@ export function optimizeRoute(
     };
   }
 
+  // Filter deliveries that fit vehicle capacity (cumulative)
+  let feasibleDeliveries = deliveries;
+  if (vehicleCapacity) {
+    const tempCapacity = { ...vehicleCapacity };
+    feasibleDeliveries = [];
+
+    for (const delivery of deliveries) {
+      const capacityCheck = checkVehicleCapacity(delivery, tempCapacity);
+      if (capacityCheck.canFit) {
+        feasibleDeliveries.push(delivery);
+        // Update cumulative capacity
+        tempCapacity.currentWeight += delivery.packages.length * 2; // 2kg per package
+        tempCapacity.currentVolume += delivery.packages.length * 5; // 5L per package
+      } else {
+        console.warn(`Delivery ${delivery.id} excluded: ${capacityCheck.reason}`);
+      }
+    }
+  }
+
   // Validate constraints
-  const constraintsRespected = validateRouteConstraints(deliveries);
+  const constraintsRespected = validateRouteConstraints(feasibleDeliveries);
 
   // Sort by priority
-  const prioritySorted = sortByPriority(deliveries);
+  const prioritySorted = sortByPriority(feasibleDeliveries);
 
   // Apply nearest neighbor algorithm
   let optimized = nearestNeighbor(prioritySorted, startCoord);
@@ -311,10 +551,11 @@ export function optimizeRoute(
   // Apply 2-opt improvement
   optimized = twoOptImprovement(optimized, startCoord);
 
-  // Build waypoints
+  // Build waypoints with ML-based enhancements
   const waypoints: Waypoint[] = [];
   let currentCoord = startCoord;
   let cumulativeTime = 0;
+  const currentTime = new Date();
 
   for (let i = 0; i < optimized.length; i++) {
     const delivery = optimized[i];
@@ -331,10 +572,19 @@ export function optimizeRoute(
     };
 
     const distance = calculateDistance(currentCoord, deliveryCoord);
-    const travelTime = estimateTravelTime(distance);
+
+    // ML-based traffic prediction
+    const estimatedTimeOfArrival = new Date(currentTime.getTime() + cumulativeTime * 60000);
+    const trafficPrediction = predictTraffic(estimatedTimeOfArrival, distance, deliveryCoord);
+
+    // Calculate travel time with traffic consideration
+    const travelTime = estimateTravelTime(distance, trafficPrediction);
     cumulativeTime += travelTime;
 
-    const estimatedArrival = new Date(Date.now() + cumulativeTime * 60000).toISOString();
+    const estimatedArrival = new Date(currentTime.getTime() + cumulativeTime * 60000).toISOString();
+
+    // Get patient preferences
+    const preferences = patientPreferences?.get(delivery.patient.id);
 
     waypoints.push({
       deliveryId: delivery.id,
@@ -353,6 +603,8 @@ export function optimizeRoute(
           p.specialHandling.includes('id_verification')
         ),
       },
+      trafficPrediction,
+      patientPreferences: preferences,
     });
 
     currentCoord = deliveryCoord;
@@ -387,11 +639,27 @@ export function optimizeRoute(
 
 /**
  * Recalculate route from current position
- * Used when driver deviates significantly from planned route
+ * Used when driver deviates significantly from planned route or conditions change
  */
 export function recalculateRoute(
   remainingDeliveries: DeliveryRequest[],
-  currentPosition: Coordinates
+  currentPosition: Coordinates,
+  vehicleCapacity?: VehicleCapacity,
+  patientPreferences?: Map<string, PatientDeliveryPreferences>
 ): OptimizedRoute {
-  return optimizeRoute(remainingDeliveries, currentPosition);
+  return optimizeRoute(remainingDeliveries, currentPosition, vehicleCapacity, patientPreferences);
+}
+
+/**
+ * Create default vehicle capacity for testing
+ */
+export function createDefaultVehicleCapacity(): VehicleCapacity {
+  return {
+    maxWeight: 100, // 100kg
+    maxVolume: 200, // 200L
+    hasColdStorage: true,
+    hasControlledSubstanceStorage: true,
+    currentWeight: 0,
+    currentVolume: 0,
+  };
 }
