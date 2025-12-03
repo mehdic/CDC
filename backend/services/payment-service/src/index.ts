@@ -11,7 +11,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import paymentRoutes from './routes/paymentRoutes';
-import { initializeDatabase } from './config/database';
+import { initializeDatabase, AppDataSource } from './config/database';
+import { createCODRoutes } from './routes/cod/codRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -105,6 +106,12 @@ app.get('/', (req: Request, res: Response) => {
 // ============================================================================
 
 app.use('/', paymentRoutes);
+
+// ============================================================================
+// COD Routes
+// ============================================================================
+
+app.use('/api/v1', createCODRoutes(AppDataSource));
 
 // ============================================================================
 // Error Handling Middleware
