@@ -286,7 +286,7 @@ describe('e-santé API Integration Tests (T5-039)', () => {
         }
       );
 
-      expect(response.data.documents.every((d) => d.documentType === 'Prescription')).toBe(true);
+      expect(response.data.documents.every((d: any) => d.documentType === 'Prescription')).toBe(true);
     });
   });
 

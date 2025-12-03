@@ -366,7 +366,7 @@ describe('HIN Authentication Integration Tests (T5-037)', () => {
 
   describe('Expired Token Handling', () => {
     test('should detect expired authorization code', async () => {
-      mockedAxios.post.mockResolvedValueOnce(mockHINResponses.tokenExpired);
+      mockedAxios.post = jest.fn().mockResolvedValueOnce(mockHINResponses.tokenExpired);
 
       const response = await mockedAxios.post(
         'https://oauth2.hin.ch/token',
@@ -441,7 +441,7 @@ describe('HIN Authentication Integration Tests (T5-037)', () => {
     });
 
     test('should handle userinfo endpoint connection refused', async () => {
-      mockedAxios.get.mockRejectedValueOnce(
+      mockedAxios.get = jest.fn().mockRejectedValueOnce(
         new Error('Connection refused') as AxiosError
       );
 
