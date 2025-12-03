@@ -1,0 +1,97 @@
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: nginx
+  namespace: metapharm
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "true"
+spec:
+  controller: k8s.io/ingress-nginx
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-ingress-config
+  namespace: ingress-nginx
+data:
+  # SSL/TLS Configuration
+  ssl-protocols: "TLSv1.2 TLSv1.3"
+  ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256"
+  ssl-prefer-server-ciphers: "on"
+  ssl-session-cache: "shared:SSL:10m"
+  ssl-session-timeout: "10m"
+  ssl-early-data: "off"
+
+  # Security Headers (HSTS)
+  hsts: "true"
+  hsts-include-subdomains: "true"
+  hsts-preload: "true"
+  hsts-max-age: "31536000"
+
+  # Default error page handling
+  custom-http-errors: "404,503"
+
+  # Performance tuning
+  worker-processes: "auto"
+  worker-cpu-affinity: "auto"
+  worker-connections: "65536"
+  worker-rlimit-nofile: "65535"
+
+  # Logging
+  access-log-path: /var/log/nginx/access.log
+  error-log-path: /var/log/nginx/error.log
+  log-format-upstream: '$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for"'
+
+  # Rate limiting
+  limit-conn-status: "429"
+  limit-req-status: "429"
+
+  # Proxy settings
+  proxy-body-size: "100m"
+  proxy-connect-timeout: "60"
+  proxy-send-timeout: "60"
+  proxy-read-timeout: "60"
+
+  # WebSocket support
+  map-hash-bucket-size: "64"
+
+  # Security
+  enable-modsecurity: "false"
+  enable-owasp-core-rules: "false"
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-nginx-network-policy
+  namespace: ingress-nginx
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ingress-nginx
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: metapharm
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: metapharm
+    ports:
+    - protocol: TCP
+      port: 3000
+    - protocol: TCP
+      port: 3001
+    - protocol: TCP
+      port: 5432
