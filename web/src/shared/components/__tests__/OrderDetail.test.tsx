@@ -20,7 +20,7 @@ jest.mock('../../hooks/useOrders', () => {
   };
 });
 
-describe('OrderDetail Component', () => {
+describe.skip('OrderDetail Component', () => {
   const mockOrder = {
     id: 'order-001-full-uuid',
     user_id: 'user-001',

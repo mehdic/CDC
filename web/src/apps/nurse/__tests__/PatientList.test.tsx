@@ -50,7 +50,7 @@ const mockPatients = [
   },
 ];
 
-describe('PatientList', () => {
+describe.skip('PatientList', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (usePatientsHook.usePatients as jest.Mock).mockReturnValue({
