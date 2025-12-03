@@ -5,7 +5,13 @@
  */
 
 // ============================================================================
-// IMPORTANT: Set environment variables BEFORE any imports
+// CRITICAL: Import reflect-metadata FIRST (required by TypeORM decorators)
+// ============================================================================
+
+import 'reflect-metadata';
+
+// ============================================================================
+// IMPORTANT: Set environment variables BEFORE other imports
 // This prevents encryption.ts from throwing at import time
 // ============================================================================
 
@@ -30,6 +36,44 @@ process.env.REDIS_TTL = '3600';
 
 // Database Configuration
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+process.env.DB_TYPE = 'sqlite'; // Default to SQLite for tests
+
+// ============================================================================
+// JSONB to SQLite Adapter - Patches entities for test compatibility
+// ============================================================================
+
+// Import AFTER reflect-metadata but BEFORE entity imports
+// The adapter converts PostgreSQL jsonb type to simple-json for SQLite
+try {
+  const { adaptJsonbColumnsForSqlite } = require('../shared/db/jsonb-sqlite-adapter');
+
+  // List of all entities that use JSONB columns in the shared/models directory
+  // These models are designed for PostgreSQL but tests use SQLite
+  const jsonbEntities = [
+    require('../shared/models/AuditLog').AuditLog,
+    require('../shared/models/Cart').Cart,
+    require('../shared/models/CartItem').CartItem,
+    require('../shared/models/CODTransaction').CODTransaction,
+    require('../shared/models/ConsultationNote').ConsultationNote,
+    require('../shared/models/DriverSettlement').DriverSettlement,
+    require('../shared/models/Notification').Notification,
+    require('../shared/models/Order').Order,
+    require('../shared/models/Payment').Payment,
+    require('../shared/models/Prescription').Prescription,
+    require('../shared/models/PrescriptionItem').PrescriptionItem,
+    require('../shared/models/RolePermission').RolePermission,
+    require('../shared/models/TreatmentPlan').TreatmentPlan,
+  ].filter(entity => entity !== undefined);
+
+  // Apply JSONB to simple-json conversion for SQLite compatibility
+  // This patches TypeORM metadata so that JSONB columns work in SQLite tests
+  if (jsonbEntities.length > 0) {
+    adaptJsonbColumnsForSqlite(jsonbEntities);
+  }
+} catch (error) {
+  // If adapter fails to load or models don't exist, continue anyway
+  // Individual tests will fail with JSONB errors if the adapter is needed
+}
 
 // ============================================================================
 // Mock AWS SDK KMS Client
@@ -74,13 +118,6 @@ jest.mock('@aws-sdk/client-kms', () => {
     })),
   };
 });
-
-// ============================================================================
-// Mock TypeORM for tests that don't need real database
-// ============================================================================
-
-// Import reflect-metadata for TypeORM decorators
-import 'reflect-metadata';
 
 // ============================================================================
 // Console Mocking

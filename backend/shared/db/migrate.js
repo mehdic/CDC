@@ -1,12 +1,20 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+/**
+ * Database Migration Tool
+ * Uses node-pg-migrate for PostgreSQL migrations
+ *
+ * Usage:
+ *   npm run migrate up   - Run pending migrations
+ *   npm run migrate down - Rollback last migration
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runMigrations = runMigrations;
-const path_1 = __importDefault(require("path"));
+const path_1 = require("path");
 const pg_1 = require("pg");
-const node_pg_migrate_1 = __importDefault(require("node-pg-migrate"));
+const node_pg_migrate_1 = require("node-pg-migrate");
+/**
+ * Get database connection configuration from environment
+ */
 function getDatabaseConfig() {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
@@ -17,6 +25,11 @@ function getDatabaseConfig() {
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     };
 }
+/**
+ * Run migrations
+ * @param direction - 'up' to apply migrations, 'down' to rollback
+ * @param count - Number of migrations to run (optional)
+ */
 async function runMigrations(direction = 'up', count) {
     const dbConfig = getDatabaseConfig();
     const client = new pg_1.Client(dbConfig);
@@ -46,6 +59,9 @@ async function runMigrations(direction = 'up', count) {
         await client.end();
     }
 }
+/**
+ * CLI interface
+ */
 if (require.main === module) {
     const args = process.argv.slice(2);
     const command = args[0] || 'up';
@@ -64,4 +80,3 @@ if (require.main === module) {
         process.exit(1);
     });
 }
-//# sourceMappingURL=migrate.js.map
