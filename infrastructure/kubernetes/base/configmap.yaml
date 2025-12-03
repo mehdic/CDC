@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metapharm-config
+  namespace: metapharm
+data:
+  # Application Configuration
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+
+  # Database Configuration (non-sensitive)
+  DB_HOST: "postgres-service.metapharm.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "metapharm"
+  DB_SSL: "true"
+
+  # Redis Configuration
+  REDIS_HOST: "redis-service.metapharm.svc.cluster.local"
+  REDIS_PORT: "6379"
+
+  # API Gateway Configuration
+  API_GATEWAY_URL: "http://api-gateway-service.metapharm.svc.cluster.local:3000"
+
+  # Service URLs (internal cluster DNS)
+  AUTH_SERVICE_URL: "http://auth-service.metapharm.svc.cluster.local:3001"
+  PRESCRIPTION_SERVICE_URL: "http://prescription-service.metapharm.svc.cluster.local:3002"
+  PHARMACY_SERVICE_URL: "http://pharmacy-service.metapharm.svc.cluster.local:3003"
+  DOCTOR_SERVICE_URL: "http://doctor-service.metapharm.svc.cluster.local:3004"
+  NURSE_SERVICE_URL: "http://nurse-service.metapharm.svc.cluster.local:3005"
+  DELIVERY_SERVICE_URL: "http://delivery-service.metapharm.svc.cluster.local:3006"
+  INVENTORY_SERVICE_URL: "http://inventory-service.metapharm.svc.cluster.local:3007"
+  MESSAGING_SERVICE_URL: "http://messaging-service.metapharm.svc.cluster.local:3008"
+  TELECONSULTATION_SERVICE_URL: "http://teleconsultation-service.metapharm.svc.cluster.local:3009"
+  USER_SERVICE_URL: "http://user-service.metapharm.svc.cluster.local:3010"
+  NOTIFICATION_SERVICE_URL: "http://notification-service.metapharm.svc.cluster.local:3011"
+  PAYMENT_SERVICE_URL: "http://payment-service.metapharm.svc.cluster.local:3012"
+  ORDER_SERVICE_URL: "http://order-service.metapharm.svc.cluster.local:3013"
+  ECOMMERCE_SERVICE_URL: "http://ecommerce-service.metapharm.svc.cluster.local:3014"
+  MEDICAL_RECORDS_SERVICE_URL: "http://medical-records-service.metapharm.svc.cluster.local:3015"
+  ANALYTICS_SERVICE_URL: "http://analytics-service.metapharm.svc.cluster.local:3016"
+
+  # Monitoring Configuration
+  METRICS_ENABLED: "true"
+  METRICS_PATH: "/metrics"
+  TRACING_ENABLED: "true"
+  JAEGER_AGENT_HOST: "jaeger-agent.metapharm.svc.cluster.local"
+  JAEGER_AGENT_PORT: "6831"
+
+  # Health Check Configuration
+  HEALTH_CHECK_PATH: "/health"
+  READINESS_CHECK_PATH: "/ready"
+  LIVENESS_CHECK_PATH: "/live"
+
+  # Rate Limiting Configuration
+  RATE_LIMIT_WINDOW_MS: "60000"
+  RATE_LIMIT_MAX_REQUESTS: "100"
+
+  # CORS Configuration
+  CORS_ALLOWED_ORIGINS: "*"
+
+  # Swiss Compliance Configuration
+  DATA_RESIDENCY: "CH"
+  ENCRYPTION_REQUIRED: "true"
+  AUDIT_LOGGING_ENABLED: "true"

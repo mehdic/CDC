@@ -1,0 +1,52 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: metapharm
+
+bases:
+  - ../../base
+  - ../../monitoring
+  - ../../logging
+
+commonLabels:
+  environment: production
+
+# Production replica counts (as defined in base)
+replicas:
+  - name: api-gateway
+    count: 3
+  - name: auth-service
+    count: 2
+  - name: prescription-service
+    count: 3
+
+# Patch configmap for production environment
+configMapGenerator:
+  - name: metapharm-config
+    behavior: merge
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=warn
+      - CORS_ALLOWED_ORIGINS=https://api.metapharm.ch
+
+# Enable monitoring and logging for production
+resources:
+  - prometheus-service-monitor.yaml
+  - network-policies.yaml
+
+# Add pod disruption budgets for high availability
+patches:
+  - patch: |-
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: api-gateway-pdb
+        namespace: metapharm
+      spec:
+        minAvailable: 2
+        selector:
+          matchLabels:
+            app: api-gateway
+    target:
+      kind: Deployment
+      name: api-gateway

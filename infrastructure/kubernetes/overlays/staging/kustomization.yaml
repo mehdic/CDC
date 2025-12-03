@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: metapharm-staging
+
+bases:
+  - ../../base
+
+namePrefix: staging-
+
+commonLabels:
+  environment: staging
+
+# Override replicas for staging
+replicas:
+  - name: api-gateway
+    count: 2
+  - name: auth-service
+    count: 2
+  - name: prescription-service
+    count: 2
+
+# Patch configmap for staging environment
+configMapGenerator:
+  - name: metapharm-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - LOG_LEVEL=info
+      - CORS_ALLOWED_ORIGINS=https://staging.metapharm.ch
+
+# Patch ingress for staging domain
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: api-staging.metapharm.ch
+      - op: replace
+        path: /spec/rules/1/host
+        value: app-staging.metapharm.ch
+    target:
+      kind: Ingress
+      name: metapharm-ingress
