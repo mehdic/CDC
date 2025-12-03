@@ -56,6 +56,10 @@ export class User {
   @Index('idx_users_hin_id')
   hin_id: string | null; // Swiss HIN e-ID for doctors and pharmacists
 
+  @Column({ type: 'varchar', length: 13, nullable: true })
+  @Index('idx_users_gln')
+  gln: string | null; // Global Location Number (Swiss healthcare professional ID)
+
   // ============================================================================
   // Role & Status
   // ============================================================================

@@ -278,21 +278,62 @@ export const LoginPage: React.FC = () => {
                   'Se connecter'
                 )}
               </Button>
-
-              {/* Additional Links */}
-              <Box sx={{ textAlign: 'center', mt: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Mot de passe oublié ?{' '}
-                  <Button
-                    size="small"
-                    sx={{ textTransform: 'none' }}
-                    disabled={loading}
-                  >
-                    Réinitialiser
-                  </Button>
-                </Typography>
-              </Box>
             </form>
+
+            {/* HIN e-ID Login (Swiss Healthcare Professionals) */}
+            <Box sx={{ mt: 3, mb: 2 }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                align="center"
+                sx={{ mb: 2 }}
+              >
+                ou
+              </Typography>
+              <Button
+                variant="outlined"
+                fullWidth
+                size="large"
+                disabled={loading}
+                onClick={() => {
+                  window.location.href = '/api/auth/hin/authorize';
+                }}
+                sx={{
+                  py: 1.5,
+                  borderColor: '#0066cc',
+                  color: '#0066cc',
+                  '&:hover': {
+                    borderColor: '#0052a3',
+                    backgroundColor: 'rgba(0, 102, 204, 0.04)',
+                  },
+                }}
+              >
+                Connexion avec HIN e-ID
+              </Button>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                align="center"
+                display="block"
+                sx={{ mt: 1 }}
+              >
+                Pour pharmaciens, médecins et infirmières en Suisse
+              </Typography>
+            </Box>
+
+            {/* Additional Links */}
+            <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Mot de passe oublié ?{' '}
+                <Button
+                  size="small"
+                  sx={{ textTransform: 'none' }}
+                  disabled={loading}
+                >
+                  Réinitialiser
+                </Button>
+              </Typography>
+            </Box>
           </CardContent>
         </Card>
 

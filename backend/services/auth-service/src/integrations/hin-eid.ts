@@ -55,7 +55,7 @@ router.get('/authorize', (req: Request, res: Response) => {
     authUrl.searchParams.append('client_id', HIN_CLIENT_ID);
     authUrl.searchParams.append('redirect_uri', HIN_REDIRECT_URI);
     authUrl.searchParams.append('response_type', 'code');
-    authUrl.searchParams.append('scope', 'openid profile email');
+    authUrl.searchParams.append('scope', 'openid profile email gln');
 
     // Optional: Add state parameter for CSRF protection
     const state = Buffer.from(JSON.stringify({
@@ -175,12 +175,14 @@ router.get('/callback', async (req: Request, res: Response) => {
     // - email
     // - given_name, family_name
     // - profession (e.g., "doctor", "pharmacist")
+    // - gln (Global Location Number - Swiss healthcare professional ID)
 
     const hinId = hinUserInfo.sub || hinUserInfo.hin_id;
     const email = hinUserInfo.email;
     const givenName = hinUserInfo.given_name || hinUserInfo.firstName;
     const familyName = hinUserInfo.family_name || hinUserInfo.lastName;
     const profession = hinUserInfo.profession;
+    const gln = hinUserInfo.gln; // Extract GLN from HIN userinfo
 
     if (!hinId || !email) {
       return res.status(400).json({
@@ -200,13 +202,21 @@ router.get('/callback', async (req: Request, res: Response) => {
         where: { email: email.toLowerCase() },
       });
 
-      // If found by email, link HIN ID
+      // If found by email, link HIN ID and GLN
       if (user) {
         user.hin_id = hinId;
         user.email_verified = true; // HIN e-ID verifies email
+        if (gln) {
+          user.gln = gln; // Store GLN for professional verification
+        }
         await userRepository.save(user);
-        console.log('Linked existing user to HIN ID');
+        console.log('Linked existing user to HIN ID and GLN');
       }
+    } else if (user && gln && !user.gln) {
+      // Update GLN if user exists but GLN is missing
+      user.gln = gln;
+      await userRepository.save(user);
+      console.log('Updated user GLN from HIN');
     }
 
     // If still not found, create new user
@@ -233,6 +243,7 @@ router.get('/callback', async (req: Request, res: Response) => {
         email: email.toLowerCase(),
         email_verified: true,
         hin_id: hinId,
+        gln: gln || null, // Store GLN from HIN if available
         role,
         status: UserStatus.ACTIVE,
         first_name_encrypted: Buffer.from(givenName || 'Unknown'),
