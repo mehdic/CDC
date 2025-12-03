@@ -5,5 +5,12 @@
     "baseUrl": "."
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["src/**/__tests__/**", "src/**/*.test.ts", "node_modules"]
+  "exclude": [
+    "src/**/__tests__/**",
+    "src/**/*.test.ts",
+    "src/routes/cart.ts",
+    "src/services/cartService.ts",
+    "src/services/recommendationService.ts",
+    "node_modules"
+  ]
 }

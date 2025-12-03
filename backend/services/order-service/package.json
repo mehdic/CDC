@@ -9,11 +9,13 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@types/pdfkit": "^0.17.4",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "helmet": "^7.0.0",
     "jsonwebtoken": "^9.0.2",
+    "pdfkit": "^0.17.2",
     "pg": "^8.11.0",
     "typeorm": "^0.3.17"
   },

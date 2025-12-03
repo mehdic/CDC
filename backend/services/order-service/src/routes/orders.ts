@@ -2,6 +2,7 @@
  * Order Routes
  * CRUD operations for orders
  * Batch 3 Phase 4 - Order Service
+ * Task T5-051 - Order History PDF Export
  */
 
 import { Router } from 'express';
@@ -12,6 +13,10 @@ import {
   updateOrder,
   deleteOrder,
 } from '../controllers/orderController';
+import {
+  exportOrderHistoryPDF,
+  validatePDFExport,
+} from '../controllers/pdf.controller';
 
 const router = Router();
 
@@ -75,5 +80,28 @@ router.put('/:id', updateOrder);
  * Delete an order (only if pending)
  */
 router.delete('/:id', deleteOrder);
+
+/**
+ * GET /orders/export/pdf
+ * Export order history as PDF
+ *
+ * Query parameters:
+ * - patientId: UUID (required)
+ * - startDate: ISO date string (optional)
+ * - endDate: ISO date string (optional)
+ * - pharmacyId: UUID (optional, for access control)
+ *
+ * Response: application/pdf
+ */
+router.get('/export/pdf', exportOrderHistoryPDF);
+
+/**
+ * GET /orders/export/pdf/validate
+ * Validate PDF export parameters
+ *
+ * Query parameters: same as /export/pdf
+ * Response: JSON with validation result
+ */
+router.get('/export/pdf/validate', validatePDFExport);
 
 export default router;

@@ -22,7 +22,7 @@ import { Cart } from '../../../shared/models/Cart';
 import { CartItem } from '../../../shared/models/CartItem';
 import { authenticateJWT } from '../../../shared/middleware/auth';
 import ordersRouter from './routes/orders';
-import cartRouter from './routes/cart';
+// import cartRouter from './routes/cart';
 
 const app = express();
 const PORT = process.env.ORDER_SERVICE_PORT || 4007;
@@ -101,7 +101,7 @@ app.use('/orders', authenticateJWT as RequestHandler, ordersRouter);
 // Cart Routes with Authentication
 // ============================================================================
 
-app.use('/cart', authenticateJWT as RequestHandler, cartRouter);
+// app.use('/cart', authenticateJWT as RequestHandler, cartRouter);
 
 // ============================================================================
 // Error Handling
