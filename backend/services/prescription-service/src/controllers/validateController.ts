@@ -2,7 +2,13 @@
  * Validate Controller
  * Handles prescription safety validation (drug interactions, allergies, contraindications)
  * T084 - User Story 1: Prescription Processing & Validation
+ * T5-008 - Integrate Swiss drug interaction checking into prescription workflow
  * Based on: /specs/002-metapharm-platform/spec.md (FR-011, FR-012, FR-026, FR-027)
+ *
+ * Enhanced with:
+ * - Swiss drug database (Documedis) integration
+ * - Patient allergy management
+ * - GTIN/Swissmedic number support
  */
 
 import { Request, Response } from 'express';
@@ -10,6 +16,8 @@ import { DataSource } from 'typeorm';
 import { Prescription, PrescriptionStatus } from '../../../../shared/models/Prescription';
 import { PrescriptionItem } from '../../../../shared/models/PrescriptionItem';
 import { FDBService } from '../integrations/fdb';
+import { createSwissDrugInteractionService } from '../integrations/swiss-drug-service-factory';
+import { getAllergyService } from '../services/PatientAllergyService';
 import { AllergyChecker } from '../utils/allergyCheck';
 import { ContraindicationChecker } from '../utils/contraindications';
 
@@ -79,13 +87,24 @@ export async function validatePrescription(req: Request, res: Response): Promise
     const medications = prescription.items.map((item) => item.medication_name);
 
     // Initialize validation services
-    const fdbService = new FDBService();
+    // T5-008: Use Swiss drug service factory (Documedis or FDB mock)
+    const swissDrugService = createSwissDrugInteractionService();
+    const allergyService = getAllergyService();
     const allergyChecker = new AllergyChecker();
     const contraindicationChecker = new ContraindicationChecker();
 
+    // Get patient allergies from allergy service (T5-009)
+    const patientAllergies = allergyService.getAllergies(prescription.patient_id);
+
+    // Check medication allergies using new allergy service (T5-009)
+    const medicationAllergyConflicts = medications.flatMap(med =>
+      allergyService.checkMedicationAllergies(prescription.patient_id, med)
+    );
+
     // Run all safety checks in parallel
+    // T5-007, T5-008: Use Swiss drug interaction service
     const [drugInteractionResult, allergyResult, contraindicationResult] = await Promise.all([
-      fdbService.checkDrugInteractions(medications),
+      swissDrugService.checkInteractions(medications),
       allergyChecker.checkAllergies(prescription.patient_id, medications),
       contraindicationChecker.checkContraindications(prescription.patient_id, medications),
     ]);
