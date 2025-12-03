@@ -51,6 +51,8 @@ describe('AppointmentReminderService', () => {
   };
 
   beforeEach(() => {
+    jest.clearAllMocks();
+
     mockTeleconsultationRepo = {
       find: jest.fn().mockResolvedValue([mockAppointment]),
     } as any;
@@ -65,8 +67,6 @@ describe('AppointmentReminderService', () => {
     } as any;
 
     reminderService = new AppointmentReminderService(dataSource, notificationService);
-
-    jest.clearAllMocks();
   });
 
   describe('Reminder Processing', () => {

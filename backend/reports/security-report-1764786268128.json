@@ -1,0 +1,258 @@
+{
+  "timestamp": "2025-12-03T18:24:28.064Z",
+  "environment": "test",
+  "sections": {
+    "authentication": {
+      "name": "Authentication & Session Management",
+      "checks": [
+        {
+          "name": "Protected endpoints require authentication",
+          "status": "FAIL",
+          "details": "HTTP 404 returned for unauthenticated request"
+        },
+        {
+          "name": "Invalid tokens are rejected",
+          "status": "FAIL",
+          "details": "HTTP 404 for invalid token"
+        },
+        {
+          "name": "JWT tokens used for authentication",
+          "status": "INFO",
+          "details": "Verify: Tokens follow JWT standard with proper claims (exp, iat, sub)"
+        }
+      ],
+      "score": 0
+    },
+    "authorization": {
+      "name": "Authorization & Access Control",
+      "checks": [
+        {
+          "name": "RBAC prevents privilege escalation",
+          "status": "FAIL",
+          "details": "Patient accessing admin endpoint: HTTP 500"
+        },
+        {
+          "name": "Resource ownership validation",
+          "status": "INFO",
+          "details": "Verify: Users can only access their own resources (prescriptions, orders, etc.)"
+        }
+      ],
+      "score": 0
+    },
+    "dataProtection": {
+      "name": "Data Protection & Encryption",
+      "checks": [
+        {
+          "name": "HTTPS enforced via HSTS",
+          "status": "PASS",
+          "details": "HSTS header: max-age=15552000; includeSubDomains"
+        },
+        {
+          "name": "Encryption at rest (database)",
+          "status": "INFO",
+          "details": "Verify: Sensitive columns encrypted with AES-256 (SSN, medical records, payment info)"
+        },
+        {
+          "name": "Sensitive data not leaked in errors",
+          "status": "PASS",
+          "details": "Error messages do not leak sensitive data"
+        }
+      ],
+      "score": 67
+    },
+    "inputValidation": {
+      "name": "Input Validation & Injection Prevention",
+      "checks": [
+        {
+          "name": "SQL injection prevention",
+          "status": "PASS",
+          "details": "SQL injection attempts handled safely"
+        },
+        {
+          "name": "XSS prevention (input sanitization)",
+          "status": "PASS",
+          "details": "Script tags properly sanitized"
+        },
+        {
+          "name": "Data type validation",
+          "status": "PASS",
+          "details": "Invalid data types: HTTP 400"
+        }
+      ],
+      "score": 100
+    },
+    "securityHeaders": {
+      "name": "Security Headers & Configuration",
+      "checks": [
+        {
+          "name": "Security header: x-content-type-options",
+          "status": "PASS",
+          "details": "nosniff"
+        },
+        {
+          "name": "Security header: x-frame-options",
+          "status": "PASS",
+          "details": "SAMEORIGIN"
+        },
+        {
+          "name": "Security header: x-xss-protection",
+          "status": "PASS",
+          "details": "0"
+        },
+        {
+          "name": "Security header: content-security-policy",
+          "status": "PASS",
+          "details": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests"
+        },
+        {
+          "name": "Security header: strict-transport-security",
+          "status": "PASS",
+          "details": "max-age=15552000; includeSubDomains"
+        },
+        {
+          "name": "Server information exposure",
+          "status": "PASS",
+          "details": "Server information hidden"
+        }
+      ],
+      "score": 100
+    },
+    "logging": {
+      "name": "Logging & Monitoring",
+      "checks": [
+        {
+          "name": "Authentication failure logging",
+          "status": "INFO",
+          "details": "Verify: Winston/Morgan logs contain failed authentication attempts with user ID, IP, timestamp"
+        },
+        {
+          "name": "PHI access logging (HIPAA requirement)",
+          "status": "INFO",
+          "details": "Verify: Audit logs contain all PHI access events (user, resource, timestamp, action)"
+        },
+        {
+          "name": "Audit log integrity",
+          "status": "INFO",
+          "details": "Verify: Audit logs use append-only table, no DELETE permissions, include checksums"
+        }
+      ],
+      "score": 0
+    },
+    "hipaaCompliance": {
+      "name": "HIPAA Compliance",
+      "requirements": [
+        {
+          "name": "Role-Based Access Control (RBAC)",
+          "status": "INFO",
+          "details": "Verify: RBAC implemented for all PHI access"
+        },
+        {
+          "name": "Minimum necessary standard",
+          "status": "INFO",
+          "details": "Verify: Users only receive minimum necessary PHI"
+        },
+        {
+          "name": "Workforce training",
+          "status": "INFO",
+          "details": "Verify: All workforce members trained on HIPAA requirements"
+        },
+        {
+          "name": "Access controls",
+          "status": "INFO",
+          "details": "Verify: Unique user identification, emergency access procedures"
+        },
+        {
+          "name": "Audit controls",
+          "status": "INFO",
+          "details": "Verify: All PHI access logged, logs retained 6+ years"
+        },
+        {
+          "name": "Transmission security",
+          "status": "INFO",
+          "details": "Verify: PHI encrypted in transit (HTTPS/TLS)"
+        },
+        {
+          "name": "Encryption at rest",
+          "status": "INFO",
+          "details": "Verify: PHI encrypted in database (AES-256)"
+        },
+        {
+          "name": "Breach notification procedures",
+          "status": "INFO",
+          "details": "Verify: Procedures in place for 60-day notification, breach log maintained"
+        }
+      ],
+      "score": 0
+    },
+    "gdprCompliance": {
+      "name": "GDPR Compliance",
+      "requirements": [
+        {
+          "name": "Right to Access (Art. 15)",
+          "status": "INFO",
+          "details": "Verify: Endpoint exists for patients to access their data (GET /api/patient/data)"
+        },
+        {
+          "name": "Right to Rectification (Art. 16)",
+          "status": "INFO",
+          "details": "Verify: Patients can update their personal data (PUT /api/patient/profile)"
+        },
+        {
+          "name": "Right to Erasure (Art. 17)",
+          "status": "INFO",
+          "details": "Verify: Account deletion endpoint exists (DELETE /api/patient/account)"
+        },
+        {
+          "name": "Right to Data Portability (Art. 20)",
+          "status": "INFO",
+          "details": "Verify: Data export in machine-readable format (JSON/XML/CSV)"
+        },
+        {
+          "name": "Consent recording",
+          "status": "INFO",
+          "details": "Verify: All consents logged with who, when, what, how"
+        },
+        {
+          "name": "Consent withdrawal",
+          "status": "INFO",
+          "details": "Verify: Consent can be withdrawn as easily as granted"
+        },
+        {
+          "name": "Data minimization",
+          "status": "INFO",
+          "details": "Verify: Only necessary data collected"
+        },
+        {
+          "name": "Privacy by default",
+          "status": "INFO",
+          "details": "Verify: Most privacy-friendly settings by default"
+        },
+        {
+          "name": "Pseudonymization",
+          "status": "INFO",
+          "details": "Verify: Patient IDs used instead of names in logs"
+        }
+      ],
+      "score": 0
+    }
+  },
+  "summary": {
+    "totalChecks": 37,
+    "passed": 11,
+    "failed": 3,
+    "warnings": 0,
+    "score": 30
+  },
+  "recommendations": [
+    "HIGH: Verify database encryption for PHI columns",
+    "MEDIUM: Verify authentication failure logging in production logs",
+    "HIGH: Implement comprehensive PHI access logging for HIPAA compliance",
+    "HIGH: Ensure audit logs are tamper-proof (append-only, no deletes)",
+    "HIGH: Document HIPAA administrative safeguards implementation",
+    "HIGH: Verify all HIPAA technical safeguards are implemented",
+    "MEDIUM: Document and test breach notification procedures",
+    "HIGH: Implement all GDPR data subject rights endpoints",
+    "MEDIUM: Implement comprehensive consent management system",
+    "MEDIUM: Review data collection practices for GDPR compliance"
+  ]
+}

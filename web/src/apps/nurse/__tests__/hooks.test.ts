@@ -3,17 +3,16 @@
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { usePatients } from '../hooks/usePatients';
 import { useOrders } from '../hooks/useOrders';
 import { useNotifications } from '../hooks/useNotifications';
 import * as nurseApi from '../services/nurseApi';
 
-vi.mock('../services/nurseApi');
+jest.mock('../services/nurseApi');
 
 describe('usePatients hook', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('fetches patients successfully', async () => {
@@ -39,7 +38,7 @@ describe('usePatients hook', () => {
       },
     ];
 
-    vi.mocked(nurseApi.getPatients).mockResolvedValue(mockPatients);
+    (nurseApi.getPatients as jest.Mock).mockResolvedValue(mockPatients);
 
     const { result } = renderHook(() => usePatients());
 
@@ -54,7 +53,7 @@ describe('usePatients hook', () => {
   });
 
   it('handles fetch error', async () => {
-    vi.mocked(nurseApi.getPatients).mockRejectedValue(new Error('Network error'));
+    (nurseApi.getPatients as jest.Mock).mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHook(() => usePatients());
 
@@ -85,7 +84,7 @@ describe('useOrders hook', () => {
       },
     ];
 
-    vi.mocked(nurseApi.getOrders).mockResolvedValue(mockOrders);
+    (nurseApi.getOrders as jest.Mock).mockResolvedValue(mockOrders);
 
     const { result } = renderHook(() => useOrders());
 
@@ -97,7 +96,7 @@ describe('useOrders hook', () => {
   });
 
   it('refetches orders on demand', async () => {
-    vi.mocked(nurseApi.getOrders).mockResolvedValue([]);
+    (nurseApi.getOrders as jest.Mock).mockResolvedValue([]);
 
     const { result } = renderHook(() => useOrders());
 
@@ -125,7 +124,7 @@ describe('useNotifications hook', () => {
       },
     ];
 
-    vi.mocked(nurseApi.getNotifications).mockResolvedValue(mockNotifications);
+    (nurseApi.getNotifications as jest.Mock).mockResolvedValue(mockNotifications);
 
     const { result } = renderHook(() => useNotifications());
 
@@ -150,8 +149,8 @@ describe('useNotifications hook', () => {
       },
     ];
 
-    vi.mocked(nurseApi.getNotifications).mockResolvedValue(mockNotifications);
-    vi.mocked(nurseApi.markNotificationRead).mockResolvedValue();
+    (nurseApi.getNotifications as jest.Mock).mockResolvedValue(mockNotifications);
+    (nurseApi.markNotificationRead as jest.Mock).mockResolvedValue();
 
     const { result } = renderHook(() => useNotifications());
 

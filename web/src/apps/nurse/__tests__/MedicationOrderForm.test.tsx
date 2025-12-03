@@ -4,13 +4,12 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import MedicationOrderForm from '../components/MedicationOrderForm';
 import * as nurseApi from '../services/nurseApi';
 import * as usePatientsHook from '../hooks/usePatients';
 
-vi.mock('../services/nurseApi');
-vi.mock('../hooks/usePatients');
+jest.mock('../services/nurseApi');
+jest.mock('../hooks/usePatients');
 
 const mockPatient = {
   id: 'patient-1',
@@ -34,13 +33,13 @@ const mockPatient = {
 
 describe('MedicationOrderForm', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(usePatientsHook.usePatient).mockReturnValue({
+    jest.clearAllMocks();
+    (usePatientsHook.usePatient as jest.Mock).mockReturnValue({
       patient: mockPatient,
       loading: false,
       error: null,
     });
-    vi.mocked(nurseApi.createMedicationOrder).mockResolvedValue({
+    (nurseApi.createMedicationOrder as jest.Mock).mockResolvedValue({
       id: 'order-1',
       patientId: 'patient-1',
       patientName: 'Jean Dupont',

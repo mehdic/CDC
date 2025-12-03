@@ -4,11 +4,10 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import PatientList from '../components/PatientList';
 import * as usePatientsHook from '../hooks/usePatients';
 
-vi.mock('../hooks/usePatients');
+jest.mock('../hooks/usePatients');
 
 const mockPatients = [
   {
@@ -53,8 +52,8 @@ const mockPatients = [
 
 describe('PatientList', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(usePatientsHook.usePatients).mockReturnValue({
+    jest.clearAllMocks();
+    (usePatientsHook.usePatients as jest.Mock).mockReturnValue({
       patients: mockPatients,
       loading: false,
       error: null,
@@ -136,7 +135,7 @@ describe('PatientList', () => {
   });
 
   it('handles empty patient list', () => {
-    vi.mocked(usePatientsHook.usePatients).mockReturnValue({
+    (usePatientsHook.usePatients as jest.Mock).mockReturnValue({
       patients: [],
       loading: false,
       error: null,
@@ -152,7 +151,7 @@ describe('PatientList', () => {
   });
 
   it('handles loading state', () => {
-    vi.mocked(usePatientsHook.usePatients).mockReturnValue({
+    (usePatientsHook.usePatients as jest.Mock).mockReturnValue({
       patients: [],
       loading: true,
       error: null,
@@ -168,7 +167,7 @@ describe('PatientList', () => {
   });
 
   it('handles error state', () => {
-    vi.mocked(usePatientsHook.usePatients).mockReturnValue({
+    (usePatientsHook.usePatients as jest.Mock).mockReturnValue({
       patients: [],
       loading: false,
       error: 'Failed to fetch patients',

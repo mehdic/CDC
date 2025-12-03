@@ -11,6 +11,8 @@ import { InventoryAlert, AlertType, AlertSeverity, AlertStatus } from '../../../
 import { Pharmacy } from '../../../shared/models/Pharmacy';
 import { User } from '../../../shared/models/User';
 import { AuditTrailEntry } from '../../../shared/models/AuditTrailEntry';
+import { Cart } from '../../../shared/models/Cart';
+import { CartItem } from '../../../shared/models/CartItem';
 
 describe('InventoryRepository', () => {
   let dataSource: DataSource;
@@ -22,7 +24,7 @@ describe('InventoryRepository', () => {
     dataSource = new DataSource({
       type: 'better-sqlite3',
       database: ':memory:',
-      entities: [InventoryItem, InventoryTransaction, InventoryAlert, Pharmacy, User, AuditTrailEntry],
+      entities: [InventoryItem, InventoryTransaction, InventoryAlert, Pharmacy, User, AuditTrailEntry, Cart, CartItem],
       synchronize: true,
       logging: false,
       // Override timestamp type to datetime for SQLite compatibility

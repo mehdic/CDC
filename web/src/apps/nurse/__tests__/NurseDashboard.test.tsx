@@ -4,13 +4,12 @@
 
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
 import NurseDashboard from '../components/NurseDashboard';
 import * as nurseApi from '../services/nurseApi';
 import * as useOrdersHook from '../hooks/useOrders';
 
-vi.mock('../services/nurseApi');
-vi.mock('../hooks/useOrders');
+jest.mock('../services/nurseApi');
+jest.mock('../hooks/useOrders');
 
 const mockStats = {
   totalPatients: 25,
@@ -38,13 +37,13 @@ const mockOrders = [
 
 describe('NurseDashboard', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(nurseApi.getDashboardStats).mockResolvedValue(mockStats);
-    vi.mocked(useOrdersHook.useOrders).mockReturnValue({
+    jest.clearAllMocks();
+    (nurseApi.getDashboardStats as jest.Mock).mockResolvedValue(mockStats);
+    (useOrdersHook.useOrders as jest.Mock).mockReturnValue({
       orders: mockOrders,
       loading: false,
       error: null,
-      refetch: vi.fn(),
+      refetch: jest.fn(),
     });
   });
 
@@ -104,11 +103,11 @@ describe('NurseDashboard', () => {
   });
 
   it('handles loading state', () => {
-    vi.mocked(useOrdersHook.useOrders).mockReturnValue({
+    (useOrdersHook.useOrders as jest.Mock).mockReturnValue({
       orders: [],
       loading: true,
       error: null,
-      refetch: vi.fn(),
+      refetch: jest.fn(),
     });
 
     render(
@@ -121,7 +120,7 @@ describe('NurseDashboard', () => {
   });
 
   it('handles error state', async () => {
-    vi.mocked(nurseApi.getDashboardStats).mockRejectedValue(new Error('Network error'));
+    (nurseApi.getDashboardStats as jest.Mock).mockRejectedValue(new Error('Network error'));
 
     render(
       <BrowserRouter>
