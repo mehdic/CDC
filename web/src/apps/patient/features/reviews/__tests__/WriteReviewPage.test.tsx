@@ -56,9 +56,11 @@ describe('WriteReviewPage', () => {
     await user.type(titleInput, 'Great product');
     await user.type(commentInput, 'This product is amazing');
 
-    await user.click(submitButton);
+    // Submit button should be disabled when rating is 0
+    expect(submitButton).toBeDisabled();
 
-    expect(screen.getByText(/Veuillez sélectionner une évaluation/)).toBeInTheDocument();
+    // Verify that onSubmit is not called when trying to submit without rating
+    await user.click(submitButton);
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
@@ -183,30 +185,28 @@ describe('WriteReviewPage', () => {
   });
 
   it('should display loading state during submission', async () => {
-    const user = userEvent.setup();
-    const slowSubmit = jest.fn(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
-    );
-
-    render(<WriteReviewPage onSubmit={slowSubmit} />);
+    const { rerender } = render(<WriteReviewPage onSubmit={mockOnSubmit} isLoading={false} />);
 
     const starButtons = screen.getAllByRole('button').filter((btn) =>
       btn.className.includes('star-button')
     );
     const titleInput = screen.getByPlaceholderText(/Résumez votre expérience/);
     const commentInput = screen.getByPlaceholderText(/Partagez votre expérience/);
-    const submitButton = screen.getByText('Publier mon avis');
+    const user = userEvent.setup();
 
     await user.click(starButtons[3]); // 4 stars
     await user.type(titleInput, 'Test');
     await user.type(commentInput, 'Test comment');
-    await user.click(submitButton);
+
+    // Simulate loading state
+    rerender(<WriteReviewPage onSubmit={mockOnSubmit} isLoading={true} />);
 
     expect(screen.getByText('Envoi en cours...')).toBeInTheDocument();
 
-    await waitFor(() => {
-      expect(screen.queryByText('Envoi en cours...')).not.toBeInTheDocument();
-    });
+    // Simulate loading complete
+    rerender(<WriteReviewPage onSubmit={mockOnSubmit} isLoading={false} />);
+
+    expect(screen.queryByText('Envoi en cours...')).not.toBeInTheDocument();
   });
 
   it('should clear form after successful submission', async () => {

@@ -154,8 +154,8 @@ export const WriteReviewPage: React.FC<WriteReviewPageProps> = ({
         <form onSubmit={handleSubmit} className="review-form">
           {/* Star Rating */}
           <div className="form-group">
-            <label className="form-label">Votre évaluation</label>
-            <div className="star-rating">
+            <label htmlFor="rating" className="form-label">Votre évaluation</label>
+            <div className="star-rating" id="rating" role="group" aria-label="Votre évaluation">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
@@ -167,6 +167,7 @@ export const WriteReviewPage: React.FC<WriteReviewPageProps> = ({
                   onMouseEnter={() => setHoveredRating(star)}
                   onMouseLeave={() => setHoveredRating(0)}
                   title={`${star} étoile${star > 1 ? 's' : ''}`}
+                  aria-pressed={star <= (hoveredRating || formData.rating)}
                 >
                   ★
                 </button>
