@@ -1,26 +1,56 @@
 import '@testing-library/jest-dom';
 
 // Mock window.matchMedia for Ant Design and other components
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
+// This must be done BEFORE antd is imported
+if (!window.matchMedia) {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    configurable: true,
+    value: jest.fn((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+} else {
+  // Override if it already exists but might be incomplete
+  const original = window.matchMedia;
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    configurable: true,
+    value: jest.fn((query: string) => {
+      const result = original(query);
+      // Ensure matches property exists
+      if (!('matches' in result)) {
+        result.matches = false;
+      }
+      return result;
+    }),
+  });
+}
 
 // Mock ResizeObserver for components that use it
-global.ResizeObserver = jest.fn().mockImplementation(() => ({
+const mockResizeObserverInstance = {
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn(),
-}));
+};
+
+const mockResizeObserver = jest.fn().mockImplementation(() => mockResizeObserverInstance);
+global.ResizeObserver = mockResizeObserver;
+
+// Also mock @rc-component/resize-observer's observer to prevent errors
+if (typeof window !== 'undefined') {
+  (window as any).mockResizeObserver = mockResizeObserverInstance;
+}
+
+// Note: Ant Design ResponsiveObserver is mocked directly in test files that use Row/Col
+// This avoids test setup issues with dynamic imports
 
 // Mock useMediaQuery to return false by default (before it's used by any components)
 jest.mock('@mui/system/useMediaQuery', () => ({

@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Card, Row, Col, Statistic, Progress } from 'antd';
+import { Card, Statistic, Progress } from 'antd';
 import {
   UserAddOutlined,
   GiftOutlined,
@@ -34,9 +34,9 @@ export const ReferralStats: React.FC<ReferralStatsProps> = ({ stats }) => {
   return (
     <div className="referral-stats">
       <Card className="stats-card" title="Your Referral Program Performance" bordered={false}>
-        <Row gutter={[24, 24]}>
+        <div className="stats-row">
           {/* Total Referrals */}
-          <Col xs={24} sm={12} lg={6}>
+          <div className="stat-col">
             <div className="stat-box total-referrals">
               <UserAddOutlined className="stat-icon" />
               <Statistic
@@ -45,10 +45,10 @@ export const ReferralStats: React.FC<ReferralStatsProps> = ({ stats }) => {
                 valueStyle={{ color: '#1890ff' }}
               />
             </div>
-          </Col>
+          </div>
 
           {/* Pending Referrals */}
-          <Col xs={24} sm={12} lg={6}>
+          <div className="stat-col">
             <div className="stat-box pending-referrals">
               <ClockCircleOutlined className="stat-icon" />
               <Statistic
@@ -57,10 +57,10 @@ export const ReferralStats: React.FC<ReferralStatsProps> = ({ stats }) => {
                 valueStyle={{ color: '#faad14' }}
               />
             </div>
-          </Col>
+          </div>
 
           {/* Completed Referrals */}
-          <Col xs={24} sm={12} lg={6}>
+          <div className="stat-col">
             <div className="stat-box completed-referrals">
               <CheckCircleOutlined className="stat-icon" />
               <Statistic
@@ -69,10 +69,10 @@ export const ReferralStats: React.FC<ReferralStatsProps> = ({ stats }) => {
                 valueStyle={{ color: '#52c41a' }}
               />
             </div>
-          </Col>
+          </div>
 
           {/* Conversion Rate */}
-          <Col xs={24} sm={12} lg={6}>
+          <div className="stat-col">
             <div className="stat-box conversion-rate">
               <Statistic
                 title="Conversion Rate"
@@ -81,12 +81,12 @@ export const ReferralStats: React.FC<ReferralStatsProps> = ({ stats }) => {
                 valueStyle={{ color: '#722ed1' }}
               />
             </div>
-          </Col>
-        </Row>
+          </div>
+        </div>
 
         {/* Rewards Section */}
-        <Row gutter={[24, 24]} className="rewards-section">
-          <Col xs={24} lg={12}>
+        <div className="rewards-row">
+          <div className="reward-col">
             <div className="reward-box total-rewards">
               <div className="reward-header">
                 <GiftOutlined className="reward-icon" />
@@ -106,10 +106,10 @@ export const ReferralStats: React.FC<ReferralStatsProps> = ({ stats }) => {
                 </div>
               </div>
             </div>
-          </Col>
+          </div>
 
           {/* Progress to Next Milestone */}
-          <Col xs={24} lg={12}>
+          <div className="reward-col">
             <div className="milestone-box">
               <h3>Progress to Next Reward Milestone</h3>
               <div className="milestone-progress">
@@ -145,8 +145,8 @@ export const ReferralStats: React.FC<ReferralStatsProps> = ({ stats }) => {
                 )}
               </div>
             </div>
-          </Col>
-        </Row>
+          </div>
+        </div>
 
         {/* Benefits Info */}
         <div className="benefits-info">

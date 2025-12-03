@@ -103,8 +103,10 @@ describe('ReferralStats', () => {
     render(<ReferralStats stats={mockStats} />);
 
     expect(screen.getByText(/How Referral Rewards Work/i)).toBeInTheDocument();
-    expect(screen.getByText(/CHF 50.*in points for each successful referral/i)).toBeInTheDocument();
-    expect(screen.getByText(/CHF 20.*in points.*welcome bonus/i)).toBeInTheDocument();
+    expect(screen.getByText('CHF 50')).toBeInTheDocument();
+    expect(screen.getByText(/in points for each successful referral/i)).toBeInTheDocument();
+    expect(screen.getByText('CHF 20')).toBeInTheDocument();
+    expect(screen.getByText(/welcome bonus/i)).toBeInTheDocument();
   });
 
   it('should handle zero conversion rate correctly', () => {
@@ -116,8 +118,10 @@ describe('ReferralStats', () => {
 
     render(<ReferralStats stats={zeroStats} />);
 
-    // Should show 0% conversion rate
-    expect(screen.getByText(/0/)).toBeInTheDocument();
+    // Should show 0% conversion rate - check for conversion rate section specifically
+    const conversionRateElement = screen.getByText('Conversion Rate').closest('.stat-box');
+    expect(conversionRateElement).toBeInTheDocument();
+    expect(conversionRateElement?.textContent).toContain('0');
   });
 
   it('should display all statistics sections', () => {
