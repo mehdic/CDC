@@ -37,10 +37,6 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
-      - name: Install web dependencies
-        working-directory: web
-        run: npm ci
-
       - name: Install Playwright browsers
         working-directory: web
         run: npx playwright install --with-deps ${{ matrix.browser }}
@@ -87,10 +83,6 @@ jobs:
           cache: 'npm'
 
       - name: Install root dependencies
-        run: npm ci
-
-      - name: Install web dependencies
-        working-directory: web
         run: npm ci
 
       - name: Install Playwright browsers
