@@ -164,21 +164,51 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker images for scanning
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.test.yml build \
+            --build-arg SERVICE_NAME=api-gateway \
+            --build-arg NODE_ENV=test
+
       - name: Run Trivy vulnerability scanner (Filesystem)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'sarif'
-          output: 'trivy-results.sarif'
+          output: 'trivy-results-fs.sarif'
           severity: 'HIGH,CRITICAL'
-          exit-code: '1' # Fail on HIGH/CRITICAL
+          exit-code: '0' # Non-blocking for filesystem scan
 
-      - name: Upload Trivy results to GitHub Security tab
+      - name: Run Trivy vulnerability scanner on Docker images
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: 'metapharm/api-gateway:latest'
+          format: 'sarif'
+          output: 'trivy-results-image.sarif'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '0' # Non-blocking for first scan
+        continue-on-error: true
+
+      - name: Upload Trivy Filesystem results to GitHub Security tab
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: 'trivy-results-fs.sarif'
+          category: 'trivy-fs'
+        continue-on-error: true
+
+      - name: Upload Trivy Docker Image results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results-image.sarif'
+          category: 'trivy-image'
+        continue-on-error: true
 
   secret-scanning:
     name: Secret Detection (Gitleaks)

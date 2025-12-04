@@ -1,0 +1,466 @@
+version: '3.9'
+
+#############################################
+# MetaPharm Connect - CI Testing Configuration
+#############################################
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.test.yml up
+#
+# CI/Testing-specific configuration:
+# - No volume persistence (ephemeral database)
+# - Fast health check intervals
+# - Test database initialization
+# - Minimal services configuration
+# - Resource limits for CI environments
+#############################################
+
+services:
+  # ========================================
+  # Infrastructure Overrides (Ephemeral)
+  # ========================================
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: metapharm
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: metapharm_test
+      POSTGRES_INITDB_ARGS: "-c max_connections=100"
+    volumes:
+      - /var/lib/postgresql/data  # Ephemeral volume (no persistence)
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metapharm"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    ports:
+      - "5433:5432"  # Alternative port to avoid conflicts
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly no  # Disable AOF for speed
+    volumes:
+      - /data  # Ephemeral volume
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    ports:
+      - "6380:6379"  # Alternative port to avoid conflicts
+
+  # ========================================
+  # Backend Service Overrides (Test Mode)
+  # ========================================
+
+  api-gateway:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  auth-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  user-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  pharmacy-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  prescription-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  adherence-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  analytics-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  appointment-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  calendar-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  controlled-substance-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  delivery-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  digital-twin-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  doctor-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  ecommerce-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  esante-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  insurance-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  inventory-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  marketing-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  medical-records-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  messaging-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  notification-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  nurse-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  order-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  patient-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  payment-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  recycling-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  refill-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  subscription-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  teleconsultation-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  vip-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  voice-service:
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://metapharm:test_password@postgres:5432/metapharm_test
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: error
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 20s
+
+  # ========================================
+  # Frontend Overrides (Minimal)
+  # ========================================
+
+  web:
+    environment:
+      NODE_ENV: test
+      VITE_API_URL: http://localhost:4000
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+
+  dashboard-v2:
+    environment:
+      NODE_ENV: test
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+
+  bazinga-dashboard:
+    environment:
+      NODE_ENV: test
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 2
+
+  # ========================================
+  # Observability Overrides (Minimal)
+  # ========================================
+
+  jaeger:
+    # Minimal jaeger config for CI
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'false'  # Disable tracing in tests to speed up

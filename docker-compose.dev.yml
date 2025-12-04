@@ -1,0 +1,456 @@
+version: '3.9'
+
+#############################################
+# MetaPharm Connect - Development Overrides
+#############################################
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Development-specific configuration:
+# - Volume mounts for hot reload
+# - Debug ports for Node.js debugging
+# - Development environment variables
+# - Faster startup for local development
+#############################################
+
+services:
+  # ========================================
+  # Backend Service Overrides (Dev Volume Mounts)
+  # ========================================
+
+  api-gateway:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9229:9229"
+
+  auth-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9230:9229"
+
+  user-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9231:9229"
+
+  pharmacy-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9232:9229"
+
+  prescription-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9233:9229"
+
+  adherence-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9234:9229"
+
+  analytics-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9235:9229"
+
+  appointment-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9236:9229"
+
+  calendar-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9237:9229"
+
+  controlled-substance-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9238:9229"
+
+  delivery-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9239:9229"
+
+  digital-twin-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9240:9229"
+
+  doctor-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9241:9229"
+
+  ecommerce-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9242:9229"
+
+  esante-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9243:9229"
+
+  insurance-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9244:9229"
+
+  inventory-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9245:9229"
+
+  marketing-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9246:9229"
+
+  medical-records-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9247:9229"
+
+  messaging-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9248:9229"
+
+  notification-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9249:9229"
+
+  nurse-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9250:9229"
+
+  order-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9251:9229"
+
+  patient-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9252:9229"
+
+  payment-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9253:9229"
+
+  recycling-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9254:9229"
+
+  refill-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9255:9229"
+
+  subscription-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9256:9229"
+
+  teleconsultation-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9257:9229"
+
+  vip-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9258:9229"
+
+  voice-service:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      DEBUG: 'metapharm:*'
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+    ports:
+      - "9259:9229"
+
+  # ========================================
+  # Frontend Service Overrides (Dev Mode)
+  # ========================================
+
+  web:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./web/src:/app/src
+      - ./web/package.json:/app/package.json
+    command: npm run dev
+
+  dashboard-v2:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./dashboard-v2/src:/app/src
+      - ./dashboard-v2/package.json:/app/package.json
+    command: npm run dev
+
+  bazinga-dashboard:
+    build:
+      args:
+        NODE_ENV: development
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./bazinga/dashboard-v2/src:/app/src
+      - ./bazinga/dashboard-v2/package.json:/app/package.json
+    command: npm run dev
+
+  # ========================================
+  # Infrastructure Overrides (Logging)
+  # ========================================
+
+  postgres:
+    environment:
+      # Enable query logging
+      POSTGRES_INITDB_ARGS: "-c log_statement=all -c log_duration=on -c log_min_duration_statement=100"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  redis:
+    command: redis-server --appendonly yes --loglevel debug
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  jaeger:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"

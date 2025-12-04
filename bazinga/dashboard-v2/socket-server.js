@@ -24074,10 +24074,34 @@ var { Server, Namespace, Socket } = import_dist.default;
 
 // src/lib/socket/server.ts
 var import_http = require("http");
-var import_better_sqlite3 = __toESM(require("better-sqlite3"));
 var import_path = __toESM(require("path"));
+var import_fs = __toESM(require("fs"));
 var PORT = process.env.SOCKET_PORT || 3001;
-var DB_PATH = process.env.DATABASE_URL || import_path.default.join(process.cwd(), "..", "bazinga", "bazinga.db");
+function resolveDbPath() {
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+  const candidates = [
+    // Running from dashboard-v2 root (dev): cwd = dashboard-v2, db at ../bazinga/bazinga.db
+    import_path.default.resolve(process.cwd(), "..", "bazinga", "bazinga.db"),
+    // Running from dist/socket-server.js (prod): __dirname = dist, db at ../bazinga/bazinga.db
+    import_path.default.resolve(__dirname, "..", "bazinga", "bazinga.db"),
+    // Running from src/lib/socket (ts-node dev): __dirname = src/lib/socket
+    import_path.default.resolve(__dirname, "..", "..", "..", "..", "bazinga", "bazinga.db"),
+    // Extra fallback: two levels up from dist
+    import_path.default.resolve(__dirname, "..", "..", "bazinga", "bazinga.db")
+  ];
+  for (const p of candidates) {
+    try {
+      if (import_fs.default.existsSync(p)) {
+        return p;
+      }
+    } catch {
+    }
+  }
+  return candidates[0];
+}
+var DB_PATH = resolveDbPath();
 var httpServer = (0, import_http.createServer)();
 var io2 = new Server(httpServer, {
   cors: {
@@ -24089,15 +24113,56 @@ var connectedClients = 0;
 var lastLogId = 0;
 var lastSessionUpdate = "";
 var _db = null;
-function getDb() {
-  if (!_db) {
-    try {
-      _db = new import_better_sqlite3.default(DB_PATH, { readonly: true });
-    } catch {
-      return null;
+var _moduleLoadFailed = false;
+var _DatabaseClass = null;
+function loadDatabaseModule() {
+  if (_moduleLoadFailed)
+    return null;
+  if (_DatabaseClass)
+    return _DatabaseClass;
+  try {
+    _DatabaseClass = require("better-sqlite3");
+    return _DatabaseClass;
+  } catch (error) {
+    const err = error;
+    const code = err?.code;
+    const msg = String(err?.message || error || "");
+    const isModuleNotFound = code === "MODULE_NOT_FOUND" || msg.includes("Cannot find module");
+    const isArchMismatch = code === "ERR_DLOPEN_FAILED" || /incompatible architecture|Mach-O|ELF|wrong architecture|arm64.*x86_64|x86_64.*arm64/i.test(msg);
+    if (isArchMismatch) {
+      _moduleLoadFailed = true;
+      console.warn(
+        `Database module architecture mismatch detected.
+The better-sqlite3 native binary was compiled for a different CPU architecture.
+To fix: cd dashboard-v2 && npm rebuild better-sqlite3
+Socket server will run without database access.`
+      );
+    } else if (isModuleNotFound) {
+      console.warn(
+        `Database module not found. Run: cd dashboard-v2 && npm install
+Socket server will run without database access.`
+      );
+    } else {
+      console.warn(`Database module failed to load: ${error}`);
     }
+    return null;
   }
-  return _db;
+}
+function getDb() {
+  if (_db)
+    return _db;
+  if (_moduleLoadFailed)
+    return null;
+  const Database = loadDatabaseModule();
+  if (!Database)
+    return null;
+  try {
+    _db = new Database(DB_PATH, { readonly: true });
+    return _db;
+  } catch (error) {
+    console.warn(`Database not available at ${DB_PATH}: ${error}`);
+    return null;
+  }
 }
 process.on("exit", () => {
   if (_db)

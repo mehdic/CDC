@@ -1,0 +1,1207 @@
+version: '3.9'
+
+#############################################
+# MetaPharm Connect - Production Configuration
+#############################################
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+#
+# Production-specific configuration:
+# - Pre-built images (no build context)
+# - Resource limits (CPU, memory)
+# - Production logging configuration
+# - Secrets from environment variables
+# - Restart policies with delays
+# - Volume persistence with backups
+#############################################
+
+services:
+  # ========================================
+  # Infrastructure Services (Production)
+  # ========================================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: metapharm-postgres-prod
+    restart: on-failure:5
+    environment:
+      POSTGRES_USER: metapharm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-in-production}
+      POSTGRES_DB: metapharm_db
+      POSTGRES_INITDB_ARGS: "-c max_connections=500 -c shared_buffers=256MB -c effective_cache_size=1GB -c work_mem=16MB -c maintenance_work_mem=64MB"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups/postgres:/backups
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metapharm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "500m"
+        max-file: "10"
+        labels: "service=postgres"
+
+  redis:
+    image: redis:7-alpine
+    container_name: metapharm-redis-prod
+    restart: on-failure:5
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-change-in-production}
+    volumes:
+      - redis_data:/data
+      - ./backups/redis:/backups
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-change-in-production}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "500m"
+        max-file: "10"
+        labels: "service=redis"
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: metapharm-jaeger-prod
+    restart: on-failure:5
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'true'
+      MEMORY_MAX_TRACES: 10000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        labels: "service=jaeger"
+
+  # ========================================
+  # Backend Services (Production - Pre-built Images)
+  # ========================================
+
+  api-gateway:
+    image: ${REGISTRY:-metapharm}/api-gateway:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: api-gateway
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-in-production}
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # Run 2 instances for high availability
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        labels: "service=api-gateway"
+
+  auth-service:
+    image: ${REGISTRY:-metapharm}/auth-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: auth-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-in-production}
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        labels: "service=auth-service"
+
+  # Standard backend service template (1 replica, basic resources)
+  user-service:
+    image: ${REGISTRY:-metapharm}/user-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: user-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  pharmacy-service:
+    image: ${REGISTRY:-metapharm}/pharmacy-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: pharmacy-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # High demand service
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  prescription-service:
+    image: ${REGISTRY:-metapharm}/prescription-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: prescription-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # High demand service
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # Remaining backend services with standard configuration
+  adherence-service:
+    image: ${REGISTRY:-metapharm}/adherence-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: adherence-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  analytics-service:
+    image: ${REGISTRY:-metapharm}/analytics-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: analytics-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  appointment-service:
+    image: ${REGISTRY:-metapharm}/appointment-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: appointment-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  calendar-service:
+    image: ${REGISTRY:-metapharm}/calendar-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: calendar-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  controlled-substance-service:
+    image: ${REGISTRY:-metapharm}/controlled-substance-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: controlled-substance-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  delivery-service:
+    image: ${REGISTRY:-metapharm}/delivery-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: delivery-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # GPS/tracking is resource intensive
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  digital-twin-service:
+    image: ${REGISTRY:-metapharm}/digital-twin-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: digital-twin-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  doctor-service:
+    image: ${REGISTRY:-metapharm}/doctor-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: doctor-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  ecommerce-service:
+    image: ${REGISTRY:-metapharm}/ecommerce-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: ecommerce-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # High traffic service
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  esante-service:
+    image: ${REGISTRY:-metapharm}/esante-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: esante-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  insurance-service:
+    image: ${REGISTRY:-metapharm}/insurance-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: insurance-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  inventory-service:
+    image: ${REGISTRY:-metapharm}/inventory-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: inventory-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # QR code scanning is high frequency
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  marketing-service:
+    image: ${REGISTRY:-metapharm}/marketing-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: marketing-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  medical-records-service:
+    image: ${REGISTRY:-metapharm}/medical-records-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: medical-records-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  messaging-service:
+    image: ${REGISTRY:-metapharm}/messaging-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: messaging-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # Real-time messaging is high frequency
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  notification-service:
+    image: ${REGISTRY:-metapharm}/notification-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: notification-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # Notifications are high frequency
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  nurse-service:
+    image: ${REGISTRY:-metapharm}/nurse-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: nurse-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  order-service:
+    image: ${REGISTRY:-metapharm}/order-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: order-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # Orders are transactional and high traffic
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  patient-service:
+    image: ${REGISTRY:-metapharm}/patient-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: patient-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # Patient profiles are accessed frequently
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  payment-service:
+    image: ${REGISTRY:-metapharm}/payment-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: payment-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # Payment is critical and must have HA
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  recycling-service:
+    image: ${REGISTRY:-metapharm}/recycling-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: recycling-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  refill-service:
+    image: ${REGISTRY:-metapharm}/refill-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: refill-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  subscription-service:
+    image: ${REGISTRY:-metapharm}/subscription-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: subscription-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  teleconsultation-service:
+    image: ${REGISTRY:-metapharm}/teleconsultation-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: teleconsultation-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 3  # Real-time video calls need HA
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  vip-service:
+    image: ${REGISTRY:-metapharm}/vip-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: vip-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  voice-service:
+    image: ${REGISTRY:-metapharm}/voice-service:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      SERVICE_NAME: voice-service
+      DATABASE_URL: postgresql://metapharm:${POSTGRES_PASSWORD:-change-in-production}@postgres:5432/metapharm_db
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change-in-production}@redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    deploy:
+      replicas: 2  # Voice calls need HA
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # ========================================
+  # Frontend Services (Production)
+  # ========================================
+
+  web:
+    image: ${REGISTRY:-metapharm}/web:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      VITE_API_URL: ${API_URL:-https://api.metapharm.local}
+      VITE_API_GATEWAY: ${API_GATEWAY_URL:-https://api.metapharm.local/api}
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  dashboard-v2:
+    image: ${REGISTRY:-metapharm}/dashboard-v2:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${API_URL:-https://api.metapharm.local}
+      NEXT_PUBLIC_API_GATEWAY: ${API_GATEWAY_URL:-https://api.metapharm.local/api}
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  bazinga-dashboard:
+    image: ${REGISTRY:-metapharm}/bazinga-dashboard:${IMAGE_TAG:-latest}
+    restart: on-failure:3
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${API_URL:-https://api.metapharm.local}
+      NEXT_PUBLIC_ORCHESTRATOR_URL: ${ORCHESTRATOR_URL:-https://orchestrator.metapharm.local}
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/metapharm/postgres
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/metapharm/redis
+
+networks:
+  metapharm-network:
+    driver: bridge

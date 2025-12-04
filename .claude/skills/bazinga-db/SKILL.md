@@ -23,6 +23,9 @@ You are the bazinga-db skill. When invoked, you handle database operations for t
 - PM needs to update success criteria status before BAZINGA
 - Orchestrator needs to query success criteria for BAZINGA validation
 - Replacing file writes to `bazinga/*.json` or `docs/orchestration-log.md`
+- Any agent needs to save or query context packages (research, failures, decisions, handoffs)
+- Orchestrator needs to get context packages for agent spawning
+- Any agent needs to mark context packages as consumed
 
 **Do NOT invoke when:**
 - Requesting read-only file operations (use Read tool directly)
@@ -42,16 +45,20 @@ When invoked:
 
 ## Environment Setup
 
-**Database paths:**
-```bash
-DB_SCRIPT="/home/user/bazinga/.claude/skills/bazinga-db/scripts/bazinga_db.py"
-DB_PATH="/home/user/bazinga/bazinga/bazinga.db"
-```
+**Path Auto-Detection:**
+The script automatically detects the project root and database path. No manual configuration required!
+
+Detection order:
+1. `--db PATH` flag (explicit override)
+2. `--project-root DIR` flag (db at DIR/bazinga/bazinga.db)
+3. `BAZINGA_ROOT` environment variable
+4. Auto-detect from script location (walks up to find .claude/ and bazinga/)
+5. Auto-detect from current working directory
 
 **Auto-initialization:**
 The database will be automatically initialized on first use (< 2 seconds). The script detects if the database doesn't exist and runs the initialization automatically, creating all tables with proper indexes and WAL mode for concurrency.
 
-No manual initialization needed - just invoke the skill and it handles everything.
+No manual path configuration or initialization needed - just invoke the skill and it handles everything.
 
 ---
 
@@ -79,6 +86,10 @@ Extract from the calling agent's request:
 - "save success criteria" / "store criteria" → save-success-criteria
 - "get success criteria" / "query criteria" → get-success-criteria
 - "update success criterion" / "update criterion status" → update-success-criterion
+- "save context package" / "create context package" → save-context-package
+- "get context packages" / "query context" → get-context-packages
+- "mark context consumed" / "context consumed" → mark-context-consumed
+- "update context references" / "link context to group" → update-context-references
 
 **Required parameters:**
 - session_id (almost always required)
@@ -100,19 +111,21 @@ Extract from the calling agent's request:
 
 Use the **Bash** tool to run the appropriate command:
 
-**IMPORTANT:** Always use the `--quiet` flag to suppress success messages. Only errors will be shown:
+**IMPORTANT:** Always use the `--quiet` flag to suppress success messages. Only errors will be shown.
+
+**Script path:** `.claude/skills/bazinga-db/scripts/bazinga_db.py` (auto-detects database)
 
 ### Session Management
 
 **List recent sessions:**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet list-sessions [limit]
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet list-sessions [limit]
 ```
 Returns JSON array of recent sessions (default 10, ordered by created_at DESC).
 
 **Create new session:**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet create-session \
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet create-session \
   "<session_id>" \
   "<mode>" \
   "<requirements>"
@@ -124,120 +137,121 @@ python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet create-session \
 
 **Log agent interaction:**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet log-interaction \
-  "<session_id>" \
-  "<agent_type>" \
-  "<content>" \
-  [iteration] \
-  [agent_id]
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet log-interaction \
+  "<session_id>" "<agent_type>" "<content>" [iteration] [agent_id]
 ```
 
 **Save state (PM or orchestrator):**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet save-state \
-  "<session_id>" \
-  "<state_type>" \
-  '<json_data>'
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet save-state \
+  "<session_id>" "<state_type>" '<json_data>'
 ```
 
 **Get latest state:**
 ```bash
-STATE=$(python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet get-state \
-  "<session_id>" \
-  "<state_type>")
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet get-state \
+  "<session_id>" "<state_type>"
 ```
 
 **Create task group:**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet create-task-group \
-  "<group_id>" \
-  "<session_id>" \
-  "<name>" \
-  [status] \
-  [assigned_to]
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet create-task-group \
+  "<group_id>" "<session_id>" "<name>" [status] [assigned_to]
 ```
 
 **Update task group:**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet update-task-group \
-  "<group_id>" \
-  "<session_id>" \
-  [--status "<status>"] \
-  [--assigned_to "<agent_id>"] \
-  [--revision_count <N>]
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet update-task-group \
+  "<group_id>" "<session_id>" [--status "<status>"] [--assigned_to "<agent_id>"]
 ```
 
 **Get task groups:**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet get-task-groups \
-  "<session_id>" \
-  [status]
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet get-task-groups \
+  "<session_id>" [status]
 ```
-Returns JSON array of task groups for the session. Optional status filter (pending, in_progress, completed, failed).
 
 **Update session status:**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet update-session-status \
-  "<session_id>" \
-  "<status>"
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet update-session-status \
+  "<session_id>" "<status>"
 ```
-Updates session status (active, completed, failed). Auto-sets end_time for completed/failed.
 
 **Dashboard snapshot:**
 ```bash
-SNAPSHOT=$(python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet dashboard-snapshot \
-  "<session_id>")
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet dashboard-snapshot \
+  "<session_id>"
 ```
 
 **Save development plan:**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet save-development-plan \
-  "<session_id>" \
-  "<original_prompt>" \
-  "<plan_text>" \
-  '<phases_json>' \
-  <current_phase> \
-  <total_phases> \
-  '<metadata_json>'
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet save-development-plan \
+  "<session_id>" "<original_prompt>" "<plan_text>" '<phases_json>' \
+  <current_phase> <total_phases> '<metadata_json>'
 ```
 
 **Get development plan:**
 ```bash
-PLAN=$(python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet get-development-plan \
-  "<session_id>")
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet get-development-plan \
+  "<session_id>"
 ```
 
 **Update plan progress:**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet update-plan-progress \
-  "<session_id>" \
-  <phase_number> \
-  "<status>"
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet update-plan-progress \
+  "<session_id>" <phase_number> "<status>"
 ```
 
 ### Success Criteria (BAZINGA Validation)
 
 **Save success criteria (PM during planning):**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet save-success-criteria \
-  "<session_id>" \
-  '[{"criterion":"All tests passing","status":"pending","actual":null,"evidence":null,"required_for_completion":true},{"criterion":"Coverage >70%","status":"pending","actual":null,"evidence":null,"required_for_completion":true}]'
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet save-success-criteria \
+  "<session_id>" '[{"criterion":"All tests passing","status":"pending"}]'
 ```
 
 **Get success criteria (Orchestrator for BAZINGA validation):**
 ```bash
-CRITERIA=$(python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet get-success-criteria \
-  "<session_id>")
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet get-success-criteria \
+  "<session_id>"
 ```
 
 **Update success criterion (PM before BAZINGA):**
 ```bash
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet update-success-criterion \
-  "<session_id>" \
-  "<criterion_text>" \
-  --status "met" \
-  --actual "711/711 passing" \
-  --evidence "pytest run at 2025-11-24T10:30:00"
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet update-success-criterion \
+  "<session_id>" "<criterion_text>" --status "met" --actual "711/711 passing"
+```
+
+### Context Package Operations (Inter-Agent Communication)
+
+**Save context package:**
+```bash
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet save-context-package \
+  "<session_id>" "<group_id>" "<package_type>" "<file_path>" \
+  "<producer_agent>" "<consumers_json>" "<priority>" "<summary>"
+```
+
+Parameters:
+- `package_type`: research, failures, decisions, handoff, investigation
+- `consumers_json`: JSON array of agent types (e.g., `'["developer"]'`)
+- `priority`: low, medium, high, critical
+
+**Get context packages for agent spawn:**
+```bash
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet get-context-packages \
+  "<session_id>" "<group_id>" "<agent_type>" [limit]
+```
+
+**Mark context package as consumed:**
+```bash
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet mark-context-consumed \
+  "<package_id>" "<agent_type>" [iteration]
+```
+
+**Update task group context references:**
+```bash
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet update-context-references \
+  "<group_id>" "<session_id>" "<package_ids_json>"
 ```
 
 **Full command reference:** See `scripts/bazinga_db.py --help` for all available operations.
@@ -494,6 +508,65 @@ Proceeding with original request...
 
 ---
 
+**Scenario 6: Requirements Engineer Saving Research Context**
+
+Input: Requirements Engineer completed research, needs to create context package for developers
+
+Request from orchestrator:
+```
+bazinga-db, please save context package:
+
+Session ID: bazinga_20250203_143530
+Group ID: group_a
+Type: research
+File: bazinga/artifacts/bazinga_20250203_143530/context/research-group_a-hin.md
+Producer: requirements_engineer
+Consumers: ["developer", "senior_software_engineer"]
+Priority: high
+Summary: HIN OAuth2 endpoints, scopes, security requirements
+```
+
+Expected output (minimal):
+```json
+{
+  "package_id": 1,
+  "file_path": "bazinga/artifacts/bazinga_20250203_143530/context/research-group_a-hin.md",
+  "consumers_created": 2
+}
+```
+
+---
+
+**Scenario 7: Orchestrator Getting Context for Developer Spawn**
+
+Input: Orchestrator spawning developer, needs relevant context packages
+
+Request from orchestrator:
+```
+bazinga-db, get context packages for developer spawn:
+
+Session ID: bazinga_20250203_143530
+Group ID: group_a
+Agent Type: developer
+Limit: 3
+```
+
+Expected output (minimal):
+```json
+[
+  {
+    "id": 1,
+    "package_type": "research",
+    "priority": "high",
+    "summary": "HIN OAuth2 endpoints, scopes, security requirements",
+    "file_path": "bazinga/artifacts/bazinga_20250203_143530/context/research-group_a-hin.md",
+    "size_bytes": 21504
+  }
+]
+```
+
+---
+
 ## Error Handling
 
 **Database not found:**
@@ -532,20 +605,25 @@ Proceeding with original request...
 
 ## Quick Reference
 
+**Script:** `python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet <command>`
+
 **Most common operations:**
 
 ```bash
 # Log interaction
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet log-interaction "$SID" "pm" "$CONTENT" 1
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet log-interaction "$SID" "pm" "$CONTENT" 1
 
 # Save PM state
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet save-state "$SID" "pm" '{"iteration":1}'
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet save-state "$SID" "pm" '{"iteration":1}'
 
 # Update task group
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet update-task-group "group_a" "$SID" --status "completed"
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet update-task-group "group_a" "$SID" --status "completed"
 
 # Dashboard snapshot
-python3 "$DB_SCRIPT" --db "$DB_PATH" --quiet dashboard-snapshot "$SID"
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet dashboard-snapshot "$SID"
+
+# Detect paths (debugging)
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py detect-paths
 ```
 
 **Success criteria:**

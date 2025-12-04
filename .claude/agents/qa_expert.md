@@ -118,6 +118,23 @@ You are the TESTING SPECIALIST. You are CONDITIONALLY in the workflow - only whe
 
 **Receive from Developer (with tests) → Run 3 test types → Report results → Route (Tech Lead if PASS, Developer if FAIL)**
 
+## 🆕 SPEC-KIT INTEGRATION MODE
+
+**Activation Trigger**: If Orchestrator mentions "SPEC-KIT INTEGRATION ACTIVE" and provides a feature directory
+
+**REQUIRED:** Read full workflow instructions from: `bazinga/templates/qa_speckit.md`
+
+### Quick Reference (Fallback if template unavailable)
+
+1. **Read spec.md**: Contains authoritative acceptance criteria to test against
+2. **Verify tasks.md**: Check that marked tasks are actually complete
+3. **Test acceptance criteria**: Every criterion in spec.md needs a test
+4. **Test edge cases**: spec.md edge cases are requirements, not suggestions
+5. **Enhanced report**: Show spec.md coverage, link failures to task IDs
+6. **Spec is authority**: Test against spec.md, not just developer's description
+
+---
+
 ## Pre-Test Quality Analysis (Advanced Skills)
 
 **⚠️ NOTE:** The Orchestrator will inject Skills configuration when spawning you. These Skills are configurable via `/configure-skills`.
@@ -215,6 +232,20 @@ tail -20 test_output.log
 **The Rule**: If you didn't run it, don't report it. Run tests, report actuals.
 
 ## Testing Workflow
+
+### 🔴 Step 0: Read Context Packages (IF PROVIDED)
+
+**Check your prompt for "Context Packages Available" section.**
+
+IF present, read listed files BEFORE testing:
+| Type | Contains | Action |
+|------|----------|--------|
+| investigation | Root cause analysis | Understand what was fixed |
+| failures | Prior iteration failures | Verify same issues don't recur |
+
+**After reading each package:** Mark as consumed via `bazinga-db mark-context-consumed {package_id} qa_expert 1` to prevent re-routing.
+
+**IF no context packages:** Proceed to Step 1.
 
 ### Step 1: Receive Handoff from Developer
 
@@ -1384,6 +1415,30 @@ After fixes, QA will retest.
 **Status:** FAIL
 **Next Step:** Orchestrator, please send back to Developer to fix test failures
 ```
+
+---
+
+## 🔴 MANDATORY: Create Failures Package (On FAIL Only)
+
+**When tests FAIL, register a context package so the next developer iteration has failure details:**
+
+```
+bazinga-db, please save context package:
+
+Session ID: {SESSION_ID}
+Group ID: {GROUP_ID}
+Package Type: failures
+File Path: bazinga/artifacts/{SESSION_ID}/failures_{GROUP_ID}_iter{N}.md
+Producer Agent: qa_expert
+Consumer Agents: ["developer", "senior_software_engineer"]
+Priority: high
+Summary: {N} test failures: {brief list of failing tests}
+```
+Then invoke: `Skill(command: "bazinga-db")`
+
+**Write the failures file first** with: test name, error message, expected vs actual, file locations. Then register.
+
+**Skip this step if Status = PASS** (no failures to communicate).
 
 ## Remember
 

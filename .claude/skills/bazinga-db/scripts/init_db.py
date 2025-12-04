@@ -2,6 +2,10 @@
 """
 Initialize BAZINGA database schema.
 Creates all necessary tables for managing orchestration state.
+
+Path Resolution:
+    If no database path is provided, auto-detects project root and uses:
+    PROJECT_ROOT/bazinga/bazinga.db
 """
 
 import sqlite3
@@ -10,8 +14,20 @@ from pathlib import Path
 import tempfile
 import shutil
 
+# Add _shared directory to path for bazinga_paths import
+_script_dir = Path(__file__).parent.resolve()
+_shared_dir = _script_dir.parent.parent / '_shared'
+if _shared_dir.exists() and str(_shared_dir) not in sys.path:
+    sys.path.insert(0, str(_shared_dir))
+
+try:
+    from bazinga_paths import get_db_path
+    _HAS_BAZINGA_PATHS = True
+except ImportError:
+    _HAS_BAZINGA_PATHS = False
+
 # Current schema version
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 def get_schema_version(cursor) -> int:
     """Get current schema version from database."""
@@ -220,11 +236,30 @@ def init_database(db_path: str) -> None:
 
             print("✓ Migration to v5 complete (merge-on-approval architecture)")
 
+        # Handle v5→v6 migration (context packages for inter-agent communication)
+        if current_version == 5:
+            print("🔄 Migrating schema from v5 to v6...")
+
+            # 1. Add context_references to task_groups
+            try:
+                cursor.execute("ALTER TABLE task_groups ADD COLUMN context_references TEXT")
+                print("   ✓ Added task_groups.context_references")
+            except sqlite3.OperationalError as e:
+                if "duplicate column" in str(e).lower():
+                    print("   ⊘ task_groups.context_references already exists")
+                else:
+                    raise
+
+            # 2. Create context_packages table (will be created below with IF NOT EXISTS)
+            # 3. Create context_package_consumers table (will be created below with IF NOT EXISTS)
+
+            print("✓ Migration to v6 complete (context packages for inter-agent communication)")
+
         # Record version upgrade
         cursor.execute("""
             INSERT OR REPLACE INTO schema_version (version, description)
             VALUES (?, ?)
-        """, (SCHEMA_VERSION, f"Schema v{SCHEMA_VERSION}: Merge-on-approval architecture"))
+        """, (SCHEMA_VERSION, f"Schema v{SCHEMA_VERSION}: Context packages for inter-agent communication"))
         conn.commit()
         print(f"✓ Schema upgraded to v{SCHEMA_VERSION}")
     elif current_version == SCHEMA_VERSION:
@@ -305,6 +340,7 @@ def init_database(db_path: str) -> None:
             merge_status TEXT CHECK(merge_status IN ('pending', 'in_progress', 'merged', 'conflict', 'test_failure', NULL)),
             complexity INTEGER CHECK(complexity BETWEEN 1 AND 10),
             initial_tier TEXT CHECK(initial_tier IN ('Developer', 'Senior Software Engineer')) DEFAULT 'Developer',
+            context_references TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id, session_id),
@@ -407,6 +443,51 @@ def init_database(db_path: str) -> None:
     """)
     print("✓ Created success_criteria table with indexes")
 
+    # Context packages table (for inter-agent communication)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS context_packages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            group_id TEXT,
+            package_type TEXT NOT NULL CHECK(package_type IN ('research', 'failures', 'decisions', 'handoff', 'investigation')),
+            file_path TEXT NOT NULL,
+            producer_agent TEXT NOT NULL,
+            priority TEXT DEFAULT 'medium' CHECK(priority IN ('low', 'medium', 'high', 'critical')),
+            summary TEXT NOT NULL,
+            size_bytes INTEGER,
+            version INTEGER DEFAULT 1,
+            supersedes_id INTEGER,
+            scope TEXT DEFAULT 'group' CHECK(scope IN ('group', 'global')),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE,
+            FOREIGN KEY (supersedes_id) REFERENCES context_packages(id)
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cp_session ON context_packages(session_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cp_group ON context_packages(group_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cp_type ON context_packages(package_type)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cp_priority ON context_packages(priority)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cp_scope ON context_packages(scope)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cp_created ON context_packages(created_at)")
+    print("✓ Created context_packages table with indexes")
+
+    # Context package consumers join table (for per-agent consumption tracking)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS context_package_consumers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            package_id INTEGER NOT NULL,
+            agent_type TEXT NOT NULL,
+            consumed_at TIMESTAMP,
+            iteration INTEGER DEFAULT 1,
+            FOREIGN KEY (package_id) REFERENCES context_packages(id) ON DELETE CASCADE,
+            UNIQUE(package_id, agent_type, iteration)
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cpc_package ON context_package_consumers(package_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cpc_agent ON context_package_consumers(agent_type)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cpc_pending ON context_package_consumers(consumed_at) WHERE consumed_at IS NULL")
+    print("✓ Created context_package_consumers table with indexes")
+
     # Record schema version for new databases
     current_version = get_schema_version(cursor)
     if current_version == 0:
@@ -427,12 +508,24 @@ def init_database(db_path: str) -> None:
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python init_db.py <database_path>")
-        print("Example: python init_db.py /home/user/bazinga/bazinga/bazinga.db")
+    # Determine database path
+    if len(sys.argv) >= 2:
+        # Explicit path provided
+        db_path = sys.argv[1]
+    elif _HAS_BAZINGA_PATHS:
+        # Auto-detect using bazinga_paths
+        try:
+            db_path = str(get_db_path())
+            print(f"Auto-detected database path: {db_path}")
+        except RuntimeError as e:
+            print(f"Error: Could not auto-detect database path: {e}", file=sys.stderr)
+            print("Usage: python init_db.py [database_path]", file=sys.stderr)
+            print("Example: python init_db.py bazinga/bazinga.db", file=sys.stderr)
+            sys.exit(1)
+    else:
+        print("Usage: python init_db.py <database_path>", file=sys.stderr)
+        print("Example: python init_db.py bazinga/bazinga.db", file=sys.stderr)
         sys.exit(1)
-
-    db_path = sys.argv[1]
 
     # Create parent directory if it doesn't exist
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)

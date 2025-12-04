@@ -2,28 +2,79 @@
 """
 BAZINGA Database Client - Simple command interface for database operations.
 Provides high-level commands for agents without requiring SQL knowledge.
+
+Path Resolution:
+    The script auto-detects the project root and database path. You can override:
+    - --db PATH          Explicit database path
+    - --project-root DIR Explicit project root (db at DIR/bazinga/bazinga.db)
+    - BAZINGA_ROOT env   Environment variable override
+
+    If none provided, auto-detects by walking up from script location or CWD.
 """
 
 import sqlite3
 import json
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 import argparse
+
+# Add _shared directory to path for bazinga_paths import
+# Path: .claude/skills/bazinga-db/scripts/bazinga_db.py
+#   -> .claude/skills/bazinga-db/scripts/  (parent)
+#   -> .claude/skills/bazinga-db/          (parent.parent)
+#   -> .claude/skills/                      (parent.parent.parent)
+#   -> .claude/skills/_shared/              (where bazinga_paths.py lives)
+_script_dir = Path(__file__).parent.resolve()
+_shared_dir = _script_dir.parent.parent / '_shared'
+if _shared_dir.exists() and str(_shared_dir) not in sys.path:
+    sys.path.insert(0, str(_shared_dir))
+
+try:
+    from bazinga_paths import get_project_root, get_db_path, get_detection_info
+    _HAS_BAZINGA_PATHS = True
+except ImportError:
+    _HAS_BAZINGA_PATHS = False
 
 
 class BazingaDB:
     """Database client for BAZINGA orchestration."""
 
     # SQLite errors that indicate ACTUAL database corruption (file is unrecoverable)
-    # NOTE: Transient errors like "database is locked" or "disk I/O error" are NOT
-    # included here - they should be retried, not trigger database deletion!
+    # NOTE: Only true corruption errors that indicate the database file itself is damaged.
+    # Transient/operational errors (locked, full disk, readonly) should NOT trigger recovery!
     CORRUPTION_ERRORS = [
         "database disk image is malformed",
         "file is not a database",
-        "database or disk is full",
-        "attempt to write a readonly database",
+        # "database or disk is full" - operational, not corruption
+        # "attempt to write a readonly database" - permission issue, not corruption
+    ]
+
+    # Tables to salvage during recovery (ordered for FK dependencies)
+    # Includes all tables from schema.md - code handles missing tables gracefully
+    SALVAGE_TABLE_ORDER = [
+        'sessions', 'orchestration_logs', 'state_snapshots', 'task_groups',
+        'token_usage', 'skill_outputs', 'development_plans', 'success_criteria',
+        'context_packages', 'context_package_consumers',
+        'configuration', 'decisions', 'model_config'  # May not exist in all DBs
+    ]
+
+    # SQLite errors that indicate BAD QUERIES, NOT corruption
+    # These happen when agents write inline SQL with wrong column/table names
+    # They should NEVER trigger database recovery/deletion
+    QUERY_ERRORS = [
+        "no such column",
+        "no such table",
+        "syntax error",
+        "near \"",           # Syntax errors like 'near "SELECT"'
+        "unrecognized token",
+        "no such function",
+        "ambiguous column name",
+        "constraint failed",  # Constraint violations are not corruption
+        "unique constraint",
+        "foreign key constraint",
     ]
 
     def __init__(self, db_path: str, quiet: bool = False):
@@ -40,13 +91,34 @@ class BazingaDB:
         """Print error message to stderr."""
         print(f"! {message}", file=sys.stderr)
 
-    def _is_corruption_error(self, error: Exception) -> bool:
-        """Check if an exception indicates database corruption."""
+    def _is_query_error(self, error: Exception) -> bool:
+        """Check if an exception indicates a bad query (NOT corruption).
+
+        These are errors caused by wrong column/table names, syntax errors, etc.
+        They should NEVER trigger database recovery/deletion.
+        """
         error_msg = str(error).lower()
+        return any(query_err in error_msg for query_err in self.QUERY_ERRORS)
+
+    def _is_corruption_error(self, error: Exception) -> bool:
+        """Check if an exception indicates database corruption.
+
+        IMPORTANT: Query errors (wrong column names, etc.) are NOT corruption.
+        This prevents data loss when agents write bad SQL.
+        """
+        error_msg = str(error).lower()
+
+        # First, check if this is a query error - these are NEVER corruption
+        if self._is_query_error(error):
+            return False
+
         return any(corruption in error_msg for corruption in self.CORRUPTION_ERRORS)
 
     def _backup_corrupted_db(self) -> Optional[str]:
-        """Backup a corrupted database file before recovery."""
+        """Backup a corrupted database file before recovery.
+
+        Also backs up WAL and SHM sidecar files if present for complete recovery.
+        """
         db_path = Path(self.db_path)
         if not db_path.exists():
             return None
@@ -57,32 +129,174 @@ class BazingaDB:
             import shutil
             shutil.copy2(self.db_path, backup_path)
             self._print_error(f"Corrupted database backed up to: {backup_path}")
+
+            # Also backup WAL and SHM files if they exist (for complete recovery)
+            for ext in ['-wal', '-shm']:
+                sidecar = Path(str(db_path) + ext)
+                if sidecar.exists():
+                    sidecar_backup = Path(str(backup_path) + ext)
+                    try:
+                        shutil.copy2(sidecar, sidecar_backup)
+                        self._print_error(f"  Also backed up {sidecar.name}")
+                    except Exception:
+                        pass  # Non-fatal - main backup succeeded
+
             return str(backup_path)
         except Exception as e:
             self._print_error(f"Failed to backup corrupted database: {e}")
             return None
 
+    def _extract_salvageable_data(self) -> Dict[str, Dict[str, Any]]:
+        """Try to extract data from a corrupted database before recovery.
+
+        Returns:
+            Dict mapping table names to {'columns': List[str], 'rows': List[tuple]}.
+            Empty dict if extraction fails.
+        """
+        salvaged: Dict[str, Dict[str, Any]] = {}
+
+        try:
+            # Use a short timeout - if DB is badly corrupted, don't hang
+            # Open in read-only mode to prevent accidental writes to corrupted DB
+            uri = f"file:{self.db_path}?mode=ro"
+            with sqlite3.connect(uri, uri=True, timeout=5.0) as conn:
+                cursor = conn.cursor()
+
+                for table in self.SALVAGE_TABLE_ORDER:
+                    try:
+                        cursor.execute(f"SELECT * FROM \"{table}\"")
+                        rows = cursor.fetchall()
+                        if rows:
+                            # Get column names for this table
+                            cursor.execute(f"PRAGMA table_info(\"{table}\")")
+                            columns = [col[1] for col in cursor.fetchall()]
+                            salvaged[table] = {'columns': columns, 'rows': rows}
+                            self._print_error(f"  Salvaged {len(rows)} rows from {table}")
+                    except sqlite3.Error:
+                        # Table doesn't exist or is unreadable - skip
+                        pass
+        except Exception as e:
+            self._print_error(f"  Could not extract data: {e}")
+            return {}
+
+        return salvaged
+
+    def _restore_salvaged_data(self, salvaged: Dict[str, Dict[str, Any]]) -> int:
+        """Restore salvaged data to the new database.
+
+        Args:
+            salvaged: Dict from _extract_salvageable_data()
+
+        Returns:
+            Number of rows restored.
+        """
+        if not salvaged:
+            return 0
+
+        total_restored = 0
+
+        try:
+            with sqlite3.connect(self.db_path, timeout=10.0) as conn:
+                cursor = conn.cursor()
+                # Disable FK constraints during restore to avoid ordering issues
+                # Table ordering handles most cases, but this is a safety layer
+                cursor.execute("PRAGMA foreign_keys = OFF")
+
+                for table in self.SALVAGE_TABLE_ORDER:
+                    if table not in salvaged:
+                        continue
+
+                    data = salvaged[table]
+                    old_columns = data['columns']
+                    rows = data['rows']
+
+                    if not rows:
+                        continue
+
+                    # Get current schema columns to handle schema changes
+                    cursor.execute(f"PRAGMA table_info(\"{table}\")")
+                    new_columns = [col[1] for col in cursor.fetchall()]
+
+                    # Intersect: only restore columns that exist in both old and new schema
+                    valid_columns = [c for c in old_columns if c in new_columns]
+                    if not valid_columns:
+                        self._print_error(f"  Skipping {table}: no matching columns")
+                        continue
+
+                    # Get indices of valid columns in original row data
+                    col_indices = [old_columns.index(c) for c in valid_columns]
+
+                    # Build INSERT statement once (with quoted identifiers)
+                    cols_str = ', '.join(f'"{c}"' for c in valid_columns)
+                    placeholders = ', '.join(['?' for _ in valid_columns])
+                    insert_sql = f"INSERT OR IGNORE INTO \"{table}\" ({cols_str}) VALUES ({placeholders})"
+
+                    # Filter row data to only valid columns and use executemany
+                    filtered_rows = [tuple(row[i] for i in col_indices) for row in rows]
+
+                    try:
+                        cursor.executemany(insert_sql, filtered_rows)
+                        restored_count = cursor.rowcount if cursor.rowcount > 0 else 0
+                    except sqlite3.Error:
+                        # Fall back to row-by-row on error
+                        restored_count = 0
+                        for row in filtered_rows:
+                            try:
+                                cursor.execute(insert_sql, row)
+                                if cursor.rowcount > 0:
+                                    restored_count += 1
+                            except sqlite3.Error:
+                                # Skip rows that fail (e.g., constraint violations, duplicates)
+                                # This is intentional - salvage as much data as possible
+                                pass
+
+                    if restored_count > 0:
+                        self._print_error(f"  Restored {restored_count}/{len(rows)} rows to {table}")
+                        total_restored += restored_count
+                    elif len(rows) > 0:
+                        # Warn when salvaged data couldn't be restored (schema mismatch, constraints)
+                        self._print_error(f"  Warning: 0/{len(rows)} rows restored to {table}")
+
+                # Re-enable FK constraints after restore
+                cursor.execute("PRAGMA foreign_keys = ON")
+                conn.commit()
+        except Exception as e:
+            self._print_error(f"  Error restoring data: {e}")
+
+        return total_restored
+
     def _recover_from_corruption(self) -> bool:
         """Attempt to recover from database corruption by reinitializing.
+
+        Tries to salvage data from the old database before replacing it.
 
         Returns:
             True if recovery succeeded, False otherwise.
         """
         self._print_error("Database corruption detected. Attempting recovery...")
 
-        # Backup corrupted file
+        # Step 1: Try to salvage data before doing anything destructive
+        self._print_error("Attempting to salvage data from corrupted database...")
+        salvaged_data = self._extract_salvageable_data()
+
+        # Step 2: Backup corrupted file
         self._backup_corrupted_db()
 
-        # Delete corrupted file
+        # Step 3: Delete corrupted file (and WAL/SHM sidecars)
         db_path = Path(self.db_path)
         try:
             if db_path.exists():
                 db_path.unlink()
+            # Also remove WAL and SHM sidecar files to ensure clean reinit
+            for ext in ['-wal', '-shm']:
+                sidecar = Path(str(db_path) + ext)
+                if sidecar.exists():
+                    sidecar.unlink()
         except Exception as e:
             self._print_error(f"Failed to remove corrupted database: {e}")
             return False
 
-        # Reinitialize
+        # Step 4: Reinitialize with fresh schema
         try:
             script_dir = Path(__file__).parent
             init_script = script_dir / "init_db.py"
@@ -94,15 +308,26 @@ class BazingaDB:
                 text=True
             )
 
-            if result.returncode == 0:
-                self._print_error(f"✓ Database recovered and reinitialized at {self.db_path}")
-                return True
-            else:
+            if result.returncode != 0:
                 self._print_error(f"Failed to reinitialize database: {result.stderr}")
                 return False
+
         except Exception as e:
             self._print_error(f"Recovery failed: {e}")
             return False
+
+        # Step 5: Restore salvaged data
+        if salvaged_data:
+            self._print_error("Restoring salvaged data to new database...")
+            restored = self._restore_salvaged_data(salvaged_data)
+            if restored > 0:
+                self._print_error(f"✓ Database recovered with {restored} rows restored")
+            else:
+                self._print_error(f"✓ Database recovered (no data could be restored)")
+        else:
+            self._print_error(f"✓ Database recovered and reinitialized (fresh start)")
+
+        return True
 
     def check_integrity(self) -> Dict[str, Any]:
         """Run SQLite integrity check on the database.
@@ -137,27 +362,55 @@ class BazingaDB:
             print(f"Database file is empty at {self.db_path}. Auto-initializing...", file=sys.stderr)
         else:
             # File exists and has content - check if it has tables and is not corrupted
-            try:
-                with sqlite3.connect(self.db_path) as conn:
-                    cursor = conn.cursor()
-                    # First check integrity
-                    integrity = cursor.execute("PRAGMA integrity_check;").fetchone()[0]
-                    if integrity != "ok":
+            # Retry loop for transient lock errors during startup
+            for attempt in range(4):  # 0, 1, 2, 3 = max 4 attempts
+                try:
+                    with sqlite3.connect(self.db_path, timeout=10.0) as conn:
+                        cursor = conn.cursor()
+                        # First check integrity
+                        integrity = cursor.execute("PRAGMA integrity_check;").fetchone()[0]
+                        if integrity != "ok":
+                            is_corrupted = True
+                            needs_init = True
+                            print(f"Database corrupted at {self.db_path}: {integrity}. Auto-recovering...", file=sys.stderr)
+                        else:
+                            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='sessions'")
+                            if not cursor.fetchone():
+                                needs_init = True
+                                print(f"Database missing schema at {self.db_path}. Auto-initializing...", file=sys.stderr)
+                    break  # Success - exit retry loop
+                except sqlite3.OperationalError as e:
+                    # Handle transient lock errors with retry/backoff
+                    error_msg = str(e).lower()
+                    if any(lock_err in error_msg for lock_err in ["database is locked", "database is busy", "schema is locked"]):
+                        if attempt < 3:
+                            wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                            print(f"Database locked during init, retrying in {wait_time}s (attempt {attempt + 1}/4)...", file=sys.stderr)
+                            time.sleep(wait_time)
+                            continue
+                        else:
+                            print(f"Database locked after 4 attempts at {self.db_path}: {e}", file=sys.stderr)
+                            raise
+                    raise  # Non-lock operational error
+                except sqlite3.DatabaseError as e:
+                    # Check if this is a query error (wrong column/table names) vs real corruption
+                    if self._is_query_error(e):
+                        # Query errors should NOT trigger recovery - just propagate the error
+                        print(f"Query error at {self.db_path}: {e}. This is a SQL syntax/schema error (e.g., incorrect table/column name), NOT database corruption. Fix the query.", file=sys.stderr)
+                        raise  # Let caller handle it - don't destroy the database
+                    elif self._is_corruption_error(e):
                         is_corrupted = True
                         needs_init = True
-                        print(f"Database corrupted at {self.db_path}: {integrity}. Auto-recovering...", file=sys.stderr)
+                        print(f"Database corrupted at {self.db_path}: {e}. Auto-recovering...", file=sys.stderr)
                     else:
-                        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='sessions'")
-                        if not cursor.fetchone():
-                            needs_init = True
-                            print(f"Database missing schema at {self.db_path}. Auto-initializing...", file=sys.stderr)
-            except sqlite3.DatabaseError as e:
-                is_corrupted = True
-                needs_init = True
-                print(f"Database corrupted at {self.db_path}: {e}. Auto-recovering...", file=sys.stderr)
-            except Exception as e:
-                needs_init = True
-                print(f"Database check failed at {self.db_path}: {e}. Auto-initializing...", file=sys.stderr)
+                        # Unknown database error - log but don't assume corruption
+                        print(f"Database error at {self.db_path}: {e}. May need investigation.", file=sys.stderr)
+                        raise  # Let caller handle it
+                    break  # Exit retry loop on corruption (will reinit)
+                except Exception as e:
+                    needs_init = True
+                    print(f"Database check failed at {self.db_path}: {e}. Auto-initializing...", file=sys.stderr)
+                    break  # Exit retry loop
 
         if not needs_init:
             return
@@ -168,6 +421,15 @@ class BazingaDB:
             try:
                 db_path.unlink()
                 print(f"Removed corrupted database file", file=sys.stderr)
+                # Also remove WAL and SHM sidecar files to ensure clean reinit
+                for ext in ['-wal', '-shm']:
+                    sidecar = Path(str(db_path) + ext)
+                    if sidecar.exists():
+                        try:
+                            sidecar.unlink()
+                            print(f"  Also removed {sidecar.name}", file=sys.stderr)
+                        except Exception:
+                            pass  # Non-fatal
             except Exception as e:
                 print(f"Warning: Could not remove corrupted file: {e}", file=sys.stderr)
 
@@ -188,11 +450,12 @@ class BazingaDB:
 
         print(f"✓ Database auto-initialized at {self.db_path}", file=sys.stderr)
 
-    def _get_connection(self, retry_on_corruption: bool = True) -> sqlite3.Connection:
+    def _get_connection(self, retry_on_corruption: bool = True, _lock_retry: int = 0) -> sqlite3.Connection:
         """Get database connection with proper settings.
 
         Args:
             retry_on_corruption: If True, attempt recovery on corruption errors.
+            _lock_retry: Internal counter for lock retry attempts (max 3 retries with backoff).
 
         Returns:
             sqlite3.Connection with WAL mode and foreign keys enabled.
@@ -207,6 +470,14 @@ class BazingaDB:
             conn.execute("PRAGMA busy_timeout = 30000")
             conn.row_factory = sqlite3.Row
             return conn
+        except sqlite3.OperationalError as e:
+            # Handle transient "database is locked" errors with retry/backoff
+            if "database is locked" in str(e).lower() and _lock_retry < 3:
+                wait_time = 2 ** _lock_retry  # Exponential backoff: 1s, 2s, 4s
+                self._print_error(f"Database locked, retrying in {wait_time}s (attempt {_lock_retry + 1}/3)...")
+                time.sleep(wait_time)
+                return self._get_connection(retry_on_corruption, _lock_retry + 1)
+            raise
         except sqlite3.DatabaseError as e:
             if retry_on_corruption and self._is_corruption_error(e):
                 if self._recover_from_corruption():
@@ -854,6 +1125,240 @@ class BazingaDB:
 
         conn.close()
 
+    # ==================== CONTEXT PACKAGE OPERATIONS ====================
+
+    # Canonical agent types (lowercase) for normalization
+    VALID_AGENT_TYPES = frozenset({
+        'project_manager', 'developer', 'senior_software_engineer',
+        'qa_expert', 'tech_lead', 'investigator', 'requirements_engineer', 'orchestrator'
+    })
+
+    def save_context_package(self, session_id: str, group_id: str, package_type: str,
+                            file_path: str, producer_agent: str, consumers: List[str],
+                            priority: str, summary: str, size_bytes: int = None) -> Dict:
+        """Save a context package and create consumer entries.
+
+        NOTE: Versioning is not yet implemented. All packages have supersedes_id=NULL.
+        Future enhancement: add superseded_by_id column and link previous versions.
+        """
+        valid_types = ('research', 'failures', 'decisions', 'handoff', 'investigation')
+        if package_type not in valid_types:
+            raise ValueError(f"Invalid package_type: {package_type}. Must be one of {valid_types}")
+
+        valid_priorities = ('low', 'medium', 'high', 'critical')
+        if priority not in valid_priorities:
+            raise ValueError(f"Invalid priority: {priority}. Must be one of {valid_priorities}")
+
+        # Normalize and validate producer agent type
+        producer_agent = producer_agent.strip().lower()
+        if producer_agent not in self.VALID_AGENT_TYPES:
+            raise ValueError(f"Invalid producer_agent: {producer_agent}. Must be one of {sorted(self.VALID_AGENT_TYPES)}")
+
+        # Normalize and validate consumer agent types
+        normalized_consumers = []
+        for c in consumers:
+            if not c or not c.strip():
+                continue  # Skip empty strings
+            c_normalized = c.strip().lower()
+            if c_normalized not in self.VALID_AGENT_TYPES:
+                raise ValueError(f"Invalid consumer agent: {c}. Must be one of {sorted(self.VALID_AGENT_TYPES)}")
+            normalized_consumers.append(c_normalized)
+        if not normalized_consumers:
+            raise ValueError("At least one valid consumer agent is required")
+        consumers = normalized_consumers
+
+        # Validate file path to prevent path traversal and symlink escapes
+        from pathlib import Path
+        import os
+
+        # Convert to Path and resolve (follows symlinks)
+        try:
+            candidate_path = Path(file_path).resolve()
+        except (ValueError, RuntimeError) as e:
+            raise ValueError(f"Invalid file_path: {e}")
+
+        # Define artifacts root and resolve it
+        artifacts_root = Path("bazinga/artifacts") / session_id
+        artifacts_root_resolved = artifacts_root.resolve()
+
+        # Ensure candidate is within artifacts directory using relative_to
+        try:
+            rel_path = candidate_path.relative_to(artifacts_root_resolved)
+        except ValueError:
+            raise ValueError(f"Invalid file_path: must be within {artifacts_root}. Got: {file_path}")
+
+        # Store as repo-relative path (not absolute) for portability
+        # Use forward slashes for cross-platform consistency
+        normalized_path = f"bazinga/artifacts/{session_id}/{str(rel_path).replace(os.sep, '/')}"
+
+        # Auto-compute size_bytes if not provided and file exists
+        if size_bytes is None:
+            try:
+                size_bytes = os.stat(str(candidate_path)).st_size
+            except (OSError, FileNotFoundError):
+                # File doesn't exist yet or not accessible - leave as None
+                pass
+
+        # Enforce summary length constraint (max 200 chars) and sanitize
+        summary = summary.replace('\n', ' ').replace('\r', ' ')  # Single-line
+        if len(summary) > 200:
+            summary = summary[:197] + "..."
+
+        # Deduplicate consumers to prevent UNIQUE constraint violations
+        consumers = list(dict.fromkeys(consumers))  # Preserves order, removes duplicates
+
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        try:
+            # Determine scope
+            scope = 'global' if group_id == 'global' or group_id is None else 'group'
+            actual_group_id = None if group_id == 'global' else group_id
+
+            # Insert the context package
+            cursor.execute("""
+                INSERT INTO context_packages
+                (session_id, group_id, package_type, file_path, producer_agent, priority, summary, size_bytes, scope)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (session_id, actual_group_id, package_type, normalized_path, producer_agent, priority, summary, size_bytes, scope))
+
+            package_id = cursor.lastrowid
+
+            # Create consumer entries
+            for consumer in consumers:
+                cursor.execute("""
+                    INSERT INTO context_package_consumers (package_id, agent_type)
+                    VALUES (?, ?)
+                """, (package_id, consumer))
+
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            conn.close()
+            raise RuntimeError(f"Failed to save context package: {e}")
+
+        conn.close()
+
+        self._print_success(f"✓ Created context package {package_id} ({package_type}) with {len(consumers)} consumers")
+        return {"package_id": package_id, "file_path": normalized_path, "consumers_created": len(consumers)}
+
+    def get_context_packages(self, session_id: str, group_id: str, agent_type: str,
+                            limit: int = 3, include_consumed: bool = False) -> List[Dict]:
+        """Get context packages for an agent spawn, ordered by priority.
+
+        Args:
+            session_id: Session ID to query
+            group_id: Group ID to query
+            agent_type: Agent type to query packages for (normalized to lowercase)
+            limit: Maximum number of packages to return (default 3)
+            include_consumed: If False (default), only return unconsumed packages
+        """
+        # Normalize agent_type for consistent matching
+        agent_type = agent_type.strip().lower()
+
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Build query with optional consumption filter
+        consumption_filter = "" if include_consumed else "AND cpc.consumed_at IS NULL"
+
+        # Query packages for this agent type, including global packages
+        cursor.execute(f"""
+            SELECT cp.id, cp.package_type, cp.priority, cp.summary, cp.file_path, cp.size_bytes, cp.group_id
+            FROM context_packages cp
+            JOIN context_package_consumers cpc ON cp.id = cpc.package_id
+            WHERE cp.session_id = ?
+              AND (cp.group_id = ? OR cp.scope = 'global')
+              AND cpc.agent_type = ?
+              AND cp.supersedes_id IS NULL
+              {consumption_filter}
+            ORDER BY
+              CASE cp.priority
+                WHEN 'critical' THEN 1
+                WHEN 'high' THEN 2
+                WHEN 'medium' THEN 3
+                WHEN 'low' THEN 4
+              END,
+              cp.created_at DESC
+            LIMIT ?
+        """, (session_id, group_id, agent_type, limit))
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        return [dict(row) for row in rows]
+
+    def mark_context_consumed(self, package_id: int, agent_type: str, iteration: int = 1) -> bool:
+        """Mark a context package as consumed by an agent.
+
+        Only marks consumption if the agent_type was designated as a consumer
+        when the package was created. Does NOT create consumer rows implicitly.
+
+        Args:
+            package_id: ID of the package to mark consumed
+            agent_type: Agent type marking consumption (normalized to lowercase)
+            iteration: Iteration number (default 1)
+
+        Returns:
+            True if marked successfully, False if agent was not a designated consumer
+        """
+        # Normalize agent_type
+        agent_type = agent_type.strip().lower()
+
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Try to update any pending (unconsumed) row for this package and agent
+        # SQLite doesn't support LIMIT in UPDATE, use subquery instead
+        cursor.execute("""
+            UPDATE context_package_consumers
+            SET consumed_at = CURRENT_TIMESTAMP, iteration = ?
+            WHERE id IN (
+                SELECT id FROM context_package_consumers
+                WHERE package_id = ? AND agent_type = ? AND consumed_at IS NULL
+                LIMIT 1
+            )
+        """, (iteration, package_id, agent_type))
+
+        if cursor.rowcount == 0:
+            # Check if this agent was ever designated as a consumer (consumed or not)
+            cursor.execute("""
+                SELECT 1 FROM context_package_consumers
+                WHERE package_id = ? AND agent_type = ?
+                LIMIT 1
+            """, (package_id, agent_type))
+            if cursor.fetchone() is None:
+                # Agent was never designated as consumer - don't create implicit entry
+                conn.close()
+                print(f"! Agent '{agent_type}' was not designated as consumer for package {package_id}", file=sys.stderr)
+                return False
+            # Consumer exists but already consumed - that's fine
+
+        conn.commit()
+        conn.close()
+        self._print_success(f"✓ Marked package {package_id} as consumed by {agent_type} (iteration {iteration})")
+        return True
+
+    def update_context_references(self, group_id: str, session_id: str, package_ids: List[int]) -> None:
+        """Update the context_references for a task group."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE task_groups
+            SET context_references = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND session_id = ?
+        """, (json.dumps(package_ids), group_id, session_id))
+
+        if cursor.rowcount == 0:
+            conn.close()
+            print(f"! Warning: No task group found with id='{group_id}' and session_id='{session_id}'", file=sys.stderr)
+            return
+
+        conn.commit()
+        conn.close()
+        self._print_success(f"✓ Updated context references for {group_id}: {package_ids}")
+
     # ==================== QUERY OPERATIONS ====================
 
     def query(self, sql: str, params: tuple = ()) -> List[Dict]:
@@ -917,6 +1422,16 @@ SUCCESS CRITERIA OPERATIONS:
   update-success-criterion <session> <criterion> [--status X] [--actual Y] [--evidence Z]
                                               Update criterion
 
+CONTEXT PACKAGE OPERATIONS:
+  save-context-package <session> <group_id> <type> <file_path> <producer> <consumers_json> <priority> <summary>
+                                              Save context package (type: research|failures|decisions|handoff|investigation)
+  get-context-packages <session> <group_id> <agent_type> [limit]
+                                              Get context packages for agent spawn (default: limit=3)
+  mark-context-consumed <package_id> <agent_type> [iteration]
+                                              Mark package as consumed (default: iteration=1)
+  update-context-references <group_id> <session> <package_ids_json>
+                                              Update task group context references
+
 QUERY OPERATIONS:
   query <sql>                                 Execute custom SELECT query
   dashboard-snapshot <session>                Get complete dashboard data
@@ -924,16 +1439,61 @@ QUERY OPERATIONS:
 DATABASE MAINTENANCE:
   integrity-check                             Check database integrity
   recover-db                                  Attempt to recover corrupted database
+  detect-paths                                Show auto-detected paths (debugging)
 
 HELP:
   help                                        Show this help message
 
+PATH RESOLUTION:
+  The script auto-detects the database path. Override with:
+  --db PATH           Explicit database path
+  --project-root DIR  Project root (db at DIR/bazinga/bazinga.db)
+  BAZINGA_ROOT env    Environment variable
+
 Examples:
-  bazinga_db.py --db bazinga.db list-sessions 5
-  bazinga_db.py --db bazinga.db query "SELECT * FROM sessions LIMIT 3"
-  bazinga_db.py --db bazinga.db get-task-groups session123
+  bazinga_db.py list-sessions 5                                    # Auto-detect path
+  bazinga_db.py --db bazinga.db list-sessions 5                    # Explicit path
+  bazinga_db.py --project-root /path/to/project list-sessions 5    # Project root
+  bazinga_db.py detect-paths                                       # Show detected paths
+  bazinga_db.py query "SELECT * FROM sessions LIMIT 3"
+  bazinga_db.py get-task-groups session123
 """
     print(help_text)
+
+
+def _resolve_db_path(args) -> str:
+    """Resolve the database path from arguments or auto-detection."""
+    # 1. Explicit --db takes highest priority
+    if args.db:
+        return args.db
+
+    # 2. Try auto-detection via bazinga_paths module
+    if _HAS_BAZINGA_PATHS:
+        try:
+            db_path = get_db_path(
+                override=args.db,
+                project_root=Path(args.project_root) if args.project_root else None
+            )
+            return str(db_path)
+        except RuntimeError as e:
+            print(f"Error: Could not auto-detect database path: {e}", file=sys.stderr)
+            print("Hint: Use --db to specify path explicitly, or ensure you're in a BAZINGA project.", file=sys.stderr)
+            sys.exit(1)
+    else:
+        # Fallback: try to find db relative to script location
+        script_dir = Path(__file__).parent.resolve()
+        # Walk up to find project root
+        current = script_dir
+        for _ in range(10):  # Max 10 levels up
+            candidate = current / 'bazinga' / 'bazinga.db'
+            if (current / '.claude').exists() and (current / 'bazinga').exists():
+                return str(candidate)
+            if current.parent == current:
+                break
+            current = current.parent
+
+        print("Error: --db is required (auto-detection unavailable)", file=sys.stderr)
+        sys.exit(1)
 
 
 def main():
@@ -941,13 +1501,26 @@ def main():
         description='BAZINGA Database Client',
         epilog='Run with "help" command to see all available commands'
     )
-    parser.add_argument('--db', required=True, help='Database path')
+    parser.add_argument('--db', required=False, help='Database path (auto-detected if not provided)')
+    parser.add_argument('--project-root', required=False, help='Project root directory (for auto-detection)')
     parser.add_argument('--quiet', action='store_true', help='Suppress success messages, only show errors')
     parser.add_argument('command', help='Command to execute')
     parser.add_argument('args', nargs=argparse.REMAINDER, help='Command arguments')
 
     args = parser.parse_args()
-    db = BazingaDB(args.db, quiet=args.quiet)
+
+    # Handle detect-paths command before resolving db
+    if args.command == 'detect-paths':
+        if _HAS_BAZINGA_PATHS:
+            info = get_detection_info()
+            print(json.dumps(info, indent=2))
+        else:
+            print(json.dumps({"error": "bazinga_paths module not available"}, indent=2))
+        sys.exit(0)
+
+    # Resolve database path
+    db_path = _resolve_db_path(args)
+    db = BazingaDB(db_path, quiet=args.quiet)
 
     # Parse command and execute
     cmd = args.command
@@ -1070,6 +1643,54 @@ def main():
                 value = cmd_args[i + 1]
                 kwargs[key] = value
             db.update_success_criterion(session_id, criterion, **kwargs)
+        elif cmd == 'save-context-package':
+            session_id = cmd_args[0]
+            group_id = cmd_args[1]
+            package_type = cmd_args[2]
+            file_path = cmd_args[3]
+            producer = cmd_args[4]
+            try:
+                consumers = json.loads(cmd_args[5])
+                if not isinstance(consumers, list):
+                    raise ValueError("consumers_json must be a JSON array of strings")
+                if not all(x and isinstance(x, str) for x in consumers):
+                    raise ValueError("All consumer elements must be non-empty strings")
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"ERROR: Invalid consumers_json argument: {e}", file=sys.stderr)
+                print("Expected: JSON array of agent types, e.g., [\"developer\", \"qa_expert\"]", file=sys.stderr)
+                sys.exit(1)
+            priority = cmd_args[6]
+            summary = cmd_args[7]
+            result = db.save_context_package(session_id, group_id, package_type, file_path, producer, consumers, priority, summary)
+            print(json.dumps(result, indent=2))
+        elif cmd == 'get-context-packages':
+            session_id = cmd_args[0]
+            group_id = cmd_args[1]
+            agent_type = cmd_args[2]
+            limit = int(cmd_args[3]) if len(cmd_args) > 3 else 3
+            # Validate limit is within acceptable range
+            if limit < 1 or limit > 50:
+                print(f"ERROR: limit must be between 1 and 50 (got {limit})", file=sys.stderr)
+                sys.exit(1)
+            result = db.get_context_packages(session_id, group_id, agent_type, limit)
+            print(json.dumps(result, indent=2))
+        elif cmd == 'mark-context-consumed':
+            package_id = int(cmd_args[0])
+            agent_type = cmd_args[1]
+            iteration = int(cmd_args[2]) if len(cmd_args) > 2 else 1
+            db.mark_context_consumed(package_id, agent_type, iteration)
+        elif cmd == 'update-context-references':
+            group_id = cmd_args[0]
+            session_id = cmd_args[1]
+            try:
+                package_ids = json.loads(cmd_args[2])
+                if not isinstance(package_ids, list) or not all(isinstance(x, int) for x in package_ids):
+                    raise ValueError("package_ids must be a JSON array of integers")
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"ERROR: Invalid package_ids argument: {e}", file=sys.stderr)
+                print("Expected: JSON array of integers, e.g., [1, 3, 5]", file=sys.stderr)
+                sys.exit(1)
+            db.update_context_references(group_id, session_id, package_ids)
         elif cmd == 'query':
             if not cmd_args:
                 print("Error: query command requires SQL statement", file=sys.stderr)
