@@ -30,9 +30,10 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install root dependencies
+        run: npm ci --workspaces
 
       - name: Run ESLint
         run: npm run lint -- --format json --output-file eslint-report.json || true
@@ -95,16 +96,16 @@ jobs:
           restore-keys: |
             buildx-cache-
 
-      - name: Build backend services with Docker Compose
+      - name: Build backend and frontend services with Docker Compose
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml build \
-            --build-arg SERVICE_NAME=api-gateway \
             --build-arg NODE_ENV=test
 
-      - name: Verify backend build
+      - name: Verify Docker build
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.test.yml config
-          docker images | grep metapharm || true
+          docker compose -f docker-compose.yml -f docker-compose.test.yml config | head -50
+          echo "Docker images built:"
+          docker images | grep -E "cdc|metapharm|postgres|redis|jaeger" | head -20 || echo "No images found"
 
   build-frontend-services:
     name: Build Frontend Services
@@ -125,20 +126,13 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            ${{ matrix.app }}/package-lock.json
+          cache-dependency-path: '**/package-lock.json'
 
-      - name: Install root dependencies
-        run: npm ci
+      - name: Install workspace dependencies
+        run: npm ci --workspaces
 
-      - name: Install ${{ matrix.app }} dependencies
-        working-directory: ${{ matrix.app }}
-        run: npm ci
-
-      - name: Build ${{ matrix.app }}
-        working-directory: ${{ matrix.app }}
-        run: npm run build
+      - name: Build ${{ matrix.app }} app
+        run: npm run build --workspace=${{ matrix.app }}
         env:
           NODE_ENV: production
 
@@ -148,6 +142,7 @@ jobs:
           name: ${{ matrix.app }}-build
           path: ${{ matrix.app }}/dist
           retention-days: 7
+        continue-on-error: true
 
   unit-tests:
     name: Unit Tests in Docker Containers
@@ -170,8 +165,12 @@ jobs:
 
       - name: Health check - Postgres
         run: |
-          until docker exec ${{ job.services.postgres.id || 'cdc-postgres-1' }} \
-            pg_isready -U metapharm >/dev/null 2>&1; do
+          CONTAINER_ID=$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -q postgres)
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "Error: Postgres container not found"
+            exit 1
+          fi
+          until docker exec "$CONTAINER_ID" pg_isready -U metapharm >/dev/null 2>&1; do
             echo "Waiting for Postgres..."
             sleep 2
           done
@@ -180,8 +179,12 @@ jobs:
 
       - name: Health check - Redis
         run: |
-          until docker exec ${{ job.services.redis.id || 'cdc-redis-1' }} \
-            redis-cli ping >/dev/null 2>&1; do
+          CONTAINER_ID=$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -q redis)
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "Error: Redis container not found"
+            exit 1
+          fi
+          until docker exec "$CONTAINER_ID" redis-cli ping >/dev/null 2>&1; do
             echo "Waiting for Redis..."
             sleep 2
           done
@@ -265,13 +268,18 @@ jobs:
 
       - name: Wait for critical services health
         run: |
-          timeout 120s bash -c 'until \
+          timeout 120s bash -c '
+          POSTGRES_ID=$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -q postgres)
+          REDIS_ID=$(docker compose -f docker-compose.yml -f docker-compose.test.yml ps -q redis)
+
+          until \
             curl -f http://localhost:4000/health 2>/dev/null && \
-            docker exec cdc-postgres-1 pg_isready -U metapharm >/dev/null 2>&1 && \
-            docker exec cdc-redis-1 redis-cli ping >/dev/null 2>&1; do
+            docker exec "$POSTGRES_ID" pg_isready -U metapharm >/dev/null 2>&1 && \
+            docker exec "$REDIS_ID" redis-cli ping >/dev/null 2>&1; do
             echo "Waiting for services..."
             sleep 5
-          done'
+          done
+          '
         timeout-minutes: 3
         continue-on-error: true
 
