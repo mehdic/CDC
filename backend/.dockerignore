@@ -1,0 +1,98 @@
+# Version Control
+.git
+.gitignore
+.gitattributes
+
+# Node modules and package manager files
+node_modules
+npm-debug.log
+npm-error.log
+yarn-error.log
+yarn.lock
+pnpm-lock.yaml
+
+# Build artifacts and compiled code (we rebuild in Docker)
+dist
+build
+*.tsbuildinfo
+
+# Testing and coverage
+coverage
+.nyc_output
+jest.config.js
+jest.*.config.js
+__tests__
+__mocks__
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+
+# IDE and editor config
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+.env.local
+.env.test
+.env.*.local
+
+# Development files
+.env
+.env.development
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Temporary files
+tmp
+temp
+*.log
+*.pid
+*.seed
+
+# Documentation (keep only what's needed)
+docs
+README.md
+CONTRIBUTING.md
+CHANGELOG.md
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+azure-pipelines.yml
+Jenkinsfile
+
+# Database files
+*.sqlite
+*.db
+*.sql
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Docker files
+docker-compose.yml
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Config files not needed in production
+tsconfig.json
+.eslintrc*
+.prettierrc*
+babel.config.js
+
+# Data files
+data/
+bazinga/
+
+# Backup files
+*.bak
+*.backup
+*.swp

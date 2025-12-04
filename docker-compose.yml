@@ -1,0 +1,259 @@
+version: '3.9'
+
+#############################################
+# MetaPharm Connect - Docker Compose
+#############################################
+# Local development setup with all services
+# Services are built using SERVICE_NAME build arg
+#############################################
+
+services:
+  # ========================================
+  # Database Services
+  # ========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: metapharm-postgres
+    environment:
+      POSTGRES_USER: metapharm
+      POSTGRES_PASSWORD: metapharm_dev_password
+      POSTGRES_DB: metapharm_db
+      POSTGRES_INITDB_ARGS: "-c max_connections=200"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metapharm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - metapharm-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: metapharm-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - metapharm-network
+
+  # ========================================
+  # Core Services
+  # ========================================
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: api-gateway
+        NODE_ENV: development
+    container_name: metapharm-api-gateway
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      SERVICE_NAME: api-gateway
+      DATABASE_URL: postgresql://metapharm:metapharm_dev_password@postgres:5432/metapharm_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-secret-key-change-in-production
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - metapharm-network
+
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: auth-service
+        NODE_ENV: development
+    container_name: metapharm-auth-service
+    environment:
+      NODE_ENV: development
+      PORT: 4001
+      SERVICE_NAME: auth-service
+      DATABASE_URL: postgresql://metapharm:metapharm_dev_password@postgres:5432/metapharm_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-secret-key-change-in-production
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    ports:
+      - "4001:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - metapharm-network
+
+  user-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: user-service
+        NODE_ENV: development
+    container_name: metapharm-user-service
+    environment:
+      NODE_ENV: development
+      PORT: 4002
+      SERVICE_NAME: user-service
+      DATABASE_URL: postgresql://metapharm:metapharm_dev_password@postgres:5432/metapharm_db
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    ports:
+      - "4002:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - metapharm-network
+
+  pharmacy-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: pharmacy-service
+        NODE_ENV: development
+    container_name: metapharm-pharmacy-service
+    environment:
+      NODE_ENV: development
+      PORT: 4003
+      SERVICE_NAME: pharmacy-service
+      DATABASE_URL: postgresql://metapharm:metapharm_dev_password@postgres:5432/metapharm_db
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    ports:
+      - "4003:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - metapharm-network
+
+  prescription-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: prescription-service
+        NODE_ENV: development
+    container_name: metapharm-prescription-service
+    environment:
+      NODE_ENV: development
+      PORT: 4004
+      SERVICE_NAME: prescription-service
+      DATABASE_URL: postgresql://metapharm:metapharm_dev_password@postgres:5432/metapharm_db
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: info
+      OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+    ports:
+      - "4004:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - metapharm-network
+
+  # ========================================
+  # Observability Stack
+  # ========================================
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: metapharm-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'true'
+    ports:
+      - "6831:6831/udp"
+      - "4318:4318"
+      - "16686:16686"
+    networks:
+      - metapharm-network
+
+  # ========================================
+  # Notes
+  # ========================================
+  # This docker-compose includes a subset of services for local development:
+  # - API Gateway (main entry point)
+  # - Auth Service (authentication)
+  # - User Service (user management)
+  # - Pharmacy Service (pharmacy operations)
+  # - Prescription Service (prescription management)
+  #
+  # To add more services, follow the pattern above with:
+  # - Unique service name
+  # - SERVICE_NAME build argument
+  # - Unique port (4000 + service_number)
+  # - DATABASE_URL and REDIS_URL dependencies
+  #
+  # To build all 31 services for testing:
+  # ./backend/scripts/build-all-docker-services.sh metapharm-connect latest
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  metapharm-network:
+    driver: bridge
