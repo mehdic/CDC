@@ -79,6 +79,7 @@ jobs:
           flags: backend
           name: backend-coverage
         if: always()
+        continue-on-error: true
 
       - name: Archive test results
         uses: actions/upload-artifact@v4
