@@ -18,7 +18,15 @@ let backendProcess: ChildProcess | null = null;
 async function globalSetup(config: FullConfig) {
   console.log('\n🚀 Starting Playwright E2E Test Suite Setup...\n');
 
-  // Start backend services if not already running
+  // Skip backend startup in CI environment
+  // In CI, tests should use mocks or run against staging
+  if (process.env.CI) {
+    console.log('📌 CI environment detected - skipping backend startup');
+    console.log('   Tests will use mocked API responses or staging backend\n');
+    return;
+  }
+
+  // Start backend services if not already running (local development only)
   const backendURL = 'http://localhost:4000';
 
   console.log('🔧 Checking backend services availability...\n');

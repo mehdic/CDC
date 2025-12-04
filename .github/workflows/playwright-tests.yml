@@ -44,6 +44,7 @@ jobs:
       - name: Run Playwright tests (${{ matrix.browser }})
         working-directory: web
         run: npm run test:e2e -- --project=${{ matrix.browser }}
+        timeout-minutes: 15
         env:
           CI: true
           PLAYWRIGHT_BASE_URL: http://localhost:5173
@@ -92,6 +93,7 @@ jobs:
       - name: Run all Playwright tests
         working-directory: web
         run: npm run test:e2e
+        timeout-minutes: 15
         env:
           CI: true
           PLAYWRIGHT_BASE_URL: http://localhost:5173
