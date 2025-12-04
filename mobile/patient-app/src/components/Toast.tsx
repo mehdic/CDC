@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Animated,
   TouchableOpacity,
-  AccessibilityInfo,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';

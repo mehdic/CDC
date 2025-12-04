@@ -3,7 +3,6 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import {
   useColorScheme,
   ColorSchemeName,
-  Appearance,
 } from 'react-native';
 
 /**

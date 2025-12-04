@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
-  AccessibilityInfo,
 } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -44,8 +43,8 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
   steps,
   onComplete,
   onSkip,
-  title,
-  description,
+  title: _title,
+  description: _description,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const scrollRef = useRef<ScrollView>(null);

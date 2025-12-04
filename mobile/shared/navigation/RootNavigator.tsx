@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { Linking, Platform } from 'react-native';
+import { Linking as _Linking, Platform } from 'react-native';
 
 /**
  * Navigation persistence key

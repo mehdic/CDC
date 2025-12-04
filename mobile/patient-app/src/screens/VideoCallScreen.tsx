@@ -29,7 +29,7 @@ const VideoCallScreen: React.FC = () => {
   const navigation = useNavigation();
   const { teleconsultationId } = route.params as VideoCallProps;
 
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [_accessToken, _setAccessToken] = useState<string | null>(null);
   const [roomSid, setRoomSid] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const [muted, setMuted] = useState(false);

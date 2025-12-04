@@ -19,7 +19,7 @@ interface OfflineIndicatorProps {
  */
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
   position = 'top',
-  showPendingCount = _showPendingCount,
+  showPendingCount: _showPendingCount = true,
 }) => {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);

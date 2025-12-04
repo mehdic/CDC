@@ -5,16 +5,14 @@
 
 import {
   Prescription,
-  PrescriptionStatus,
   CreatePrescriptionRequest,
   CreatePrescriptionResponse,
   TranscribePrescriptionResponse,
   ListPrescriptionsRequest,
-  ListPrescriptionsResponse,
   GetPrescriptionResponse,
   ApiResponse,
 } from '@metapharm/api-types';
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 // API Configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';

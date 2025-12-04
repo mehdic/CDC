@@ -18,11 +18,6 @@ import {
 
 import { teleconsultationService } from '../services/teleconsultationService';
 
-interface TimeSlot {
-  datetime: string;
-  available: boolean;
-}
-
 interface Pharmacist {
   id: string;
   name: string;
@@ -33,8 +28,8 @@ const BookTeleconsultationScreen: React.FC = () => {
   const navigation = useNavigation();
   const [pharmacists, setPharmacists] = useState<Pharmacist[]>([]);
   const [selectedPharmacist, setSelectedPharmacist] = useState<string | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [recordingConsent, setRecordingConsent] = useState(false);
+  const [_selectedSlot, _setSelectedSlot] = useState<string | null>(null);
+  const [_recordingConsent, _setRecordingConsent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

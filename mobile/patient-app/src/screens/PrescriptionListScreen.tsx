@@ -3,7 +3,7 @@
  * Displays all prescriptions for the patient with filtering and search
  */
 
-import { Prescription, PrescriptionStatus } from '@metapharm/api-types';
+import { Prescription } from '@metapharm/api-types';
 import { useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';

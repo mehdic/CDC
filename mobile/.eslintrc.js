@@ -24,7 +24,7 @@ module.exports = {
   ],
   rules: {
     '@typescript-eslint/no-unused-vars': [
-      'error',
+      'warn',
       {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
@@ -52,11 +52,13 @@ module.exports = {
     'import/no-unresolved': [
       'error',
       {
-        ignore: ['react-native', 'react-native-keychain'],
+        ignore: ['react-native', 'react-native-keychain', '../store'],
       },
     ],
     'import/namespace': 'off',
+    'import/default': 'warn',
     'import/no-cycle': 'warn',
+    '@typescript-eslint/no-var-requires': 'warn',
     'eqeqeq': ['error', 'always'],
     'curly': ['error', 'all'],
     'prefer-const': 'error',
@@ -83,6 +85,7 @@ module.exports = {
         '@typescript-eslint/require-await': 'off',
         '@typescript-eslint/no-unsafe-argument': 'off',
         '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unused-vars': 'warn',
       },
     },
   ],

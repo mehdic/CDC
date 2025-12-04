@@ -80,7 +80,7 @@ export const MainNavigator: React.FC<MainNavigatorProps> = ({
   tabBarOptions = {},
 }) => {
   // Merge custom tab bar options with defaults
-  const mergedTabBarOptions = {
+  const _mergedTabBarOptions = {
     activeTintColor: tabBarOptions.activeTintColor || '#007AFF',
     inactiveTintColor: tabBarOptions.inactiveTintColor || '#6C757D',
     style: tabBarOptions.style || defaultScreenOptions.tabBarStyle,

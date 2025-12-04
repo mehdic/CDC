@@ -5,7 +5,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import { Platform as _Platform } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 
 /**

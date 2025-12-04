@@ -4,18 +4,15 @@
  * T114 - User Story 1: Prescription Processing & Validation
  */
 
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 import prescriptionService, {
   Prescription,
   PrescriptionStatus,
   ListPrescriptionsParams,
-  ListPrescriptionsResponse,
   ValidatePrescriptionResponse,
   ApprovePrescriptionRequest,
-  ApprovePrescriptionResponse,
   RejectPrescriptionRequest,
-  RejectPrescriptionResponse,
 } from '../services/prescriptionService';
 
 // ============================================================================

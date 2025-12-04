@@ -3,7 +3,7 @@
  * State management for inventory data
  */
 
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 import inventoryService, { InventoryItem, InventoryAlert, InventoryAnalytics, ScanRequest } from '../services/inventoryService';
 

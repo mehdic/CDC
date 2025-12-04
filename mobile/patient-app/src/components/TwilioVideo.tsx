@@ -52,13 +52,13 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(true);
   const [remoteParticipants, setRemoteParticipants] = useState<Participant[]>([]);
-  const [localVideoEnabled, setLocalVideoEnabled] = useState(!audioOnly);
-  const [localAudioEnabled, setLocalAudioEnabled] = useState(true);
-  const [networkQuality, setNetworkQuality] = useState<number>(5);
-  const [reconnecting, setReconnecting] = useState(false);
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [_localVideoEnabled, _setLocalVideoEnabled] = useState(!audioOnly);
+  const [_localAudioEnabled, _setLocalAudioEnabled] = useState(true);
+  const [_networkQuality, _setNetworkQuality] = useState<number>(5);
+  const [_reconnecting, _setReconnecting] = useState(false);
+  const [_reconnectAttempts, _setReconnectAttempts] = useState(0);
   const maxReconnectAttempts = 3;
-  const roomRef = useRef<any>(null);
+  const _roomRef = useRef<any>(null);
 
   useEffect(() => {
     connectToRoom();
@@ -88,15 +88,15 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         onConnected?.();
       });
 
-      TwilioVideo.setOnRoomDidDisconnect((event: any) => {
+      TwilioVideo.setOnRoomDidDisconnect((_event: any) => {
         handleDisconnected();
       });
 
-      TwilioVideo.setOnRoomDidFailToConnect((error: any) => {
-        console.error('Failed to connect to room:', error);
+      TwilioVideo.setOnRoomDidFailToConnect((_error: any) => {
+        console.error('Failed to connect to room:', _error);
         setConnecting(false);
         Alert.alert('Connection Error', 'Failed to connect to video call');
-        onError?.(new Error(error.error || 'Connection failed'));
+        onError?.(new Error(_error.error || 'Connection failed'));
       });
 
       TwilioVideo.setOnParticipantAddedVideoTrack((event: any) => {
@@ -189,7 +189,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
     onDisconnected?.();
   };
 
-  const handleParticipantConnected = (participant: any) => {
+  const _handleParticipantConnected = (participant: any) => {
     console.log('Participant connected:', participant.identity);
 
     const newParticipant: Participant = {
@@ -203,7 +203,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
     onParticipantConnected?.(participant.sid);
   };
 
-  const handleParticipantDisconnected = (participant: any) => {
+  const _handleParticipantDisconnected = (participant: any) => {
     console.log('Participant disconnected:', participant.identity);
 
     setRemoteParticipants((prev) =>
@@ -321,7 +321,7 @@ export const disconnectCall = () => {
   console.log('Disconnecting from call');
 };
 
-const { width, height } = Dimensions.get('window');
+const { width, height: _height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {

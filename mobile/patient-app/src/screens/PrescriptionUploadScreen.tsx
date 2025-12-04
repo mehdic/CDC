@@ -25,7 +25,7 @@ import { uploadPrescription, transcribePrescription, selectUploading, selectUplo
 export const PrescriptionUploadScreen: React.FC = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
-  const [uploadedPrescriptionId, setUploadedPrescriptionId] = useState<string | null>(null);
+  const [_uploadedPrescriptionId, _setUploadedPrescriptionId] = useState<string | null>(null);
 
   const dispatch = useDispatch();
   const navigation = useNavigation();
