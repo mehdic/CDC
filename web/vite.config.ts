@@ -13,6 +13,7 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, './src/shared'),
       '@routes': path.resolve(__dirname, './src/routes'),
     },
+    dedupe: ['date-fns'],
   },
 
   server: {
@@ -44,6 +45,11 @@ export default defineConfig({
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.info', 'console.debug'],
       },
+    },
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true,
+      esmExternals: true,
     },
     rollupOptions: {
       output: {
@@ -135,6 +141,7 @@ export default defineConfig({
       '@mui/icons-material',
       '@emotion/react',
       '@emotion/styled',
+      'date-fns',
     ],
   },
 

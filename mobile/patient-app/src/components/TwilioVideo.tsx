@@ -124,10 +124,10 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
       // Network quality monitoring (INT-006)
       TwilioVideo.setOnNetworkQualityLevelsChanged((event: any) => {
         const quality = event.localQuality || 5;
-        setNetworkQuality(quality);
+        _setNetworkQuality(quality);
 
         // Suggest audio-only if poor connection
-        if (quality < 2 && !audioOnly && localVideoEnabled) {
+        if (quality < 2 && !audioOnly && _localVideoEnabled) {
           Alert.alert(
             'Poor Connection',
             'Video quality is poor. Switch to audio-only mode?',
@@ -147,10 +147,10 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
 
       // Reconnection handling (INT-006)
       TwilioVideo.setOnReconnecting((error: any) => {
-        setReconnecting(true);
-        setReconnectAttempts((prev) => prev + 1);
+        _setReconnecting(true);
+        _setReconnectAttempts((prev) => prev + 1);
 
-        if (reconnectAttempts >= maxReconnectAttempts) {
+        if (_reconnectAttempts >= maxReconnectAttempts) {
           Alert.alert(
             'Connection Lost',
             'Unable to reconnect after multiple attempts. Please try again.',
@@ -167,8 +167,8 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
       });
 
       TwilioVideo.setOnReconnected(() => {
-        setReconnecting(false);
-        setReconnectAttempts(0);
+        _setReconnecting(false);
+        _setReconnectAttempts(0);
         Alert.alert(
           'Connection Restored',
           'Video call has been restored'
@@ -264,7 +264,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
       )}
 
       {/* Local Video (Picture-in-Picture) */}
-      {!audioOnly && localVideoEnabled && (
+      {!audioOnly && _localVideoEnabled && (
         <View style={styles.localVideoContainer}>
           <TwilioVideoLocalView
             enabled={true}
@@ -283,11 +283,11 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
       )}
 
       {/* Reconnecting Overlay (INT-006) */}
-      {reconnecting && (
+      {_reconnecting && (
         <View style={styles.reconnectingOverlay}>
           <ActivityIndicator size="large" color="#ffffff" />
           <Text style={styles.reconnectingText}>
-            Reconnecting... (Attempt {reconnectAttempts}/{maxReconnectAttempts})
+            Reconnecting... (Attempt {_reconnectAttempts}/{maxReconnectAttempts})
           </Text>
         </View>
       )}

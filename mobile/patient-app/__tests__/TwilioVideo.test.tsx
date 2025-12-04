@@ -51,18 +51,18 @@ describe('TwilioVideo', () => {
 
   beforeEach(() => {
     // Manually clear mock calls without clearing the mock implementations
-    mockTwilioVideo.connect.mockClear();
-    mockTwilioVideo.disconnect.mockClear();
-    mockTwilioVideo.setLocalVideoEnabled.mockClear();
-    mockTwilioVideo.setLocalAudioEnabled.mockClear();
-    mockTwilioVideo.setOnRoomDidConnect.mockClear();
-    mockTwilioVideo.setOnRoomDidDisconnect.mockClear();
-    mockTwilioVideo.setOnRoomDidFailToConnect.mockClear();
-    mockTwilioVideo.setOnParticipantAddedVideoTrack.mockClear();
-    mockTwilioVideo.setOnParticipantRemovedVideoTrack.mockClear();
-    mockTwilioVideo.setOnNetworkQualityLevelsChanged.mockClear();
-    mockTwilioVideo.setOnReconnecting.mockClear();
-    mockTwilioVideo.setOnReconnected.mockClear();
+    mockTwilioVideoRef.connect.mockClear();
+    mockTwilioVideoRef.disconnect.mockClear();
+    mockTwilioVideoRef.setLocalVideoEnabled.mockClear();
+    mockTwilioVideoRef.setLocalAudioEnabled.mockClear();
+    mockTwilioVideoRef.setOnRoomDidConnect.mockClear();
+    mockTwilioVideoRef.setOnRoomDidDisconnect.mockClear();
+    mockTwilioVideoRef.setOnRoomDidFailToConnect.mockClear();
+    mockTwilioVideoRef.setOnParticipantAddedVideoTrack.mockClear();
+    mockTwilioVideoRef.setOnParticipantRemovedVideoTrack.mockClear();
+    mockTwilioVideoRef.setOnNetworkQualityLevelsChanged.mockClear();
+    mockTwilioVideoRef.setOnReconnecting.mockClear();
+    mockTwilioVideoRef.setOnReconnected.mockClear();
   });
 
   it('renders loading state initially', () => {
@@ -78,11 +78,11 @@ describe('TwilioVideo', () => {
 
     // Wait for setOnRoomDidConnect to be called
     await waitFor(() => {
-      expect(mockTwilioVideo.setOnRoomDidConnect).toHaveBeenCalled();
+      expect(mockTwilioVideoRef.setOnRoomDidConnect).toHaveBeenCalled();
     });
 
     // Extract the callback from the mock call and trigger it
-    const registeredCallback = mockTwilioVideo.setOnRoomDidConnect.mock.calls[0][0];
+    const registeredCallback = mockTwilioVideoRef.setOnRoomDidConnect.mock.calls[0][0];
     await act(async () => {
       registeredCallback();
     });
@@ -96,11 +96,11 @@ describe('TwilioVideo', () => {
 
     // Wait for setOnRoomDidConnect to be called
     await waitFor(() => {
-      expect(mockTwilioVideo.setOnRoomDidConnect).toHaveBeenCalled();
+      expect(mockTwilioVideoRef.setOnRoomDidConnect).toHaveBeenCalled();
     });
 
     // Extract the callback from the mock call and trigger it
-    const registeredCallback = mockTwilioVideo.setOnRoomDidConnect.mock.calls[0][0];
+    const registeredCallback = mockTwilioVideoRef.setOnRoomDidConnect.mock.calls[0][0];
     await act(async () => {
       registeredCallback();
     });
@@ -114,11 +114,11 @@ describe('TwilioVideo', () => {
 
     // Wait for setOnRoomDidConnect to be called
     await waitFor(() => {
-      expect(mockTwilioVideo.setOnRoomDidConnect).toHaveBeenCalled();
+      expect(mockTwilioVideoRef.setOnRoomDidConnect).toHaveBeenCalled();
     });
 
     // Extract the callback from the mock call and trigger it
-    const registeredCallback = mockTwilioVideo.setOnRoomDidConnect.mock.calls[0][0];
+    const registeredCallback = mockTwilioVideoRef.setOnRoomDidConnect.mock.calls[0][0];
     await act(async () => {
       registeredCallback();
     });
@@ -142,11 +142,11 @@ describe('TwilioVideo', () => {
 
     // Wait for setOnRoomDidConnect to be called
     await waitFor(() => {
-      expect(mockTwilioVideo.setOnRoomDidConnect).toHaveBeenCalled();
+      expect(mockTwilioVideoRef.setOnRoomDidConnect).toHaveBeenCalled();
     });
 
     // Extract the callback from the mock call and trigger it
-    const registeredCallback = mockTwilioVideo.setOnRoomDidConnect.mock.calls[0][0];
+    const registeredCallback = mockTwilioVideoRef.setOnRoomDidConnect.mock.calls[0][0];
     await act(async () => {
       registeredCallback();
     });
@@ -164,11 +164,11 @@ describe('TwilioVideo', () => {
 
     // Wait for setOnRoomDidConnect to be called
     await waitFor(() => {
-      expect(mockTwilioVideo.setOnRoomDidConnect).toHaveBeenCalled();
+      expect(mockTwilioVideoRef.setOnRoomDidConnect).toHaveBeenCalled();
     });
 
     // Extract the callback from the mock call and trigger it
-    const registeredCallback = mockTwilioVideo.setOnRoomDidConnect.mock.calls[0][0];
+    const registeredCallback = mockTwilioVideoRef.setOnRoomDidConnect.mock.calls[0][0];
     await act(async () => {
       registeredCallback();
     });
