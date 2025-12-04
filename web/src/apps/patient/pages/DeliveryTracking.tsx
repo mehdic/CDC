@@ -19,6 +19,8 @@ import {
   Alert,
   CircularProgress,
   IconButton,
+} from '@mui/material';
+import {
   Timeline,
   TimelineItem,
   TimelineSeparator,
@@ -26,7 +28,7 @@ import {
   TimelineContent,
   TimelineDot,
   TimelineOppositeContent,
-} from '@mui/material';
+} from '@mui/lab';
 import {
   Phone as PhoneIcon,
   Chat as ChatIcon,
@@ -37,17 +39,18 @@ import {
   MyLocation as LocationIcon,
   ArrowBack as BackIcon,
 } from '@mui/icons-material';
-import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+// Map components disabled - leaflet not currently installed
+// import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
+// import 'leaflet/dist/leaflet.css';
+// import L from 'leaflet';
 
-// Fix Leaflet default icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
-});
+// // Fix Leaflet default icon issue
+// delete (L.Icon.Default.prototype as any)._getIconUrl;
+// L.Icon.Default.mergeOptions({
+//   iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+//   iconUrl: require('leaflet/dist/images/marker-icon.png'),
+//   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+// });
 
 /**
  * Interfaces
@@ -77,16 +80,17 @@ interface DeliveryTracking {
 
 /**
  * Map Auto-Center Component
+ * Disabled - requires react-leaflet
  */
-const MapAutoCenter: React.FC<{ center: [number, number] }> = ({ center }) => {
-  const map = useMap();
+// const MapAutoCenter: React.FC<{ center: [number, number] }> = ({ center }) => {
+//   const map = useMap();
 
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
+//   useEffect(() => {
+//     map.setView(center, map.getZoom());
+//   }, [center, map]);
 
-  return null;
-};
+//   return null;
+// };
 
 /**
  * Patient Delivery Tracking Page Component
@@ -284,85 +288,33 @@ const PatientDeliveryTracking: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Map */}
+      {/* Map - Disabled (leaflet not installed) */}
       <Paper elevation={3} sx={{ height: 500, mb: 3, overflow: 'hidden' }}>
+        {/* Map disabled - requires react-leaflet and leaflet packages
         {tracking.current_location ? (
           <MapContainer
             center={mapCenter}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
           >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <MapAutoCenter center={mapCenter} />
-
-            {/* Driver Marker */}
-            <Marker
-              position={[tracking.current_location.latitude, tracking.current_location.longitude]}
-              icon={L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41],
-              })}
-            >
-              <Popup>
-                <strong>Driver Location</strong>
-                <br />
-                {tracking.driver_info?.name || 'Delivery Personnel'}
-              </Popup>
-            </Marker>
-
-            {/* Patient Marker */}
-            <Marker
-              position={[patientLocation.latitude, patientLocation.longitude]}
-              icon={L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41],
-              })}
-            >
-              <Popup>
-                <strong>Your Location</strong>
-                <br />
-                Delivery destination
-              </Popup>
-            </Marker>
-
-            {/* Route Line */}
-            <Polyline
-              positions={[
-                [tracking.current_location.latitude, tracking.current_location.longitude],
-                [patientLocation.latitude, patientLocation.longitude],
-              ]}
-              color="#667eea"
-              weight={3}
-              opacity={0.7}
-              dashArray="10, 10"
-            />
+            ...map content...
           </MapContainer>
         ) : (
-          <Box
-            sx={{
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: 'grey.100',
-            }}
-          >
-            <Typography variant="h6" color="text.secondary">
-              Waiting for driver location...
-            </Typography>
-          </Box>
-        )}
+        */}
+        <Box
+          sx={{
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'grey.100',
+          }}
+        >
+          <Typography variant="h6" color="text.secondary">
+            Map feature disabled - requires react-leaflet package
+          </Typography>
+        </Box>
+        {/* End of disabled map section */}
       </Paper>
 
       {/* Driver Info Card */}

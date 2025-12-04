@@ -15,7 +15,7 @@ import {
   Person as PersonIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
-  Calendar as CalendarIcon,
+  DateRange as CalendarIcon,
 } from '@mui/icons-material';
 import type { DoctorPatient } from '../types/doctor';
 

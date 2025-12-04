@@ -284,14 +284,14 @@ export const TreatmentView: React.FC<TreatmentViewProps> = ({ patientId }) => {
               <Table data-testid="prescriptions-table">
                 <TableHead>
                   <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                    <TableCell fontWeight="bold">Médicament</TableCell>
-                    <TableCell fontWeight="bold">Dosage</TableCell>
-                    <TableCell fontWeight="bold">Fréquence</TableCell>
-                    <TableCell align="center" fontWeight="bold">
+                    <TableCell sx={{ fontWeight: 'bold' }}>Médicament</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Dosage</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Fréquence</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>
                       Quantité
                     </TableCell>
-                    <TableCell fontWeight="bold">Statut</TableCell>
-                    <TableCell align="right" fontWeight="bold">
+                    <TableCell sx={{ fontWeight: 'bold' }}>Statut</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 'bold' }}>
                       Actions
                     </TableCell>
                   </TableRow>
@@ -319,10 +319,10 @@ export const TreatmentView: React.FC<TreatmentViewProps> = ({ patientId }) => {
             <Table data-testid="history-table">
               <TableHead>
                 <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                  <TableCell fontWeight="bold">Traitement</TableCell>
-                  <TableCell fontWeight="bold">Période</TableCell>
-                  <TableCell fontWeight="bold">Médicaments</TableCell>
-                  <TableCell fontWeight="bold">Résultat</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Traitement</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Période</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Médicaments</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Résultat</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

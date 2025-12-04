@@ -22,13 +22,15 @@ import {
   MenuItem,
   CircularProgress,
   Alert,
+} from '@mui/material';
+import {
   Timeline,
   TimelineItem,
   TimelineSeparator,
   TimelineConnector,
   TimelineContent,
   TimelineDot,
-} from '@mui/material';
+} from '@mui/lab';
 import {
   CheckCircle as CheckIcon,
   LocalShipping as ShippingIcon,
@@ -51,11 +53,11 @@ const STATUS_COLORS: Record<
   string,
   'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error'
 > = {
-  pending: 'default',
-  confirmed: 'primary',
+  pending: 'info' as any,
+  confirmed: 'info' as any,
   preparing: 'warning',
-  ready: 'secondary',
-  in_transit: 'info',
+  ready: 'success',
+  in_transit: 'info' as any,
   delivered: 'success',
   cancelled: 'error',
 };

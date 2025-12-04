@@ -170,7 +170,6 @@ export const DeliveryManagement: React.FC = () => {
           loading={loading}
           onDelete={handleDeleteDelivery}
           onTrack={handleTrackClick}
-          onAssign={handleAssignClick}
         />
       </Paper>
 

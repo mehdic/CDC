@@ -64,7 +64,7 @@ export const PatientList: React.FC = () => {
     });
   };
 
-  const handleSortChange = (e: React.ChangeEvent<HTMLInputElement | { value: unknown }>) => {
+  const handleSortChange = (e: any) => {
     const value = e.target.value as string;
     setFilters({
       ...filters,

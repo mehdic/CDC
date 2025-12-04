@@ -5,6 +5,7 @@
  * FR-021, FR-022: View scheduled consultations and receive reminders
  */
 
+import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -16,7 +17,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+
 import {
   teleconsultationService,
   Teleconsultation,
@@ -121,9 +122,9 @@ const ConsultationDashboardScreen: React.FC = () => {
     const diffMs = scheduled.getTime() - now.getTime();
     const diffMins = Math.floor(diffMs / 60000);
 
-    if (diffMins < 0) return 'Now';
-    if (diffMins < 60) return `in ${diffMins} min`;
-    if (diffMins < 1440) return `in ${Math.floor(diffMins / 60)} hours`;
+    if (diffMins < 0) {return 'Now';}
+    if (diffMins < 60) {return `in ${diffMins} min`;}
+    if (diffMins < 1440) {return `in ${Math.floor(diffMins / 60)} hours`;}
     return `in ${Math.floor(diffMins / 1440)} days`;
   };
 

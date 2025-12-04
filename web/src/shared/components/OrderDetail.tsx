@@ -289,8 +289,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId }) => {
               <Chip
                 label={order.payment_status}
                 color={order.payment_status === 'paid' ? 'success' : 'warning'}
-                fullWidth
-                sx={{ mb: 2 }}
+                sx={{ mb: 2, width: '100%' }}
               />
               {order.payment_method && (
                 <Typography variant="body2" color="text.secondary">

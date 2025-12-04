@@ -5,6 +5,7 @@
  * FR-021: Patients MUST be able to view available time slots and book appointments
  */
 
+import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -14,7 +15,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+
 import { teleconsultationService } from '../services/teleconsultationService';
 
 interface TimeSlot {

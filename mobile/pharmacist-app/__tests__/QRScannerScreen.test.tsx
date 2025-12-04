@@ -3,12 +3,13 @@
  * Covers: INT-009 (RNCamera), INT-010 (Camera Permissions)
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
 import { Alert, Platform } from 'react-native';
+import * as Permissions from 'react-native-permissions';
+
 import { QRScannerScreen } from '../src/screens/QRScannerScreen';
 import { scanQRCode } from '../src/store/inventorySlice';
-import * as Permissions from 'react-native-permissions';
 
 // Mock dependencies
 jest.mock('@react-navigation/native', () => ({

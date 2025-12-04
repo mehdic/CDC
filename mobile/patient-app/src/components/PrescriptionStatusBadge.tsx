@@ -3,9 +3,9 @@
  * Displays the current status of a prescription with appropriate styling
  */
 
+import { PrescriptionStatus } from '@metapharm/api-types';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { PrescriptionStatus } from '@metapharm/api-types';
 
 interface PrescriptionStatusBadgeProps {
   status: PrescriptionStatus;

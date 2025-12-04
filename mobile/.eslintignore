@@ -1,0 +1,9 @@
+node_modules/
+android/
+ios/
+dist/
+.next/
+out/
+build/
+coverage/
+*.bundle.js

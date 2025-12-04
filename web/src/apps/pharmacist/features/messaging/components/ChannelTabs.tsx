@@ -76,7 +76,6 @@ export const ChannelTabs: React.FC<ChannelTabsProps> = ({
         value={getTabIndex(activeChannel)}
         onChange={handleChange}
         aria-label="messaging channels"
-        disabled={disabled}
         variant="scrollable"
         scrollButtons="auto"
       >

@@ -6,9 +6,10 @@
  * CRITICAL: Validates prescription data before submission to prevent errors
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
 import { Alert } from 'react-native';
+
 import ConsultationPrescriptionScreen from '../src/screens/ConsultationPrescriptionScreen';
 import { Teleconsultation, TeleconsultationStatus } from '../src/services/teleconsultationService';
 

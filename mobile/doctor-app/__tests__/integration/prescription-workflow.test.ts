@@ -16,7 +16,6 @@ import {
   Patient,
   Pharmacy,
   PrescriptionItem,
-  Prescription,
   CreatePrescriptionRequest,
 } from '../../src/types';
 
@@ -186,7 +185,7 @@ describe('Doctor App - Prescription Creation Workflow', () => {
       };
 
       const validate = (req: CreatePrescriptionRequest): string | null => {
-        if (req.items.length === 0) return 'Please add at least one medication';
+        if (req.items.length === 0) {return 'Please add at least one medication';}
         return null;
       };
 
@@ -203,7 +202,7 @@ describe('Doctor App - Prescription Creation Workflow', () => {
       };
 
       const validate = (req: CreatePrescriptionRequest): string | null => {
-        if (!req.patient_id) return 'Please select a patient';
+        if (!req.patient_id) {return 'Please select a patient';}
         return null;
       };
 
@@ -220,7 +219,7 @@ describe('Doctor App - Prescription Creation Workflow', () => {
       };
 
       const validate = (req: CreatePrescriptionRequest): string | null => {
-        if (!req.pharmacy_id) return 'Please select a pharmacy';
+        if (!req.pharmacy_id) {return 'Please select a pharmacy';}
         return null;
       };
 

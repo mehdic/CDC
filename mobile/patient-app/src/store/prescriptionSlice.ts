@@ -3,12 +3,13 @@
  * Manages prescription data, loading states, and errors for the Patient App
  */
 
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import {
   Prescription,
   PrescriptionStatus,
   ListPrescriptionsRequest,
 } from '@metapharm/api-types';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+
 import prescriptionService from '../services/prescriptionService';
 
 // State interface

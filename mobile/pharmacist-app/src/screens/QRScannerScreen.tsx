@@ -15,16 +15,17 @@
  * - react-native-permissions (for camera access)
  */
 
+import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, Platform, Linking } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useDispatch } from 'react-redux';
-import { scanQRCode } from '../store/inventorySlice';
-import { AppDispatch } from '../store';
+import { RNCamera } from 'react-native-camera';
 import { request, PERMISSIONS, RESULTS, check } from 'react-native-permissions';
+import { useDispatch } from 'react-redux';
+
+import { AppDispatch } from '../store';
+import { scanQRCode } from '../store/inventorySlice';
 
 // Import from react-native-camera (production implementation)
-import { RNCamera } from 'react-native-camera';
 
 export const QRScannerScreen: React.FC = () => {
   const navigation = useNavigation();

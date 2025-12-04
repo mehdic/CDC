@@ -4,8 +4,8 @@
  * Used for authenticated users to navigate between main features
  */
 
-import React from 'react';
 import { createBottomTabNavigator, BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
+import React from 'react';
 import { Platform } from 'react-native';
 
 /**

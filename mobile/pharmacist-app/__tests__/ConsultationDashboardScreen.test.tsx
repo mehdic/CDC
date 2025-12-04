@@ -4,9 +4,10 @@
  * FR-021, FR-022: View scheduled consultations and receive reminders
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
 import { Alert } from 'react-native';
+
 import ConsultationDashboardScreen from '../src/screens/ConsultationDashboardScreen';
 import { teleconsultationService, Teleconsultation, TeleconsultationStatus } from '../src/services/teleconsultationService';
 

@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 import { useCart } from '../hooks/useCart';
 
 interface CartIconProps {
@@ -24,7 +24,7 @@ export const CartIcon: React.FC<CartIconProps> = ({ onClick, className = '' }) =
       data-testid="cart-icon"
       aria-label={`Shopping cart with ${itemCount} items`}
     >
-      <ShoppingCart className="w-6 h-6" />
+      <ShoppingCartIcon className="w-6 h-6" sx={{ fontSize: 24 }} />
       {itemCount > 0 && (
         <span
           className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"

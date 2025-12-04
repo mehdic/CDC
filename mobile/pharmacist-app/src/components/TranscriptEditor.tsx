@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+
 import { EditHistoryEntry } from '../services/teleconsultationService';
 
 interface TranscriptEditorProps {

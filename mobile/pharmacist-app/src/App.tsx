@@ -4,18 +4,19 @@
  * T105 - User Story 1: Prescription Processing & Validation
  */
 
-import React from 'react';
-import { SafeAreaView, StyleSheet, StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
+import React from 'react';
+import { SafeAreaView, StyleSheet, StatusBar } from 'react-native';
+import { Provider } from 'react-redux';
+
+import DoctorMessageScreen from './screens/DoctorMessageScreen';
+import PrescriptionQueueScreen from './screens/PrescriptionQueueScreen';
+import PrescriptionReviewScreen from './screens/PrescriptionReviewScreen';
 import queueReducer from './store/queueSlice';
 
 // Screens
-import PrescriptionQueueScreen from './screens/PrescriptionQueueScreen';
-import PrescriptionReviewScreen from './screens/PrescriptionReviewScreen';
-import DoctorMessageScreen from './screens/DoctorMessageScreen';
 
 // ============================================================================
 // Redux Store Configuration

@@ -3,10 +3,10 @@
  * Validates that all new mobile services are properly implemented
  */
 
-import PushNotificationsService from '../src/services/push-notifications';
-import OfflineStorageService from '../src/services/offline-storage';
 import BiometricAuthService from '../src/services/biometric-auth';
 import LocationService from '../src/services/location';
+import OfflineStorageService from '../src/services/offline-storage';
+import PushNotificationsService from '../src/services/push-notifications';
 
 describe('Mobile Features Integration', () => {
   describe('Services Initialization', () => {

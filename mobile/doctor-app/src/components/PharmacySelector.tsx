@@ -19,9 +19,10 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { Pharmacy } from '../types';
-import { pharmacyApi } from '../services/api';
+
 import { theme } from '../App';
+import { pharmacyApi } from '../services/api';
+import { Pharmacy } from '../types';
 
 interface PharmacySelectorProps {
   selectedPharmacy?: Pharmacy;

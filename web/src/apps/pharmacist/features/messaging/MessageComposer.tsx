@@ -128,7 +128,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
       {/* Attachments Preview */}
       {attachments.length > 0 && (
-        <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', useFlexGap: true }}>
+        <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
           {attachments.map((attachment) => (
             <Chip
               key={attachment.id}

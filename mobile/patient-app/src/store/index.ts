@@ -3,9 +3,10 @@
  * Configures the Redux store with slices and middleware
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { configureStore } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import prescriptionReducer from './prescriptionSlice';
 import teleconsultationReducer from './teleconsultationSlice';
 

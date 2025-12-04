@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
+
 import OfflineStorageService from '../services/offline-storage';
 
 interface OfflineIndicatorProps {
@@ -18,7 +19,7 @@ interface OfflineIndicatorProps {
  */
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
   position = 'top',
-  showPendingCount = true,
+  showPendingCount = _showPendingCount,
 }) => {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);

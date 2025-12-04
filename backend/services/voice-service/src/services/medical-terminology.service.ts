@@ -183,4 +183,28 @@ export class MedicalTerminologyService {
   getPharmaTerms(): string[] {
     return [...this.pharmaTerms];
   }
+
+  /**
+   * Detect doctor-related medical terms
+   */
+  detectDoctorTerms(text: string): { hasTerms: boolean; terms: string[] } {
+    const analysis = this.analyzeMedicalContent(text);
+    return analysis.doctor;
+  }
+
+  /**
+   * Detect pharmaceutical terms
+   */
+  detectPharmaTerms(text: string): { hasTerms: boolean; terms: string[] } {
+    const analysis = this.analyzeMedicalContent(text);
+    return analysis.pharma;
+  }
+
+  /**
+   * Extract all keywords from medical text
+   */
+  extractKeywords(text: string): string[] {
+    const analysis = this.analyzeMedicalContent(text);
+    return analysis.allKeywords;
+  }
 }

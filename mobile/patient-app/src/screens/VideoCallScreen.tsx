@@ -5,6 +5,7 @@
  * FR-023: Video calls MUST use end-to-end encryption with visible security indicators
  */
 
+import { useRoute, useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -13,7 +14,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+
 import { teleconsultationService } from '../services/teleconsultationService';
 
 // NOTE: In production, would use actual Twilio Video SDK (Task T155)

@@ -26,6 +26,7 @@ export interface ProductFilters {
   requiresPrescription?: boolean;
   limit?: number;
   offset?: number;
+  [key: string]: unknown;
 }
 
 export interface ProductsResponse {

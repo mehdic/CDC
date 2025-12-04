@@ -4,6 +4,7 @@
  */
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+
 import inventoryService, { InventoryItem, InventoryAlert, InventoryAnalytics, ScanRequest } from '../services/inventoryService';
 
 interface InventoryState {

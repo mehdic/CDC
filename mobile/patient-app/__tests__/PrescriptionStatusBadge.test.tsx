@@ -2,10 +2,12 @@
  * Unit Tests for PrescriptionStatusBadge Component
  */
 
-import React from 'react';
-import { render } from '@testing-library/react-native';
-import { PrescriptionStatusBadge } from '../src/components/PrescriptionStatusBadge';
 import { PrescriptionStatus } from '@metapharm/api-types';
+import { render } from '@testing-library/react-native';
+import React from 'react';
+
+import { PrescriptionStatusBadge } from '../src/components/PrescriptionStatusBadge';
+
 
 describe('PrescriptionStatusBadge', () => {
   it('renders pending status correctly', () => {

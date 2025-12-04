@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
+
 import PushNotificationsService, {
   PushNotification,
 } from '../services/push-notifications';

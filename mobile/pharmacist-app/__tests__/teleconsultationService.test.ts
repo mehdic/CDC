@@ -57,6 +57,7 @@ const mockClient = {
 
 // NOW import the service (after mocks are set up)
 import axios from 'axios';
+
 import teleconsultationService, {
   Teleconsultation,
   TeleconsultationStatus,

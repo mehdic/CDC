@@ -14,11 +14,12 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { fetchPrescriptionQueue, setFilters } from '../store/queueSlice';
-import { Prescription, PrescriptionStatus } from '../services/prescriptionService';
+import { useDispatch, useSelector } from 'react-redux';
+
 import { ConfidenceWarning } from '../components/ConfidenceWarning';
+import { Prescription, PrescriptionStatus } from '../services/prescriptionService';
+import { fetchPrescriptionQueue, setFilters } from '../store/queueSlice';
 
 // ============================================================================
 // Types

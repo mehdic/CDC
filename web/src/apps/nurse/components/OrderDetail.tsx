@@ -23,6 +23,8 @@ import {
   CircularProgress,
   Alert,
   IconButton,
+} from '@mui/material';
+import {
   Timeline,
   TimelineItem,
   TimelineSeparator,
@@ -30,7 +32,7 @@ import {
   TimelineContent,
   TimelineDot,
   TimelineOppositeContent,
-} from '@mui/material';
+} from '@mui/lab';
 import {
   ArrowBack as BackIcon,
   Print as PrintIcon,
@@ -149,7 +151,7 @@ export const OrderDetail: React.FC = () => {
                       ? 'info'
                       : 'warning'
                   }
-                  size="large"
+                  size="medium"
                 />
               </Box>
             </CardContent>

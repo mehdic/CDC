@@ -3,13 +3,14 @@
  * Main navigation configuration for the Patient App
  */
 
-import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React from 'react';
+
+import PrescriptionDetailScreen from '../screens/PrescriptionDetailScreen';
 import PrescriptionListScreen from '../screens/PrescriptionListScreen';
 import PrescriptionUploadScreen from '../screens/PrescriptionUploadScreen';
-import PrescriptionDetailScreen from '../screens/PrescriptionDetailScreen';
 
 // Stack and Tab navigators
 const Stack = createStackNavigator();

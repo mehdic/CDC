@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+
 import {
   teleconsultationService,
   ConsultationNote,

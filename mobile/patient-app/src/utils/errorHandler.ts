@@ -290,7 +290,7 @@ export function validateField(
   rules: any,
 ): string | null {
   const fieldRules = rules[fieldName];
-  if (!fieldRules) return null;
+  if (!fieldRules) {return null;}
 
   // Required validation
   if (fieldRules.required && !value) {
@@ -307,7 +307,8 @@ export function validateField(
 
   // Phone validation
   if (fieldRules.phone && value) {
-    const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
+    // Allow phone numbers with country code, spaces, dashes, dots, or parentheses (minimum 7 chars)
+    const phoneRegex = /^[+]?[0-9\s().-]{7,}$/;
     if (!phoneRegex.test(value)) {
       return 'Please enter a valid phone number';
     }

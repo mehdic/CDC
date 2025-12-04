@@ -153,8 +153,14 @@ export class NotificationService {
     // Get user preferences
     const preferences = await this.getUserPreferences(payload.userId);
 
-    // Determine which channels to use
-    const channels = this.determineChannels(payload, preferences);
+    // If a specific type is provided, ensure it's included (don't let preferences override it)
+    let channels = [payload.type];
+
+    // For urgent messages, also add other enabled channels
+    if (payload.priority === NotificationPriority.URGENT) {
+      const additionalChannels = this.determineChannels(payload, preferences);
+      channels = Array.from(new Set([...channels, ...additionalChannels]));
+    }
 
     // Create notification record
     const notification = this.notificationRepository.create({
@@ -413,6 +419,9 @@ export class NotificationService {
       // Use global preferences
       if (preferences.email_enabled) {
         channels.push(NotificationType.EMAIL);
+      }
+      if (preferences.sms_enabled) {
+        channels.push(NotificationType.SMS);
       }
       if (preferences.push_enabled) {
         channels.push(NotificationType.PUSH);

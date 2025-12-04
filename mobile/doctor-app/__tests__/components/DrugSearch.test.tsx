@@ -3,8 +3,9 @@
  * Tests AI-powered drug search functionality
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
+
 import DrugSearch from '../../src/components/DrugSearch';
 import { drugApi } from '../../src/services/api';
 

@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+
 import {
   teleconsultationService,
   PatientMedicalRecord,
@@ -54,7 +55,7 @@ const PatientRecordSidebar: React.FC<PatientRecordSidebarProps> = ({
     }
   };
 
-  if (!visible) return null;
+  if (!visible) {return null;}
 
   if (loading) {
     return (

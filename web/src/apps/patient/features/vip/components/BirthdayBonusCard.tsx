@@ -121,7 +121,7 @@ export const BirthdayBonusCard: React.FC<BirthdayBonusCardProps> = ({
           <Typography variant="h6" gutterBottom>
             Pas de bonus d'anniversaire
           </Typography>
-          <Typography variant="body2" opacity={0.9}>
+          <Typography variant="body2" sx={{ opacity: 0.9 }}>
             Votre bonus d'anniversaire n'a pas encore été généré. Revenez plus tard!
           </Typography>
           {onRefresh && (
@@ -224,7 +224,7 @@ export const BirthdayBonusCard: React.FC<BirthdayBonusCardProps> = ({
               {BONUS_TYPE_ICONS[bonus.bonusType]}
             </Box>
             <Box sx={{ color: 'white' }}>
-              <Typography variant="subtitle2" opacity={0.9}>
+              <Typography variant="subtitle2" sx={{ opacity: 0.9 }}>
                 {BONUS_TYPE_LABELS[bonus.bonusType]}
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>

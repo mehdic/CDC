@@ -32,7 +32,7 @@ import {
 import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
-  Trending as TrendingIcon,
+  TrendingUp as TrendingIcon,
   Download as DownloadIcon,
   BarChart as BarChartIcon,
 } from '@mui/icons-material';
@@ -363,23 +363,23 @@ export const ObservanceStats: React.FC = () => {
           <Table data-testid="observance-table">
             <TableHead>
               <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableCell fontWeight="bold">Patient</TableCell>
-                <TableCell align="center" fontWeight="bold">
+                <TableCell sx={{ fontWeight: 'bold' }}>Patient</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>
                   Observance
                 </TableCell>
-                <TableCell align="center" fontWeight="bold">
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>
                   Médicaments
                 </TableCell>
-                <TableCell align="center" fontWeight="bold">
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>
                   Rendez-vous
                 </TableCell>
-                <TableCell align="center" fontWeight="bold">
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>
                   Tests Lab
                 </TableCell>
-                <TableCell align="center" fontWeight="bold">
+                <TableCell align="center" sx={{ fontWeight: 'bold' }}>
                   Tendance
                 </TableCell>
-                <TableCell align="right" fontWeight="bold">
+                <TableCell align="right" sx={{ fontWeight: 'bold' }}>
                   Actions
                 </TableCell>
               </TableRow>

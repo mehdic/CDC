@@ -3,7 +3,6 @@
  * Handles all prescription-related API calls for the Patient App
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import {
   Prescription,
   PrescriptionStatus,
@@ -15,6 +14,7 @@ import {
   GetPrescriptionResponse,
   ApiResponse,
 } from '@metapharm/api-types';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
 // API Configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';

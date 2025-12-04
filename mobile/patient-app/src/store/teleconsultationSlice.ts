@@ -5,6 +5,7 @@
  */
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+
 import { teleconsultationService } from '../services/teleconsultationService';
 
 // Types

@@ -107,6 +107,18 @@ export const NavigationScreen: React.FC<NavigationScreenProps> = ({ navigation, 
     return () => clearInterval(interval);
   }, [currentLocation, isTracking, dispatch]);
 
+  // Animate map to show current location
+  useEffect(() => {
+    if (!mapRef.current || !currentLocation) return;
+    const mapRegion = {
+      latitude: currentLocation.latitude,
+      longitude: currentLocation.longitude,
+      latitudeDelta: 0.1,
+      longitudeDelta: 0.1,
+    };
+    mapRef.current.animateToRegion(mapRegion, 1000);
+  }, [currentLocation]);
+
   const handleArrived = async () => {
     if (!activeDelivery || !nextWaypoint) return;
 
@@ -186,13 +198,6 @@ export const NavigationScreen: React.FC<NavigationScreenProps> = ({ navigation, 
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
   };
-
-  // Animate map to show current location
-  useEffect(() => {
-    if (mapRef.current && currentLocation) {
-      mapRef.current.animateToRegion(mapRegion, 1000);
-    }
-  }, [currentLocation]);
 
   return (
     <View style={styles.container}>

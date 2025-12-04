@@ -26,7 +26,7 @@ import {
 import {
   Send as SendIcon,
   AttachFile as AttachFileIcon,
-  Paperclip as PaperclipIcon,
+  AttachFile as PaperclipIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
 import { useDoctorMessageThreads, useDoctorMessageThread, useSendMessage } from '../hooks/useDoctor';

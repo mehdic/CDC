@@ -8,6 +8,7 @@
  * FR-026: Consultations MUST support audio-only fallback for poor network conditions
  */
 
+import { useRoute, useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -19,18 +20,18 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+
+import ConsultationNotes from '../components/ConsultationNotes';
+import ConsultationStatus from '../components/ConsultationStatus';
+import PatientRecordSidebar from '../components/PatientRecordSidebar';
+import TranscriptEditor from '../components/TranscriptEditor';
+import TwilioVideoComponent from '../components/TwilioVideo';
 import {
   teleconsultationService,
   Teleconsultation,
   JoinResponse,
   ConsultationNote,
 } from '../services/teleconsultationService';
-import ConsultationStatus from '../components/ConsultationStatus';
-import PatientRecordSidebar from '../components/PatientRecordSidebar';
-import ConsultationNotes from '../components/ConsultationNotes';
-import TranscriptEditor from '../components/TranscriptEditor';
-import TwilioVideoComponent from '../components/TwilioVideo';
 
 const { width, height } = Dimensions.get('window');
 
@@ -119,7 +120,7 @@ const PharmacistVideoCallScreen: React.FC = () => {
   };
 
   const handleCreatePrescription = () => {
-    if (!teleconsultation) return;
+    if (!teleconsultation) {return;}
 
     (navigation as any).navigate('ConsultationPrescription', {
       teleconsultation,

@@ -6,6 +6,7 @@
  * FR-022: System MUST send appointment reminder notifications
  */
 
+import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -17,7 +18,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+
 import { teleconsultationService } from '../services/teleconsultationService';
 
 interface Teleconsultation {

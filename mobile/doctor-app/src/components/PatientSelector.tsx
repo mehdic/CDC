@@ -19,9 +19,10 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { Patient } from '../types';
-import { patientApi } from '../services/api';
+
 import { theme } from '../App';
+import { patientApi } from '../services/api';
+import { Patient } from '../types';
 
 interface PatientSelectorProps {
   selectedPatient?: Patient;

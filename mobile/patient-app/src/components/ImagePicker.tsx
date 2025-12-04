@@ -3,7 +3,6 @@
  * Allows users to select prescription images from device gallery
  */
 
-import React from 'react';
 import {
   Alert,
   Platform,

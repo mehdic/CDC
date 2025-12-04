@@ -228,7 +228,7 @@ export const DeliveryDashboard: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" color="text.secondary">
-                      {delivery.tracking_info?.address || 'Address not specified'}
+                      {(delivery.tracking_info?.address as string) || 'Address not specified'}
                     </Typography>
                   </TableCell>
                   <TableCell>

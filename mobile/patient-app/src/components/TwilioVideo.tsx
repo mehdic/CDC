@@ -108,7 +108,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         };
         setRemoteParticipants((prev) => {
           const exists = prev.find((p) => p.sid === event.participant.sid);
-          if (exists) return prev;
+          if (exists) {return prev;}
           return [...prev, newParticipant];
         });
         onParticipantConnected?.(event.participant.sid);

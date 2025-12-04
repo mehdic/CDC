@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+
 import { TeleconsultationStatus } from '../services/teleconsultationService';
 
 interface ConsultationStatusProps {
@@ -61,7 +62,7 @@ const ConsultationStatus: React.FC<ConsultationStatusProps> = ({
   };
 
   const getElapsedTime = (): string | null => {
-    if (!startedAt) return null;
+    if (!startedAt) {return null;}
 
     const start = new Date(startedAt);
     const end = endedAt ? new Date(endedAt) : new Date();
@@ -76,7 +77,7 @@ const ConsultationStatus: React.FC<ConsultationStatusProps> = ({
   };
 
   const getRemainingTime = (): string | null => {
-    if (!startedAt || status !== TeleconsultationStatus.IN_PROGRESS) return null;
+    if (!startedAt || status !== TeleconsultationStatus.IN_PROGRESS) {return null;}
 
     const start = new Date(startedAt);
     const now = new Date();
@@ -84,7 +85,7 @@ const ConsultationStatus: React.FC<ConsultationStatusProps> = ({
     const elapsedMinutes = Math.floor(elapsedMs / 60000);
     const remaining = durationMinutes - elapsedMinutes;
 
-    if (remaining <= 0) return 'Overtime';
+    if (remaining <= 0) {return 'Overtime';}
     return `${remaining} min remaining`;
   };
 

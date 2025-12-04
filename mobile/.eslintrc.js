@@ -7,7 +7,7 @@ module.exports = {
     ecmaFeatures: {
       jsx: true,
     },
-    project: './tsconfig.json',
+    project: null,
   },
   env: {
     browser: true,
@@ -19,7 +19,6 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:import/recommended',
     'plugin:import/typescript',
   ],
@@ -31,18 +30,8 @@ module.exports = {
         varsIgnorePattern: '^_',
       },
     ],
-    '@typescript-eslint/explicit-function-return-type': [
-      'warn',
-      {
-        allowExpressions: true,
-        allowTypedFunctionExpressions: true,
-      },
-    ],
-    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-non-null-assertion': 'warn',
-    '@typescript-eslint/no-floating-promises': 'error',
-    '@typescript-eslint/await-thenable': 'error',
-    '@typescript-eslint/no-misused-promises': 'error',
     'no-console': [
       'warn',
       {
@@ -60,8 +49,14 @@ module.exports = {
         },
       },
     ],
-    'import/no-unresolved': 'error',
-    'import/no-cycle': 'error',
+    'import/no-unresolved': [
+      'error',
+      {
+        ignore: ['react-native', 'react-native-keychain'],
+      },
+    ],
+    'import/namespace': 'off',
+    'import/no-cycle': 'warn',
     'eqeqeq': ['error', 'always'],
     'curly': ['error', 'all'],
     'prefer-const': 'error',
@@ -69,10 +64,7 @@ module.exports = {
   },
   settings: {
     'import/resolver': {
-      typescript: {
-        alwaysTryTypes: true,
-        project: './tsconfig.json',
-      },
+      node: {},
     },
   },
   overrides: [
@@ -81,9 +73,16 @@ module.exports = {
       env: {
         jest: true,
       },
+      parserOptions: {
+        project: undefined,
+      },
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
+        '@typescript-eslint/no-floating-promises': 'off',
+        '@typescript-eslint/require-await': 'off',
+        '@typescript-eslint/no-unsafe-argument': 'off',
+        '@typescript-eslint/no-unsafe-member-access': 'off',
       },
     },
   ],

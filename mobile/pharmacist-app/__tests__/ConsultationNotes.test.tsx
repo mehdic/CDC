@@ -4,9 +4,10 @@
  * FR-025: AI-assisted note-taking with patient consent
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
 import { Alert } from 'react-native';
+
 import ConsultationNotes from '../src/components/ConsultationNotes';
 import { teleconsultationService, ConsultationNote } from '../src/services/teleconsultationService';
 

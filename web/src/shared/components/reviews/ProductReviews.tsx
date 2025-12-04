@@ -248,7 +248,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
 
       {showReviewForm && canReview && (
         <ReviewForm
-          productId={productId}
+          _productId={productId}
           onSubmit={handleReviewSubmit}
           onCancel={() => setShowReviewForm(false)}
         />

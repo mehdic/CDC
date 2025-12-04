@@ -2,8 +2,9 @@
  * Input Component Tests
  */
 
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import React from 'react';
+
 import { Input } from '../components/Input';
 
 describe('Input Component', () => {

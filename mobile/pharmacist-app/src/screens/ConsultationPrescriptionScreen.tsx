@@ -5,6 +5,7 @@
  * FR-027: Pharmacists MUST be able to create prescriptions during or immediately after teleconsultations
  */
 
+import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -16,7 +17,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+
 import { Teleconsultation } from '../services/teleconsultationService';
 
 interface PrescriptionItem {

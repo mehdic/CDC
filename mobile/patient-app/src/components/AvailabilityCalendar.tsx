@@ -5,7 +5,7 @@
  * FR-021: Patients MUST be able to view available time slots and book appointments
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -57,8 +57,8 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
     const isToday = date.toDateString() === today.toDateString();
     const isTomorrow = date.toDateString() === tomorrow.toDateString();
 
-    if (isToday) return 'Today';
-    if (isTomorrow) return 'Tomorrow';
+    if (isToday) {return 'Today';}
+    if (isTomorrow) {return 'Tomorrow';}
 
     // Format as "Mon, Jan 15"
     const options: Intl.DateTimeFormatOptions = {

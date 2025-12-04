@@ -20,9 +20,10 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { DrugSuggestion } from '../types';
-import { drugApi } from '../services/api';
+
 import { theme } from '../App';
+import { drugApi } from '../services/api';
+import { DrugSuggestion } from '../types';
 
 interface DrugSearchProps {
   placeholder?: string;
@@ -81,8 +82,8 @@ const DrugSearch: React.FC<DrugSearchProps> = ({
   };
 
   const getConfidenceBadgeColor = (confidence: number): string => {
-    if (confidence >= 90) return theme.colors.success;
-    if (confidence >= 70) return theme.colors.primary;
+    if (confidence >= 90) {return theme.colors.success;}
+    if (confidence >= 70) {return theme.colors.primary;}
     return theme.colors.warning;
   };
 

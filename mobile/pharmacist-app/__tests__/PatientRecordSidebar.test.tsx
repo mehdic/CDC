@@ -4,9 +4,10 @@
  * FR-024: Pharmacists MUST access patient medical records during consultations
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
 import { Alert } from 'react-native';
+
 import PatientRecordSidebar from '../src/components/PatientRecordSidebar';
 import { teleconsultationService, PatientMedicalRecord } from '../src/services/teleconsultationService';
 

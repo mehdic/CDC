@@ -92,7 +92,7 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
   const handleCreateConversation = async (contact: ContactOption) => {
     try {
       const newConversation = await createNew({
-        type: 'direct',
+        type: 'DIRECT' as any,
         participants: [
           { userId: currentUserId, role: currentRole },
           { userId: contact.id, role: contact.role },
@@ -129,7 +129,7 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
             <Button
               variant="outlined"
               size="small"
-              onClick={refetchConversations}
+              onClick={() => refetchConversations()}
               disabled={conversationsLoading}
               startIcon={<RefreshIcon />}
             >
@@ -200,7 +200,7 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
                   <MessageThread
                     conversationId={selectedConversation.id}
                     currentUserId={currentUserId}
-                    isLoading={messagingLoading}
+                    _isLoading={messagingLoading}
                     onMarkRead={markAsRead}
                   />
                 </Box>

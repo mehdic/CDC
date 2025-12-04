@@ -5,8 +5,8 @@
  */
 
 import { DataSource, Repository } from 'typeorm';
-import { Cart } from '../../../shared/models/Cart';
-import { CartItem } from '../../../shared/models/CartItem';
+import { Cart } from '../../../../shared/models/Cart';
+import { CartItem } from '../../../../shared/models/CartItem';
 import { Product } from '../types/product';
 
 const TAX_RATE = 0.1; // 10% tax

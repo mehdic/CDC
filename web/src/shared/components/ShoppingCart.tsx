@@ -131,10 +131,10 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({ onCheckout, classNam
                   <CartItemComponent
                     key={item.productId}
                     item={item}
-                    availableStock={item.availableStock || 100}
+                    availableStock={100}
                     onRemove={handleRemoveItem}
                     onQuantityChange={(productId, quantity) =>
-                      handleQuantityChange(productId, quantity, item.availableStock || 100)
+                      handleQuantityChange(productId, quantity, 100)
                     }
                     loading={loading}
                   />

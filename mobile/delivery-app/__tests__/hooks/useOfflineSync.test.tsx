@@ -61,7 +61,7 @@ describe('useOfflineSync', () => {
         syncQueue: [
           {
             id: 'sync1',
-            type: 'status_update',
+            type: 'status_update' as const,
             data: { id: 'del1', status: 'delivered' },
             timestamp: new Date().toISOString(),
             retryCount: 0,
@@ -107,7 +107,7 @@ describe('useOfflineSync', () => {
         syncQueue: [
           {
             id: 'sync1',
-            type: 'status_update',
+            type: 'status_update' as const,
             data: { id: 'del1', status: 'delivered' },
             timestamp: new Date().toISOString(),
             retryCount: 0,

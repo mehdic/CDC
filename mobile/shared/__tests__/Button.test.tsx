@@ -2,8 +2,9 @@
  * Button Component Tests
  */
 
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import React from 'react';
+
 import { Button } from '../components/Button';
 
 describe('Button Component', () => {

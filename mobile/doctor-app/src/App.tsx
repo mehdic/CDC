@@ -9,6 +9,8 @@
  * - Error boundary
  */
 
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
@@ -18,15 +20,13 @@ import {
   Text,
   ActivityIndicator,
 } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
 
 // Screens
+import { RootStackParamList } from './navigation/types';
 import CreatePrescriptionScreen from './screens/CreatePrescriptionScreen';
 import SendConfirmationScreen from './screens/SendConfirmationScreen';
 
 // Navigation
-import { RootStackParamList } from './navigation/types';
 
 // ============================================================================
 // Navigation Stack

@@ -4,8 +4,8 @@
  * Used by teleconsultationService and other API services
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 
 // API Configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';

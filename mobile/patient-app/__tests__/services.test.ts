@@ -4,13 +4,13 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import PushNotificationsService from '../src/services/push-notifications';
-import OfflineStorageService from '../src/services/offline-storage';
+
 import BiometricAuthService from '../src/services/biometric-auth';
 import LocationService, {
   Coordinates,
-  PharmacyLocation,
 } from '../src/services/location';
+import OfflineStorageService from '../src/services/offline-storage';
+import PushNotificationsService from '../src/services/push-notifications';
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage');

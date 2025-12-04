@@ -4,8 +4,9 @@
  * FR-028: Track consultation session state
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import React from 'react';
+
 import ConsultationStatus from '../src/components/ConsultationStatus';
 import { TeleconsultationStatus } from '../src/services/teleconsultationService';
 

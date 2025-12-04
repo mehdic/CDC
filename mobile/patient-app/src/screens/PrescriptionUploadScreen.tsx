@@ -3,6 +3,7 @@
  * Allows patients to upload prescription images via camera or gallery
  */
 
+import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   View,
@@ -16,7 +17,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation } from '@react-navigation/native';
+
 import { CameraCapture } from '../components/CameraCapture';
 import { openImagePicker } from '../components/ImagePicker';
 import { uploadPrescription, transcribePrescription, selectUploading, selectUploadProgress } from '../store/prescriptionSlice';

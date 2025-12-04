@@ -69,7 +69,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       } else {
         setMessages((prev) => [...data.messages, ...prev]);
       }
-      setHasMore((data.offset || 0) + (data.messages?.length || 0) < data.total);
+      setHasMore((page * 20) + (data.messages?.length || 0) < data.total);
     }
   }, [data, page]);
 

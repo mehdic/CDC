@@ -108,12 +108,14 @@ export const InventoryManagement: React.FC = () => {
       width: 100,
       getActions: (params) => [
         <GridActionsCellItem
+          key={`edit-${params.row.id}`}
           icon={<EditIcon />}
           label="Edit"
           onClick={() => handleEditItem(params.row)}
           showInMenu={false}
         />,
         <GridActionsCellItem
+          key={`delete-${params.row.id}`}
           icon={<DeleteIcon />}
           label="Delete"
           onClick={() => handleDeleteItem(params.row.id)}
@@ -254,7 +256,7 @@ export const InventoryManagement: React.FC = () => {
     }
   };
 
-  const filteredItems = items.filter((item) => {
+  const filteredItems = items.filter((item: any) => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     return (

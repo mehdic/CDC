@@ -236,3 +236,41 @@ Complete orchestration workflow: `.claude/agents/orchestrator.md`
 5. **Orchestrator never implements** - This rule is absolute and inviolable
 
 ---
+
+## 🔄 GitHub Workflow Monitoring Guidelines
+
+When monitoring GitHub Actions workflows:
+
+### ❌ DO NOT:
+- Use `gh` CLI (may not be installed or authenticated)
+- Wait long periods before checking (no `sleep 180`)
+- Assume workflows are still running without checking
+
+### ✅ DO:
+- Use **WebFetch** to check `https://github.com/{owner}/{repo}/actions` directly
+- Use **GitHub REST API** via WebFetch: `https://api.github.com/repos/{owner}/{repo}/actions/runs`
+- Check status **immediately** after pushing, then every **60 seconds** if still running
+- Maximum **60 seconds** between checks (not minutes)
+
+### Monitoring Loop Pattern:
+```
+1. Push changes to GitHub
+2. Wait 30 seconds for workflows to start
+3. CHECK status via WebFetch (GitHub Actions page or API)
+4. IF any workflow still "in_progress" or "queued":
+   - Wait 60 seconds
+   - Check again
+   - Repeat until all complete or timeout (15 minutes max)
+5. IF all workflows complete:
+   - Report final status (passed/failed)
+   - If any failed, analyze errors and fix
+```
+
+### WebFetch URLs:
+- Actions page: `https://github.com/{owner}/{repo}/actions`
+- API (runs): `https://api.github.com/repos/{owner}/{repo}/actions/runs?per_page=10`
+- Specific run: `https://api.github.com/repos/{owner}/{repo}/actions/runs/{run_id}`
+
+### CRITICAL: Never wait more than 60 seconds between status checks!
+
+---

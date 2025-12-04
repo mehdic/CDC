@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { RefillRequestResponse } from '../../../types/refill.types';
+import { RefillRequestResponse } from '../types/refill.types';
 
 interface UseRefillsOptions {
   patientId?: string;

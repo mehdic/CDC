@@ -20,11 +20,25 @@ module.exports = {
   },
   rules: {
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-explicit-any': 'warn',
     'react/react-in-jsx-scope': 'off',
+    'react/display-name': 'warn',
+    'react/no-unescaped-entities': 'warn',
+    '@typescript-eslint/no-var-requires': 'warn',
+    'react/no-unknown-property': ['error', { ignore: ['jsx'] }],
   },
   overrides: [
     {
       files: ['e2e/**/*.ts', 'e2e/**/*.tsx'],
+      parserOptions: {
+        project: null,
+      },
+      rules: {
+        '@typescript-eslint/no-unused-vars': 'off',
+      },
+    },
+    {
+      files: ['**/__tests__/**/*.tsx', '**/__tests__/**/*.ts', '**/*.test.tsx', '**/*.test.ts'],
       parserOptions: {
         project: null,
       },

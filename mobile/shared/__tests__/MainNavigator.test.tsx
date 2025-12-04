@@ -2,10 +2,12 @@
  * Main Navigator Tests
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
-import { MainNavigator } from '../navigation/MainNavigator';
+import React from 'react';
 import { View, Text } from 'react-native';
+
+import { MainNavigator } from '../navigation/MainNavigator';
+
 
 // Mock navigation modules
 jest.mock('@react-navigation/native', () => ({

@@ -128,7 +128,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 <AttachmentPreview
                   key={attachment.id}
                   attachment={attachment}
-                  isOwn={isOwn}
+                  _isOwn={isOwn}
                 />
               ))}
             </Stack>

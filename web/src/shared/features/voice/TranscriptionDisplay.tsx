@@ -27,7 +27,7 @@ import {
 } from '@mui/material';
 import {
   Edit,
-  Copy,
+  FileCopy as Copy,
   Download,
   Check,
   Close,

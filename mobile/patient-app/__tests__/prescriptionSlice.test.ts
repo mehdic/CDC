@@ -2,6 +2,8 @@
  * Unit Tests for Prescription Redux Slice
  */
 
+import { PrescriptionStatus, Prescription } from '@metapharm/api-types';
+
 import prescriptionReducer, {
   setSelectedPrescription,
   setFilters,
@@ -10,7 +12,6 @@ import prescriptionReducer, {
   setUploadProgress,
   updatePrescription,
 } from '../src/store/prescriptionSlice';
-import { PrescriptionStatus, Prescription } from '@metapharm/api-types';
 
 const mockPrescription: Prescription = {
   id: 'test-123',

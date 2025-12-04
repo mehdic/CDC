@@ -4,9 +4,10 @@
  */
 
 import { DataSource } from 'typeorm';
-import { Cart } from '../../../shared/models/Cart';
-import { CartItem } from '../../../shared/models/CartItem';
-import { User } from '../../../shared/models/User';
+import { Cart } from '../../../../shared/models/Cart';
+import { CartItem } from '../../../../shared/models/CartItem';
+import { User } from '../../../../shared/models/User';
+import { AuditTrailEntry } from '../../../../shared/models/AuditTrailEntry';
 import { CartService } from '../services/cartService';
 import { Product } from '../types/product';
 
@@ -40,7 +41,7 @@ describe('CartService', () => {
     dataSource = new DataSource({
       type: 'better-sqlite3',
       database: ':memory:',
-      entities: [Cart, CartItem, User],
+      entities: [Cart, CartItem, User, AuditTrailEntry],
       synchronize: true,
       logging: false,
     });

@@ -3,9 +3,10 @@
  * Task: T156
  */
 
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import React from 'react';
 import { Alert } from 'react-native';
+
 import VideoControls from '../src/components/VideoControls';
 
 describe('VideoControls', () => {

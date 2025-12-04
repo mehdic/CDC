@@ -4,9 +4,9 @@
  * Efficient location tracking with battery optimization
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Coordinates interface

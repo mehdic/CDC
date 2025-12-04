@@ -4,8 +4,9 @@
  * Used by all MetaPharm mobile apps
  */
 
-import axios, { AxiosInstance, AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import NetInfo from '@react-native-community/netinfo';
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
+
 import { getAuthToken, setAuthToken, getRefreshToken, clearAuthTokens } from '../utils/secureStorage';
 
 // API Configuration

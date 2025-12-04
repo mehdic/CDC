@@ -57,7 +57,7 @@ export const useReviews = (): UseReviewsReturn => {
       setError(null);
 
       try {
-        let endpoint = `${API_BASE_URL}/reviews`;
+        const endpoint = `${API_BASE_URL}/reviews`;
         const params = new URLSearchParams();
 
         if (productId) {

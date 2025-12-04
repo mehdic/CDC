@@ -3,6 +3,10 @@
  * Displays all prescriptions for the patient with filtering and search
  */
 
+import { Prescription, PrescriptionStatus } from '@metapharm/api-types';
+import { useNavigation } from '@react-navigation/native';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -16,7 +20,8 @@ import {
   Image,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation } from '@react-navigation/native';
+
+import PrescriptionStatusBadge from '../components/PrescriptionStatusBadge';
 import {
   fetchPrescriptions,
   refreshPrescriptions,
@@ -25,10 +30,9 @@ import {
   selectLoading,
   selectPagination,
 } from '../store/prescriptionSlice';
-import { Prescription, PrescriptionStatus } from '@metapharm/api-types';
-import PrescriptionStatusBadge from '../components/PrescriptionStatusBadge';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+
+
+
 
 export const PrescriptionListScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);

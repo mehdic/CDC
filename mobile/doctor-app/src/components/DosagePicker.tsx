@@ -19,8 +19,9 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import { DosagePickerState, PrescriptionItem } from '../types';
+
 import { theme } from '../App';
+import { DosagePickerState, PrescriptionItem } from '../types';
 
 interface DosagePickerProps {
   medicationName: string;

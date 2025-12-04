@@ -4,24 +4,20 @@
  * Task: T3-009
  */
 
-import { IVideoProvider } from './video-provider.interface';
+
+import { CallStateMachine } from './call-state-machine';
 import { MockVideoProvider } from './mock-video-provider';
 import { TwilioVideoProvider } from './twilio-video-provider';
-import { CallStateMachine } from './call-state-machine';
 import {
   RoomConfig,
   CallState,
   Participant,
   LocalParticipant,
   VideoRoomCallbacks,
-  VideoError,
-  NetworkQuality,
   CameraPosition,
   AudioDevice,
-  RoomStats,
-  PiPConfig,
-  BackgroundAudioConfig,
 } from './types';
+import { IVideoProvider } from './video-provider.interface';
 
 /**
  * Video room service configuration

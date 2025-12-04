@@ -2,9 +2,10 @@
  * ErrorBoundary Component Tests
  */
 
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import React from 'react';
 import { Text } from 'react-native';
+
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // Component that throws an error

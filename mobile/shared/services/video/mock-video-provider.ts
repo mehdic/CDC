@@ -4,7 +4,6 @@
  * Task: T3-008, T3-009
  */
 
-import { IVideoProvider } from './video-provider.interface';
 import {
   RoomConfig,
   Participant,
@@ -19,6 +18,7 @@ import {
   PiPConfig,
   BackgroundAudioConfig,
 } from './types';
+import { IVideoProvider } from './video-provider.interface';
 
 /**
  * Mock video provider for testing

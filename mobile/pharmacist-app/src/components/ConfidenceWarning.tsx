@@ -38,7 +38,7 @@ export const ConfidenceWarning: React.FC<ConfidenceWarningProps> = ({
 
   // Determine severity level based on confidence score
   const getSeverityLevel = (): 'critical' | 'warning' => {
-    if (confidence < 60) return 'critical'; // Red
+    if (confidence < 60) {return 'critical';} // Red
     return 'warning'; // Yellow
   };
 

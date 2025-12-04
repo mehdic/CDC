@@ -1,11 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
   TextInput,
   TextInputProps,
   TouchableOpacity,
-  AccessibilityInfo,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -245,7 +244,7 @@ export const Validators = {
 
   email: (): FormFieldValidator => ({
     validate: (value) => {
-      if (!value) return null;
+      if (!value) {return null;}
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(value) ? null : 'Please enter a valid email';
     },
@@ -253,7 +252,7 @@ export const Validators = {
 
   phone: (): FormFieldValidator => ({
     validate: (value) => {
-      if (!value) return null;
+      if (!value) {return null;}
       const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/;
       return phoneRegex.test(value)
         ? null
@@ -282,15 +281,15 @@ export const Validators = {
 
   passwordStrength: (): FormFieldValidator => ({
     validate: (value) => {
-      if (!value) return null;
-      if (value.length < 8) return 'Password must be at least 8 characters';
+      if (!value) {return null;}
+      if (value.length < 8) {return 'Password must be at least 8 characters';}
       if (!/[A-Z]/.test(value))
-        return 'Password must contain an uppercase letter';
+        {return 'Password must contain an uppercase letter';}
       if (!/[a-z]/.test(value))
-        return 'Password must contain a lowercase letter';
-      if (!/[0-9]/.test(value)) return 'Password must contain a number';
+        {return 'Password must contain a lowercase letter';}
+      if (!/[0-9]/.test(value)) {return 'Password must contain a number';}
       if (!/[!@#$%^&*]/.test(value))
-        return 'Password must contain a special character';
+        {return 'Password must contain a special character';}
       return null;
     },
   }),

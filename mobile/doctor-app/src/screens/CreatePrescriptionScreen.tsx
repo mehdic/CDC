@@ -12,6 +12,7 @@
  * - Validation before sending
  */
 
+import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useState } from 'react';
 import {
   View,
@@ -22,16 +23,16 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/types';
-import { Patient, Pharmacy, PrescriptionItem, Prescription, PrescriptionSource } from '../types';
-import { theme } from '../App';
 
-// Components
+import { theme } from '../App';
+import DosagePicker from '../components/DosagePicker';
+import DrugSearch from '../components/DrugSearch';
 import PatientSelector from '../components/PatientSelector';
 import PharmacySelector from '../components/PharmacySelector';
-import DrugSearch from '../components/DrugSearch';
-import DosagePicker from '../components/DosagePicker';
+import { RootStackParamList } from '../navigation/types';
+import { Patient, Pharmacy, PrescriptionItem, Prescription, PrescriptionSource } from '../types';
+
+// Components
 
 type CreatePrescriptionScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -118,9 +119,9 @@ const CreatePrescriptionScreen: React.FC<Props> = ({ navigation }) => {
 
   // Validate form
   const validateForm = (): string | null => {
-    if (!patient) return 'Please select a patient';
-    if (!pharmacy) return 'Please select a pharmacy';
-    if (items.length === 0) return 'Please add at least one medication';
+    if (!patient) {return 'Please select a patient';}
+    if (!pharmacy) {return 'Please select a pharmacy';}
+    if (items.length === 0) {return 'Please add at least one medication';}
     return null;
   };
 

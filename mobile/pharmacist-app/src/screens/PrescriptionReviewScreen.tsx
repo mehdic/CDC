@@ -14,16 +14,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+
+import { LowConfidenceFieldsSummary } from '../components/ConfidenceWarning';
+import InteractionWarnings from '../components/InteractionWarnings';
+import PrescriptionActions from '../components/PrescriptionActions';
+import TranscriptionEditor from '../components/TranscriptionEditor';
 import {
   fetchPrescriptionDetails,
   validatePrescription,
   approvePrescription,
   rejectPrescription,
 } from '../store/queueSlice';
-import TranscriptionEditor from '../components/TranscriptionEditor';
-import InteractionWarnings from '../components/InteractionWarnings';
-import { LowConfidenceFieldsSummary } from '../components/ConfidenceWarning';
-import PrescriptionActions from '../components/PrescriptionActions';
 
 // ============================================================================
 // Types

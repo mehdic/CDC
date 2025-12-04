@@ -3,9 +3,9 @@
  * Handles FaceID/TouchID authentication for iOS and Android
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, Alert } from 'react-native';
 import RNKeychain from 'react-native-keychain';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Biometric type

@@ -4,10 +4,10 @@
  * Supports deep linking and navigation state persistence
  */
 
-import React, { useEffect, useState } from 'react';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
 import { Linking, Platform } from 'react-native';
 
 /**

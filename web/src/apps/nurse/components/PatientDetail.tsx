@@ -29,7 +29,7 @@ import {
   LocalPharmacy as PharmacyIcon,
   Warning as WarningIcon,
   Phone as PhoneIcon,
-  Emergency as EmergencyIcon,
+  WarningAmber as EmergencyIcon,
   Print as PrintIcon,
 } from '@mui/icons-material';
 import { usePatient } from '../hooks/usePatients';

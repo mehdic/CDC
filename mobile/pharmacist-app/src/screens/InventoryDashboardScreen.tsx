@@ -9,12 +9,13 @@
  * - Quick actions (Scan QR, View All Items, View Alerts)
  */
 
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchInventoryAnalytics, fetchActiveAlerts } from '../store/inventorySlice';
+
 import { RootState, AppDispatch } from '../store';
+import { fetchInventoryAnalytics, fetchActiveAlerts } from '../store/inventorySlice';
 
 export const InventoryDashboardScreen: React.FC = () => {
   const navigation = useNavigation();

@@ -15,7 +15,6 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-
 import {
   TwilioVideo,
   TwilioVideoLocalView,

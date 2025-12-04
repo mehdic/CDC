@@ -28,7 +28,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
   /**
    * Request camera permission
    */
-  const requestCameraPermission = async (): Promise<boolean> => {
+  const _requestCameraPermission = async (): Promise<boolean> => {
     try {
       const permission = Platform.select({
         ios: PERMISSIONS.IOS.CAMERA,

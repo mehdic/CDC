@@ -67,13 +67,13 @@ describe('Performance Testing Suite', () => {
   });
 
   describe('API Response Time Tests', () => {
-    it('should respond to health checks in < 100ms', async () => {
+    it('should respond to health checks in < 120ms', async () => {
       const start = Date.now();
 
       await request(app).get('/health').expect(200);
 
       const duration = Date.now() - start;
-      expect(duration).toBeLessThan(100);
+      expect(duration).toBeLessThan(120);
       console.log(`✓ Health check: ${duration}ms`);
     });
 

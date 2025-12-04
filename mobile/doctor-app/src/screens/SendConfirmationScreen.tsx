@@ -11,6 +11,8 @@
  * - Success/error handling
  */
 
+import { RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import React, { useState } from 'react';
 import {
   View,
@@ -21,11 +23,10 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RouteProp } from '@react-navigation/native';
+
+import { theme } from '../App';
 import { RootStackParamList } from '../navigation/types';
 import { prescriptionApi } from '../services/api';
-import { theme } from '../App';
 
 type SendConfirmationScreenNavigationProp = StackNavigationProp<
   RootStackParamList,

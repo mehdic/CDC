@@ -3,13 +3,15 @@
  * Task: T155
  */
 
-import React from 'react';
 import { render, waitFor, act } from '@testing-library/react-native';
+import React from 'react';
+
 import TwilioVideoComponent from '../src/components/TwilioVideo';
 
 // Mock the Twilio SDK with callback support
 jest.mock('react-native-twilio-video-webrtc', () => {
-  const React = require('react');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
+  const _React = require('react');
 
   const mockTwilioVideo = {
     connect: jest.fn(),
@@ -29,10 +31,10 @@ jest.mock('react-native-twilio-video-webrtc', () => {
   return {
     TwilioVideo: mockTwilioVideo,
     TwilioVideoLocalView: (props: any) => {
-      return React.createElement('TwilioVideoLocalView', props);
+      return _React.createElement('TwilioVideoLocalView', props);
     },
     TwilioVideoParticipantView: (props: any) => {
-      return React.createElement('TwilioVideoParticipantView', props);
+      return _React.createElement('TwilioVideoParticipantView', props);
     },
   };
 });
@@ -44,7 +46,8 @@ describe('TwilioVideo', () => {
   };
 
   // Get reference to the mock object
-  const { TwilioVideo: mockTwilioVideo } = require('react-native-twilio-video-webrtc');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require, @typescript-eslint/no-unused-vars
+  const { TwilioVideo: mockTwilioVideoRef } = require('react-native-twilio-video-webrtc');
 
   beforeEach(() => {
     // Manually clear mock calls without clearing the mock implementations

@@ -3,6 +3,10 @@
  * Displays detailed information about a specific prescription
  */
 
+import { SafetyWarningLevel, ConfidenceLevel } from '@metapharm/api-types';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import React, { useEffect } from 'react';
 import {
   View,
@@ -16,17 +20,17 @@ import {
   Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+
+import PrescriptionStatusBadge from '../components/PrescriptionStatusBadge';
 import {
   fetchPrescription,
   selectSelectedPrescription,
   selectLoading,
   transcribePrescription,
 } from '../store/prescriptionSlice';
-import { SafetyWarningLevel, ConfidenceLevel } from '@metapharm/api-types';
-import PrescriptionStatusBadge from '../components/PrescriptionStatusBadge';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+
+
+
 
 type RootStackParamList = {
   PrescriptionDetail: { prescriptionId: string };
@@ -57,7 +61,7 @@ export const PrescriptionDetailScreen: React.FC = () => {
    * Retry transcription
    */
   const handleRetryTranscription = async () => {
-    if (!prescription) return;
+    if (!prescription) {return;}
 
     try {
       await dispatch(transcribePrescription(prescription.id) as any);
@@ -73,7 +77,7 @@ export const PrescriptionDetailScreen: React.FC = () => {
    * Format date for display
    */
   const formatDate = (dateString: string | undefined): string => {
-    if (!dateString) return 'N/A';
+    if (!dateString) {return 'N/A';}
     try {
       const date = new Date(dateString);
       return format(date, 'dd MMMM yyyy à HH:mm', { locale: fr });

@@ -3,7 +3,6 @@
  */
 
 import { prescriptionService } from '../src/services/prescriptionService';
-import { PrescriptionStatus } from '@metapharm/api-types';
 
 describe('PrescriptionService', () => {
   describe('API Configuration', () => {

@@ -6,8 +6,9 @@
  * CRITICAL: This test suite validates healthcare compliance requirements
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor, getAllByText } from '@testing-library/react-native';
+import React from 'react';
+
 import TranscriptEditor from '../src/components/TranscriptEditor';
 import { EditHistoryEntry } from '../src/services/teleconsultationService';
 

@@ -4,8 +4,8 @@
  * Handles Login, Register, MFA verification, and Password reset flows
  */
 
-import React from 'react';
 import { createStackNavigator, StackNavigationOptions } from '@react-navigation/stack';
+import React from 'react';
 
 /**
  * Auth stack param list

@@ -46,7 +46,10 @@ describe('NotificationService', () => {
 
   beforeEach(() => {
     mockNotificationRepo = {
-      create: jest.fn((data) => ({ ...data, id: 'notification-456' })),
+      create: jest.fn((data) => {
+        const notification = Object.assign(new Notification(), { ...data, id: 'notification-456' });
+        return notification;
+      }),
       save: jest.fn((notification) => Promise.resolve(notification)),
       findOne: jest.fn(),
       createQueryBuilder: jest.fn(() => ({
@@ -86,6 +89,11 @@ describe('NotificationService', () => {
     notificationService.registerProvider(mockEmailProvider);
     notificationService.registerProvider(mockSMSProvider);
     notificationService.registerProvider(mockPushProvider);
+
+    // Clear provider state
+    mockEmailProvider.clearSentNotifications();
+    mockSMSProvider.clearSentNotifications();
+    mockPushProvider.clearSentNotifications();
 
     jest.clearAllMocks();
   });

@@ -74,11 +74,11 @@ const getStatusLabel = (status: MessageStatus): string => {
 const getSizeProps = (size: 'small' | 'medium' | 'large') => {
   switch (size) {
     case 'small':
-      return { fontSize: 'small' };
+      return { fontSize: 'small' as const };
     case 'large':
-      return { fontSize: 'large' };
+      return { fontSize: 'large' as const };
     default:
-      return { fontSize: 'medium' };
+      return { fontSize: 'medium' as const };
   }
 };
 

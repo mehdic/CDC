@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { Trash2, Plus, Minus } from 'lucide-react';
+import { Delete as DeleteIcon, Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
 import { CartItem } from '../hooks/useCart';
 
 interface CartItemComponentProps {
@@ -94,7 +94,7 @@ export const CartItemComponent: React.FC<CartItemComponentProps> = ({
             className="p-1 hover:bg-gray-200 disabled:hover:bg-gray-100 rounded transition-colors"
             aria-label="Decrease quantity"
           >
-            <Minus className="w-4 h-4" />
+            <RemoveIcon className="w-4 h-4" sx={{ fontSize: 16 }} />
           </button>
 
           <input
@@ -115,7 +115,7 @@ export const CartItemComponent: React.FC<CartItemComponentProps> = ({
             className="p-1 hover:bg-gray-200 disabled:hover:bg-gray-100 rounded transition-colors"
             aria-label="Increase quantity"
           >
-            <Plus className="w-4 h-4" />
+            <AddIcon className="w-4 h-4" sx={{ fontSize: 16 }} />
           </button>
         </div>
 
@@ -130,7 +130,7 @@ export const CartItemComponent: React.FC<CartItemComponentProps> = ({
         className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
         aria-label={`Remove ${item.name}`}
       >
-        <Trash2 className="w-5 h-5" />
+        <DeleteIcon className="w-5 h-5" sx={{ fontSize: 20 }} />
       </button>
     </div>
   );

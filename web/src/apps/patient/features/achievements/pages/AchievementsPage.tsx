@@ -116,6 +116,7 @@ export const AchievementsPage: React.FC = () => {
   const handleCreateGoal = async () => {
     try {
       await createGoal({
+        patientId,
         goalType: newGoal.goalType as any,
         targetValue: newGoal.targetValue,
         currentValue: 0,
@@ -123,7 +124,6 @@ export const AchievementsPage: React.FC = () => {
         targetDate: new Date(newGoal.targetDate),
         status: 'active',
         progress: 0,
-        checkIns: [],
       });
       setGoalDialogOpen(false);
       setNewGoal({ goalType: 'weight', targetValue: 0, targetDate: '' });

@@ -11,6 +11,9 @@ import { DriverSettlement, SettlementStatus } from '../../../../../shared/models
 import { User, UserRole } from '../../../../../shared/models/User';
 import { Order, OrderStatus } from '../../../../../shared/models/Order';
 import { Pharmacy } from '../../../../../shared/models/Pharmacy';
+import { AuditTrailEntry } from '../../../../../shared/models/AuditTrailEntry';
+import { Cart } from '../../../../../shared/models/Cart';
+import { CartItem } from '../../../../../shared/models/CartItem';
 
 describe('COD System Unit Tests', () => {
   let dataSource: DataSource;
@@ -22,7 +25,7 @@ describe('COD System Unit Tests', () => {
     dataSource = new DataSource({
       type: 'better-sqlite3',
       database: ':memory:',
-      entities: [CODTransaction, DriverSettlement, User, Order, Pharmacy],
+      entities: [CODTransaction, DriverSettlement, User, Order, Pharmacy, AuditTrailEntry, Cart, CartItem],
       synchronize: true,
       logging: false,
     });

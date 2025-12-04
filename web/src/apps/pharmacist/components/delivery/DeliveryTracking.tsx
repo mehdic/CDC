@@ -13,6 +13,8 @@ import {
   Box,
   Typography,
   Chip,
+} from '@mui/material';
+import {
   Timeline,
   TimelineItem,
   TimelineSeparator,
@@ -20,7 +22,7 @@ import {
   TimelineContent,
   TimelineDot,
   TimelineOppositeContent,
-} from '@mui/material';
+} from '@mui/lab';
 import {
   CheckCircle as CheckIcon,
   LocalShipping as ShippingIcon,
@@ -37,23 +39,23 @@ interface DeliveryTrackingProps {
 }
 
 const getStatusIcon = (status: DeliveryStatus, isActive: boolean) => {
-  const color = isActive ? 'primary' : 'grey';
+  const sx = isActive ? {} : { color: 'text.disabled' };
 
   switch (status) {
     case DeliveryStatus.PENDING:
-      return <PackageIcon color={color} />;
+      return <PackageIcon sx={sx} color={isActive ? 'primary' : 'inherit'} />;
     case DeliveryStatus.ASSIGNED:
-      return <PackageIcon color={color} />;
+      return <PackageIcon sx={sx} color={isActive ? 'primary' : 'inherit'} />;
     case DeliveryStatus.IN_TRANSIT:
-      return <ShippingIcon color={color} />;
+      return <ShippingIcon sx={sx} color={isActive ? 'primary' : 'inherit'} />;
     case DeliveryStatus.DELIVERED:
-      return <CheckIcon color={color} />;
+      return <CheckIcon sx={sx} color={isActive ? 'primary' : 'inherit'} />;
     case DeliveryStatus.FAILED:
       return <ErrorIcon color="error" />;
     case DeliveryStatus.CANCELLED:
       return <CancelIcon color="warning" />;
     default:
-      return <PackageIcon color={color} />;
+      return <PackageIcon sx={sx} color={isActive ? 'primary' : 'inherit'} />;
   }
 };
 

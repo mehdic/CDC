@@ -27,7 +27,7 @@ const AudioFallback: React.FC<AudioFallbackProps> = ({
   connectionQuality = 'good',
   audioEnabled,
   onSwitchToVideo,
-  onToggleAudio,
+  _onToggleAudio,
 }) => {
   const getQualityColor = () => {
     switch (connectionQuality) {

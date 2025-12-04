@@ -66,6 +66,7 @@ export interface OrderFilters {
   payment_status?: PaymentStatus[];
   limit?: number;
   offset?: number;
+  [key: string]: unknown;
 }
 
 export interface OrdersResponse {
