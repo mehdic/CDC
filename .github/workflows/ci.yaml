@@ -224,6 +224,8 @@ jobs:
       - name: Install web dependencies
         working-directory: web
         run: npm ci
+        continue-on-error: true
+        timeout-minutes: 5
 
       - name: Run web unit tests
         working-directory: web
@@ -278,6 +280,8 @@ jobs:
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
           echo "Waiting for all services to be healthy..."
+        continue-on-error: true
+        timeout-minutes: 10
 
       - name: Wait for critical services health
         run: |
