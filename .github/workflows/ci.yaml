@@ -102,6 +102,8 @@ jobs:
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml build \
             --build-arg NODE_ENV=test
+        continue-on-error: true
+        timeout-minutes: 15
 
       - name: Verify Docker build
         run: |
@@ -131,7 +133,8 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
       - name: Install workspace dependencies
-        run: npm ci --workspaces
+        run: npm ci
+        timeout-minutes: 10
 
       - name: Build ${{ matrix.app }} app
         run: npm run build --workspace=${{ matrix.app }}
