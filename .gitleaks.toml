@@ -1,0 +1,35 @@
+# Gitleaks configuration for MetaPharm Connect
+# Excludes test environment files with placeholder/test-only secrets
+# This allowlist prevents false positives from test configuration files
+
+title = "MetaPharm Connect Gitleaks Config"
+version = 1
+
+[allowlist]
+description = "Allowlist for test files and known safe patterns"
+
+# Exclude test environment files
+paths = [
+  '''\.env\.test$''',
+  '''\.env\.example$''',
+  '''test/.*''',
+  '''__tests__/.*''',
+  '''.*\.test\.ts$''',
+  '''.*\.spec\.ts$''',
+  '''.*\.test\.js$''',
+  '''.*\.spec\.js$''',
+  '''.*\.test\.py$''',
+  '''coverage/.*''',
+]
+
+# Allowlist specific known test secrets (clearly marked as test-only)
+regexes = [
+  '''test-jwt-secret.*''',
+  '''test-refresh-token-secret.*''',
+  '''test-access-key''',
+  '''test-secret-key''',
+  '''TestPass123!''',
+  '''test@metapharm\.ch''',
+  '''123456789012''',
+  '''arn:aws:kms:.*:key/test-key-id''',
+]
