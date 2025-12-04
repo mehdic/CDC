@@ -12,6 +12,7 @@ on:
     paths:
       - 'mobile/**'
       - 'package.json'
+  workflow_dispatch: # Allow manual trigger
 
 jobs:
   test:
