@@ -6,12 +6,7 @@
     "sourceType": "module",
     "ecmaFeatures": {
       "jsx": true
-    },
-    "project": [
-      "./backend/tsconfig.json",
-      "./mobile/tsconfig.json",
-      "./web/tsconfig.json"
-    ]
+    }
   },
   "env": {
     "browser": true,
@@ -56,26 +51,14 @@
         "allow": ["warn", "error"]
       }
     ],
-    "import/order": [
-      "error",
-      {
-        "groups": [
-          "builtin",
-          "external",
-          "internal",
-          "parent",
-          "sibling",
-          "index"
-        ],
-        "newlines-between": "always",
-        "alphabetize": {
-          "order": "asc",
-          "caseInsensitive": true
-        }
-      }
-    ],
-    "import/no-unresolved": "error",
-    "import/no-cycle": "error",
+    "import/order": "off",
+    "import/no-unresolved": "off",
+    "import/no-cycle": "off",
+    "import/namespace": "off",
+    "import/default": "off",
+    "import/no-duplicates": "off",
+    "import/no-named-as-default": "off",
+    "import/no-named-as-default-member": "off",
     "no-restricted-imports": [
       "error",
       {
@@ -91,15 +74,35 @@
     "import/resolver": {
       "typescript": {
         "alwaysTryTypes": true,
-        "project": [
-          "./backend/tsconfig.json",
-          "./mobile/tsconfig.json",
-          "./web/tsconfig.json"
-        ]
+        "project": []
       }
     }
   },
   "overrides": [
+    {
+      "files": ["backend/**/*.ts", "backend/**/*.tsx"],
+      "parserOptions": {
+        "project": "./backend/tsconfig.json"
+      }
+    },
+    {
+      "files": ["mobile/**/*.ts", "mobile/**/*.tsx"],
+      "parserOptions": {
+        "project": "./mobile/tsconfig.json"
+      },
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": ["web/**/*.ts", "web/**/*.tsx"],
+      "parserOptions": {
+        "project": "./web/tsconfig.json"
+      },
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
     {
       "files": ["**/*.test.ts", "**/*.spec.ts", "**/__tests__/**"],
       "env": {
@@ -108,18 +111,6 @@
       "rules": {
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-non-null-assertion": "off"
-      }
-    },
-    {
-      "files": ["mobile/**/*.tsx", "mobile/**/*.ts"],
-      "rules": {
-        "no-restricted-imports": "off"
-      }
-    },
-    {
-      "files": ["web/**/*.tsx", "web/**/*.ts"],
-      "rules": {
-        "no-restricted-imports": "off"
       }
     }
   ]

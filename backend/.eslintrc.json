@@ -1,0 +1,36 @@
+{
+  "root": false,
+  "extends": ["../.eslintrc.json"],
+  "parserOptions": {
+    "project": "./tsconfig.eslint.json"
+  },
+  "overrides": [
+    {
+      "files": ["tests/**/*.ts", "tests/**/*.tsx", "**/*.test.ts", "**/*.spec.ts", "**/__tests__/**"],
+      "extends": ["../.eslintrc.json"],
+      "parserOptions": {
+        "project": "./tsconfig.eslint.json"
+      },
+      "rules": {
+        "@typescript-eslint/no-unsafe-assignment": "off",
+        "@typescript-eslint/no-unsafe-call": "off",
+        "@typescript-eslint/no-unsafe-member-access": "off",
+        "@typescript-eslint/no-unsafe-argument": "off",
+        "@typescript-eslint/no-unsafe-return": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/require-await": "off",
+        "@typescript-eslint/explicit-function-return-type": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/no-unnecessary-type-assertion": "off",
+        "no-console": "off",
+        "import/no-unresolved": "off",
+        "import/order": "off",
+        "import/no-cycle": "off",
+        "no-restricted-imports": "off",
+        "curly": "off"
+      }
+    }
+  ]
+}

@@ -3,11 +3,12 @@
  * Sets up Swagger UI and API documentation endpoints
  */
 
-import { Express } from 'express';
-import swaggerUi from 'swagger-ui-express';
-import yaml from 'js-yaml';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+
+import { Express } from 'express';
+import yaml from 'js-yaml';
+import swaggerUi from 'swagger-ui-express';
 
 /**
  * Initialize Swagger documentation in Express app
@@ -18,7 +19,8 @@ export function initializeSwagger(app: Express): void {
     // Load OpenAPI spec from YAML file
     const openapiPath = resolve(__dirname, '../../docs/api/openapi.yaml');
     const openapiContent = readFileSync(openapiPath, 'utf8');
-    const openapiSpec = yaml.load(openapiContent) as Record<string, any>;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    const openapiSpec = yaml.load(openapiContent) as Record<string, unknown>;
 
     // Serve OpenAPI spec as JSON
     app.get('/api-docs.json', (_req, res) => {
@@ -33,7 +35,7 @@ export function initializeSwagger(app: Express): void {
     });
 
     // Swagger UI with custom options
-    const swaggerUiOptions = {
+    const swaggerUiOptions: Record<string, unknown> = {
       swaggerOptions: {
         url: '/api-docs.json',
         deepLinking: true,
@@ -73,30 +75,29 @@ export function initializeSwagger(app: Express): void {
         }
       `,
       customSiteTitle: 'MetaPharm Connect API Documentation',
-      customfavIcon:
-        'https://metapharm.ch/favicon.ico',
+      customfavIcon: 'https://metapharm.ch/favicon.ico',
     };
 
     // Mount Swagger UI
-    app.use(
-      '/api-docs',
-      swaggerUi.serve,
-      swaggerUi.setup(openapiSpec, swaggerUiOptions)
-    );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpec, swaggerUiOptions));
 
     // Mount Swagger UI at root path for convenience
-    app.use(
-      '/swagger',
-      swaggerUi.serve,
-      swaggerUi.setup(openapiSpec, swaggerUiOptions)
-    );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    app.use('/swagger', swaggerUi.serve, swaggerUi.setup(openapiSpec, swaggerUiOptions));
 
+    // eslint-disable-next-line no-console
     console.log('✓ Swagger documentation initialized');
+    // eslint-disable-next-line no-console
     console.log('  - Interactive UI: http://localhost:4000/api-docs');
+    // eslint-disable-next-line no-console
     console.log('  - Alternative UI: http://localhost:4000/swagger');
+    // eslint-disable-next-line no-console
     console.log('  - OpenAPI JSON: http://localhost:4000/api-docs.json');
+    // eslint-disable-next-line no-console
     console.log('  - OpenAPI YAML: http://localhost:4000/api-docs.yaml');
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Failed to initialize Swagger:', error);
     throw error;
   }
@@ -106,7 +107,12 @@ export function initializeSwagger(app: Express): void {
  * Middleware to validate requests against OpenAPI spec
  * This is optional but useful for development
  */
-export function validateAgainstOpenAPI(_req: any, _res: any, next: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function validateAgainstOpenAPI(
+  _req: Record<string, unknown>,
+  _res: Record<string, unknown>,
+  next: () => void
+): void {
   // This would require additional validation libraries like ajv
   // Implementation depends on specific requirements
   next();

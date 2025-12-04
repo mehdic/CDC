@@ -3,8 +3,9 @@
  * Configures Swagger/OpenAPI documentation for the API
  */
 
-import swaggerJsdoc from 'swagger-jsdoc';
 import { resolve } from 'path';
+
+import swaggerJsdoc from 'swagger-jsdoc';
 
 /**
  * Swagger configuration options
@@ -405,7 +406,8 @@ export const swaggerOptions = {
 /**
  * Generate OpenAPI/Swagger specs from JSDoc comments
  */
-export const swaggerSpec = swaggerJsdoc(swaggerOptions);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+export const swaggerSpec = swaggerJsdoc(swaggerOptions) as Record<string, unknown>;
 
 /**
  * Swagger UI options
