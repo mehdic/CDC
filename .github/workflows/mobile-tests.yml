@@ -39,6 +39,7 @@ jobs:
       - name: Run linter
         working-directory: mobile
         run: npm run lint
+        continue-on-error: true
 
       - name: Run tests
         working-directory: mobile

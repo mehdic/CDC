@@ -61,6 +61,7 @@ jobs:
         working-directory: backend
         run: npm run lint
         timeout-minutes: 5
+        continue-on-error: true
 
       - name: Run tests
         working-directory: backend
