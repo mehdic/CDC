@@ -41,7 +41,6 @@ export const createMedicalRecordsRouter = (dataSource: DataSource): Router => {
       UserRole.PHARMACIST,
       UserRole.DOCTOR,
       UserRole.NURSE,
-      UserRole.ADMIN,
     ]),
     requireOwnPatientAccess,
     filterRecordsByRole,
@@ -60,7 +59,6 @@ export const createMedicalRecordsRouter = (dataSource: DataSource): Router => {
       UserRole.PHARMACIST,
       UserRole.DOCTOR,
       UserRole.NURSE,
-      UserRole.ADMIN,
     ]),
     controller.getRecordById
   );
@@ -72,7 +70,7 @@ export const createMedicalRecordsRouter = (dataSource: DataSource): Router => {
   router.post(
     '/records',
     validateCreateMedicalRecord,
-    requireAuth([UserRole.DOCTOR, UserRole.NURSE, UserRole.PHARMACIST, UserRole.ADMIN]),
+    requireAuth([UserRole.DOCTOR, UserRole.NURSE, UserRole.PHARMACIST]),
     controller.createRecord
   );
 
@@ -84,7 +82,7 @@ export const createMedicalRecordsRouter = (dataSource: DataSource): Router => {
     '/records/:id',
     validateRecordId,
     validateUpdateMedicalRecord,
-    requireAuth([UserRole.DOCTOR, UserRole.NURSE, UserRole.ADMIN]),
+    requireAuth([UserRole.DOCTOR, UserRole.NURSE]),
     controller.updateRecord
   );
 
@@ -95,7 +93,7 @@ export const createMedicalRecordsRouter = (dataSource: DataSource): Router => {
   router.delete(
     '/records/:id',
     validateRecordId,
-    requireAuth([UserRole.DOCTOR, UserRole.ADMIN]),
+    requireAuth([UserRole.DOCTOR]),
     controller.deleteRecord
   );
 
@@ -106,7 +104,7 @@ export const createMedicalRecordsRouter = (dataSource: DataSource): Router => {
   router.get(
     '/records/patient/:patientId/access-logs',
     validatePatientId,
-    requireAuth([UserRole.PATIENT, UserRole.ADMIN]),
+    requireAuth([UserRole.PATIENT]),
     requireOwnPatientAccess,
     controller.getAccessLogs
   );
@@ -123,7 +121,6 @@ export const createMedicalRecordsRouter = (dataSource: DataSource): Router => {
       UserRole.PHARMACIST,
       UserRole.DOCTOR,
       UserRole.NURSE,
-      UserRole.ADMIN,
     ]),
     requireOwnPatientAccess,
     controller.getRecordCounts

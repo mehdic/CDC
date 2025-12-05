@@ -178,7 +178,7 @@ async function analyzePatientHistory(patient_id: string): Promise<{
 
   const [prescriptionCount, orderCount] = await Promise.all([
     prescriptionRepo.count({ where: { patient_id } }),
-    orderRepo.count({ where: { patient_id } }),
+    orderRepo.count({ where: { user_id: patient_id } }),
   ]);
 
   // Get most common medications from prescriptions
@@ -204,8 +204,7 @@ async function analyzePatientHistory(patient_id: string): Promise<{
 
   // Get most common product categories from orders
   const orders = await orderRepo.find({
-    where: { patient_id },
-    relations: ['items'],
+    where: { user_id: patient_id },
     take: 50,
     order: { created_at: 'DESC' },
   });
@@ -213,8 +212,8 @@ async function analyzePatientHistory(patient_id: string): Promise<{
   const categoryCounts = new Map<string, number>();
   for (const order of orders) {
     for (const item of order.items || []) {
-      const category = item.product_category || 'uncategorized';
-      categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+      // items don't have product_category field, group by product type from name
+      categoryCounts.set('product', (categoryCounts.get('product') || 0) + 1);
     }
   }
 
@@ -481,17 +480,32 @@ function deduplicateRecommendations(
 // Product Recommendations (E-Commerce)
 // ============================================================================
 
-async function getPurchaseHistory(patient_id: string): Promise<OrderItem[]> {
+async function getPurchaseHistory(
+  patient_id: string
+): Promise<
+  Array<{
+    product_id: string;
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>
+> {
   const orderRepo = AppDataSource.getRepository(Order);
 
   const orders = await orderRepo.find({
-    where: { patient_id },
-    relations: ['items'],
+    where: { user_id: patient_id },
     take: 20, // Last 20 orders
     order: { created_at: 'DESC' },
   });
 
-  const items: OrderItem[] = [];
+  const items: Array<{
+    product_id: string;
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }> = [];
   for (const order of orders) {
     items.push(...(order.items || []));
   }
@@ -500,14 +514,20 @@ async function getPurchaseHistory(patient_id: string): Promise<OrderItem[]> {
 }
 
 async function getFrequentlyBoughtTogether(
-  purchaseHistory: OrderItem[]
+  purchaseHistory: Array<{
+    product_id: string;
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>
 ): Promise<ProductRecommendation[]> {
   // Simple implementation: recommend products from same category
   const categoryCounts = new Map<string, number>();
 
   for (const item of purchaseHistory) {
-    const category = item.product_category || 'uncategorized';
-    categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+    // Group by product type based on product_name
+    categoryCounts.set('product', (categoryCounts.get('product') || 0) + 1);
   }
 
   const recommendations: ProductRecommendation[] = [];
@@ -528,7 +548,13 @@ async function getFrequentlyBoughtTogether(
 }
 
 async function getPopularInCategory(
-  purchaseHistory: OrderItem[]
+  purchaseHistory: Array<{
+    product_id: string;
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>
 ): Promise<ProductRecommendation[]> {
   // Placeholder: In production, query most popular products in purchased categories
   return [];

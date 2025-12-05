@@ -15,6 +15,7 @@ export { UserRole };
 export interface AuthenticatedRequest extends SharedAuthRequest {
   user?: AuthenticatedUser & {
     id?: string; // Alias for userId for backward compatibility
+    pharmacyId?: string | null;
   };
 }
 
@@ -136,9 +137,16 @@ export const mockAuth = (
   }
 
   req.user = {
-    id: userId,
+    userId,
+    email: `user-${userId}@metapharm.local`, // Mock email for development
     role: userRole,
     pharmacyId,
+    tokenPayload: {
+      userId,
+      email: `user-${userId}@metapharm.local`,
+      role: userRole,
+      pharmacyId,
+    } as any,
   };
 
   next();
