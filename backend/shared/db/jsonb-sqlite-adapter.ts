@@ -74,13 +74,15 @@ export function adaptJsonbColumnsForSqlite(
   }
 
   // Also iterate through view column metadata (for database views)
-  for (const viewColumnMetadata of metadataArgsStorage.viewColumns) {
-    const type = viewColumnMetadata.options?.type;
+  if ((metadataArgsStorage as any).viewColumns) {
+    for (const viewColumnMetadata of (metadataArgsStorage as any).viewColumns) {
+      const type = viewColumnMetadata.options?.type;
 
-    if (type === 'jsonb') {
-      viewColumnMetadata.options.type = 'simple-json' as any;
-    } else if (type === 'timestamp') {
-      viewColumnMetadata.options.type = 'datetime' as any;
+      if (type === 'jsonb') {
+        viewColumnMetadata.options.type = 'simple-json' as any;
+      } else if (type === 'timestamp') {
+        viewColumnMetadata.options.type = 'datetime' as any;
+      }
     }
   }
 }

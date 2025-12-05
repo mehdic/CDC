@@ -445,7 +445,7 @@ async function getPredictions(patient_id: string): Promise<DigitalTwinProfile['p
   return {
     refill_due_dates: refillPredictions,
     upcoming_health_needs: upcomingHealthNeeds.slice(0, 5),
-    recommended_screenings,
+    recommended_screenings: recommendedScreenings,
   };
 }
 

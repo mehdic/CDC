@@ -620,3 +620,29 @@ export function getInputValidationMiddleware() {
     sanitizeBody,
   ];
 }
+
+// ============================================================================
+// Express-Validator Chain Helper
+// ============================================================================
+
+/**
+ * Combine validation chains with error handling
+ * Shorthand for applying express-validator chains followed by error handling
+ *
+ * Usage:
+ * ```typescript
+ * router.post('/endpoint',
+ *   validate([
+ *     body('email').isEmail(),
+ *     body('password').isLength({ min: 8 }),
+ *   ]),
+ *   handler
+ * );
+ * ```
+ *
+ * @param chains Array of express-validator validation chains
+ * @returns Middleware array with validation chains and error handler
+ */
+export function validate(chains: ValidationChain[]) {
+  return [...chains, handleValidationErrors];
+}
