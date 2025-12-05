@@ -56,6 +56,21 @@ export class AppointmentReminderService {
   }
 
   /**
+   * Static helper methods for timezone conversions (for testing)
+   */
+  static toSwissTime(date: Date): Date {
+    return toZonedTime(date, SWISS_TIMEZONE);
+  }
+
+  static fromSwissTime(date: Date): Date {
+    return fromZonedTime(date, SWISS_TIMEZONE);
+  }
+
+  static formatSwissTime(date: Date, formatStr: string = 'yyyy-MM-dd HH:mm:ss'): string {
+    return formatInTimeZone(date, SWISS_TIMEZONE, formatStr);
+  }
+
+  /**
    * Start the reminder scheduler
    * Run this on a cron schedule (e.g., every 15 minutes)
    */
@@ -297,26 +312,6 @@ L'équipe MetaPharm Connect
     });
   }
 
-  /**
-   * Convert UTC time to Swiss timezone
-   */
-  static toSwissTime(date: Date): Date {
-    return toZonedTime(date, SWISS_TIMEZONE);
-  }
-
-  /**
-   * Convert Swiss timezone to UTC
-   */
-  static fromSwissTime(date: Date): Date {
-    return fromZonedTime(date, SWISS_TIMEZONE);
-  }
-
-  /**
-   * Format date in Swiss timezone
-   */
-  static formatSwissTime(date: Date, formatString: string = 'yyyy-MM-dd HH:mm:ss'): string {
-    return formatInTimeZone(date, SWISS_TIMEZONE, formatString);
-  }
 }
 
 /**
