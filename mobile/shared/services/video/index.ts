@@ -9,23 +9,23 @@ export { VideoRoomService } from './video-room-service';
 export type { VideoRoomServiceConfig } from './video-room-service';
 
 // Providers
-export { IVideoProvider } from './video-provider.interface';
+export type { IVideoProvider } from './video-provider.interface';
 export { MockVideoProvider } from './mock-video-provider';
 export { TwilioVideoProvider } from './twilio-video-provider';
 
 // State machine
 export { CallStateMachine } from './call-state-machine';
 
-// Types
+// Types (enums and types)
 export {
   CallState,
   NetworkQuality,
   VideoErrorType,
   AudioDevice,
-  CameraPosition,
 } from './types';
 
 export type {
+  CameraPosition,
   Participant,
   LocalParticipant,
   RoomConfig,

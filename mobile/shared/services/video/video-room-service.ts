@@ -16,6 +16,9 @@ import {
   VideoRoomCallbacks,
   CameraPosition,
   AudioDevice,
+  PiPConfig,
+  BackgroundAudioConfig,
+  RoomStats,
 } from './types';
 import { IVideoProvider } from './video-provider.interface';
 
