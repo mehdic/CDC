@@ -102,7 +102,6 @@ jobs:
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml build \
             --build-arg NODE_ENV=test
-        continue-on-error: true
         timeout-minutes: 15
 
       - name: Verify Docker build
@@ -140,7 +139,6 @@ jobs:
         run: npm run build --workspace=${{ matrix.app }}
         env:
           NODE_ENV: production
-        continue-on-error: true
         timeout-minutes: 10
 
       - name: Archive ${{ matrix.app }} build
