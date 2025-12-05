@@ -48,9 +48,39 @@ jobs:
         working-directory: web
         run: npx playwright install --with-deps chromium
 
-      - name: Run smoke tests
+      - name: Start dev server and run smoke tests
         working-directory: web
-        run: npx playwright test --project=chromium --grep @smoke
+        run: |
+          # Start Vite dev server in background with visible output
+          npm run dev 2>&1 &
+          DEV_PID=$!
+
+          echo "Waiting for dev server to start (PID: $DEV_PID)..."
+
+          # Wait for server to be ready (max 2 minutes)
+          for i in $(seq 1 120); do
+            if curl -s http://localhost:5173 > /dev/null 2>&1; then
+              echo "✅ Dev server is ready!"
+              break
+            fi
+            if [ $i -eq 120 ]; then
+              echo "❌ Dev server failed to start after 2 minutes"
+              # Show any error output from the server
+              kill $DEV_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # Run smoke tests
+          echo "Running smoke tests..."
+          npx playwright test --project=chromium --grep @smoke
+          TEST_EXIT=$?
+
+          # Cleanup
+          kill $DEV_PID 2>/dev/null || true
+
+          exit $TEST_EXIT
         timeout-minutes: 10
         env:
           CI: true
@@ -94,9 +124,38 @@ jobs:
         working-directory: web
         run: npx playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Run Playwright tests
+      - name: Start dev server and run tests
         working-directory: web
-        run: npx playwright test --project=${{ matrix.browser }} --workers=2
+        run: |
+          # Start Vite dev server in background
+          npm run dev 2>&1 &
+          DEV_PID=$!
+
+          echo "Waiting for dev server to start (PID: $DEV_PID)..."
+
+          # Wait for server to be ready (max 2 minutes)
+          for i in $(seq 1 120); do
+            if curl -s http://localhost:5173 > /dev/null 2>&1; then
+              echo "✅ Dev server is ready!"
+              break
+            fi
+            if [ $i -eq 120 ]; then
+              echo "❌ Dev server failed to start after 2 minutes"
+              kill $DEV_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # Run tests with 2 workers
+          echo "Running Playwright tests (${{ matrix.browser }})..."
+          npx playwright test --project=${{ matrix.browser }} --workers=2
+          TEST_EXIT=$?
+
+          # Cleanup
+          kill $DEV_PID 2>/dev/null || true
+
+          exit $TEST_EXIT
         timeout-minutes: 20
         env:
           CI: true
