@@ -3,13 +3,10 @@
  * REST API endpoints for cold chain monitoring management
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
+import { AuthenticatedRequest } from '../../../../shared/middleware/auth';
 import { ColdChainService } from '../services/ColdChainService';
 import { TemperatureAlertService } from '../services/TemperatureAlertService';
-
-interface AuthRequest extends Request {
-  user?: { id: string; role: string };
-}
 
 export class ColdChainController {
   private router: Router;
@@ -25,43 +22,43 @@ export class ColdChainController {
 
   private initializeRoutes(): void {
     // Sensor Management
-    this.router.post('/sensors/register', (req: AuthRequest, res: Response) =>
+    this.router.post('/sensors/register', (req: AuthenticatedRequest, res: Response) =>
       this.registerSensor(req, res)
     );
 
-    this.router.get('/sensors/attention', (req: AuthRequest, res: Response) =>
+    this.router.get('/sensors/attention', (req: AuthenticatedRequest, res: Response) =>
       this.getSensorsRequiringAttention(req, res)
     );
 
     // Temperature Readings
-    this.router.post('/readings', (req: AuthRequest, res: Response) =>
+    this.router.post('/readings', (req: AuthenticatedRequest, res: Response) =>
       this.recordTemperatureReading(req, res)
     );
 
     // Cold Chain Monitoring
-    this.router.post('/monitoring/start', (req: AuthRequest, res: Response) =>
+    this.router.post('/monitoring/start', (req: AuthenticatedRequest, res: Response) =>
       this.startMonitoring(req, res)
     );
 
-    this.router.post('/monitoring/:monitoringId/complete', (req: AuthRequest, res: Response) =>
+    this.router.post('/monitoring/:monitoringId/complete', (req: AuthenticatedRequest, res: Response) =>
       this.completeMonitoring(req, res)
     );
 
-    this.router.get('/monitoring/delivery/:deliveryId', (req: AuthRequest, res: Response) =>
+    this.router.get('/monitoring/delivery/:deliveryId', (req: AuthenticatedRequest, res: Response) =>
       this.getDeliveryMonitoring(req, res)
     );
 
     // Alerts
-    this.router.get('/alerts', (req: AuthRequest, res: Response) =>
+    this.router.get('/alerts', (req: AuthenticatedRequest, res: Response) =>
       this.getAlerts(req, res)
     );
 
-    this.router.post('/alerts/:alertId/resolve', (req: AuthRequest, res: Response) =>
+    this.router.post('/alerts/:alertId/resolve', (req: AuthenticatedRequest, res: Response) =>
       this.resolveAlert(req, res)
     );
   }
 
-  private async registerSensor(req: AuthRequest, res: Response): Promise<void> {
+  private async registerSensor(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { serialNumber, model, manufacturer, driverId, vehicleId } = req.body;
 
@@ -76,7 +73,7 @@ export class ColdChainController {
         manufacturer,
         driverId,
         vehicleId,
-        performedBy: req.user?.id || 'system',
+        performedBy: req.user?.userId || 'system',
       });
 
       if (!result.success) {
@@ -90,7 +87,7 @@ export class ColdChainController {
     }
   }
 
-  private async getSensorsRequiringAttention(req: AuthRequest, res: Response): Promise<void> {
+  private async getSensorsRequiringAttention(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const result = await this.coldChainService.getSensorsRequiringAttention();
 
@@ -105,7 +102,7 @@ export class ColdChainController {
     }
   }
 
-  private async recordTemperatureReading(req: AuthRequest, res: Response): Promise<void> {
+  private async recordTemperatureReading(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { sensorId, temperature, humidity, timestamp, batteryLevel } = req.body;
 
@@ -133,7 +130,7 @@ export class ColdChainController {
     }
   }
 
-  private async startMonitoring(req: AuthRequest, res: Response): Promise<void> {
+  private async startMonitoring(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { deliveryId, productId, sensorId, minTemperature, maxTemperature } = req.body;
 
@@ -166,7 +163,7 @@ export class ColdChainController {
     }
   }
 
-  private async completeMonitoring(req: AuthRequest, res: Response): Promise<void> {
+  private async completeMonitoring(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { monitoringId } = req.params;
 
@@ -183,7 +180,7 @@ export class ColdChainController {
     }
   }
 
-  private async getDeliveryMonitoring(req: AuthRequest, res: Response): Promise<void> {
+  private async getDeliveryMonitoring(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { deliveryId } = req.params;
 
@@ -200,7 +197,7 @@ export class ColdChainController {
     }
   }
 
-  private async getAlerts(req: AuthRequest, res: Response): Promise<void> {
+  private async getAlerts(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const alerts = this.alertService.getActiveAlerts();
       const stats = this.alertService.getAlertStatistics();
@@ -211,7 +208,7 @@ export class ColdChainController {
     }
   }
 
-  private async resolveAlert(req: AuthRequest, res: Response): Promise<void> {
+  private async resolveAlert(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { alertId } = req.params;
 

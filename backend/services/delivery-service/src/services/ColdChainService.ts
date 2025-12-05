@@ -41,7 +41,7 @@ export class ColdChainService {
   }): Promise<{ success: boolean; sensor?: TemperatureSensor; errors: string[] }> {
     const errors: string[] = [];
     try {
-      const existing = await this.sensorRepository.findOne({ where: { serial_number: params.serialNumber } });
+      const existing = await this.sensorRepository.findOne({ where: { serial_number: params.serialNumber } } as any);
       if (existing) {
         errors.push(`Sensor with serial number ${params.serialNumber} already exists`);
         return { success: false, errors };
@@ -73,7 +73,7 @@ export class ColdChainService {
     const alerts: any[] = [];
 
     try {
-      const sensor = await this.sensorRepository.findOne(reading.sensorId);
+      const sensor = await this.sensorRepository.findOne({ where: { id: reading.sensorId } } as any);
       if (!sensor) {
         errors.push(`Sensor ${reading.sensorId} not found`);
         return { success: false, alerts, errors };
@@ -155,7 +155,7 @@ export class ColdChainService {
   }): Promise<{ success: boolean; monitoring?: ColdChainMonitoring; errors: string[] }> {
     const errors: string[] = [];
     try {
-      const sensor = await this.sensorRepository.findOne(params.sensorId);
+      const sensor = await this.sensorRepository.findOne({ where: { id: params.sensorId } } as any);
       if (!sensor) {
         errors.push(`Sensor ${params.sensorId} not found`);
         return { success: false, errors };
@@ -194,7 +194,7 @@ export class ColdChainService {
   }> {
     const errors: string[] = [];
     try {
-      const monitoring = await this.coldChainRepository.findOne(monitoringId);
+      const monitoring = await this.coldChainRepository.findOne({ where: { id: monitoringId } } as any);
       if (!monitoring) {
         errors.push(`Monitoring record ${monitoringId} not found`);
         return { success: false, errors };
