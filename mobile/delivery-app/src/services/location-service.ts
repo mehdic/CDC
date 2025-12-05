@@ -318,7 +318,7 @@ class LocationService {
   /**
    * Handle Location Update
    */
-  private handleLocationUpdate(position: GeolocationPosition): void {
+  private handleLocationUpdate(position: any): void {
     const coords: Coordinates = {
       latitude: position.coords.latitude,
       longitude: position.coords.longitude,

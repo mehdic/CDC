@@ -313,9 +313,11 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
 }) => {
   const slideAnim = useRef(new Animated.Value(400)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
+  const isHiddenRef = useRef(!visible);
 
   useEffect(() => {
     if (visible) {
+      isHiddenRef.current = false;
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
@@ -342,11 +344,13 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
           duration,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]).start(() => {
+        isHiddenRef.current = true;
+      });
     }
   }, [visible, slideAnim, backdropAnim, duration]);
 
-  if (!visible && slideAnim._value === 400) {
+  if (isHiddenRef.current) {
     return null;
   }
 

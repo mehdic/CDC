@@ -202,7 +202,7 @@ export const useRotationAnimation = (options: UseRotationAnimationOptions = {}) 
  * Plays multiple animations in sequence
  */
 interface SequentialAnimationItem {
-  animation: Animated.Animated;
+  animation: Animated.Value | Animated.ValueXY;
   toValue: number;
   duration: number;
 }
@@ -250,7 +250,7 @@ export const useSequentialAnimation = (
  */
 interface UseInterpolatedValueOptions {
   inputRange: number[];
-  outputRange: (string | number)[];
+  outputRange: string[] | number[];
   extrapolate?: 'extend' | 'clamp' | 'identity';
 }
 

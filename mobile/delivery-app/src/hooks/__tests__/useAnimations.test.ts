@@ -22,13 +22,13 @@ describe('useAnimations Hooks', () => {
     it('should initialize with correct initial value', () => {
       const { result } = renderHook(() => useScaleAnimation(1));
 
-      expect(result.current.scaleAnim._value).toBe(1);
+      expect(result.current.scaleAnim.toJSON()).toBe(1);
     });
 
     it('should support custom initial value', () => {
       const { result } = renderHook(() => useScaleAnimation(0.5));
 
-      expect(result.current.scaleAnim._value).toBe(0.5);
+      expect(result.current.scaleAnim.toJSON()).toBe(0.5);
     });
 
     it('should animate to target value', () => {
@@ -48,7 +48,7 @@ describe('useAnimations Hooks', () => {
         result.current.reset();
       });
 
-      expect(result.current.scaleAnim._value).toBe(1);
+      expect(result.current.scaleAnim.toJSON()).toBe(1);
     });
   });
 
@@ -56,13 +56,13 @@ describe('useAnimations Hooks', () => {
     it('should initialize with correct initial value', () => {
       const { result } = renderHook(() => useFadeAnimation(1));
 
-      expect(result.current.fadeAnim._value).toBe(1);
+      expect(result.current.fadeAnim.toJSON()).toBe(1);
     });
 
     it('should support custom initial value', () => {
       const { result } = renderHook(() => useFadeAnimation(0.5));
 
-      expect(result.current.fadeAnim._value).toBe(0.5);
+      expect(result.current.fadeAnim.toJSON()).toBe(0.5);
     });
 
     it('should animate to target value', () => {
@@ -82,7 +82,7 @@ describe('useAnimations Hooks', () => {
         result.current.reset();
       });
 
-      expect(result.current.fadeAnim._value).toBe(1);
+      expect(result.current.fadeAnim.toJSON()).toBe(1);
     });
   });
 
@@ -90,7 +90,7 @@ describe('useAnimations Hooks', () => {
     it('should initialize with default direction x', () => {
       const { result } = renderHook(() => useSlideAnimation());
 
-      expect(result.current.slideAnim._value).toBe(0);
+      expect(result.current.slideAnim.toJSON()).toBe(0);
       expect(result.current.transform).toBeTruthy();
     });
 
@@ -103,7 +103,7 @@ describe('useAnimations Hooks', () => {
     it('should support custom initial value', () => {
       const { result } = renderHook(() => useSlideAnimation({ initialValue: 50 }));
 
-      expect(result.current.slideAnim._value).toBe(50);
+      expect(result.current.slideAnim.toJSON()).toBe(50);
     });
 
     it('should animate to target value', () => {
@@ -123,7 +123,7 @@ describe('useAnimations Hooks', () => {
         result.current.reset();
       });
 
-      expect(result.current.slideAnim._value).toBe(0);
+      expect(result.current.slideAnim.toJSON()).toBe(0);
     });
   });
 
@@ -316,7 +316,7 @@ describe('useAnimations Hooks', () => {
         result.current.reset();
       });
 
-      expect(result.current.swipeAnim._value).toBe(0);
+      expect(result.current.swipeAnim.toJSON()).toBe(0);
     });
   });
 
