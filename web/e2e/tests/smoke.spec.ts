@@ -17,8 +17,8 @@ import { createMockAuthState } from '../utils/auth-helpers';
  * Purpose: Infrastructure verification only. Phase 2 developers will write comprehensive tests.
  */
 
-test.describe('Smoke Tests - Infrastructure Verification', () => {
-  test('should load the application homepage', async ({ page }) => {
+test.describe('Smoke Tests - Infrastructure Verification @smoke', () => {
+  test('should load the application homepage @smoke', async ({ page }) => {
     await page.goto('/');
 
     // Verify page loaded
