@@ -273,4 +273,25 @@ When monitoring GitHub Actions workflows:
 
 ### CRITICAL: Never wait more than 60 seconds between status checks!
 
+### GitHub Token for API Access
+
+A GitHub Personal Access Token is stored in `.env` at the project root (gitignored).
+
+**To use the token for API calls:**
+```bash
+# Load token from .env
+export GITHUB_TOKEN=$(grep GITHUB_TOKEN .env | cut -d'=' -f2)
+
+# Use with curl for authenticated API calls
+curl -H "Authorization: Bearer $GITHUB_TOKEN" \
+  "https://api.github.com/repos/mehdic/CDC/actions/runs"
+
+# Use for downloading workflow logs
+curl -L -H "Authorization: Bearer $GITHUB_TOKEN" \
+  "https://api.github.com/repos/mehdic/CDC/actions/runs/{run_id}/logs" \
+  -o logs.zip
+```
+
+**Token capabilities:** workflow logs, workflow dispatch, repo read access.
+
 ---

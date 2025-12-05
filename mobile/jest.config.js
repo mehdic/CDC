@@ -33,7 +33,10 @@ module.exports = {
     '^@components/(.*)$': '<rootDir>/src/components/$1',
     '^@screens/(.*)$': '<rootDir>/src/screens/$1',
     '^@services/(.*)$': '<rootDir>/src/services/$1',
-    '^@utils/(.*)$': '<rootDir>/src/utils/$1'
+    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
+
+    // Monorepo package aliases
+    '^@metapharm/api-types$': '<rootDir>/../packages/api-types/index.ts'
   },
 
   // Transform ignore patterns - include React Native libraries that need transformation
