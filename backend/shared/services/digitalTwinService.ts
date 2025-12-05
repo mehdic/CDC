@@ -13,12 +13,18 @@
  * Based on: /specs/003-production-readiness/tasks3.md
  */
 
-import { AppDataSource } from '../../services/user-service/src/index';
+// TODO: AppDataSource not available in in-memory implementation
+// import { AppDataSource } from '../../services/user-service/src/index';
 import { User } from '../models/User';
 import { Prescription } from '../models/Prescription';
 import { Order } from '../models/Order';
 import { PrescriptionItem } from '../models/PrescriptionItem';
-import { OrderItem } from '../models/OrderItem';
+// TODO: OrderItem model not found
+// import { OrderItem } from '../models/OrderItem';
+import { decryptUserPII } from '../utils/userDecryption';
+
+// Temporary type until model is created
+type OrderItem = any;
 
 // ============================================================================
 // Types & Interfaces
@@ -168,13 +174,13 @@ export async function getDigitalTwinProfile(patient_id: string): Promise<Digital
     // Calculate demographic info
     const demographic = calculateDemographic(patient);
 
-    // Build complete profile
-    const firstName = patient.first_name_encrypted ? patient.first_name_encrypted.toString() : 'Unknown';
-    const lastName = patient.last_name_encrypted ? patient.last_name_encrypted.toString() : '';
+    // Decrypt patient PII for display
+    const { first_name, last_name } = await decryptUserPII(patient);
 
+    // Build complete profile
     const profile: DigitalTwinProfile = {
       patient_id,
-      patient_name: `${firstName} ${lastName}`.trim(),
+      patient_name: `${first_name} ${last_name}`.trim(),
       age: null, // TODO: Calculate from date_of_birth if available
       demographic,
       medical_history: medicalHistory,

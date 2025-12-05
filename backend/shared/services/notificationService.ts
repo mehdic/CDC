@@ -14,6 +14,7 @@
 import { DataSource, Repository } from 'typeorm';
 import { Notification, NotificationType, NotificationStatus } from '../models/Notification';
 import { User } from '../models/User';
+import { decryptUserPII } from '../utils/userDecryption';
 
 /**
  * Notification categories for organizing notifications
@@ -258,8 +259,14 @@ export class NotificationService {
     }
   ): Promise<Notification> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user || !user.phone) {
-      throw new Error(`User not found or phone number missing: ${userId}`);
+    if (!user) {
+      throw new Error(`User not found: ${userId}`);
+    }
+
+    // Decrypt phone number from encrypted field
+    const { phone } = await decryptUserPII(user);
+    if (!phone) {
+      throw new Error(`Phone number missing for user: ${userId}`);
     }
 
     return this.send({
@@ -271,7 +278,7 @@ export class NotificationService {
       message,
       metadata: options?.metadata,
       sms: {
-        to: user.phone,
+        to: phone,
       },
     });
   }

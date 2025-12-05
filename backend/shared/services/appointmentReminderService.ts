@@ -15,6 +15,7 @@ import { Teleconsultation, TeleconsultationStatus } from '../models/Teleconsulta
 import { NotificationService, NotificationCategory, NotificationPriority } from './notificationService';
 import { format, addHours, subHours, isWithinInterval } from 'date-fns';
 import { toZonedTime, fromZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { getUserWithDecryptedPII } from '../utils/userDecryption';
 
 /**
  * Swiss timezone constant
@@ -140,6 +141,10 @@ export class AppointmentReminderService {
     appointment: Teleconsultation,
     hoursBeforeAppointment: number
   ): Promise<void> {
+    // Decrypt patient and pharmacist PII for use in notifications
+    const patientWithPII = await getUserWithDecryptedPII(appointment.patient);
+    const pharmacistWithPII = await getUserWithDecryptedPII(appointment.pharmacist);
+
     const scheduledTimeSwiss = toZonedTime(appointment.scheduled_at, SWISS_TIMEZONE);
     const formattedTime = formatInTimeZone(
       appointment.scheduled_at,
@@ -150,7 +155,9 @@ export class AppointmentReminderService {
     const reminderMessage = this.buildReminderMessage(
       appointment,
       hoursBeforeAppointment,
-      formattedTime
+      formattedTime,
+      patientWithPII.first_name,
+      `${pharmacistWithPII.first_name} ${pharmacistWithPII.last_name}`
     );
 
     const reminderSubject = this.buildReminderSubject(hoursBeforeAppointment);
@@ -203,7 +210,7 @@ export class AppointmentReminderService {
       await this.notificationService.sendEmail(
         appointment.pharmacist_id,
         `[Rappel] Téléconsultation dans ${hoursBeforeAppointment}h`,
-        `Vous avez une téléconsultation prévue avec ${appointment.patient.first_name} ${appointment.patient.last_name} le ${formattedTime}.`,
+        `Vous avez une téléconsultation prévue avec ${patientWithPII.first_name} ${patientWithPII.last_name} le ${formattedTime}.`,
         NotificationCategory.TELECONSULTATION_REMINDER,
         {
           priority,
@@ -228,19 +235,21 @@ export class AppointmentReminderService {
   private buildReminderMessage(
     appointment: Teleconsultation,
     hoursBeforeAppointment: number,
-    formattedTime: string
+    formattedTime: string,
+    patientFirstName: string,
+    pharmacistFullName: string
   ): string {
     const timePhrase = hoursBeforeAppointment === 24 ? 'demain' : `dans ${hoursBeforeAppointment} heure${hoursBeforeAppointment > 1 ? 's' : ''}`;
 
     return `
-Bonjour ${appointment.patient.first_name},
+Bonjour ${patientFirstName},
 
 Ceci est un rappel concernant votre téléconsultation ${timePhrase}.
 
 **Détails de la consultation:**
 - Date et heure: ${formattedTime}
 - Pharmacie: ${appointment.pharmacy.name}
-- Pharmacien: ${appointment.pharmacist.first_name} ${appointment.pharmacist.last_name}
+- Pharmacien: ${pharmacistFullName}
 - Durée: ${appointment.duration_minutes} minutes
 
 **Comment rejoindre:**
