@@ -43,8 +43,8 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
   steps,
   onComplete,
   onSkip,
-  title: _title,
-  description: _description,
+  title,
+  description,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const scrollRef = useRef<ScrollView>(null);

@@ -129,7 +129,7 @@ export const PrescriptionListScreen: React.FC = () => {
 
       {/* Content */}
       <View style={styles.content}>
-        <View style={styles.header}>
+        <View style={styles.cardHeader}>
           <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
           <PrescriptionStatusBadge status={item.status} size="small" />
         </View>
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
   },
-  header: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',

@@ -17,23 +17,12 @@ import {
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { nurseApiClient } from '../../services/nurseApiClient';
+import { AdverseReactionsScreenProps } from '../../navigation/types';
 
-interface AdverseReactionsScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      patientId: string;
-      patientName: string;
-      medicationId?: string;
-      medicationName?: string;
-    };
-  };
-}
-
-export const AdverseReactionsScreen: React.FC<AdverseReactionsScreenProps> = ({
+export const AdverseReactionsScreen = ({
   navigation,
   route,
-}) => {
+}: AdverseReactionsScreenProps) => {
   const { patientId, patientName, medicationId: initialMedId, medicationName: initialMedName } = route.params;
   const { nurse } = useSelector((state: RootState) => state.auth);
 

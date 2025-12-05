@@ -28,8 +28,10 @@ export const InventoryDashboardScreen: React.FC = () => {
   }, []);
 
   const loadData = () => {
-    dispatch(fetchInventoryAnalytics());
-    dispatch(fetchActiveAlerts());
+    // TODO: Get actual pharmacy_id from auth context
+    const pharmacyId = 'mock-pharmacy-id';
+    dispatch(fetchInventoryAnalytics(pharmacyId));
+    dispatch(fetchActiveAlerts({ pharmacy_id: pharmacyId, status: 'active' }));
   };
 
   const handleScanQR = () => {

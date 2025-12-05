@@ -21,6 +21,17 @@ import {
   TwilioVideoParticipantView,
 } from 'react-native-twilio-video-webrtc';
 
+interface TwilioVideoRef {
+  connect: (options: {
+    accessToken: string;
+    roomName: string;
+    enableVideo: boolean;
+    enableAudio: boolean;
+  }) => void;
+  disconnect: () => void;
+  setLocalVideoEnabled: (enabled: boolean) => void;
+}
+
 export interface TwilioVideoProps {
   accessToken: string;
   roomName: string;
@@ -52,13 +63,8 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(true);
   const [remoteParticipants, setRemoteParticipants] = useState<Participant[]>([]);
-  const [_localVideoEnabled, _setLocalVideoEnabled] = useState(!audioOnly);
-  const [_localAudioEnabled, _setLocalAudioEnabled] = useState(true);
-  const [_networkQuality, _setNetworkQuality] = useState<number>(5);
-  const [_reconnecting, _setReconnecting] = useState(false);
-  const [_reconnectAttempts, _setReconnectAttempts] = useState(0);
-  const maxReconnectAttempts = 3;
-  const _roomRef = useRef<any>(null);
+  const [localVideoEnabled, setLocalVideoEnabled] = useState(!audioOnly);
+  const twilioRef = useRef<TwilioVideoRef | null>(null);
 
   useEffect(() => {
     connectToRoom();
@@ -70,109 +76,22 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
 
   const connectToRoom = async () => {
     try {
+      if (!accessToken || accessToken.trim() === '') {
+        throw new Error('Access token is required');
+      }
+
+      if (!twilioRef.current) {
+        throw new Error('TwilioVideo component not initialized');
+      }
+
       setConnecting(true);
 
-      // Connect to Twilio Video using the SDK
-      TwilioVideo.connect(accessToken, {
+      // Connect to Twilio Video using the ref-based API
+      twilioRef.current.connect({
+        accessToken,
         roomName,
         enableVideo: !audioOnly,
         enableAudio: true,
-        enableNetworkQualityReporting: true,
-        dominantSpeakerEnabled: true,
-      });
-
-      // Set up event listeners
-      TwilioVideo.setOnRoomDidConnect(() => {
-        setConnected(true);
-        setConnecting(false);
-        onConnected?.();
-      });
-
-      TwilioVideo.setOnRoomDidDisconnect((_event: any) => {
-        handleDisconnected();
-      });
-
-      TwilioVideo.setOnRoomDidFailToConnect((_error: any) => {
-        console.error('Failed to connect to room:', _error);
-        setConnecting(false);
-        Alert.alert('Connection Error', 'Failed to connect to video call');
-        onError?.(new Error(_error.error || 'Connection failed'));
-      });
-
-      TwilioVideo.setOnParticipantAddedVideoTrack((event: any) => {
-        const newParticipant: Participant = {
-          sid: event.participant.sid,
-          identity: event.participant.identity,
-          videoEnabled: true,
-          audioEnabled: true,
-        };
-        setRemoteParticipants((prev) => {
-          const exists = prev.find((p) => p.sid === event.participant.sid);
-          if (exists) {return prev;}
-          return [...prev, newParticipant];
-        });
-        onParticipantConnected?.(event.participant.sid);
-      });
-
-      TwilioVideo.setOnParticipantRemovedVideoTrack((event: any) => {
-        setRemoteParticipants((prev) =>
-          prev.filter((p) => p.sid !== event.participant.sid)
-        );
-        onParticipantDisconnected?.(event.participant.sid);
-      });
-
-      // Network quality monitoring (INT-006)
-      TwilioVideo.setOnNetworkQualityLevelsChanged((event: any) => {
-        const quality = event.localQuality || 5;
-        _setNetworkQuality(quality);
-
-        // Suggest audio-only if poor connection
-        if (quality < 2 && !audioOnly && _localVideoEnabled) {
-          Alert.alert(
-            'Poor Connection',
-            'Video quality is poor. Switch to audio-only mode?',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Switch to Audio',
-                onPress: () => {
-                  TwilioVideo.setLocalVideoEnabled(false);
-                  setLocalVideoEnabled(false);
-                },
-              },
-            ]
-          );
-        }
-      });
-
-      // Reconnection handling (INT-006)
-      TwilioVideo.setOnReconnecting((error: any) => {
-        _setReconnecting(true);
-        _setReconnectAttempts((prev) => prev + 1);
-
-        if (_reconnectAttempts >= maxReconnectAttempts) {
-          Alert.alert(
-            'Connection Lost',
-            'Unable to reconnect after multiple attempts. Please try again.',
-            [
-              {
-                text: 'OK',
-                onPress: () => {
-                  disconnectFromRoom();
-                },
-              },
-            ]
-          );
-        }
-      });
-
-      TwilioVideo.setOnReconnected(() => {
-        _setReconnecting(false);
-        _setReconnectAttempts(0);
-        Alert.alert(
-          'Connection Restored',
-          'Video call has been restored'
-        );
       });
     } catch (error: any) {
       console.error('Failed to connect to room:', error);
@@ -183,40 +102,83 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
   };
 
   const disconnectFromRoom = () => {
-    TwilioVideo.disconnect();
+    if (twilioRef.current) {
+      twilioRef.current.disconnect();
+    }
     setConnected(false);
     setRemoteParticipants([]);
     onDisconnected?.();
   };
 
-  const _handleParticipantConnected = (participant: any) => {
-    console.log('Participant connected:', participant.identity);
-
-    const newParticipant: Participant = {
-      sid: participant.sid,
-      identity: participant.identity,
-      videoEnabled: true,
-      audioEnabled: true,
-    };
-
-    setRemoteParticipants((prev) => [...prev, newParticipant]);
-    onParticipantConnected?.(participant.sid);
+  const handleRoomDidConnect = () => {
+    console.log('Connected to room');
+    setConnected(true);
+    setConnecting(false);
+    onConnected?.();
   };
 
-  const _handleParticipantDisconnected = (participant: any) => {
-    console.log('Participant disconnected:', participant.identity);
-
-    setRemoteParticipants((prev) =>
-      prev.filter((p) => p.sid !== participant.sid)
-    );
-    onParticipantDisconnected?.(participant.sid);
-  };
-
-  const handleDisconnected = () => {
+  const handleRoomDidDisconnect = () => {
     console.log('Disconnected from room');
     setConnected(false);
     setRemoteParticipants([]);
     onDisconnected?.();
+  };
+
+  const handleRoomDidFailToConnect = (error: any) => {
+    console.error('Failed to connect to room:', error);
+    setConnecting(false);
+    Alert.alert('Connection Error', 'Failed to connect to video call');
+    onError?.(new Error(error.error || 'Connection failed'));
+  };
+
+  const handleParticipantAddedVideoTrack = (event: any) => {
+    console.log('Participant added video track:', event.participant.identity);
+    const newParticipant: Participant = {
+      sid: event.participant.sid,
+      identity: event.participant.identity,
+      videoEnabled: true,
+      audioEnabled: true,
+    };
+    setRemoteParticipants((prev) => {
+      const exists = prev.find((p) => p.sid === event.participant.sid);
+      if (exists) {
+        return prev;
+      }
+      return [...prev, newParticipant];
+    });
+    onParticipantConnected?.(event.participant.sid);
+  };
+
+  const handleParticipantRemovedVideoTrack = (event: any) => {
+    console.log('Participant removed video track:', event.participant.identity);
+    setRemoteParticipants((prev) =>
+      prev.filter((p) => p.sid !== event.participant.sid)
+    );
+    onParticipantDisconnected?.(event.participant.sid);
+  };
+
+  const handleNetworkQualityLevelsChanged = (event: any) => {
+    const qualityLevel = event.participant?.networkQualityLevel ?? 5;
+
+    // FR-026: Suggest audio fallback when quality < 2
+    if (qualityLevel < 2 && !audioOnly && localVideoEnabled) {
+      Alert.alert(
+        'Poor Network Connection',
+        'Your connection quality is low. Would you like to switch to audio-only mode?',
+        [
+          { text: 'Continue with Video', style: 'cancel' },
+          {
+            text: 'Switch to Audio Only',
+            onPress: () => {
+              if (twilioRef.current) {
+                twilioRef.current.setLocalVideoEnabled(false);
+                setLocalVideoEnabled(false);
+              }
+            },
+          },
+        ]
+      );
+    }
   };
 
   if (connecting) {
@@ -238,6 +200,17 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
 
   return (
     <View style={styles.container}>
+      {/* TwilioVideo component with event handlers */}
+      <TwilioVideo
+        ref={twilioRef}
+        onRoomDidConnect={handleRoomDidConnect}
+        onRoomDidDisconnect={handleRoomDidDisconnect}
+        onRoomDidFailToConnect={handleRoomDidFailToConnect}
+        onParticipantAddedVideoTrack={handleParticipantAddedVideoTrack}
+        onParticipantRemovedVideoTrack={handleParticipantRemovedVideoTrack}
+        onNetworkQualityLevelsChanged={handleNetworkQualityLevelsChanged}
+      />
+
       {/* Remote Participant Video */}
       {remoteParticipants.length > 0 ? (
         <View style={styles.remoteVideoContainer}>
@@ -264,7 +237,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
       )}
 
       {/* Local Video (Picture-in-Picture) */}
-      {!audioOnly && _localVideoEnabled && (
+      {!audioOnly && localVideoEnabled && (
         <View style={styles.localVideoContainer}>
           <TwilioVideoLocalView
             enabled={true}
@@ -281,47 +254,11 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
           <Text style={styles.audioOnlyText}>Audio Only Mode</Text>
         </View>
       )}
-
-      {/* Reconnecting Overlay (INT-006) */}
-      {_reconnecting && (
-        <View style={styles.reconnectingOverlay}>
-          <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={styles.reconnectingText}>
-            Reconnecting... (Attempt {_reconnectAttempts}/{maxReconnectAttempts})
-          </Text>
-        </View>
-      )}
     </View>
   );
 };
 
-// Exposed methods for controlling the video
-export const toggleLocalVideo = (enabled: boolean) => {
-  TwilioVideo.setLocalVideoEnabled(enabled);
-  console.log('Toggle local video:', enabled);
-};
-
-export const toggleLocalAudio = (enabled: boolean) => {
-  TwilioVideo.setLocalAudioEnabled(enabled);
-  console.log('Toggle local audio:', enabled);
-};
-
-export const switchToAudioOnly = () => {
-  TwilioVideo.setLocalVideoEnabled(false);
-  console.log('Switched to audio-only mode');
-};
-
-export const switchToVideoMode = () => {
-  TwilioVideo.setLocalVideoEnabled(true);
-  console.log('Switched to video mode');
-};
-
-export const disconnectCall = () => {
-  TwilioVideo.disconnect();
-  console.log('Disconnecting from call');
-};
-
-const { width, height: _height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
@@ -356,22 +293,6 @@ const styles = StyleSheet.create({
   remoteVideo: {
     flex: 1,
   },
-  placeholderVideo: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-  },
-  placeholderText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  placeholderSubtext: {
-    color: '#999',
-    fontSize: 14,
-    marginTop: 8,
-  },
   waitingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -402,16 +323,6 @@ const styles = StyleSheet.create({
   localVideo: {
     flex: 1,
   },
-  placeholderLocalVideo: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#333',
-  },
-  placeholderLocalText: {
-    color: '#fff',
-    fontSize: 12,
-  },
   audioOnlyContainer: {
     position: 'absolute',
     top: '40%',
@@ -439,23 +350,6 @@ const styles = StyleSheet.create({
   securityText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '600',
-  },
-  reconnectingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999,
-  },
-  reconnectingText: {
-    color: '#ffffff',
-    fontSize: 16,
-    marginTop: 16,
     fontWeight: '600',
   },
 });

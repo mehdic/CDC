@@ -9,14 +9,14 @@ import {
   RecommendationContext,
 } from '../services/recommendationService';
 
-// Mock the AppDataSource
+// Mock the dataSource
 jest.mock('../index', () => ({
-  AppDataSource: {
+  dataSource: {
     getRepository: jest.fn(),
   },
 }));
 
-import { AppDataSource } from '../index';
+import { dataSource as AppDataSource } from '../index';
 
 describe('Recommendation Service - T3-105', () => {
   beforeEach(() => {

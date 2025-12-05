@@ -18,21 +18,12 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { nurseApiClient } from '../../services/nurseApiClient';
 import { OrderMedication } from '../../types';
+import { MedicationOrderScreenProps } from '../../navigation/types';
 
-interface MedicationOrderScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      patientId: string;
-      patientName: string;
-    };
-  };
-}
-
-export const MedicationOrderScreen: React.FC<MedicationOrderScreenProps> = ({
+export const MedicationOrderScreen = ({
   navigation,
   route,
-}) => {
+}: MedicationOrderScreenProps) => {
   const { patientId, patientName } = route.params;
   const { nurse } = useSelector((state: RootState) => state.auth);
 

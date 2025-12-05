@@ -15,21 +15,12 @@ import {
 } from 'react-native';
 import { RNCamera } from 'react-native-camera';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { BarcodeScannerScreenProps } from '../../navigation/types';
 
-interface BarcodeScannerScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      patientId: string;
-      onScan: (barcode: string) => void;
-    };
-  };
-}
-
-export const BarcodeScannerScreen: React.FC<BarcodeScannerScreenProps> = ({
+export const BarcodeScannerScreen = ({
   navigation,
   route,
-}) => {
+}: BarcodeScannerScreenProps) => {
   const { onScan } = route.params;
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);

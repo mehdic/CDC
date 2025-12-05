@@ -55,7 +55,7 @@ export class ToastManager {
     this.toasts.push(toast);
     this.notifyListeners();
 
-    if (toast.duration > 0) {
+    if (toast.duration && toast.duration > 0) {
       setTimeout(() => this.hide(id), toast.duration);
     }
 

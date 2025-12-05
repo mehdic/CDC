@@ -28,8 +28,8 @@ const BookTeleconsultationScreen: React.FC = () => {
   const navigation = useNavigation();
   const [pharmacists, setPharmacists] = useState<Pharmacist[]>([]);
   const [selectedPharmacist, setSelectedPharmacist] = useState<string | null>(null);
-  const [_selectedSlot, _setSelectedSlot] = useState<string | null>(null);
-  const [_recordingConsent, _setRecordingConsent] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [recordingConsent, setRecordingConsent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

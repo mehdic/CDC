@@ -23,6 +23,15 @@ jest.mock('date-fns-tz', () => {
   };
 });
 
+// Mock userDecryption utility
+jest.mock('../../utils/userDecryption', () => ({
+  getUserWithDecryptedPII: jest.fn((user) => ({
+    ...user,
+    first_name: user.first_name || 'Jean',
+    last_name: user.last_name || 'Dupont',
+  })),
+}));
+
 describe('AppointmentReminderService', () => {
   let dataSource: DataSource;
   let notificationService: jest.Mocked<NotificationService>;

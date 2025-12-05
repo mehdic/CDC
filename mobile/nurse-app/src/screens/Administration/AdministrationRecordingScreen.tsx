@@ -19,22 +19,12 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { nurseApiClient } from '../../services/nurseApiClient';
 import { Medication } from '../../types';
+import { AdministrationRecordingScreenProps } from '../../navigation/types';
 
-interface AdministrationRecordingScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      patientId: string;
-      medicationId?: string;
-      scheduledTime?: string;
-    };
-  };
-}
-
-export const AdministrationRecordingScreen: React.FC<AdministrationRecordingScreenProps> = ({
+export const AdministrationRecordingScreen = ({
   navigation,
   route,
-}) => {
+}: AdministrationRecordingScreenProps) => {
   const { patientId, medicationId, scheduledTime } = route.params;
   const { nurse } = useSelector((state: RootState) => state.auth);
 

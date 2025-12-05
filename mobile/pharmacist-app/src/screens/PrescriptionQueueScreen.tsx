@@ -48,7 +48,7 @@ export const PrescriptionQueueScreen: React.FC<PrescriptionQueueScreenProps> = (
   }, [filters]);
 
   const loadQueue = async () => {
-    await dispatch(fetchPrescriptionQueue() as any);
+    await dispatch(fetchPrescriptionQueue({}) as any);
   };
 
   const handleRefresh = async () => {

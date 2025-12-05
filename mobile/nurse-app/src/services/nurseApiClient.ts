@@ -4,7 +4,7 @@
  */
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { getAuthToken, setAuthToken, clearAuthTokens } from '@metapharm/shared';
+import { getAuthToken, setAuthToken, clearAuthTokens } from '../utils/secureStorage';
 import {
   Nurse,
   Patient,

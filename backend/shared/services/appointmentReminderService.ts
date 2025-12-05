@@ -88,7 +88,7 @@ export class AppointmentReminderService {
       const swissNow = toZonedTime(now, SWISS_TIMEZONE);
 
       for (const config of this.reminderConfig) {
-        if (!config.enabled) continue;
+        if (!config.enabled) {continue;}
 
         await this.processRemindersForWindow(swissNow, config.hoursBeforeAppointment);
       }

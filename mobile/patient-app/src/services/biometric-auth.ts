@@ -4,7 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform as _Platform } from 'react-native';
+import { Platform } from 'react-native';
 import RNKeychain from 'react-native-keychain';
 
 /**
@@ -77,9 +77,9 @@ export class BiometricAuthService {
   private async detectBiometricType(): Promise<BiometricType> {
     try {
       // Check what biometric is available
-      const type = await RNKeychain.canImplyAuthentication({ authenticateSecurely: true });
+      const type = await RNKeychain.getSupportedBiometryType();
 
-      if (type === false) {
+      if (!type) {
         return null;
       }
 
@@ -202,22 +202,11 @@ export class BiometricAuthService {
         };
       }
 
-      // Prompt for biometric authentication
-      const authenticated = await RNKeychain.canImplyAuthentication({
-        authenticateSecurely: true,
-      });
-
-      if (authenticated) {
-        return {
-          success: true,
-          biometricType: this.biometricAvailable,
-        };
-      } else {
-        return {
-          success: false,
-          error: 'Biometric authentication failed',
-        };
-      }
+      // Credentials were successfully retrieved with biometric authentication
+      return {
+        success: true,
+        biometricType: this.biometricAvailable,
+      };
     } catch (error) {
       console.error('Error during biometric authentication:', error);
       return {

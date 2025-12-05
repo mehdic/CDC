@@ -12,6 +12,16 @@ import {
   GetPrescriptionResponse,
   ApiResponse,
 } from '@metapharm/api-types';
+
+// Define missing type locally until api-types is updated
+export interface ListPrescriptionsResponse {
+  prescriptions: Prescription[];
+  total: number;
+  page: number;
+  pageSize: number;
+  limit: number;
+  hasMore: boolean;
+}
 import axios, { AxiosInstance } from 'axios';
 
 // API Configuration

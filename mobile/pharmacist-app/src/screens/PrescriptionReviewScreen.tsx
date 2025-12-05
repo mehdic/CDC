@@ -61,7 +61,7 @@ export const PrescriptionReviewScreen: React.FC<PrescriptionReviewScreenProps> =
   };
 
   const handleApprove = async (prescriptionId: string, pharmacistId: string, notes?: string) => {
-    await dispatch(approvePrescription({ prescriptionId, data: { pharmacistId, notes } }) as any);
+    await dispatch(approvePrescription({ prescriptionId, data: { pharmacist_id: pharmacistId, notes } }) as any);
     navigation.goBack();
   };
 
@@ -76,7 +76,7 @@ export const PrescriptionReviewScreen: React.FC<PrescriptionReviewScreenProps> =
       rejectPrescription({
         prescriptionId,
         data: {
-          pharmacistId,
+          pharmacist_id: pharmacistId,
           rejection_reason: reason,
           notify_doctor: notifyDoctor,
           notify_patient: notifyPatient,

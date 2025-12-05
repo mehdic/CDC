@@ -243,7 +243,7 @@ async function getCurrentStock(
     where: { pharmacy_id, medication_rxnorm_code },
   });
 
-  return item?.quantity || 0;
+  return item?.quantity_in_stock || item?.quantity || 0;
 }
 
 /**

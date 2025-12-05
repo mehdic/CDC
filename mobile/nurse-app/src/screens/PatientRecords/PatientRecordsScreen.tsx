@@ -16,19 +16,11 @@ import {
 } from 'react-native';
 import { nurseApiClient } from '../../services/nurseApiClient';
 import { PatientRecord } from '../../types';
+import { PatientRecordsScreenProps } from '../../navigation/types';
 
-interface PatientRecordsScreenProps {
-  route: {
-    params: {
-      patientId: string;
-      patientName: string;
-    };
-  };
-}
-
-export const PatientRecordsScreen: React.FC<PatientRecordsScreenProps> = ({
+export const PatientRecordsScreen = ({
   route,
-}) => {
+}: PatientRecordsScreenProps) => {
   const { patientId, patientName } = route.params;
   const [records, setRecords] = useState<PatientRecord[]>([]);
   const [loading, setLoading] = useState(true);

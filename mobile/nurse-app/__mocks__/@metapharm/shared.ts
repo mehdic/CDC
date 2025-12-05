@@ -1,6 +1,9 @@
 /**
  * Mock for @metapharm/shared module
+ * Note: This file is only used during Jest tests
  */
+
+/// <reference types="jest" />
 
 export const getAuthToken = jest.fn().mockResolvedValue('mock-token');
 export const setAuthToken = jest.fn().mockResolvedValue(undefined);

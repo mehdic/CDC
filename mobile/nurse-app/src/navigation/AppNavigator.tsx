@@ -8,6 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
+import { PatientsStackParamList } from './types';
 
 // Auth Screens
 import LoginScreen from '../screens/Auth/LoginScreen';
@@ -34,14 +35,15 @@ import ShiftHandoverScreen from '../screens/Handover/ShiftHandoverScreen';
 // Profile Screen
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<PatientsStackParamList>();
+const AuthNavigator = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const AuthStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Login" component={LoginScreen} />
-    <Stack.Screen name="MfaVerification" component={MfaVerificationScreen} />
-  </Stack.Navigator>
+  <AuthNavigator.Navigator screenOptions={{ headerShown: false }}>
+    <AuthNavigator.Screen name="Login" component={LoginScreen} />
+    <AuthNavigator.Screen name="MfaVerification" component={MfaVerificationScreen} />
+  </AuthNavigator.Navigator>
 );
 
 const PatientsStack = () => (

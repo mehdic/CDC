@@ -582,9 +582,8 @@ function getSeasonalRecommendations(): ProductRecommendation[] {
       tags: ['seasonal', 'cold_flu', 'winter'],
     });
   }
-
   // Spring months (Mar-May): Allergy products
-  if (month >= 2 && month <= 4) {
+  else if (month >= 2 && month <= 4) {
     recommendations.push({
       product_name: 'Antihistamine (Loratadine)',
       category: 'otc',
@@ -593,15 +592,24 @@ function getSeasonalRecommendations(): ProductRecommendation[] {
       tags: ['seasonal', 'allergy', 'spring'],
     });
   }
-
   // Summer months (Jun-Aug): Sun protection
-  if (month >= 5 && month <= 7) {
+  else if (month >= 5 && month <= 7) {
     recommendations.push({
       product_name: 'Sunscreen SPF 50+',
       category: 'skincare',
       reason: 'Sun protection for summer',
       confidence: 70,
       tags: ['seasonal', 'sun_protection', 'summer'],
+    });
+  }
+  // Fall months (Sep-Oct): Autumn wellness
+  else {
+    recommendations.push({
+      product_name: 'Vitamin D supplements',
+      category: 'supplements',
+      reason: 'Seasonal recommendation for fall wellness',
+      confidence: 60,
+      tags: ['seasonal', 'wellness', 'fall'],
     });
   }
 
