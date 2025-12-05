@@ -36,7 +36,7 @@ module.exports = {
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
 
     // Monorepo package aliases
-    '^@metapharm/api-types$': '<rootDir>/../packages/api-types/index.ts'
+    '^@metapharm/api-types$': '<rootDir>/../packages/api-types/src/index.ts'
   },
 
   // Transform ignore patterns - include React Native libraries that need transformation

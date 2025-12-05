@@ -1,30 +1,28 @@
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  readonly VITE_API_BASE_URL?: string;
-  // Add more env variables here as needed
-}
+// Make this file a module
+export {};
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
-}
-
-// Styled-JSX support - augment React's JSX namespace
-declare module 'react' {
-  interface StyleHTMLAttributes<T> extends React.HTMLAttributes<T> {
-    jsx?: boolean;
-    global?: boolean;
+// Styled-JSX support - augment React's intrinsic elements
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      style: React.DetailedHTMLProps<React.StyleHTMLAttributes<HTMLStyleElement> & {
+        jsx?: boolean;
+        global?: boolean;
+      }, HTMLStyleElement>;
+    }
   }
 }
 
 // Timeline stubs - @mui/lab not installed due to version conflicts
 declare module '@mui/lab' {
-  import React from 'react';
-  export const Timeline: React.FC<any>;
-  export const TimelineItem: React.FC<any>;
-  export const TimelineSeparator: React.FC<any>;
-  export const TimelineConnector: React.FC<any>;
-  export const TimelineContent: React.FC<any>;
-  export const TimelineDot: React.FC<any>;
-  export const TimelineOppositeContent: React.FC<any>;
+  import { FC } from 'react';
+  export const Timeline: FC<any>;
+  export const TimelineItem: FC<any>;
+  export const TimelineSeparator: FC<any>;
+  export const TimelineConnector: FC<any>;
+  export const TimelineContent: FC<any>;
+  export const TimelineDot: FC<any>;
+  export const TimelineOppositeContent: FC<any>;
 }
