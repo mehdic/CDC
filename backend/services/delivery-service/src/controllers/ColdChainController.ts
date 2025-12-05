@@ -3,7 +3,7 @@
  * REST API endpoints for cold chain monitoring management
  */
 
-import { Router, Response } from 'express';
+import { Router, Response, RequestHandler } from 'express';
 import { AuthenticatedRequest } from '../../../../shared/middleware/auth';
 import { ColdChainService } from '../services/ColdChainService';
 import { TemperatureAlertService } from '../services/TemperatureAlertService';
@@ -22,40 +22,24 @@ export class ColdChainController {
 
   private initializeRoutes(): void {
     // Sensor Management
-    this.router.post('/sensors/register', (req: AuthenticatedRequest, res: Response) =>
-      this.registerSensor(req, res)
-    );
+    this.router.post('/sensors/register', this.registerSensor.bind(this) as RequestHandler);
 
-    this.router.get('/sensors/attention', (req: AuthenticatedRequest, res: Response) =>
-      this.getSensorsRequiringAttention(req, res)
-    );
+    this.router.get('/sensors/attention', this.getSensorsRequiringAttention.bind(this) as RequestHandler);
 
     // Temperature Readings
-    this.router.post('/readings', (req: AuthenticatedRequest, res: Response) =>
-      this.recordTemperatureReading(req, res)
-    );
+    this.router.post('/readings', this.recordTemperatureReading.bind(this) as RequestHandler);
 
     // Cold Chain Monitoring
-    this.router.post('/monitoring/start', (req: AuthenticatedRequest, res: Response) =>
-      this.startMonitoring(req, res)
-    );
+    this.router.post('/monitoring/start', this.startMonitoring.bind(this) as RequestHandler);
 
-    this.router.post('/monitoring/:monitoringId/complete', (req: AuthenticatedRequest, res: Response) =>
-      this.completeMonitoring(req, res)
-    );
+    this.router.post('/monitoring/:monitoringId/complete', this.completeMonitoring.bind(this) as RequestHandler);
 
-    this.router.get('/monitoring/delivery/:deliveryId', (req: AuthenticatedRequest, res: Response) =>
-      this.getDeliveryMonitoring(req, res)
-    );
+    this.router.get('/monitoring/delivery/:deliveryId', this.getDeliveryMonitoring.bind(this) as RequestHandler);
 
     // Alerts
-    this.router.get('/alerts', (req: AuthenticatedRequest, res: Response) =>
-      this.getAlerts(req, res)
-    );
+    this.router.get('/alerts', this.getAlerts.bind(this) as RequestHandler);
 
-    this.router.post('/alerts/:alertId/resolve', (req: AuthenticatedRequest, res: Response) =>
-      this.resolveAlert(req, res)
-    );
+    this.router.post('/alerts/:alertId/resolve', this.resolveAlert.bind(this) as RequestHandler);
   }
 
   private async registerSensor(req: AuthenticatedRequest, res: Response): Promise<void> {

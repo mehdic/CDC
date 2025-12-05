@@ -5,20 +5,16 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { RecordType } from '../models/MedicalRecord';
+import { AuthenticatedUser, AuthenticatedRequest as SharedAuthRequest } from '../../../../shared/middleware/auth';
+import { UserRole } from '../../../../shared/models/User';
 
-export enum UserRole {
-  PATIENT = 'patient',
-  PHARMACIST = 'pharmacist',
-  DOCTOR = 'doctor',
-  NURSE = 'nurse',
-  ADMIN = 'admin',
-}
+// Re-export UserRole for backward compatibility
+export { UserRole };
 
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    role: UserRole;
-    pharmacyId?: string;
+// Extend shared AuthenticatedRequest with additional user properties if needed
+export interface AuthenticatedRequest extends SharedAuthRequest {
+  user?: AuthenticatedUser & {
+    id?: string; // Alias for userId for backward compatibility
   };
 }
 

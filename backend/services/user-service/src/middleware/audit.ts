@@ -4,8 +4,14 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { AppDataSource } from '../index';
+// TODO: AppDataSource not available in in-memory implementation
+// import { AppDataSource } from '../index';
 import { AuditLog } from '@models/AuditLog';
+
+// Stub AppDataSource for compilation (not used in in-memory service)
+const AppDataSource: any = {
+  getRepository: () => { throw new Error('AppDataSource not available'); }
+};
 
 /**
  * Audit middleware - logs all requests

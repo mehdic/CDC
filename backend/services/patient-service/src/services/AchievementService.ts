@@ -5,14 +5,22 @@
  */
 
 import { getRepository, Repository } from 'typeorm';
-import {
-  Achievement,
-  AchievementCategory,
-  AchievementTier,
-  AchievementRequirement,
-} from '@shared/models/Achievement';
-import { PatientAchievement } from '@shared/models/PatientAchievement';
+// TODO: Achievement and PatientAchievement models not found - need to be created
+// import {
+//   Achievement,
+//   AchievementCategory,
+//   AchievementTier,
+//   AchievementRequirement,
+// } from '@shared/models/Achievement';
+// import { PatientAchievement } from '@shared/models/PatientAchievement';
 import { User } from '@shared/models/User';
+
+// Temporary type definitions until models are created
+type AchievementCategory = string;
+type AchievementTier = string;
+type AchievementRequirement = any;
+type Achievement = any;
+type PatientAchievement = any;
 
 export interface AchievementProgressData {
   type: string;

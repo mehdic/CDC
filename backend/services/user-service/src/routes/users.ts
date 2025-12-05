@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express';
-import { listUsers, createUser, updatePermissions } from '@controllers/userController';
+import { listUsers, createUser, updatePermissions } from '../controllers/userController';
 import { authenticateToken } from '../middleware/auth';
 import { auditMiddleware } from '../middleware/audit';
 

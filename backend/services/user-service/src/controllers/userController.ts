@@ -4,11 +4,19 @@
  */
 
 import { Request, Response } from 'express';
-import { AppDataSource } from '../index';
+// TODO: AppDataSource not available in in-memory implementation
+// import { AppDataSource } from '../index';
 import { User, UserRole, UserStatus } from '@models/User';
 import { RolePermission } from '@models/RolePermission';
 import { AuditLog } from '@models/AuditLog';
 import { z } from 'zod';
+
+// Stub AppDataSource for compilation (controller not used in in-memory service)
+const AppDataSource: any = {
+  getRepository: () => {
+    throw new Error('AppDataSource not available in in-memory implementation');
+  }
+};
 
 // ============================================================================
 // Validation Schemas

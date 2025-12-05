@@ -26,6 +26,11 @@ import { decryptUserPII } from '../utils/userDecryption';
 // Temporary type until model is created
 type OrderItem = any;
 
+// Stub AppDataSource for compilation (not used in in-memory service)
+const AppDataSource: any = {
+  getRepository: () => { throw new Error('AppDataSource not available'); }
+};
+
 // ============================================================================
 // Types & Interfaces
 // ============================================================================

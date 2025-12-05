@@ -12,12 +12,12 @@
  * Based on: /specs/003-production-readiness/tasks3.md
  */
 
-import { AppDataSource } from '../index';
+import { dataSource as AppDataSource } from '../index';
 import { User } from '../../../../shared/models/User';
 import { Prescription } from '../../../../shared/models/Prescription';
 import { PrescriptionItem } from '../../../../shared/models/PrescriptionItem';
 import { Order } from '../../../../shared/models/Order';
-import { OrderItem } from '../../../../shared/models/OrderItem';
+// import { OrderItem } from '../../../../shared/models/OrderItem'; // TODO: Model not found
 
 // ============================================================================
 // Types & Interfaces

@@ -4,9 +4,15 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { AppDataSource } from '../index';
+// TODO: AppDataSource not available in in-memory implementation
+// import { AppDataSource } from '../index';
 import { RolePermission } from '@models/RolePermission';
 import { authenticateToken } from '../middleware/auth';
+
+// Stub AppDataSource for compilation (not used in in-memory service)
+const AppDataSource: any = {
+  getRepository: () => { throw new Error('AppDataSource not available'); }
+};
 
 const router = Router();
 

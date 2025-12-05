@@ -14,12 +14,13 @@ import {
   DocumentUploadRequest,
   SwissCanton,
 } from '../types/esante.types';
+import { AuthenticatedUser, AuthenticatedRequest as SharedAuthRequest } from '../../../../shared/middleware/auth';
 
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    hinId: string;
-    role: string;
-    canton: SwissCanton;
+// Extend shared AuthenticatedRequest with e-Santé specific fields
+export interface AuthenticatedRequest extends SharedAuthRequest {
+  user?: AuthenticatedUser & {
+    hinId?: string;
+    canton?: SwissCanton;
   };
   token?: string;
 }
