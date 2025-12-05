@@ -13,22 +13,9 @@ import { FullConfig } from '@playwright/test';
 async function globalTeardown(config: FullConfig) {
   console.log('\n🧹 Starting Playwright E2E Test Suite Teardown...\n');
 
-  // Stop backend services if they were started by global-setup
-  try {
-    const { backendProcess } = await import('./global-setup');
-    if (backendProcess) {
-      console.log('⏹️  Stopping backend services...\n');
-      backendProcess.kill('SIGTERM');
-
-      // Give it time to shut down gracefully
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      console.log('✅ Backend services stopped\n');
-    }
-  } catch (error) {
-    // Backend process not found or already stopped
-    console.log('ℹ️  No backend services to stop\n');
-  }
+  // Backend services cleanup is handled by global-setup via process cleanup
+  // This ensures proper process termination when playwright test runner exits
+  console.log('ℹ️  Playwright will automatically clean up background processes\n');
 
   // Cleanup tasks can be added here:
   // - Stop mock API server
