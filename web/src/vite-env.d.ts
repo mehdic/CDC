@@ -1,17 +1,13 @@
 /// <reference types="vite/client" />
 
-// Make this file a module
-export {};
+// Import React to make this a proper module augmentation
+import 'react';
 
-// Styled-JSX support - augment React's intrinsic elements
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      style: React.DetailedHTMLProps<React.StyleHTMLAttributes<HTMLStyleElement> & {
-        jsx?: boolean;
-        global?: boolean;
-      }, HTMLStyleElement>;
-    }
+// Styled-JSX support - augment React's HTMLAttributes
+declare module 'react' {
+  interface HTMLAttributes<T> {
+    jsx?: boolean;
+    global?: boolean;
   }
 }
 

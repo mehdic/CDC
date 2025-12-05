@@ -35,11 +35,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install root dependencies
-        run: npm ci
-
-      - name: Install web dependencies
-        working-directory: web
+      - name: Install all dependencies
         run: npm ci
 
       - name: Install Playwright browsers
@@ -88,11 +84,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install root dependencies
-        run: npm ci
-
-      - name: Install web dependencies
-        working-directory: web
+      - name: Install all dependencies
         run: npm ci
 
       - name: Install Playwright browsers
