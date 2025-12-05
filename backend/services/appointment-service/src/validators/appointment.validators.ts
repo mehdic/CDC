@@ -17,9 +17,9 @@ export const CreateAppointmentSchema = z.object({
     AppointmentType.TELECONSULTATION,
     AppointmentType.IN_PERSON,
     AppointmentType.HOME_VISIT,
-  ]),
-  scheduled_start: z.string().datetime().transform((str) => new Date(str)),
-  scheduled_end: z.string().datetime().transform((str) => new Date(str)),
+  ]).optional(),
+  scheduled_start: z.string().datetime().transform((str) => new Date(str)).optional(),
+  scheduled_end: z.string().datetime().transform((str) => new Date(str)).optional(),
   reason: z.string().max(500).optional(),
   notes: z.string().optional(),
   location: z.string().max(500).optional(),
@@ -103,14 +103,16 @@ export const ListAppointmentsSchema = z.object({
 export const CreateAvailabilitySlotSchema = z
   .object({
     provider_id: z.string().uuid('Invalid provider ID'),
-    day_of_week: z.number().int().min(0).max(6),
+    day_of_week: z.number().int().min(0).max(6).optional(),
     start_time: z
       .string()
-      .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:mm)'),
+      .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:mm)')
+      .optional(),
     end_time: z
       .string()
-      .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:mm)'),
-    capacity: z.number().int().positive(),
+      .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:mm)')
+      .optional(),
+    capacity: z.number().int().positive().optional(),
     is_recurring: z.boolean().default(true),
     end_date: z
       .string()

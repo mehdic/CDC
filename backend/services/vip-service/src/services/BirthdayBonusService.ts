@@ -13,7 +13,7 @@ import {
 } from '../../../../shared/models/BirthdayBonus';
 import { VipMembership } from '../../../../shared/models/VipMembership';
 import { User } from '../../../../shared/models/User';
-import { PointsTransaction, TransactionSource } from '../../../../shared/models/PointsTransaction';
+import { PointsTransaction, TransactionSource, TransactionType } from '../../../../shared/models/PointsTransaction';
 
 export interface BirthdayBonusDto {
   id: string;
@@ -186,7 +186,7 @@ export class BirthdayBonusService {
         const pointsTransaction = this.pointsTransactionRepo.create({
           vip_membership_id: vipMembership.id,
           vip_membership: vipMembership,
-          type: 'earned',
+          type: TransactionType.EARNED,
           source: TransactionSource.BIRTHDAY,
           amount: Math.round(bonus.bonusValue),
           description: `Birthday bonus - ${bonus.bonusCode}`,

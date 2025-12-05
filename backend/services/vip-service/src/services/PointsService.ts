@@ -179,13 +179,12 @@ export class PointsService {
    */
   async expirePoints(): Promise<number> {
     const now = new Date();
-    const expiringTransactions = await this.transactionRepo.find({
-      where: {
-        expires_at: () => `expires_at <= '${now.toISOString()}'`,
-        redeemed: false,
-        type: TransactionType.EARNED,
-      },
-    });
+    const expiringTransactions = await this.transactionRepo
+      .createQueryBuilder('transaction')
+      .where('transaction.expires_at <= :now', { now })
+      .andWhere('transaction.redeemed = :redeemed', { redeemed: false })
+      .andWhere('transaction.type = :type', { type: TransactionType.EARNED })
+      .getMany();
 
     let totalExpired = 0;
 

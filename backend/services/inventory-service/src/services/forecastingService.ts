@@ -14,7 +14,7 @@
  */
 
 import { AppDataSource } from '../index';
-import { InventoryTransaction } from '../../../../shared/models/InventoryTransaction';
+import { InventoryTransaction, TransactionType } from '../../../../shared/models/InventoryTransaction';
 import { InventoryItem } from '../../../../shared/models/InventoryItem';
 
 // ============================================================================
@@ -243,7 +243,7 @@ async function getCurrentStock(
     where: { pharmacy_id, medication_rxnorm_code },
   });
 
-  return item?.quantity_in_stock || 0;
+  return item?.quantity || 0;
 }
 
 /**
@@ -311,8 +311,8 @@ function calculateBaseStatistics(transactions: InventoryTransaction[]): {
   // Coefficient of variation (CV = std dev / mean)
   const coefficientOfVariation = avgDailyDemand > 0 ? stdDev / avgDailyDemand : 0;
 
-  // Get last restock date
-  const restockTransactions = transactions.filter(t => t.transaction_type === 'restock');
+  // Get last restock date (RECEIVE transactions)
+  const restockTransactions = transactions.filter(t => t.transaction_type === TransactionType.RECEIVE);
   const lastRestockDate = restockTransactions.length > 0
     ? restockTransactions[restockTransactions.length - 1].created_at
     : null;

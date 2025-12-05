@@ -189,11 +189,14 @@ export class EmailChannel extends BaseMessageChannel {
       this.config.retryPolicy?.backoffMs || 1000
     );
 
+    // Type the nodemailer response properly
+    const mailInfo = info as { messageId: string; response: string };
+
     return {
       success: true,
-      externalId: info.messageId,
+      externalId: mailInfo.messageId,
       metadata: {
-        response: info.response,
+        response: mailInfo.response,
         provider: 'smtp',
       },
     };

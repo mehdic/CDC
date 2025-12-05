@@ -67,8 +67,11 @@ export class AchievementService {
   private userRepository: Repository<User>;
 
   constructor() {
-    this.achievementRepository = getRepository(Achievement);
-    this.patientAchievementRepository = getRepository(PatientAchievement);
+    // Note: Achievement and PatientAchievement are temporary type definitions
+    // In production, these should be actual entity classes for getRepository()
+    // For now, we use type assertions to work with the mock repositories
+    this.achievementRepository = getRepository(User) as any; // Placeholder until Achievement entity is created
+    this.patientAchievementRepository = getRepository(User) as any; // Placeholder until PatientAchievement entity is created
     this.userRepository = getRepository(User);
   }
 

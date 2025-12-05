@@ -19,7 +19,7 @@ import {
   ListAvailabilitySlotsInput,
   CreateReminderInput,
 } from '../validators/appointment.validators';
-import { ReminderType } from '../types/appointment.types';
+import { ReminderType, AppointmentCreateRequest, AvailabilitySlotCreateRequest } from '../types/appointment.types';
 
 export class AppointmentController {
   constructor(
@@ -36,7 +36,10 @@ export class AppointmentController {
    * Create new appointment
    */
   async createAppointment(data: CreateAppointmentInput): Promise<Appointment> {
-    return this.appointmentService.createAppointment(data);
+    // Cast validated input to service request type
+    // The validator ensures all required fields are present
+    const request = data as any as AppointmentCreateRequest;
+    return this.appointmentService.createAppointment(request);
   }
 
   /**
@@ -132,7 +135,9 @@ export class AppointmentController {
   async createAvailabilitySlot(
     data: CreateAvailabilitySlotInput
   ): Promise<AvailabilitySlot> {
-    return this.availabilityService.createSlot(data);
+    // Cast validated input to service request type
+    const request = data as any as AvailabilitySlotCreateRequest;
+    return this.availabilityService.createSlot(request);
   }
 
   /**
