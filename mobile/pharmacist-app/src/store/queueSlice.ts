@@ -4,7 +4,7 @@
  * T114 - User Story 1: Prescription Processing & Validation
  */
 
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
 import prescriptionService, {
   Prescription,
@@ -90,7 +90,7 @@ const initialState: QueueState = {
  */
 export const fetchPrescriptionQueue = createAsyncThunk(
   'queue/fetchPrescriptionQueue',
-  async (params?: Partial<ListPrescriptionsParams>, { getState, rejectWithValue }) => {
+  async (params: Partial<ListPrescriptionsParams> = {}, { getState, rejectWithValue }) => {
     try {
       const state = getState() as { queue: QueueState };
       const { filters, pagination } = state.queue;
