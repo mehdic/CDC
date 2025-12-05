@@ -5,11 +5,11 @@
  */
 
 import { getRepository, Repository, SelectQueryBuilder } from 'typeorm';
-import { Review } from '../../../shared/models/Review';
-import { ReviewResponse } from '../../../shared/models/ReviewResponse';
-import { ServiceReview, ServiceType, ServiceReviewStatus } from '../../../shared/models/ServiceReview';
-import { MedicationEffectiveness } from '../../../shared/models/MedicationEffectiveness';
-import { SideEffectReport } from '../../../shared/models/SideEffectReport';
+import { Review } from '@models/Review';
+import { ReviewResponse } from '@models/ReviewResponse';
+import { ServiceReview, ServiceType, ServiceReviewStatus } from '@models/ServiceReview';
+import { MedicationEffectiveness } from '@models/MedicationEffectiveness';
+import { SideEffectReport, SeverityLevel } from '@models/SideEffectReport';
 
 export interface CreateReviewRequest {
   product_id: string;
@@ -121,7 +121,7 @@ export class ReviewService {
    * Update a review
    */
   async updateReview(reviewId: string, updates: Partial<CreateReviewRequest>): Promise<Review> {
-    const review = await this.reviewRepository.findOne(reviewId);
+    const review = await this.reviewRepository.findOne({ where: { id: reviewId } });
     if (!review) throw new Error('Review not found');
 
     Object.assign(review, updates);
@@ -189,7 +189,7 @@ export class ReviewService {
    * Mark review as helpful
    */
   async markHelpful(reviewId: string): Promise<Review> {
-    const review = await this.reviewRepository.findOne(reviewId);
+    const review = await this.reviewRepository.findOne({ where: { id: reviewId } });
     if (!review) throw new Error('Review not found');
 
     review.markHelpful();
@@ -200,7 +200,7 @@ export class ReviewService {
    * Report a review
    */
   async reportReview(reviewId: string, reason: string, reportedBy: string): Promise<Review> {
-    const review = await this.reviewRepository.findOne(reviewId);
+    const review = await this.reviewRepository.findOne({ where: { id: reviewId } });
     if (!review) throw new Error('Review not found');
 
     review.flag(reason, reportedBy);
@@ -211,7 +211,7 @@ export class ReviewService {
    * Respond to a review (pharmacy response)
    */
   async respondToReview(reviewId: string, pharmacyId: string, request: RespondToReviewRequest): Promise<ReviewResponse> {
-    const review = await this.reviewRepository.findOne(reviewId);
+    const review = await this.reviewRepository.findOne({ where: { id: reviewId } });
     if (!review) throw new Error('Review not found');
 
     const response = this.reviewResponseRepository.create({
@@ -233,7 +233,7 @@ export class ReviewService {
     moderatedBy: string,
     reason?: string,
   ): Promise<Review> {
-    const review = await this.reviewRepository.findOne(reviewId);
+    const review = await this.reviewRepository.findOne({ where: { id: reviewId } });
     if (!review) throw new Error('Review not found');
 
     if (approved) {
@@ -380,7 +380,7 @@ export class ReviewService {
    * Approve service review
    */
   async approveServiceReview(reviewId: string, approvedBy: string): Promise<ServiceReview> {
-    const review = await this.serviceReviewRepository.findOne(reviewId);
+    const review = await this.serviceReviewRepository.findOne({ where: { id: reviewId } });
     if (!review) throw new Error('Service review not found');
 
     review.approve(approvedBy);
@@ -391,7 +391,7 @@ export class ReviewService {
    * Reject service review
    */
   async rejectServiceReview(reviewId: string, rejectedBy: string): Promise<ServiceReview> {
-    const review = await this.serviceReviewRepository.findOne(reviewId);
+    const review = await this.serviceReviewRepository.findOne({ where: { id: reviewId } });
     if (!review) throw new Error('Service review not found');
 
     review.reject(rejectedBy);
@@ -477,7 +477,7 @@ export class ReviewService {
     return await this.sideEffectReportRepository.find({
       where: {
         product_id: productId,
-        severity: 'severe',
+        severity: SeverityLevel.SEVERE,
       },
       order: { report_date: 'DESC' },
     });

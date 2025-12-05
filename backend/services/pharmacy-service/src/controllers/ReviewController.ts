@@ -6,7 +6,7 @@
 
 import { Router, Request, Response } from 'express';
 import { ReviewService } from '../services/ReviewService';
-import { ServiceType } from '../../../shared/models/ServiceReview';
+import { ServiceType } from '@models/ServiceReview';
 
 export class ReviewController {
   private reviewService: ReviewService;
