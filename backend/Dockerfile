@@ -32,12 +32,13 @@ RUN apk add --no-cache \
     git \
     ca-certificates
 
-# Copy package files for root and all services
+# Copy package files for backend service
 COPY package*.json ./
 COPY tsconfig.json ./
 
 # Install ALL dependencies (including devDependencies for TypeScript compilation)
-RUN npm ci --include=dev
+# Use npm install since we're in a backend workspace without a separate package-lock.json
+RUN npm install
 
 # ========================================
 # Stage 2: TypeScript Build
@@ -77,7 +78,7 @@ WORKDIR /app
 
 # Install production dependencies only (remove dev dependencies)
 COPY package*.json ./
-RUN npm ci --omit=dev && \
+RUN npm install --omit=dev && \
     npm cache clean --force
 
 # Copy compiled TypeScript from builder stage

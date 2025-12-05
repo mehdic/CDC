@@ -83,7 +83,6 @@ Dockerfile
 .dockerignore
 
 # Config files not needed in production
-tsconfig.json
 .eslintrc*
 .prettierrc*
 babel.config.js
