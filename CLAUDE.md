@@ -237,6 +237,60 @@ Complete orchestration workflow: `.claude/agents/orchestrator.md`
 
 ---
 
+## 🚨 MANDATORY: CI Pipeline Verification Before BAZINGA
+
+**CRITICAL:** Before PM can send BAZINGA, the orchestrator MUST verify CI pipelines:
+
+### Pre-BAZINGA CI Check Protocol
+
+When PM signals ready for BAZINGA, the orchestrator MUST:
+
+1. **Push all changes to GitHub** (if not already pushed)
+2. **Wait for CI workflows to complete** (poll every 60 seconds)
+3. **Verify ALL workflows pass:**
+   - Web CI
+   - Mobile CI
+   - Backend CI
+   - Playwright E2E Tests
+   - Security Vulnerability Scan
+   - CI Pipeline (Docker Compose)
+
+### If ANY CI workflow fails:
+
+```
+❌ CI VERIFICATION FAILED
+Failing workflows: [list failing workflows]
+
+🔄 ORCHESTRATOR: Spawning new orchestration cycle to fix CI failures...
+[Spawn PM with: "CI pipelines failed. Analyze failures and create fix plan."]
+```
+
+**DO NOT send BAZINGA until ALL CI workflows are GREEN.**
+
+### CI Verification Commands:
+
+```bash
+# Check all workflow statuses
+curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+  "https://api.github.com/repos/mehdic/CDC/actions/runs?per_page=10" | \
+  jq '.workflow_runs[:6] | .[] | {name: .name, status: .status, conclusion: .conclusion}'
+
+# Download logs for failed workflow
+curl -s -L -H "Authorization: Bearer $GITHUB_TOKEN" \
+  "https://api.github.com/repos/mehdic/CDC/actions/runs/{run_id}/logs" -o logs.zip
+```
+
+### BAZINGA is ONLY valid when:
+
+- ✅ All code changes committed and pushed
+- ✅ All CI workflows completed
+- ✅ All CI workflows show `"conclusion": "success"`
+- ✅ PM has reviewed final status and approved
+
+**This is NON-NEGOTIABLE. A BAZINGA with failing CI is INVALID.**
+
+---
+
 ## 🔄 GitHub Workflow Monitoring Guidelines
 
 When monitoring GitHub Actions workflows:
