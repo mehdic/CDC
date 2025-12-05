@@ -39,16 +39,13 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint -- --format json --output-file eslint-report.json || true
-        continue-on-error: true
 
       - name: Run Prettier
         run: npm run format:check || true
-        continue-on-error: true
 
       - name: Backend Linting
         working-directory: backend
         run: npm run lint || true
-        continue-on-error: true
 
       - name: Upload lint reports
         uses: actions/upload-artifact@v4
@@ -102,7 +99,6 @@ jobs:
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml build \
             --build-arg NODE_ENV=test
-        continue-on-error: true
         timeout-minutes: 15
 
       - name: Verify Docker build
@@ -140,7 +136,6 @@ jobs:
         run: npm run build --workspace=${{ matrix.app }}
         env:
           NODE_ENV: production
-        continue-on-error: true
         timeout-minutes: 10
 
       - name: Archive ${{ matrix.app }} build
@@ -169,7 +164,6 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.test.yml up -d \
             postgres redis api-gateway auth-service user-service
           echo "Waiting for services to be healthy..."
-        continue-on-error: true
         timeout-minutes: 5
 
       - name: Health check - Postgres
@@ -207,7 +201,6 @@ jobs:
           docker compose exec -T api-gateway npm test -- --coverage || echo "Tests skipped - container not running"
         env:
           NODE_ENV: test
-        continue-on-error: true
         timeout-minutes: 10
 
       - name: Extract test coverage from container
@@ -224,13 +217,11 @@ jobs:
       - name: Install web dependencies
         working-directory: web
         run: npm ci
-        continue-on-error: true
         timeout-minutes: 5
 
       - name: Run web unit tests
         working-directory: web
         run: npm run test -- --coverage
-        continue-on-error: true
 
       - name: Upload backend coverage
         uses: codecov/codecov-action@v4
@@ -280,7 +271,6 @@ jobs:
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
           echo "Waiting for all services to be healthy..."
-        continue-on-error: true
         timeout-minutes: 10
 
       - name: Wait for critical services health
@@ -298,12 +288,10 @@ jobs:
           done
           '
         timeout-minutes: 3
-        continue-on-error: true
 
       - name: Run integration tests
         run: |
           docker compose exec -T api-gateway npm run test:integration -- --detectOpenHandles --forceExit || true
-        continue-on-error: true
 
       - name: Collect integration test results
         run: |
@@ -355,7 +343,6 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'HIGH,CRITICAL'
-        continue-on-error: true
 
       - name: Upload Trivy results
         uses: github/codeql-action/upload-sarif@v3
@@ -381,13 +368,11 @@ jobs:
 
       - name: Run npm audit
         run: npm audit --audit-level=moderate || true
-        continue-on-error: true
 
       - name: Check for hardcoded secrets
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true
 
   quality-report:
     name: CI Quality Report
@@ -401,6 +386,7 @@ jobs:
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+        if: always()
         continue-on-error: true
 
       - name: Generate Quality Report

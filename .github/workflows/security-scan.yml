@@ -181,7 +181,6 @@ jobs:
         run: |
           # Build the api-gateway service with proper tagging
           docker compose -f docker-compose.yml build api-gateway
-        continue-on-error: true
 
       - name: Run Trivy vulnerability scanner (Filesystem)
         uses: aquasecurity/trivy-action@master
