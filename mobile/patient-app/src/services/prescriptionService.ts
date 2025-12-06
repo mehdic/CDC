@@ -12,6 +12,7 @@ import {
   GetPrescriptionResponse,
   ApiResponse,
 } from '@metapharm/api-types';
+import axios, { AxiosInstance } from 'axios';
 
 // Define missing type locally until api-types is updated
 export interface ListPrescriptionsResponse {
@@ -22,7 +23,6 @@ export interface ListPrescriptionsResponse {
   limit: number;
   hasMore: boolean;
 }
-import axios, { AxiosInstance } from 'axios';
 
 // API Configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';

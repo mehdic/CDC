@@ -9,4 +9,7 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|@react-navigation)/)',
   ],
+  moduleNameMapper: {
+    '^@metapharm/api-types$': '<rootDir>/../../packages/api-types/src/index.ts',
+  },
 };

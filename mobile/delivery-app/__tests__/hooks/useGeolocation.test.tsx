@@ -3,19 +3,25 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
+import React from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import Geolocation from 'react-native-geolocation-service';
 import { useGeolocation } from '../../src/hooks/useGeolocation';
 import deliveryReducer from '../../src/store/deliverySlice';
 import authReducer from '../../src/store/authSlice';
 
+// Define mock functions outside to avoid resetMocks issues
+const mockRequestAuthorization = jest.fn();
+const mockGetCurrentPosition = jest.fn();
+const mockWatchPosition = jest.fn();
+const mockClearWatch = jest.fn();
+
 // Mock Geolocation
 jest.mock('react-native-geolocation-service', () => ({
-  requestAuthorization: jest.fn(),
-  getCurrentPosition: jest.fn(),
-  watchPosition: jest.fn(),
-  clearWatch: jest.fn(),
+  requestAuthorization: (...args: unknown[]) => mockRequestAuthorization(...args),
+  getCurrentPosition: (...args: unknown[]) => mockGetCurrentPosition(...args),
+  watchPosition: (...args: unknown[]) => mockWatchPosition(...args),
+  clearWatch: (...args: unknown[]) => mockClearWatch(...args),
 }));
 
 // Mock PermissionsAndroid
@@ -45,8 +51,11 @@ describe('useGeolocation', () => {
 
   beforeEach(() => {
     store = createMockStore();
-    jest.clearAllMocks();
-    (Geolocation.requestAuthorization as jest.Mock).mockResolvedValue('granted');
+    mockRequestAuthorization.mockReset();
+    mockGetCurrentPosition.mockReset();
+    mockWatchPosition.mockReset();
+    mockClearWatch.mockReset();
+    mockRequestAuthorization.mockResolvedValue('granted');
   });
 
   it('should request location permission', async () => {
@@ -54,11 +63,11 @@ describe('useGeolocation', () => {
 
     renderHook(() => useGeolocation(false), { wrapper });
 
-    expect(Geolocation.requestAuthorization).toHaveBeenCalledWith('whenInUse');
+    expect(mockRequestAuthorization).toHaveBeenCalledWith('whenInUse');
   });
 
   it('should return permission denied error when not granted', async () => {
-    (Geolocation.requestAuthorization as jest.Mock).mockResolvedValue('denied');
+    mockRequestAuthorization.mockResolvedValue('denied');
 
     const wrapper = ({ children }: any) => <Provider store={store}>{children}</Provider>;
     const { result } = renderHook(() => useGeolocation(false), { wrapper });
@@ -72,14 +81,14 @@ describe('useGeolocation', () => {
   });
 
   it('should start tracking when enabled', async () => {
-    (Geolocation.requestAuthorization as jest.Mock).mockResolvedValue('granted');
-    (Geolocation.getCurrentPosition as jest.Mock).mockImplementation((success) => {
+    mockRequestAuthorization.mockResolvedValue('granted');
+    mockGetCurrentPosition.mockImplementation((success: (position: any) => void) => {
       success({
         coords: { latitude: 46.8182, longitude: 8.2275, accuracy: 10 },
         timestamp: Date.now(),
       });
     });
-    (Geolocation.watchPosition as jest.Mock).mockReturnValue(1);
+    mockWatchPosition.mockReturnValue(1);
 
     const wrapper = ({ children }: any) => <Provider store={store}>{children}</Provider>;
 
@@ -92,13 +101,13 @@ describe('useGeolocation', () => {
       await new Promise((resolve) => setTimeout(resolve, 200));
     });
 
-    expect(Geolocation.getCurrentPosition).toHaveBeenCalled();
-    expect(Geolocation.watchPosition).toHaveBeenCalled();
+    expect(mockGetCurrentPosition).toHaveBeenCalled();
+    expect(mockWatchPosition).toHaveBeenCalled();
   });
 
   it('should clear watch on unmount', async () => {
-    (Geolocation.requestAuthorization as jest.Mock).mockResolvedValue('granted');
-    (Geolocation.watchPosition as jest.Mock).mockReturnValue(1);
+    mockRequestAuthorization.mockResolvedValue('granted');
+    mockWatchPosition.mockReturnValue(1);
 
     const wrapper = ({ children }: any) => <Provider store={store}>{children}</Provider>;
 
@@ -112,6 +121,6 @@ describe('useGeolocation', () => {
 
     unmount();
 
-    expect(Geolocation.clearWatch).toHaveBeenCalledWith(1);
+    expect(mockClearWatch).toHaveBeenCalledWith(1);
   });
 });

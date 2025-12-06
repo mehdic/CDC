@@ -52,7 +52,7 @@ module.exports = {
     'import/no-unresolved': [
       'error',
       {
-        ignore: ['react-native', 'react-native-keychain', '../store'],
+        ignore: ['react-native', 'react-native-keychain', '../store', '@metapharm/api-types'],
       },
     ],
     'import/namespace': 'off',
