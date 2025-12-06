@@ -15,8 +15,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  Relation,
 } from 'typeorm';
-import { Product } from './Product';
+
+// Forward reference type for Product (avoids circular dependency)
+import type { Product } from './Product';
 
 @Entity('categories')
 export class Category {
@@ -78,8 +81,8 @@ export class Category {
   // Relationships
   // ============================================================================
 
-  @OneToMany(() => Product, (product) => product.category)
-  products: Product[];
+  @OneToMany('Product', 'category')
+  products: Relation<Product[]>;
 
   // ============================================================================
   // Metadata
