@@ -10,11 +10,8 @@ import {
   Animated,
   ViewStyle,
   StyleProp,
-  LayoutAnimation,
   UIManager,
   Platform,
-  FlatListProps,
-  FlatList,
   Easing,
 } from 'react-native';
 
