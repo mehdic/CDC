@@ -3,13 +3,46 @@
  * Task: T155
  */
 
-import { render, waitFor, act } from '@testing-library/react-native';
+import { render, act, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
 import TwilioVideoComponent from '../src/components/TwilioVideo';
 
-// Use the global mock from __mocks__ folder
-// The mock uses callback props pattern matching the actual component
+// Store captured props to trigger callbacks in tests
+let capturedTwilioProps: any = {};
+const mockConnect = jest.fn();
+const mockDisconnect = jest.fn();
+const mockSetLocalVideoEnabled = jest.fn();
+
+// Mock the Twilio SDK with a proper React component
+jest.mock('react-native-twilio-video-webrtc', () => {
+  const _React = require('react');
+
+  // TwilioVideo component that captures props and provides ref methods
+  const TwilioVideo = _React.forwardRef((props: any, ref: any) => {
+    // Store props so tests can access and trigger callbacks
+    capturedTwilioProps = props;
+
+    // Provide imperative methods via ref
+    _React.useImperativeHandle(ref, () => ({
+      connect: mockConnect,
+      disconnect: mockDisconnect,
+      setLocalVideoEnabled: mockSetLocalVideoEnabled,
+    }));
+
+    return _React.createElement('TwilioVideo', props);
+  });
+
+  return {
+    TwilioVideo,
+    TwilioVideoLocalView: (props: any) => {
+      return _React.createElement('TwilioVideoLocalView', props);
+    },
+    TwilioVideoParticipantView: (props: any) => {
+      return _React.createElement('TwilioVideoParticipantView', props);
+    },
+  };
+});
 
 describe('TwilioVideo', () => {
   const mockProps = {
@@ -17,17 +50,11 @@ describe('TwilioVideo', () => {
     roomName: 'test-room',
   };
 
-  // Access the mock module to trigger callbacks
-  // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
-  const { TwilioVideo: MockTwilioVideo } = require('react-native-twilio-video-webrtc');
-
   beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.runOnlyPendingTimers();
-    jest.useRealTimers();
+    capturedTwilioProps = {};
+    mockConnect.mockReset();
+    mockDisconnect.mockReset();
+    mockSetLocalVideoEnabled.mockReset();
   });
 
   it('renders loading state initially', () => {
@@ -44,9 +71,11 @@ describe('TwilioVideo', () => {
     // Initially shows connecting
     expect(getByText('Connecting to video call...')).toBeTruthy();
 
-    // Advance timers to trigger the connection callback
+    // Trigger the onRoomDidConnect callback
     await act(async () => {
-      jest.advanceTimersByTime(50);
+      if (capturedTwilioProps.onRoomDidConnect) {
+        capturedTwilioProps.onRoomDidConnect();
+      }
     });
 
     // Verify callback was called
@@ -61,9 +90,11 @@ describe('TwilioVideo', () => {
     // Initially shows connecting
     expect(getByText('Connecting to video call...')).toBeTruthy();
 
-    // Advance timers to trigger the connection callback
+    // Trigger the onRoomDidConnect callback
     await act(async () => {
-      jest.advanceTimersByTime(50);
+      if (capturedTwilioProps.onRoomDidConnect) {
+        capturedTwilioProps.onRoomDidConnect();
+      }
     });
 
     // Wait for connected state and verify audio-only mode is displayed
@@ -78,9 +109,11 @@ describe('TwilioVideo', () => {
     // Initially shows connecting
     expect(getByText('Connecting to video call...')).toBeTruthy();
 
-    // Advance timers to trigger the connection callback
+    // Trigger the onRoomDidConnect callback
     await act(async () => {
-      jest.advanceTimersByTime(50);
+      if (capturedTwilioProps.onRoomDidConnect) {
+        capturedTwilioProps.onRoomDidConnect();
+      }
     });
 
     // Wait for connected state and verify waiting state is displayed
@@ -91,8 +124,16 @@ describe('TwilioVideo', () => {
 
   it('calls onError when connection fails', async () => {
     const onError = jest.fn();
-    // We can't easily simulate a connection failure in this test environment
-    // This would be tested in integration tests with actual Twilio SDK
+    render(<TwilioVideoComponent {...mockProps} onError={onError} />);
+
+    // Trigger the onRoomDidFailToConnect callback
+    await act(async () => {
+      if (capturedTwilioProps.onRoomDidFailToConnect) {
+        capturedTwilioProps.onRoomDidFailToConnect({ error: 'Connection failed' });
+      }
+    });
+
+    expect(onError).toHaveBeenCalled();
   });
 
   it('calls onDisconnected when component unmounts', async () => {
@@ -105,9 +146,11 @@ describe('TwilioVideo', () => {
     // Initially shows connecting
     expect(getByText('Connecting to video call...')).toBeTruthy();
 
-    // Advance timers to trigger the connection callback
+    // Trigger the onRoomDidConnect callback first
     await act(async () => {
-      jest.advanceTimersByTime(50);
+      if (capturedTwilioProps.onRoomDidConnect) {
+        capturedTwilioProps.onRoomDidConnect();
+      }
     });
 
     // Wait for connected state
@@ -129,9 +172,11 @@ describe('TwilioVideo', () => {
     // Initially shows connecting
     expect(getByText('Connecting to video call...')).toBeTruthy();
 
-    // Advance timers to trigger the connection callback
+    // Trigger the onRoomDidConnect callback
     await act(async () => {
-      jest.advanceTimersByTime(50);
+      if (capturedTwilioProps.onRoomDidConnect) {
+        capturedTwilioProps.onRoomDidConnect();
+      }
     });
 
     // Wait for connected state

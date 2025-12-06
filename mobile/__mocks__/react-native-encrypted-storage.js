@@ -1,25 +1,40 @@
-/**
- * Mock for react-native-encrypted-storage
- */
+// Mock for react-native-encrypted-storage
+const storage = {};
 
-const mockStorage = {};
+const setItem = jest.fn((key, value) => {
+  storage[key] = value;
+  return Promise.resolve();
+});
 
-const EncryptedStorage = {
-  setItem: jest.fn(async (key, value) => {
-    mockStorage[key] = value;
-    return Promise.resolve();
-  }),
-  getItem: jest.fn(async (key) => {
-    return Promise.resolve(mockStorage[key] || null);
-  }),
-  removeItem: jest.fn(async (key) => {
-    delete mockStorage[key];
-    return Promise.resolve();
-  }),
-  clear: jest.fn(async () => {
-    Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
-    return Promise.resolve();
-  }),
+const getItem = jest.fn((key) => {
+  return Promise.resolve(storage[key] || null);
+});
+
+const removeItem = jest.fn((key) => {
+  delete storage[key];
+  return Promise.resolve();
+});
+
+const clear = jest.fn(() => {
+  Object.keys(storage).forEach((key) => delete storage[key]);
+  return Promise.resolve();
+});
+
+const getAllKeys = jest.fn(() => {
+  return Promise.resolve(Object.keys(storage));
+});
+
+module.exports = {
+  default: {
+    setItem,
+    getItem,
+    removeItem,
+    clear,
+    getAllKeys,
+  },
+  setItem,
+  getItem,
+  removeItem,
+  clear,
+  getAllKeys,
 };
-
-export default EncryptedStorage;
