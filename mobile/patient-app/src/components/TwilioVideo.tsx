@@ -64,7 +64,8 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
   const [connecting, setConnecting] = useState(true);
   const [remoteParticipants, setRemoteParticipants] = useState<Participant[]>([]);
   const [localVideoEnabled, setLocalVideoEnabled] = useState(!audioOnly);
-  const twilioRef = useRef<TwilioVideoRef | null>(null);
+  // Use 'any' type for ref as the TwilioVideo library types don't expose all methods in the ref type
+  const twilioRef = useRef<any>(null);
   const [refReady, setRefReady] = useState(false);
 
   // Effect to connect once ref is ready
@@ -78,7 +79,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
     };
   }, [accessToken, roomName, refReady]);
 
-  const handleRef = (ref: TwilioVideoRef | null) => {
+  const handleRef = (ref: any) => {
     twilioRef.current = ref;
     if (ref && !refReady) {
       setRefReady(true);

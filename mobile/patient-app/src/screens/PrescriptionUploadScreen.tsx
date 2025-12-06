@@ -3,7 +3,7 @@
  * Allows patients to upload prescription images via camera or gallery
  */
 
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   View,
@@ -28,7 +28,7 @@ export const PrescriptionUploadScreen: React.FC = () => {
   const [uploadedPrescriptionId, setUploadedPrescriptionId] = useState<string | null>(null);
 
   const dispatch = useDispatch();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const uploading = useSelector(selectUploading);
   const uploadProgress = useSelector(selectUploadProgress);
 
@@ -90,7 +90,7 @@ export const PrescriptionUploadScreen: React.FC = () => {
               text: 'OK',
               onPress: () => {
                 // Navigate to prescription detail screen
-                navigation.navigate('PrescriptionDetail' as never, { prescriptionId: prescription.id } as never);
+                navigation.navigate('PrescriptionDetail', { prescriptionId: prescription.id });
               },
             },
           ]

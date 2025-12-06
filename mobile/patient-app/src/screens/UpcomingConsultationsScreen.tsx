@@ -6,7 +6,7 @@
  * FR-022: System MUST send appointment reminder notifications
  */
 
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -34,7 +34,7 @@ interface Teleconsultation {
 }
 
 const UpcomingConsultationsScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const [consultations, setConsultations] = useState<Teleconsultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

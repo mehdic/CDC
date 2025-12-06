@@ -55,6 +55,11 @@ import { hashPassword, comparePassword } from '../utils/auth';
 // ============================================================================
 
 describe('Security Configuration (T250)', () => {
+  // Set required environment variables for security config tests
+  beforeAll(() => {
+    process.env.SESSION_SECRET = 'test-session-secret-that-is-at-least-32-characters-long';
+  });
+
   describe('Environment Detection', () => {
     it('should detect environment from NODE_ENV', () => {
       const env = getEnvironment();
