@@ -144,9 +144,9 @@ export class LocationService {
         },
         {
           enableHighAccuracy: false, // Lower accuracy for better battery
-          timeout: 30000,
           maximumAge: 5000,
           distanceFilter: 50, // Update only when moved 50 meters
+          interval: 30000, // Update interval in milliseconds
         }
       );
 
