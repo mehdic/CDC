@@ -33,8 +33,8 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create non-root user
-RUN addgroup --gid 1001 nodejs && \
-    adduser --uid 1001 --gid 1001 nextjs
+RUN addgroup -g 1001 nodejs && \
+    adduser -u 1001 -G nodejs -D -H nextjs
 
 # Copy standalone output from builder
 COPY --from=builder /app/.next/standalone ./
