@@ -66,14 +66,25 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
   const [localVideoEnabled, setLocalVideoEnabled] = useState(!audioOnly);
   // Use 'any' type for ref as the TwilioVideo library types don't expose all methods in the ref type
   const twilioRef = useRef<any>(null);
+  const [refReady, setRefReady] = useState(false);
 
+  // Effect to connect once ref is ready
   useEffect(() => {
-    connectToRoom();
+    if (refReady) {
+      connectToRoom();
+    }
 
     return () => {
       disconnectFromRoom();
     };
-  }, [accessToken, roomName]);
+  }, [accessToken, roomName, refReady]);
+
+  const handleRef = (ref: any) => {
+    twilioRef.current = ref;
+    if (ref && !refReady) {
+      setRefReady(true);
+    }
+  };
 
   const connectToRoom = async () => {
     try {
@@ -82,7 +93,8 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
       }
 
       if (!twilioRef.current) {
-        throw new Error('TwilioVideo component not initialized');
+        // Ref not ready yet, will retry when ref is set
+        return;
       }
 
       setConnecting(true);
@@ -182,12 +194,12 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
     }
   };
 
-  // Always render TwilioVideo component to establish ref, but control visibility
+  // Always render TwilioVideo component to get the ref, but show overlays based on state
   return (
     <View style={styles.container}>
-      {/* TwilioVideo component - always rendered to maintain ref for connection */}
+      {/* TwilioVideo component with event handlers - always rendered for ref */}
       <TwilioVideo
-        ref={twilioRef}
+        ref={handleRef}
         onRoomDidConnect={handleRoomDidConnect}
         onRoomDidDisconnect={handleRoomDidDisconnect}
         onRoomDidFailToConnect={handleRoomDidFailToConnect}
@@ -196,7 +208,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         onNetworkQualityLevelsChanged={handleNetworkQualityLevelsChanged}
       />
 
-      {/* Loading state */}
+      {/* Loading state overlay */}
       {connecting && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
@@ -204,14 +216,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         </View>
       )}
 
-      {/* Error/Not connected state */}
-      {!connecting && !connected && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Not connected</Text>
-        </View>
-      )}
-
-      {/* Connected state */}
+      {/* Connected state content */}
       {connected && (
         <>
           {/* Remote Participant Video */}
@@ -227,7 +232,7 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
               />
               {/* Security indicator */}
               <View style={styles.securityIndicator}>
-                <Text style={styles.securityText}>🔒 Encrypted</Text>
+                <Text style={styles.securityText}>Encrypted</Text>
               </View>
             </View>
           ) : (
@@ -253,11 +258,18 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
           {/* Audio-Only Indicator */}
           {audioOnly && (
             <View style={styles.audioOnlyContainer}>
-              <Text style={styles.audioOnlyIcon}>🎤</Text>
+              <Text style={styles.audioOnlyIcon}>M</Text>
               <Text style={styles.audioOnlyText}>Audio Only Mode</Text>
             </View>
           )}
         </>
+      )}
+
+      {/* Not connected state (connection failed) */}
+      {!connecting && !connected && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Not connected</Text>
+        </View>
       )}
     </View>
   );

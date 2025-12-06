@@ -3,7 +3,7 @@
  * Task: T155
  */
 
-import { render, act } from '@testing-library/react-native';
+import { render, act, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
 import TwilioVideoComponent from '../src/components/TwilioVideo';
@@ -66,7 +66,10 @@ describe('TwilioVideo', () => {
   it('renders connected state after connection', async () => {
     const onConnected = jest.fn();
 
-    render(<TwilioVideoComponent {...mockProps} onConnected={onConnected} />);
+    const { getByText } = render(<TwilioVideoComponent {...mockProps} onConnected={onConnected} />);
+
+    // Initially shows connecting
+    expect(getByText('Connecting to video call...')).toBeTruthy();
 
     // Trigger the onRoomDidConnect callback
     await act(async () => {
@@ -76,12 +79,17 @@ describe('TwilioVideo', () => {
     });
 
     // Verify callback was called
-    expect(onConnected).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(onConnected).toHaveBeenCalled();
+    });
   });
 
   it('renders audio-only mode when audioOnly prop is true', async () => {
     const { getByText } = render(<TwilioVideoComponent {...mockProps} audioOnly={true} />);
 
+    // Initially shows connecting
+    expect(getByText('Connecting to video call...')).toBeTruthy();
+
     // Trigger the onRoomDidConnect callback
     await act(async () => {
       if (capturedTwilioProps.onRoomDidConnect) {
@@ -89,13 +97,18 @@ describe('TwilioVideo', () => {
       }
     });
 
-    // Verify audio-only mode is displayed
-    expect(getByText('Audio Only Mode')).toBeTruthy();
+    // Wait for connected state and verify audio-only mode is displayed
+    await waitFor(() => {
+      expect(getByText('Audio Only Mode')).toBeTruthy();
+    });
   });
 
   it('renders waiting state when no remote participants', async () => {
     const { getByText } = render(<TwilioVideoComponent {...mockProps} />);
 
+    // Initially shows connecting
+    expect(getByText('Connecting to video call...')).toBeTruthy();
+
     // Trigger the onRoomDidConnect callback
     await act(async () => {
       if (capturedTwilioProps.onRoomDidConnect) {
@@ -103,8 +116,10 @@ describe('TwilioVideo', () => {
       }
     });
 
-    // Verify waiting state is displayed
-    expect(getByText('Waiting for pharmacist to join...')).toBeTruthy();
+    // Wait for connected state and verify waiting state is displayed
+    await waitFor(() => {
+      expect(getByText('Waiting for pharmacist to join...')).toBeTruthy();
+    });
   });
 
   it('calls onError when connection fails', async () => {
@@ -124,15 +139,23 @@ describe('TwilioVideo', () => {
   it('calls onDisconnected when component unmounts', async () => {
     const onDisconnected = jest.fn();
 
-    const { unmount } = render(
+    const { unmount, getByText } = render(
       <TwilioVideoComponent {...mockProps} onDisconnected={onDisconnected} />
     );
+
+    // Initially shows connecting
+    expect(getByText('Connecting to video call...')).toBeTruthy();
 
     // Trigger the onRoomDidConnect callback first
     await act(async () => {
       if (capturedTwilioProps.onRoomDidConnect) {
         capturedTwilioProps.onRoomDidConnect();
       }
+    });
+
+    // Wait for connected state
+    await waitFor(() => {
+      expect(getByText('Waiting for pharmacist to join...')).toBeTruthy();
     });
 
     // Unmount and check disconnect was called
@@ -142,15 +165,23 @@ describe('TwilioVideo', () => {
   });
 
   it('renders local video container when not in audio-only mode', async () => {
-    const { queryByText } = render(
+    const { getByText, queryByText } = render(
       <TwilioVideoComponent {...mockProps} audioOnly={false} />
     );
+
+    // Initially shows connecting
+    expect(getByText('Connecting to video call...')).toBeTruthy();
 
     // Trigger the onRoomDidConnect callback
     await act(async () => {
       if (capturedTwilioProps.onRoomDidConnect) {
         capturedTwilioProps.onRoomDidConnect();
       }
+    });
+
+    // Wait for connected state
+    await waitFor(() => {
+      expect(getByText('Waiting for pharmacist to join...')).toBeTruthy();
     });
 
     // Local video should be visible (not audio-only mode)
