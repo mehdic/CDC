@@ -32,9 +32,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create non-root user
-RUN addgroup --gid 1001 nodejs && \
-    adduser --uid 1001 --gid 1001 nextjs
+# Create non-root user (Alpine syntax)
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -u 1001 -G nodejs -S -D nextjs
 
 # Copy standalone output from builder
 COPY --from=builder /app/.next/standalone ./
