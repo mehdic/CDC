@@ -65,14 +65,25 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
   const [remoteParticipants, setRemoteParticipants] = useState<Participant[]>([]);
   const [localVideoEnabled, setLocalVideoEnabled] = useState(!audioOnly);
   const twilioRef = useRef<TwilioVideoRef | null>(null);
+  const [refReady, setRefReady] = useState(false);
 
+  // Effect to connect once ref is ready
   useEffect(() => {
-    connectToRoom();
+    if (refReady) {
+      connectToRoom();
+    }
 
     return () => {
       disconnectFromRoom();
     };
-  }, [accessToken, roomName]);
+  }, [accessToken, roomName, refReady]);
+
+  const handleRef = (ref: TwilioVideoRef | null) => {
+    twilioRef.current = ref;
+    if (ref && !refReady) {
+      setRefReady(true);
+    }
+  };
 
   const connectToRoom = async () => {
     try {
@@ -81,7 +92,8 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
       }
 
       if (!twilioRef.current) {
-        throw new Error('TwilioVideo component not initialized');
+        // Ref not ready yet, will retry when ref is set
+        return;
       }
 
       setConnecting(true);
@@ -181,28 +193,12 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
     }
   };
 
-  if (connecting) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Connecting to video call...</Text>
-      </View>
-    );
-  }
-
-  if (!connected) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Not connected</Text>
-      </View>
-    );
-  }
-
+  // Always render TwilioVideo component to get the ref, but show overlays based on state
   return (
     <View style={styles.container}>
-      {/* TwilioVideo component with event handlers */}
+      {/* TwilioVideo component with event handlers - always rendered for ref */}
       <TwilioVideo
-        ref={twilioRef}
+        ref={handleRef}
         onRoomDidConnect={handleRoomDidConnect}
         onRoomDidDisconnect={handleRoomDidDisconnect}
         onRoomDidFailToConnect={handleRoomDidFailToConnect}
@@ -211,47 +207,67 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         onNetworkQualityLevelsChanged={handleNetworkQualityLevelsChanged}
       />
 
-      {/* Remote Participant Video */}
-      {remoteParticipants.length > 0 ? (
-        <View style={styles.remoteVideoContainer}>
-          <TwilioVideoParticipantView
-            trackIdentifier={{
-              participantSid: remoteParticipants[0].sid,
-              videoTrackSid: remoteParticipants[0].sid + '_video',
-            }}
-            style={styles.remoteVideo}
-            scaleType="fit"
-          />
-          {/* Security indicator */}
-          <View style={styles.securityIndicator}>
-            <Text style={styles.securityText}>🔒 Encrypted</Text>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.waitingContainer}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.waitingText}>
-            Waiting for pharmacist to join...
-          </Text>
+      {/* Loading state overlay */}
+      {connecting && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Connecting to video call...</Text>
         </View>
       )}
 
-      {/* Local Video (Picture-in-Picture) */}
-      {!audioOnly && localVideoEnabled && (
-        <View style={styles.localVideoContainer}>
-          <TwilioVideoLocalView
-            enabled={true}
-            style={styles.localVideo}
-            scaleType="fit"
-          />
-        </View>
+      {/* Connected state content */}
+      {connected && (
+        <>
+          {/* Remote Participant Video */}
+          {remoteParticipants.length > 0 ? (
+            <View style={styles.remoteVideoContainer}>
+              <TwilioVideoParticipantView
+                trackIdentifier={{
+                  participantSid: remoteParticipants[0].sid,
+                  videoTrackSid: remoteParticipants[0].sid + '_video',
+                }}
+                style={styles.remoteVideo}
+                scaleType="fit"
+              />
+              {/* Security indicator */}
+              <View style={styles.securityIndicator}>
+                <Text style={styles.securityText}>Encrypted</Text>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.waitingContainer}>
+              <ActivityIndicator size="large" color="#fff" />
+              <Text style={styles.waitingText}>
+                Waiting for pharmacist to join...
+              </Text>
+            </View>
+          )}
+
+          {/* Local Video (Picture-in-Picture) */}
+          {!audioOnly && localVideoEnabled && (
+            <View style={styles.localVideoContainer}>
+              <TwilioVideoLocalView
+                enabled={true}
+                style={styles.localVideo}
+                scaleType="fit"
+              />
+            </View>
+          )}
+
+          {/* Audio-Only Indicator */}
+          {audioOnly && (
+            <View style={styles.audioOnlyContainer}>
+              <Text style={styles.audioOnlyIcon}>M</Text>
+              <Text style={styles.audioOnlyText}>Audio Only Mode</Text>
+            </View>
+          )}
+        </>
       )}
 
-      {/* Audio-Only Indicator */}
-      {audioOnly && (
-        <View style={styles.audioOnlyContainer}>
-          <Text style={styles.audioOnlyIcon}>🎤</Text>
-          <Text style={styles.audioOnlyText}>Audio Only Mode</Text>
+      {/* Not connected state (connection failed) */}
+      {!connecting && !connected && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Not connected</Text>
         </View>
       )}
     </View>
