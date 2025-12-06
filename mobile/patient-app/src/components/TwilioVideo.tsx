@@ -181,26 +181,10 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
     }
   };
 
-  if (connecting) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Connecting to video call...</Text>
-      </View>
-    );
-  }
-
-  if (!connected) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Not connected</Text>
-      </View>
-    );
-  }
-
+  // Always render TwilioVideo component to establish ref, but control visibility
   return (
     <View style={styles.container}>
-      {/* TwilioVideo component with event handlers */}
+      {/* TwilioVideo component - always rendered to maintain ref for connection */}
       <TwilioVideo
         ref={twilioRef}
         onRoomDidConnect={handleRoomDidConnect}
@@ -211,48 +195,68 @@ const TwilioVideoComponent: React.FC<TwilioVideoProps> = ({
         onNetworkQualityLevelsChanged={handleNetworkQualityLevelsChanged}
       />
 
-      {/* Remote Participant Video */}
-      {remoteParticipants.length > 0 ? (
-        <View style={styles.remoteVideoContainer}>
-          <TwilioVideoParticipantView
-            trackIdentifier={{
-              participantSid: remoteParticipants[0].sid,
-              videoTrackSid: remoteParticipants[0].sid + '_video',
-            }}
-            style={styles.remoteVideo}
-            scaleType="fit"
-          />
-          {/* Security indicator */}
-          <View style={styles.securityIndicator}>
-            <Text style={styles.securityText}>🔒 Encrypted</Text>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.waitingContainer}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.waitingText}>
-            Waiting for pharmacist to join...
-          </Text>
+      {/* Loading state */}
+      {connecting && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Connecting to video call...</Text>
         </View>
       )}
 
-      {/* Local Video (Picture-in-Picture) */}
-      {!audioOnly && localVideoEnabled && (
-        <View style={styles.localVideoContainer}>
-          <TwilioVideoLocalView
-            enabled={true}
-            style={styles.localVideo}
-            scaleType="fit"
-          />
+      {/* Error/Not connected state */}
+      {!connecting && !connected && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Not connected</Text>
         </View>
       )}
 
-      {/* Audio-Only Indicator */}
-      {audioOnly && (
-        <View style={styles.audioOnlyContainer}>
-          <Text style={styles.audioOnlyIcon}>🎤</Text>
-          <Text style={styles.audioOnlyText}>Audio Only Mode</Text>
-        </View>
+      {/* Connected state */}
+      {connected && (
+        <>
+          {/* Remote Participant Video */}
+          {remoteParticipants.length > 0 ? (
+            <View style={styles.remoteVideoContainer}>
+              <TwilioVideoParticipantView
+                trackIdentifier={{
+                  participantSid: remoteParticipants[0].sid,
+                  videoTrackSid: remoteParticipants[0].sid + '_video',
+                }}
+                style={styles.remoteVideo}
+                scaleType="fit"
+              />
+              {/* Security indicator */}
+              <View style={styles.securityIndicator}>
+                <Text style={styles.securityText}>🔒 Encrypted</Text>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.waitingContainer}>
+              <ActivityIndicator size="large" color="#fff" />
+              <Text style={styles.waitingText}>
+                Waiting for pharmacist to join...
+              </Text>
+            </View>
+          )}
+
+          {/* Local Video (Picture-in-Picture) */}
+          {!audioOnly && localVideoEnabled && (
+            <View style={styles.localVideoContainer}>
+              <TwilioVideoLocalView
+                enabled={true}
+                style={styles.localVideo}
+                scaleType="fit"
+              />
+            </View>
+          )}
+
+          {/* Audio-Only Indicator */}
+          {audioOnly && (
+            <View style={styles.audioOnlyContainer}>
+              <Text style={styles.audioOnlyIcon}>🎤</Text>
+              <Text style={styles.audioOnlyText}>Audio Only Mode</Text>
+            </View>
+          )}
+        </>
       )}
     </View>
   );

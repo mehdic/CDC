@@ -6,23 +6,28 @@ import { renderHook, act, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import NetInfo from '@react-native-community/netinfo';
 import { useOfflineSync } from '../../src/hooks/useOfflineSync';
 import deliveryReducer from '../../src/store/deliverySlice';
 import authReducer from '../../src/store/authSlice';
-import deliveryApi from '../../src/services/deliveryApi';
+
+// Define mock functions outside to avoid resetMocks issues
+const mockAddEventListener = jest.fn();
+const mockUpdateDeliveryStatus = jest.fn();
+const mockUpdateLocation = jest.fn();
+const mockSubmitProofOfDelivery = jest.fn();
+const mockAcceptDelivery = jest.fn();
 
 // Mock NetInfo
 jest.mock('@react-native-community/netinfo', () => ({
-  addEventListener: jest.fn(),
+  addEventListener: (...args: unknown[]) => mockAddEventListener(...args),
 }));
 
 // Mock deliveryApi
 jest.mock('../../src/services/deliveryApi', () => ({
-  updateDeliveryStatus: jest.fn(),
-  updateLocation: jest.fn(),
-  submitProofOfDelivery: jest.fn(),
-  acceptDelivery: jest.fn(),
+  updateDeliveryStatus: (...args: unknown[]) => mockUpdateDeliveryStatus(...args),
+  updateLocation: (...args: unknown[]) => mockUpdateLocation(...args),
+  submitProofOfDelivery: (...args: unknown[]) => mockSubmitProofOfDelivery(...args),
+  acceptDelivery: (...args: unknown[]) => mockAcceptDelivery(...args),
 }));
 
 const createMockStore = (initialState?: any) =>
@@ -36,7 +41,11 @@ const createMockStore = (initialState?: any) =>
 
 describe('useOfflineSync', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockAddEventListener.mockReset();
+    mockUpdateDeliveryStatus.mockReset();
+    mockUpdateLocation.mockReset();
+    mockSubmitProofOfDelivery.mockReset();
+    mockAcceptDelivery.mockReset();
   });
 
   it('should monitor network status', () => {
@@ -45,7 +54,7 @@ describe('useOfflineSync', () => {
 
     renderHook(() => useOfflineSync(), { wrapper });
 
-    expect(NetInfo.addEventListener).toHaveBeenCalled();
+    expect(mockAddEventListener).toHaveBeenCalled();
   });
 
   it('should process sync queue when online', async () => {
@@ -80,12 +89,12 @@ describe('useOfflineSync', () => {
     const store = createMockStore(initialState);
     const wrapper = ({ children }: any) => <Provider store={store}>{children}</Provider>;
 
-    (deliveryApi.updateDeliveryStatus as jest.Mock).mockResolvedValue({ success: true });
+    mockUpdateDeliveryStatus.mockResolvedValue({ success: true });
 
     renderHook(() => useOfflineSync(), { wrapper });
 
     await waitFor(() => {
-      expect(deliveryApi.updateDeliveryStatus).toHaveBeenCalledWith(
+      expect(mockUpdateDeliveryStatus).toHaveBeenCalledWith(
         'del1',
         'delivered',
         undefined,
@@ -132,6 +141,6 @@ describe('useOfflineSync', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
     });
 
-    expect(deliveryApi.updateDeliveryStatus).not.toHaveBeenCalled();
+    expect(mockUpdateDeliveryStatus).not.toHaveBeenCalled();
   });
 });
