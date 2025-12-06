@@ -3,7 +3,7 @@
  * Displays detailed information about a specific prescription
  */
 
-import { SafetyWarningLevel, ConfidenceLevel } from '@metapharm/api-types';
+import { SafetyWarningLevel, ConfidenceLevel, PrescriptionItem, SafetyWarning } from '@metapharm/api-types';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -204,7 +204,7 @@ export const PrescriptionDetailScreen: React.FC = () => {
               prescription.transcriptionData.medications.length > 0 && (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Médicaments prescrits</Text>
-                  {prescription.transcriptionData.medications.map((med, index) => (
+                  {prescription.transcriptionData.medications.map((med: PrescriptionItem, index: number) => (
                     <View key={index} style={styles.medicationCard}>
                       <View style={styles.medicationHeader}>
                         <Text style={styles.medicationName}>{med.medicationName}</Text>
@@ -254,7 +254,7 @@ export const PrescriptionDetailScreen: React.FC = () => {
             {prescription.safetyWarnings && prescription.safetyWarnings.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Alertes de sécurité</Text>
-                {prescription.safetyWarnings.map((warning, index) => (
+                {prescription.safetyWarnings.map((warning: SafetyWarning, index: number) => (
                   <View
                     key={index}
                     style={[

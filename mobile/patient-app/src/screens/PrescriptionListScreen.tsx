@@ -3,8 +3,8 @@
  * Displays all prescriptions for the patient with filtering and search
  */
 
-import { Prescription } from '@metapharm/api-types';
-import { useNavigation } from '@react-navigation/native';
+import { Prescription, PrescriptionItem } from '@metapharm/api-types';
+import { useNavigation, NavigationProp, ParamListBase } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
@@ -38,7 +38,7 @@ export const PrescriptionListScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const dispatch = useDispatch();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
 
   const prescriptions = useSelector(selectPrescriptions);
   const loading = useSelector(selectLoading);
@@ -83,14 +83,14 @@ export const PrescriptionListScreen: React.FC = () => {
    * Navigate to prescription detail
    */
   const handlePrescriptionPress = (prescription: Prescription) => {
-    navigation.navigate('PrescriptionDetail' as never, { prescriptionId: prescription.id } as never);
+    navigation.navigate('PrescriptionDetail', { prescriptionId: prescription.id });
   };
 
   /**
    * Navigate to upload screen
    */
   const handleUploadPress = () => {
-    navigation.navigate('PrescriptionUpload' as never);
+    navigation.navigate('PrescriptionUpload');
   };
 
   /**
@@ -141,7 +141,7 @@ export const PrescriptionListScreen: React.FC = () => {
         {item.transcriptionData?.medications && item.transcriptionData.medications.length > 0 ? (
           <View style={styles.medications}>
             <Text style={styles.medicationsLabel}>Médicaments:</Text>
-            {item.transcriptionData.medications.slice(0, 2).map((med, index) => (
+            {item.transcriptionData.medications.slice(0, 2).map((med: PrescriptionItem, index: number) => (
               <Text key={index} style={styles.medicationName}>
                 • {med.medicationName}
               </Text>

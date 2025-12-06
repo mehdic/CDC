@@ -82,8 +82,10 @@ export class PermissionsUtil {
           return PermissionStatus.DENIED;
         case RESULTS.BLOCKED:
           return PermissionStatus.BLOCKED;
-        case RESULTS.NOT_DETERMINED:
+        case RESULTS.UNAVAILABLE:
           return PermissionStatus.NOT_DETERMINED;
+        case RESULTS.LIMITED:
+          return PermissionStatus.GRANTED; // Limited permission is still usable
         default:
           return PermissionStatus.NOT_DETERMINED;
       }
