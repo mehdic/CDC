@@ -14,8 +14,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  Relation,
 } from 'typeorm';
-import { Category } from './Category';
+
+// Forward reference type for Category (avoids circular dependency)
+import type { Category } from './Category';
 
 @Entity('products')
 export class Product {
@@ -48,11 +51,11 @@ export class Product {
   @Index('idx_products_category')
   category_id: string;
 
-  @ManyToOne(() => Category, (category) => category.products, {
+  @ManyToOne('Category', 'products', {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'category_id' })
-  category: Category;
+  category: Relation<Category>;
 
   // ============================================================================
   // Pricing
