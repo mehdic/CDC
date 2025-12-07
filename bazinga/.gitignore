@@ -6,6 +6,11 @@
 !testing_config.json
 !sessions_history.json
 
+# Allow dashboard-v2 package files
+!dashboard-v2/package.json
+!dashboard-v2/package-lock.json
+!dashboard-v2/tsconfig.json
+
 # Reports are ephemeral - generated per session
 reports/
 
