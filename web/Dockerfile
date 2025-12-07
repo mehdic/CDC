@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies (using npm install since this is a workspace project)
+RUN npm install
 
 # Copy source code
 COPY . .
