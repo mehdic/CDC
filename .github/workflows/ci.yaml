@@ -102,7 +102,7 @@ jobs:
         run: |
           docker compose -f docker-compose.yml -f docker-compose.test.yml build \
             --build-arg NODE_ENV=test
-        timeout-minutes: 15
+        timeout-minutes: 25
 
       - name: Verify Docker build
         run: |
