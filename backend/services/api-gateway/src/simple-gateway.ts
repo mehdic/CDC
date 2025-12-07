@@ -22,31 +22,31 @@ app.get('/health', (req, res) => {
 app.use('/auth', createProxyMiddleware({
   target: 'http://localhost:4001',
   changeOrigin: true,
-  logLevel: 'debug'
+  logger: console
 }));
 
 app.use('/prescriptions', createProxyMiddleware({
   target: 'http://localhost:4002',
   changeOrigin: true,
-  logLevel: 'debug'
+  logger: console
 }));
 
 app.use('/teleconsultations', createProxyMiddleware({
   target: 'http://localhost:4003',
   changeOrigin: true,
-  logLevel: 'debug'
+  logger: console
 }));
 
 app.use('/inventory', createProxyMiddleware({
   target: 'http://localhost:4004',
   changeOrigin: true,
-  logLevel: 'debug'
+  logger: console
 }));
 
 app.use('/notifications', createProxyMiddleware({
   target: 'http://localhost:4005',
   changeOrigin: true,
-  logLevel: 'debug'
+  logger: console
 }));
 
 // Return 404 for unmatched routes

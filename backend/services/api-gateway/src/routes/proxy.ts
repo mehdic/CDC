@@ -32,16 +32,10 @@ console.info('Proxy Configuration:', {
 });
 
 /**
- * Common proxy options
+ * Common proxy event handlers (http-proxy-middleware v3 API)
  */
-const commonProxyOptions = {
-  changeOrigin: true,
-  // logLevel removed - not available in current http-proxy-middleware version
-
-  /**
-   * Preserve original headers (Authorization, etc.)
-   */
-  onProxyReq: (proxyReq: any, req: any) => {
+const commonProxyEvents = {
+  proxyReq: (proxyReq: any, req: any) => {
     // Forward authentication header
     if (req.headers.authorization) {
       proxyReq.setHeader('Authorization', req.headers.authorization);
@@ -69,10 +63,7 @@ const commonProxyOptions = {
     });
   },
 
-  /**
-   * Handle proxy errors gracefully
-   */
-  onError: (err: Error, req: Request, res: Response) => {
+  error: (err: Error, req: Request, res: Response) => {
     console.error('Proxy error:', {
       error: err.message,
       path: req.path,
@@ -87,10 +78,7 @@ const commonProxyOptions = {
     });
   },
 
-  /**
-   * Log proxy responses
-   */
-  onProxyRes: (proxyRes: any, req: any) => {
+  proxyRes: (proxyRes: any, req: any) => {
     console.debug('Proxy response:', {
       path: req.path,
       method: req.method,
@@ -101,13 +89,21 @@ const commonProxyOptions = {
 };
 
 /**
+ * Common proxy options (http-proxy-middleware v3 API)
+ */
+const commonProxyOptions = {
+  changeOrigin: true,
+  on: commonProxyEvents,
+};
+
+/**
  * Auth Service Proxy
  * Routes: /auth/*
  * Note: Express app.use('/auth', authProxy) strips /auth prefix before passing to middleware
  * So: Request /auth/login becomes /login in middleware
  * We need to add /auth back for the auth service
  */
-// http-proxy-middleware v2 for auth service
+// http-proxy-middleware v3 for auth service
 export const authProxy = createProxyMiddleware({
   target: AUTH_SERVICE_URL,
   changeOrigin: true,
@@ -116,36 +112,38 @@ export const authProxy = createProxyMiddleware({
     console.log('[AUTH PROXY] Path rewrite:', path, '→', newPath);
     return newPath;
   },
-  onProxyReq: (proxyReq: any, req: any) => {
-    console.log('[AUTH PROXY] Proxying:', req.method, req.url, '→', proxyReq.path);
+  on: {
+    proxyReq: (proxyReq: any, req: any) => {
+      console.log('[AUTH PROXY] Proxying:', req.method, req.url, '→', proxyReq.path);
 
-    // Forward authentication header
-    if (req.headers.authorization) {
-      proxyReq.setHeader('Authorization', req.headers.authorization);
-    }
-
-    // Forward user context headers
-    if (req.user) {
-      proxyReq.setHeader('X-User-ID', req.user.userId);
-      proxyReq.setHeader('X-User-Role', req.user.role);
-      if (req.user.pharmacyId) {
-        proxyReq.setHeader('X-Pharmacy-ID', req.user.pharmacyId);
+      // Forward authentication header
+      if (req.headers.authorization) {
+        proxyReq.setHeader('Authorization', req.headers.authorization);
       }
-    }
 
-    // Forward request ID for tracing
-    if (req.headers['x-request-id']) {
-      proxyReq.setHeader('X-Request-ID', req.headers['x-request-id'] as string);
-    }
-  },
-  onError: (err: Error, req: any, res: any) => {
-    console.error('[AUTH PROXY] Error:', err.message);
-    if (!res.headersSent) {
-      res.status(503).json({
-        error: 'Service Unavailable',
-        message: 'The auth service is temporarily unavailable',
-      });
-    }
+      // Forward user context headers
+      if (req.user) {
+        proxyReq.setHeader('X-User-ID', req.user.userId);
+        proxyReq.setHeader('X-User-Role', req.user.role);
+        if (req.user.pharmacyId) {
+          proxyReq.setHeader('X-Pharmacy-ID', req.user.pharmacyId);
+        }
+      }
+
+      // Forward request ID for tracing
+      if (req.headers['x-request-id']) {
+        proxyReq.setHeader('X-Request-ID', req.headers['x-request-id'] as string);
+      }
+    },
+    error: (err: Error, req: any, res: any) => {
+      console.error('[AUTH PROXY] Error:', err.message);
+      if (!res.headersSent) {
+        res.status(503).json({
+          error: 'Service Unavailable',
+          message: 'The auth service is temporarily unavailable',
+        });
+      }
+    },
   },
 });
 
