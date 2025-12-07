@@ -82,7 +82,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
       const options = {
         quality: 0.8,
         base64: false,
-        orientation: 'portrait',
+        orientation: 'portrait' as const,
         fixOrientation: true,
       };
 

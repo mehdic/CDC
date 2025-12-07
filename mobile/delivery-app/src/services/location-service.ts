@@ -4,7 +4,7 @@
  * Provides battery-efficient GPS tracking with adaptive modes, geofencing, and offline queueing
  */
 
-import Geolocation from 'react-native-geolocation-service';
+import Geolocation, { GeoPosition } from 'react-native-geolocation-service';
 import Geofencing from '@react-native-community/geofencing';
 import { Platform, PermissionsAndroid, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -318,7 +318,7 @@ class LocationService {
   /**
    * Handle Location Update
    */
-  private handleLocationUpdate(position: GeolocationPosition): void {
+  private handleLocationUpdate(position: GeoPosition): void {
     const coords: Coordinates = {
       latitude: position.coords.latitude,
       longitude: position.coords.longitude,
