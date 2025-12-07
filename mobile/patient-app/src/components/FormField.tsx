@@ -123,8 +123,8 @@ export const FormField: React.FC<FormFieldProps> = ({
         <Text
           style={[
             styles.label,
-            error && touched && styles.labelError,
-            showSuccess && styles.labelSuccess,
+            !!error && touched ? styles.labelError : undefined,
+            showSuccess ? styles.labelSuccess : undefined,
           ]}
           accessibilityRole="text"
         >
@@ -151,7 +151,7 @@ export const FormField: React.FC<FormFieldProps> = ({
         )}
 
         <TextInput
-          style={[styles.input, icon && styles.inputWithIcon]}
+          style={[styles.input, icon ? styles.inputWithIcon : undefined]}
           value={value}
           onChangeText={handleChangeText}
           onBlur={handleBlur}
@@ -220,8 +220,8 @@ export const FormField: React.FC<FormFieldProps> = ({
       {showSuccess && !error && (
         <Text
           style={styles.successText}
-          accessibilityRole="status"
           accessible
+          accessibilityLabel="Validation successful"
         >
           Looks good!
         </Text>

@@ -14,12 +14,12 @@ import {
   Switch,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
+import { RootState, AppDispatch } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 import { nurseApiClient } from '../../services/nurseApiClient';
 
 export const ProfileScreen: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { nurse } = useSelector((state: RootState) => state.auth);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);

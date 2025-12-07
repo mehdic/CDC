@@ -335,7 +335,7 @@ export const NavigationScreen: React.FC<NavigationScreenProps> = ({ navigation, 
               </View>
 
               {/* Constraints Info */}
-              {(nextWaypoint.constraints.coldChain ||
+              {nextWaypoint.constraints && (nextWaypoint.constraints.coldChain ||
                 nextWaypoint.constraints.controlledSubstance ||
                 nextWaypoint.constraints.idVerificationRequired) && (
                 <View style={styles.constraintsBox}>

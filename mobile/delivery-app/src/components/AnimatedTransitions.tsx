@@ -343,7 +343,19 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
     }
   }, [visible, slideAnim, backdropAnim, duration]);
 
-  if (!visible && slideAnim._value === 400) {
+  // Track if the animation has completed to initial position
+  const [hasAnimatedOut, setHasAnimatedOut] = React.useState(!visible);
+
+  React.useEffect(() => {
+    if (!visible) {
+      const timer = setTimeout(() => setHasAnimatedOut(true), duration);
+      return () => clearTimeout(timer);
+    } else {
+      setHasAnimatedOut(false);
+    }
+  }, [visible, duration]);
+
+  if (!visible && hasAnimatedOut) {
     return null;
   }
 

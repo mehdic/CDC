@@ -125,7 +125,18 @@ export interface Coordinates {
   latitude: number;
   longitude: number;
   accuracy?: number;
+  speed?: number;
+  heading?: number;
   timestamp: string;
+}
+
+/**
+ * Waypoint Constraints
+ */
+export interface WaypointConstraints {
+  coldChain: boolean;
+  controlledSubstance: boolean;
+  idVerificationRequired: boolean;
 }
 
 /**
@@ -138,6 +149,7 @@ export interface Waypoint {
   sequence: number;
   estimatedArrival: string;
   completed: boolean;
+  constraints?: WaypointConstraints;
 }
 
 /**

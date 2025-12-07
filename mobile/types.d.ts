@@ -3,6 +3,78 @@
  * Provides type definitions for libraries without @types support
  */
 
+/**
+ * Type declarations for @react-native-community/geofencing
+ */
+declare module '@react-native-community/geofencing' {
+  interface CircularRegion {
+    latitude: number;
+    longitude: number;
+    radius: number;
+    identifier: string;
+    notifyOnEntry?: boolean;
+    notifyOnExit?: boolean;
+  }
+
+  function addCircularRegion(region: CircularRegion): Promise<void>;
+  function removeCircularRegion(identifier: string): Promise<void>;
+  function removeAllRegions(): Promise<void>;
+  function getMonitoredRegions(): Promise<CircularRegion[]>;
+
+  const Geofencing: {
+    addCircularRegion: typeof addCircularRegion;
+    removeCircularRegion: typeof removeCircularRegion;
+    removeAllRegions: typeof removeAllRegions;
+    getMonitoredRegions: typeof getMonitoredRegions;
+  };
+
+  export default Geofencing;
+}
+
+/**
+ * Type declarations for react-native-image-picker
+ */
+declare module 'react-native-image-picker' {
+  export interface Asset {
+    uri?: string;
+    type?: string;
+    fileName?: string;
+    fileSize?: number;
+    width?: number;
+    height?: number;
+    base64?: string;
+  }
+
+  export interface ImagePickerResponse {
+    didCancel?: boolean;
+    errorCode?: string;
+    errorMessage?: string;
+    assets?: Asset[];
+  }
+
+  export interface ImageLibraryOptions {
+    mediaType: 'photo' | 'video' | 'mixed';
+    quality?: number;
+    maxWidth?: number;
+    maxHeight?: number;
+    includeBase64?: boolean;
+    selectionLimit?: number;
+  }
+
+  export interface CameraOptions extends ImageLibraryOptions {
+    cameraType?: 'front' | 'back';
+    saveToPhotos?: boolean;
+  }
+
+  export function launchImageLibrary(
+    options: ImageLibraryOptions
+  ): Promise<ImagePickerResponse>;
+
+  export function launchCamera(
+    options: CameraOptions
+  ): Promise<ImagePickerResponse>;
+}
+
 declare module 'react-native-vector-icons/MaterialCommunityIcons' {
   import { Component } from 'react';
   import { TextProps } from 'react-native';
