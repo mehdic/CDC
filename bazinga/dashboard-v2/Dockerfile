@@ -1,6 +1,9 @@
 # Dependencies stage
 FROM node:20-alpine AS deps
 
+# Install build dependencies for native modules (better-sqlite3)
+RUN apk add --no-cache python3 make g++ libc6-compat
+
 WORKDIR /app
 
 COPY package*.json ./
