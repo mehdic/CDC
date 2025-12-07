@@ -73,7 +73,7 @@ describe('Forecasting Service - T3-104', () => {
 
       const mockInventoryRepo = {
         findOne: jest.fn().mockResolvedValue({
-          quantity_in_stock: 100,
+          quantity: 100,
           medication_name: 'Test Medication',
         }),
       };
@@ -114,7 +114,7 @@ describe('Forecasting Service - T3-104', () => {
 
       const mockInventoryRepo = {
         findOne: jest.fn().mockResolvedValue({
-          quantity_in_stock: 100,
+          quantity: 100,
           medication_name: 'Growing Demand Medication',
         }),
       };
@@ -151,7 +151,7 @@ describe('Forecasting Service - T3-104', () => {
 
       const mockInventoryRepo = {
         findOne: jest.fn().mockResolvedValue({
-          quantity_in_stock: 50, // 50 units in stock
+          quantity: 50, // 50 units in stock
           medication_name: 'Test Medication',
         }),
       };
@@ -179,7 +179,7 @@ describe('Forecasting Service - T3-104', () => {
       const mockInventoryRepo = {
         find: jest.fn().mockResolvedValue(mockInventoryItems),
         findOne: jest.fn().mockResolvedValue({
-          quantity_in_stock: 100,
+          quantity: 100,
           medication_name: 'Test Medication',
         }),
       };
@@ -206,10 +206,10 @@ describe('Forecasting Service - T3-104', () => {
 
       // Mock findOne for each medication
       mockInventoryRepo.findOne
-        .mockResolvedValueOnce({ quantity_in_stock: 100, medication_name: 'Med 1' })
-        .mockResolvedValueOnce({ quantity_in_stock: 100, medication_name: 'Med 1' })
-        .mockResolvedValueOnce({ quantity_in_stock: 50, medication_name: 'Med 2' })
-        .mockResolvedValueOnce({ quantity_in_stock: 50, medication_name: 'Med 2' });
+        .mockResolvedValueOnce({ quantity: 100, medication_name: 'Med 1' })
+        .mockResolvedValueOnce({ quantity: 100, medication_name: 'Med 1' })
+        .mockResolvedValueOnce({ quantity: 50, medication_name: 'Med 2' })
+        .mockResolvedValueOnce({ quantity: 50, medication_name: 'Med 2' });
 
       const result = await getAllMedicationForecasts('pharmacy-123', 30, false);
 
@@ -225,7 +225,7 @@ describe('Forecasting Service - T3-104', () => {
       const mockInventoryRepo = {
         find: jest.fn().mockResolvedValue(mockInventoryItems),
         findOne: jest.fn().mockResolvedValue({
-          quantity_in_stock: 5, // Very low stock
+          quantity: 5, // Very low stock
           medication_name: 'Low Stock Medication',
         }),
       };
@@ -251,8 +251,8 @@ describe('Forecasting Service - T3-104', () => {
         .mockReturnValue(mockTransactionRepo);
 
       mockInventoryRepo.findOne
-        .mockResolvedValueOnce({ quantity_in_stock: 5, medication_name: 'Low Stock Med' })
-        .mockResolvedValueOnce({ quantity_in_stock: 5, medication_name: 'Low Stock Med' });
+        .mockResolvedValueOnce({ quantity: 5, medication_name: 'Low Stock Med' })
+        .mockResolvedValueOnce({ quantity: 5, medication_name: 'Low Stock Med' });
 
       const result = await getAllMedicationForecasts('pharmacy-123', 30, true);
 
