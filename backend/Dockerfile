@@ -37,7 +37,8 @@ COPY package*.json ./
 COPY tsconfig.json ./
 
 # Install ALL dependencies (including devDependencies for TypeScript compilation)
-RUN npm ci --include=dev
+# Use npm install instead of npm ci since package-lock.json is in root (npm workspaces)
+RUN npm install --include=dev
 
 # ========================================
 # Stage 2: TypeScript Build
@@ -77,6 +78,8 @@ WORKDIR /app
 
 # Install production dependencies only (remove dev dependencies)
 COPY package*.json ./
+# Copy package-lock.json generated in dependencies stage for reproducible builds
+COPY --from=dependencies /app/package-lock.json ./
 RUN npm ci --omit=dev && \
     npm cache clean --force
 

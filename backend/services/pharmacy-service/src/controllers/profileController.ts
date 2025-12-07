@@ -61,7 +61,8 @@ export const updatePharmacyProfile = async (req: Request, res: Response) => {
 
     // Create profile if not exists
     if (!profile) {
-      profile = profileRepository.create({ pharmacyId, ...updateData });
+      const newProfile: Partial<PharmacyProfile> = { pharmacyId, ...updateData };
+      profile = profileRepository.create(newProfile);
     } else {
       Object.assign(profile, updateData);
     }

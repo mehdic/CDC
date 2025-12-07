@@ -17,6 +17,21 @@ dotenv.config();
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { DataSource } from 'typeorm';
+
+// AppDataSource stub for controllers that require database access
+// Will be properly initialized when database integration is complete
+export const AppDataSource = new DataSource({
+  type: 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  username: process.env.DB_USER || 'metapharm',
+  password: process.env.DB_PASSWORD || 'metapharm_dev_password',
+  database: process.env.DB_NAME || 'metapharm_db',
+  synchronize: false,
+  logging: false,
+  entities: [],
+});
 
 // ============================================================================
 // Configuration
