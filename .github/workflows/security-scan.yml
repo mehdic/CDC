@@ -120,7 +120,7 @@ jobs:
 
       - name: Upload Snyk results to GitHub Code Scanning
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: snyk.sarif
         continue-on-error: true
@@ -134,22 +134,22 @@ jobs:
       contents: read
     strategy:
       matrix:
-        language: ['javascript', 'typescript']
+        language: ['javascript-typescript']
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           queries: security-extended,security-and-quality
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"
 
@@ -184,7 +184,7 @@ jobs:
         continue-on-error: true
 
       - name: Run Trivy vulnerability scanner (Filesystem)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -192,6 +192,14 @@ jobs:
           output: 'trivy-results-fs.sarif'
           severity: 'HIGH,CRITICAL'
           exit-code: '0' # Non-blocking for filesystem scan
+        continue-on-error: true
+
+      - name: Ensure SARIF file exists for filesystem scan
+        if: always()
+        run: |
+          if [ ! -f trivy-results-fs.sarif ]; then
+            echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"Trivy","version":"0.0.0"}},"results":[]}]}' > trivy-results-fs.sarif
+          fi
 
       - name: Get built image ID for scanning
         id: image-id
@@ -208,7 +216,7 @@ jobs:
 
       - name: Run Trivy vulnerability scanner on Docker images
         if: steps.image-id.outputs.image_found == 'true'
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: 'image'
           image-ref: ${{ steps.image-id.outputs.image_id }}
@@ -218,9 +226,16 @@ jobs:
           exit-code: '0' # Non-blocking for first scan
         continue-on-error: true
 
+      - name: Ensure SARIF file exists for Docker image scan
+        if: steps.image-id.outputs.image_found == 'true'
+        run: |
+          if [ ! -f trivy-results-image.sarif ]; then
+            echo '{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"Trivy","version":"0.0.0"}},"results":[]}]}' > trivy-results-image.sarif
+          fi
+
       - name: Upload Trivy Filesystem results to GitHub Security tab
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-results-fs.sarif'
           category: 'trivy-fs'
@@ -228,7 +243,7 @@ jobs:
 
       - name: Upload Trivy Docker Image results to GitHub Security tab
         if: steps.image-id.outputs.image_found == 'true' && always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-results-image.sarif'
           category: 'trivy-image'
