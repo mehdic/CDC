@@ -16,11 +16,54 @@ import {
 // Mock Request and Response
 // ============================================================================
 
-function mockRequest(body: any = {}, params: any = {}, query: any = {}): Partial<Request> {
+interface MockUser {
+  userId: string;
+  email: string;
+  role: string;
+  pharmacyId: string | null;
+  tokenPayload: any;
+}
+
+function mockRequest(body: any = {}, params: any = {}, query: any = {}, user?: MockUser | string): Partial<Request> {
+  // If user is a string (userId), create a default user object
+  // If user is undefined and body.userId exists, auto-create user from body.userId
+  let userObj: MockUser | undefined;
+
+  if (typeof user === 'string') {
+    userObj = {
+      userId: user,
+      email: `${user}@test.com`,
+      role: 'patient',
+      pharmacyId: null,
+      tokenPayload: { userId: user, role: 'patient' },
+    };
+  } else if (user) {
+    userObj = user;
+  } else if (body.userId) {
+    // Auto-create user from body.userId for convenience
+    userObj = {
+      userId: body.userId,
+      email: `${body.userId}@test.com`,
+      role: 'patient',
+      pharmacyId: null,
+      tokenPayload: { userId: body.userId, role: 'patient' },
+    };
+  } else if (params.userId) {
+    // Auto-create user from params.userId for convenience
+    userObj = {
+      userId: params.userId,
+      email: `${params.userId}@test.com`,
+      role: 'patient',
+      pharmacyId: null,
+      tokenPayload: { userId: params.userId, role: 'patient' },
+    };
+  }
+
   return {
     body,
     params,
     query,
+    user: userObj as any,
     ip: '127.0.0.1',
     socket: { remoteAddress: '127.0.0.1' } as any,
     get: jest.fn((header: string) => header === 'user-agent' ? 'test-agent' : undefined) as any,
@@ -143,8 +186,8 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const jsonCall = (createRes.json as jest.Mock).mock.calls[0][0];
       const requestId = jsonCall.requestId;
 
-      // Now download it
-      const downloadReq = mockRequest({}, { requestId });
+      // Now download it (with same user as creator)
+      const downloadReq = mockRequest({}, { requestId }, {}, 'user123');
       const downloadRes = mockResponse();
 
       await downloadDataExport(downloadReq as Request, downloadRes as Response);
@@ -168,8 +211,8 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const jsonCall = (createRes.json as jest.Mock).mock.calls[0][0];
       const requestId = jsonCall.requestId;
 
-      // Now download it
-      const downloadReq = mockRequest({}, { requestId });
+      // Now download it (with same user as creator)
+      const downloadReq = mockRequest({}, { requestId }, {}, 'user123');
       const downloadRes = mockResponse();
 
       await downloadDataExport(downloadReq as Request, downloadRes as Response);
@@ -351,8 +394,8 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const jsonCall = (createRes.json as jest.Mock).mock.calls[0][0];
       const requestId = jsonCall.requestId;
 
-      // Now get status
-      const statusReq = mockRequest({}, { requestId });
+      // Now get status (with same user as creator)
+      const statusReq = mockRequest({}, { requestId }, {}, 'user789');
       const statusRes = mockResponse();
 
       await getErasureStatus(statusReq as Request, statusRes as Response);
@@ -499,8 +542,8 @@ describe('GDPR Integration Tests', () => {
     const exportJson = (exportRes.json as jest.Mock).mock.calls[0][0];
     const exportRequestId = exportJson.requestId;
 
-    // Step 2: Download export
-    const downloadReq = mockRequest({}, { requestId: exportRequestId });
+    // Step 2: Download export (with same user)
+    const downloadReq = mockRequest({}, { requestId: exportRequestId }, {}, userId);
     const downloadRes = mockResponse();
     await downloadDataExport(downloadReq as Request, downloadRes as Response);
 
@@ -515,14 +558,14 @@ describe('GDPR Integration Tests', () => {
     const erasureJson = (erasureRes.json as jest.Mock).mock.calls[0][0];
     const erasureRequestId = erasureJson.requestId;
 
-    // Step 4: Verify erasure status
-    const statusReq = mockRequest({}, { requestId: erasureRequestId });
+    // Step 4: Verify erasure status (with same user)
+    const statusReq = mockRequest({}, { requestId: erasureRequestId }, {}, userId);
     const statusRes = mockResponse();
     await getErasureStatus(statusReq as Request, statusRes as Response);
 
     expect(statusRes.status).toHaveBeenCalledWith(200);
 
-    // Step 5: Check audit trail
+    // Step 5: Check audit trail (uses params.userId which auto-creates user)
     const auditReq = mockRequest({}, { userId });
     const auditRes = mockResponse();
     await getAuditTrail(auditReq as Request, auditRes as Response);

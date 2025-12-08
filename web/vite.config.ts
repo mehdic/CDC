@@ -2,46 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-// Custom resolver for date-fns internal modules
-function resolveDateFnsInternal() {
-  const virtualModules: Record<string, string> = {};
-
-  return {
-    name: 'resolve-date-fns-internal',
-    enforce: 'pre',
-    resolveId(source: string) {
-      if (source.startsWith('date-fns/_lib/')) {
-        // Create a virtual module ID
-        const virtualId = '\0date-fns-internal:' + source;
-        return virtualId;
-      }
-    },
-    load(id: string) {
-      // Handle virtual date-fns internal modules
-      if (id.startsWith('\0date-fns-internal:')) {
-        const actualImport = id.replace('\0date-fns-internal:', '');
-        // Get the actual file path
-        const basePath = path.resolve(__dirname, '..', 'node_modules', actualImport);
-
-        // For longFormatters, provide a default export
-        if (actualImport.includes('longFormatters')) {
-          return `
-export { longFormatters as default } from '${basePath}.mjs';
-export { longFormatters } from '${basePath}.mjs';
-`;
-        }
-
-        // For other modules, just re-export everything
-        return `export * from '${basePath}.mjs';`;
-      }
-      return null;
-    },
-  };
-}
-
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [resolveDateFnsInternal(), react()],
+  plugins: [react()],
 
   resolve: {
     alias: {
@@ -89,13 +52,6 @@ export default defineConfig({
       esmExternals: true,
     },
     rollupOptions: {
-      external: (id) => {
-        // Mark date-fns internal modules as external to prevent resolution errors
-        if (id.startsWith('date-fns/_lib/')) {
-          return false; // Allow them to be included
-        }
-        return false;
-      },
       output: {
         manualChunks: (id) => {
           // Core React libraries
@@ -187,6 +143,10 @@ export default defineConfig({
       '@emotion/styled',
       'date-fns',
     ],
+    // Force esbuild to transform date-fns properly
+    esbuildOptions: {
+      target: 'es2020',
+    },
   },
 
   define: {

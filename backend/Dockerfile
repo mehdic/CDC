@@ -87,8 +87,9 @@ RUN npm ci --omit=dev && \
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 
 # Copy shared utilities and config files needed at runtime
-COPY --from=builder --chown=nodejs:nodejs /app/shared ./shared 2>/dev/null || true
-COPY --from=builder --chown=nodejs:nodejs /app/config ./config 2>/dev/null || true
+# Note: These directories must exist in the builder stage
+COPY --from=builder --chown=nodejs:nodejs /app/shared ./shared
+COPY --from=builder --chown=nodejs:nodejs /app/config ./config
 
 # Create a startup script that loads the correct service
 RUN echo '#!/bin/sh\n\

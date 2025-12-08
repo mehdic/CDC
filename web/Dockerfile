@@ -4,9 +4,9 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json ./
 
-# Install dependencies (using npm install since this is a workspace project)
+# Install dependencies (npm workspace - no separate lock file)
 RUN npm install
 
 # Copy source code

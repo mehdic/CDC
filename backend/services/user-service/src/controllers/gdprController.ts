@@ -10,18 +10,20 @@
  * - Cross-service data aggregation
  */
 
-import { Request, Response } from 'express';
-
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    role: string;
-    roles?: string[];
-  };
-}
-
+import { Response } from 'express';
+import { AuthenticatedRequest } from '../../../../shared/middleware/auth';
 import * as crypto from 'crypto';
+
+// Helper to check if user has admin role
+function isAdminUser(user: AuthenticatedRequest['user']): boolean {
+  if (!user) return false;
+  // Check role directly
+  if (user.role === 'ADMIN' || user.role === 'admin') return true;
+  // Check tokenPayload for additional roles
+  const payload = user.tokenPayload as any;
+  if (payload?.roles?.includes('admin')) return true;
+  return false;
+}
 
 // ============================================================================
 // Types and Interfaces
@@ -337,7 +339,7 @@ export async function requestDataExport(req: AuthenticatedRequest, res: Response
 
     // SECURITY: Authorization check - user can only access their own data
     const authenticatedUserId = req.user?.userId;
-    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+    const isAdmin = isAdminUser(req.user);
 
     if (!isAdmin && authenticatedUserId !== userId) {
       console.warn(`⚠️ SECURITY: Unauthorized data export attempt - User ${hashForLogging(authenticatedUserId || 'unknown')} tried to access data of ${hashForLogging(userId)}`);
@@ -422,7 +424,7 @@ export async function downloadDataExport(req: AuthenticatedRequest, res: Respons
 
     // SECURITY: Authorization check - user can only download their own data
     const authenticatedUserId = req.user?.userId;
-    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+    const isAdmin = isAdminUser(req.user);
 
     if (!isAdmin && authenticatedUserId !== exportData.userId) {
       return res.status(403).json({
@@ -493,7 +495,7 @@ export async function requestDataErasure(req: AuthenticatedRequest, res: Respons
 
     // SECURITY: Authorization check - user can only erase their own data
     const authenticatedUserId = req.user?.userId;
-    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+    const isAdmin = isAdminUser(req.user);
 
     if (!isAdmin && authenticatedUserId !== userId) {
       return res.status(403).json({
@@ -585,7 +587,7 @@ export async function getErasureStatus(req: AuthenticatedRequest, res: Response)
 
     // SECURITY: Authorization check - user can only access their own erasure status
     const authenticatedUserId = req.user?.userId;
-    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+    const isAdmin = isAdminUser(req.user);
 
     if (!isAdmin && authenticatedUserId !== erasureData.userId) {
       return res.status(403).json({
@@ -620,7 +622,7 @@ export async function getAuditTrail(req: AuthenticatedRequest, res: Response): P
 
     // SECURITY: Authorization check - only admin or the user themselves can access audit trail
     const authenticatedUserId = req.user?.userId;
-    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+    const isAdmin = isAdminUser(req.user);
 
     if (!isAdmin && authenticatedUserId !== userId) {
       return res.status(403).json({
