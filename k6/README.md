@@ -506,14 +506,51 @@ export default function () {
 - Spike Testing: https://k6.io/docs/testing-guides/spike-testing/
 - Soak Testing: https://k6.io/docs/testing-guides/soak-testing/
 
+## Quick Verification
+
+To verify that k6 is installed and all scripts are working:
+
+```bash
+# Check k6 installation
+k6 version
+
+# Quick syntax check on all scripts (1 second, 1 VU each)
+for script in k6/scripts/*.js; do
+  echo "Testing: $script"
+  k6 run --duration 1s --vus 1 "$script" 2>&1 | grep -E "✓|error" | head -1
+done
+```
+
+## Script Status
+
+All 5 load test scripts verified as functional:
+
+| Script | Purpose | Load | Duration | Status |
+|--------|---------|------|----------|--------|
+| prescription-processing.js | Prescription upload & validation | 100 VUs | 7m 30s | ✅ |
+| delivery-tracking.js | WebSocket delivery tracking | 500 conns | 9m | ✅ |
+| messaging.js | Multi-channel messaging | 200 VUs | 8m | ✅ |
+| api-gateway.js | API Gateway routing | 1000 VUs | 9m 30s | ✅ |
+| database-queries.js | Database query performance | 100 VUs | 8m | ✅ |
+
+See `AUDIT_REPORT.md` for detailed audit results.
+
 ## Support
 
 For issues or questions about the load testing suite:
 
 1. Check `PERFORMANCE_BASELINES.md` for performance targets
-2. Review script comments for implementation details
-3. Check GitHub issues for known problems
-4. Contact the QUALITY-LOAD team
+2. Check `AUDIT_REPORT.md` for script verification results
+3. Review script comments for implementation details
+4. Check GitHub issues for known problems
+5. Contact the QUALITY-LOAD team
+
+## Key Documents
+
+- **`README.md`** (this file) - Usage guide and examples
+- **`PERFORMANCE_BASELINES.md`** - Performance targets and thresholds
+- **`AUDIT_REPORT.md`** - Audit results and verification status
+- **`config/thresholds.json`** - Threshold configuration
 
 ## License
 
@@ -523,4 +560,5 @@ This load testing suite is part of the MetaPharm Connect project and follows the
 
 **Last Updated:** 2025-12-08
 **Maintained By:** QUALITY-LOAD Team
-**Version:** 1.0.0
+**Version:** 1.0.1
+**Audit Status:** ✅ All scripts verified and functional
