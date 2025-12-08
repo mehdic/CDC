@@ -1,0 +1,107 @@
+{{- if .Values.loki.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "logging.fullname" . }}-loki
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: loki
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  loki.yaml: |
+    auth_enabled: {{ .Values.loki.config.authEnabled }}
+
+    server:
+      http_listen_port: {{ .Values.loki.config.server.httpListenPort }}
+      grpc_listen_port: {{ .Values.loki.config.server.grpcListenPort }}
+      log_level: {{ .Values.loki.config.server.logLevel }}
+
+    common:
+      path_prefix: /loki
+      storage:
+        filesystem:
+          chunks_directory: /loki/chunks
+          rules_directory: /loki/rules
+      replication_factor: 1
+      ring:
+        kvstore:
+          store: inmemory
+
+    schema_config:
+      configs:
+        {{- range .Values.loki.config.schemaConfig.configs }}
+        - from: {{ .from }}
+          store: {{ .store }}
+          object_store: {{ .objectStore }}
+          schema: {{ .schema }}
+          index:
+            prefix: {{ .index.prefix }}
+            period: {{ .index.period }}
+        {{- end }}
+
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: {{ .Values.loki.config.storageConfig.boltdbShipper.activeIndexDirectory }}
+        cache_location: {{ .Values.loki.config.storageConfig.boltdbShipper.cacheLocation }}
+        shared_store: {{ .Values.loki.config.storageConfig.boltdbShipper.sharedStoreType }}
+      filesystem:
+        directory: {{ .Values.loki.config.storageConfig.filesystem.directory }}
+
+    compactor:
+      working_directory: {{ .Values.loki.config.compactor.workingDirectory }}
+      shared_store: {{ .Values.loki.config.compactor.sharedStoreType }}
+      compaction_interval: {{ .Values.loki.config.compactor.compactionInterval }}
+      retention_enabled: {{ .Values.loki.config.compactor.retentionEnabled }}
+      retention_delete_delay: {{ .Values.loki.config.compactor.retentionDeleteDelay }}
+      retention_delete_worker_count: {{ .Values.loki.config.compactor.retentionDeleteWorkerCount }}
+
+    limits_config:
+      enforce_metric_name: {{ .Values.loki.limits.enforceMetricName }}
+      reject_old_samples: {{ .Values.loki.limits.rejectOldSamples }}
+      reject_old_samples_max_age: {{ .Values.loki.limits.rejectOldSamplesMaxAge }}
+      ingestion_rate_mb: {{ div .Values.loki.limits.ingestionRate 1048576 }}
+      ingestion_burst_size_mb: {{ div .Values.loki.limits.ingestionBurstSize 1048576 }}
+      max_streams_per_user: {{ .Values.loki.limits.maxStreamsPerUser }}
+      max_global_streams_per_user: {{ .Values.loki.limits.maxGlobalStreamsPerUser }}
+      max_chunks_per_query: {{ .Values.loki.limits.maxChunksPerQuery }}
+      max_query_series: {{ .Values.loki.limits.maxQuerySeries }}
+      {{- if .Values.loki.limits.maxQueryLookback }}
+      max_query_lookback: {{ .Values.loki.limits.maxQueryLookback }}
+      {{- end }}
+      max_query_length: {{ .Values.loki.limits.maxQueryLength }}
+
+    {{- if .Values.loki.retention.enabled }}
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: {{ .Values.loki.retention.retentionPeriod }}
+    {{- end }}
+
+    ingester:
+      lifecycler:
+        ring:
+          kvstore:
+            store: {{ .Values.loki.config.ingester.lifecycler.ringKvStore }}
+          replication_factor: 1
+      chunk_encoding: {{ .Values.loki.config.ingester.chunkEncoding }}
+      chunk_idle_period: {{ .Values.loki.config.ingester.chunkIdlePeriod }}
+      chunk_retain_period: {{ .Values.loki.config.ingester.chunkRetainPeriod }}
+      max_transfer_retries: {{ .Values.loki.config.ingester.maxTransferRetries }}
+
+    ruler:
+      storage:
+        type: local
+        local:
+          directory: /loki/rules
+      rule_path: /loki/rules-temp
+      alertmanager_url: http://alertmanager:9093
+      ring:
+        kvstore:
+          store: inmemory
+      enable_api: true
+      enable_alertmanager_v2: true
+
+    analytics:
+      reporting_enabled: false
+{{- end }}

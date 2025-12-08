@@ -1,0 +1,58 @@
+{{- if .Values.loki.enabled }}
+---
+# Loki headless service for StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "logging.fullname" . }}-loki-headless
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: loki
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: http
+      port: {{ .Values.loki.service.httpPort }}
+      targetPort: http
+      protocol: TCP
+    - name: grpc
+      port: {{ .Values.loki.service.grpcPort }}
+      targetPort: grpc
+      protocol: TCP
+  selector:
+    app: loki
+    release: {{ .Release.Name }}
+---
+# Loki service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "logging.fullname" . }}-loki
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: loki
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.loki.service.httpPort }}"
+spec:
+  type: {{ .Values.loki.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.loki.service.httpPort }}
+      targetPort: http
+      protocol: TCP
+    - name: grpc
+      port: {{ .Values.loki.service.grpcPort }}
+      targetPort: grpc
+      protocol: TCP
+  selector:
+    app: loki
+    release: {{ .Release.Name }}
+{{- end }}

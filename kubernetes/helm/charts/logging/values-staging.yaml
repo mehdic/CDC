@@ -1,0 +1,43 @@
+# Staging environment overrides for logging chart
+
+global:
+  environment: staging
+
+loki:
+  replicas: 2
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  storage:
+    size: 50Gi
+
+  # Medium retention for staging
+  retention:
+    enabled: true
+    retentionPeriod: 168h  # 7 days
+
+  limits:
+    ingestionRate: 2097152  # 2MB/s
+    ingestionBurstSize: 4194304  # 4MB
+
+promtail:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 384Mi
+
+  # PII sanitization MUST be enabled in staging
+  piiSanitization:
+    enabled: true
+
+alerts:
+  enabled: true

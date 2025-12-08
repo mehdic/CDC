@@ -1,0 +1,168 @@
+{{- if and .Values.alerts.enabled .Values.loki.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "logging.fullname" . }}-alerts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: loki
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  alerts.yaml: |
+    groups:
+      - name: logging-alerts
+        interval: 30s
+        rules:
+          {{- range .Values.alerts.rules }}
+          - alert: {{ .name }}
+            expr: {{ .expr | quote }}
+            for: {{ .for }}
+            labels:
+              {{- range $key, $value := .labels }}
+              {{ $key }}: {{ $value | quote }}
+              {{- end }}
+            annotations:
+              {{- range $key, $value := .annotations }}
+              {{ $key }}: {{ $value | quote }}
+              {{- end }}
+          {{- end }}
+
+      # Healthcare-specific alerts
+      - name: healthcare-compliance
+        interval: 30s
+        rules:
+          - alert: UnauthorizedAccessAttempt
+            expr: |
+              sum(rate({service=~".*auth.*", level="error", message=~".*unauthorized.*"}[5m])) by (service) > 5
+            for: 2m
+            labels:
+              severity: critical
+              component: security
+              compliance: hipaa
+            annotations:
+              summary: "Unauthorized access attempts detected"
+              description: "Multiple unauthorized access attempts detected in {{ $labels.service }}"
+
+          - alert: PrescriptionValidationFailures
+            expr: |
+              sum(rate({service="prescription-service", level="error", message=~".*validation.*failed.*"}[5m])) > 10
+            for: 5m
+            labels:
+              severity: warning
+              component: prescription
+              compliance: healthcare
+            annotations:
+              summary: "High prescription validation failure rate"
+              description: "Prescription validation is failing at a high rate - may indicate data quality issues"
+
+          - alert: PatientDataAccessLog
+            expr: |
+              sum(rate({message=~".*patient.*data.*access.*"}[1h])) by (service) > 1000
+            for: 10m
+            labels:
+              severity: info
+              component: audit
+              compliance: gdpr
+            annotations:
+              summary: "High patient data access rate in {{ $labels.service }}"
+              description: "Patient data is being accessed at an unusually high rate - review for compliance"
+
+          - alert: EncryptionFailure
+            expr: |
+              sum(rate({message=~".*encryption.*failed.*"}[5m])) by (service) > 0
+            for: 1m
+            labels:
+              severity: critical
+              component: security
+              compliance: hipaa
+            annotations:
+              summary: "Encryption failure detected in {{ $labels.service }}"
+              description: "Data encryption is failing - immediate action required for HIPAA compliance"
+
+      # Service health alerts
+      - name: service-health
+        interval: 30s
+        rules:
+          - alert: ServiceCrashLoop
+            expr: |
+              sum(rate({message=~".*panic.*|.*fatal.*"}[5m])) by (service) > 0
+            for: 2m
+            labels:
+              severity: critical
+              component: service-health
+            annotations:
+              summary: "Service {{ $labels.service }} is crash looping"
+              description: "Service {{ $labels.service }} is experiencing panics or fatal errors"
+
+          - alert: SlowAPIResponses
+            expr: |
+              sum(rate({message=~".*duration.*", message=~".*[5-9][0-9]{3,}ms.*"}[5m])) by (service) > 10
+            for: 5m
+            labels:
+              severity: warning
+              component: performance
+            annotations:
+              summary: "Slow API responses in {{ $labels.service }}"
+              description: "Service {{ $labels.service }} is experiencing slow API responses (>5s)"
+
+          - alert: DependencyFailure
+            expr: |
+              sum(rate({message=~".*dependency.*failed.*|.*connection.*refused.*"}[5m])) by (service) > 5
+            for: 3m
+            labels:
+              severity: warning
+              component: dependencies
+            annotations:
+              summary: "Dependency failures in {{ $labels.service }}"
+              description: "Service {{ $labels.service }} is experiencing dependency connection failures"
+
+      # Business logic alerts
+      - name: business-logic
+        interval: 30s
+        rules:
+          - alert: LowPrescriptionProcessingRate
+            expr: |
+              sum(rate({service="prescription-service", message=~".*prescription.*processed.*"}[10m])) < 0.1
+            for: 10m
+            labels:
+              severity: warning
+              component: business
+            annotations:
+              summary: "Low prescription processing rate"
+              description: "Prescription processing rate is below expected threshold"
+
+          - alert: HighDeliveryFailureRate
+            expr: |
+              sum(rate({service="delivery-service", level="error"}[5m])) / sum(rate({service="delivery-service"}[5m])) > 0.1
+            for: 5m
+            labels:
+              severity: warning
+              component: delivery
+            annotations:
+              summary: "High delivery failure rate"
+              description: "More than 10% of delivery operations are failing"
+
+          - alert: PaymentProcessingErrors
+            expr: |
+              sum(rate({service="payment-service", level="error"}[5m])) > 1
+            for: 2m
+            labels:
+              severity: critical
+              component: payment
+            annotations:
+              summary: "Payment processing errors detected"
+              description: "Payment service is experiencing errors - immediate investigation required"
+
+          - alert: InventoryStockOutAlerts
+            expr: |
+              sum(rate({service="inventory-service", message=~".*stock.*out.*"}[10m])) > 5
+            for: 5m
+            labels:
+              severity: warning
+              component: inventory
+            annotations:
+              summary: "Multiple stock-out events detected"
+              description: "Inventory service is reporting multiple stock-out events"
+{{- end }}

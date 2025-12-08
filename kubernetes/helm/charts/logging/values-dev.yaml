@@ -1,0 +1,43 @@
+# Development environment overrides for logging chart
+
+global:
+  environment: development
+
+loki:
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  storage:
+    size: 10Gi
+
+  # Shorter retention for dev
+  retention:
+    enabled: true
+    retentionPeriod: 72h  # 3 days
+
+  limits:
+    ingestionRate: 1048576  # 1MB/s
+    ingestionBurstSize: 2097152  # 2MB
+
+promtail:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # PII sanitization enabled even in dev (good practice)
+  piiSanitization:
+    enabled: true
+
+alerts:
+  enabled: false  # Disable alerts in dev

@@ -1,0 +1,50 @@
+# Production environment overrides for logging chart
+
+global:
+  environment: production
+
+loki:
+  replicas: 3
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+  storage:
+    size: 100Gi
+    storageClassName: fast-ssd  # Use fast storage in production
+
+  # Full retention for production (30 days)
+  retention:
+    enabled: true
+    retentionPeriod: 720h  # 30 days
+
+  limits:
+    ingestionRate: 4194304  # 4MB/s
+    ingestionBurstSize: 6291456  # 6MB
+    maxStreamsPerUser: 10000
+
+promtail:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # PII sanitization CRITICAL in production (GDPR/HIPAA compliance)
+  piiSanitization:
+    enabled: true
+
+  # Tolerate running on all nodes including control plane
+  tolerations:
+    - effect: NoSchedule
+      operator: Exists
+
+alerts:
+  enabled: true

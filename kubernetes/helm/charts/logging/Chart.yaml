@@ -1,0 +1,20 @@
+apiVersion: v2
+name: logging
+description: Log aggregation with Loki and Promtail for MetaPharm Connect
+type: application
+version: 1.0.0
+appVersion: "2.9.3"
+keywords:
+  - logging
+  - loki
+  - promtail
+  - observability
+  - healthcare
+maintainers:
+  - name: MetaPharm DevOps Team
+    email: devops@metapharm.ch
+home: https://github.com/metapharm/logging
+sources:
+  - https://github.com/grafana/loki
+  - https://github.com/grafana/promtail
+icon: https://grafana.com/static/img/logos/logo-loki.svg

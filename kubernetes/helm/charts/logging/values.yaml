@@ -1,0 +1,357 @@
+# Default values for logging chart (Loki + Promtail)
+# This is a YAML-formatted file.
+
+# Global settings
+global:
+  domain: metapharm.ch
+  environment: production
+
+# Loki configuration
+loki:
+  enabled: true
+  image:
+    repository: grafana/loki
+    tag: "2.9.3"
+    pullPolicy: IfNotPresent
+
+  replicas: 3
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+  # Storage configuration
+  storage:
+    type: filesystem
+    filesystem:
+      chunksCachePath: /loki/chunks-cache
+      rulesPath: /loki/rules
+    size: 100Gi
+    storageClassName: standard-rwo
+
+  # Retention configuration (default for production)
+  retention:
+    enabled: true
+    deletionMode: filter-and-delete
+    retentionPeriod: 720h  # 30 days
+
+  # Limits configuration
+  limits:
+    enforceMetricName: false
+    rejectOldSamples: true
+    rejectOldSamplesMaxAge: 168h  # 7 days
+    ingestionRate: 4194304  # 4MB/s
+    ingestionBurstSize: 6291456  # 6MB
+    maxStreamsPerUser: 10000
+    maxGlobalStreamsPerUser: 0
+    maxChunksPerQuery: 2000000
+    maxQuerySeries: 500
+    maxQueryLookback: 0
+    maxQueryLength: 721h  # 30 days + 1h
+
+  # Server configuration
+  service:
+    type: ClusterIP
+    httpPort: 3100
+    grpcPort: 9095
+
+  # Loki config
+  config:
+    authEnabled: false
+    server:
+      httpListenPort: 3100
+      grpcListenPort: 9095
+      logLevel: info
+
+    ingester:
+      lifecycler:
+        ringKvStore: inmemory
+      chunkEncoding: snappy
+      chunkIdlePeriod: 15m
+      chunkRetainPeriod: 30s
+      maxTransferRetries: 0
+
+    schemaConfig:
+      configs:
+        - from: 2024-01-01
+          store: boltdb-shipper
+          objectStore: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+
+    storageConfig:
+      boltdbShipper:
+        activeIndexDirectory: /loki/index
+        cacheLocation: /loki/cache
+        sharedStoreType: filesystem
+      filesystem:
+        directory: /loki/chunks
+
+    compactor:
+      workingDirectory: /loki/compactor
+      sharedStoreType: filesystem
+      compactionInterval: 10m
+      retentionEnabled: true
+      retentionDeleteDelay: 2h
+      retentionDeleteWorkerCount: 150
+
+    limits:
+      enforceMetricName: false
+      rejectOldSamples: true
+      rejectOldSamplesMaxAge: 168h
+      ingestionRate: 4194304
+      ingestionBurstSize: 6291456
+
+# Promtail configuration (log collector)
+promtail:
+  enabled: true
+  image:
+    repository: grafana/promtail
+    tag: "2.9.3"
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # PII sanitization enabled by default (GDPR compliance)
+  piiSanitization:
+    enabled: true
+    patterns:
+      email: '([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})'
+      phone: '(\+?\d{1,3}[\s.-]?\(?\d{1,4}\)?[\s.-]?\d{1,4}[\s.-]?\d{1,9})'
+      ahv: '(\d{3}[\s.-]?\d{4}[\s.-]?\d{4}[\s.-]?\d{2})'  # Swiss AHV number
+      iban: '([A-Z]{2}\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{0,2})'
+      creditCard: '(\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4})'
+    replacements:
+      email: '[EMAIL]'
+      phone: '[PHONE]'
+      ahv: '[AHV]'
+      iban: '[IBAN]'
+      creditCard: '[CREDIT_CARD]'
+
+  # Service monitor for Prometheus
+  serviceMonitor:
+    enabled: true
+
+  # Tolerations for running on all nodes
+  tolerations: []
+
+  # Node selector
+  nodeSelector: {}
+
+  # Config for scraping
+  config:
+    serverPort: 3101
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+    positions:
+      filename: /tmp/positions.yaml
+
+    scrapeConfigs:
+      # Kubernetes pod logs
+      - jobName: kubernetes-pods
+        kubernetesSDConfigs:
+          - role: pod
+        relabelConfigs:
+          # Only scrape pods with annotation prometheus.io/scrape: "true"
+          - sourceLabels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          # Rename pod labels
+          - sourceLabels: [__meta_kubernetes_pod_name]
+            targetLabel: pod
+          - sourceLabels: [__meta_kubernetes_namespace]
+            targetLabel: namespace
+          - sourceLabels: [__meta_kubernetes_pod_label_app]
+            targetLabel: app
+          - sourceLabels: [__meta_kubernetes_pod_container_name]
+            targetLabel: container
+          - sourceLabels: [__meta_kubernetes_pod_node_name]
+            targetLabel: node
+
+        # Pipeline stages for log processing
+        pipelineStages:
+          # Parse JSON logs
+          - json:
+              expressions:
+                level: level
+                service: service
+                message: message
+                traceId: traceId
+                spanId: spanId
+                timestamp: timestamp
+
+          # Extract labels
+          - labels:
+              level:
+              service:
+              traceId:
+              spanId:
+
+          # PII sanitization (if enabled)
+          # Email addresses
+          - replace:
+              expression: '([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})'
+              replace: '[EMAIL]'
+
+          # Phone numbers
+          - replace:
+              expression: '(\+?\d{1,3}[\s.-]?\(?\d{1,4}\)?[\s.-]?\d{1,4}[\s.-]?\d{1,9})'
+              replace: '[PHONE]'
+
+          # Swiss AHV numbers (social security)
+          - replace:
+              expression: '(\d{3}[\s.-]?\d{4}[\s.-]?\d{4}[\s.-]?\d{2})'
+              replace: '[AHV]'
+
+          # IBAN numbers
+          - replace:
+              expression: '([A-Z]{2}\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{4}[\s]?\d{0,2})'
+              replace: '[IBAN]'
+
+          # Credit card numbers
+          - replace:
+              expression: '(\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4})'
+              replace: '[CREDIT_CARD]'
+
+          # Timestamp parsing
+          - timestamp:
+              source: timestamp
+              format: RFC3339
+
+# Log-based alerts (AlertManager rules)
+alerts:
+  enabled: true
+
+  rules:
+    # High error rate
+    - name: high-error-rate
+      expr: |
+        sum(rate({level="error"}[5m])) by (service) > 10
+      for: 5m
+      labels:
+        severity: warning
+        component: logging
+      annotations:
+        summary: "High error rate detected in {{ $labels.service }}"
+        description: "Service {{ $labels.service }} has more than 10 errors per second for the last 5 minutes"
+
+    # Critical errors
+    - name: critical-errors
+      expr: |
+        sum(rate({level="critical"}[1m])) by (service) > 0
+      for: 1m
+      labels:
+        severity: critical
+        component: logging
+      annotations:
+        summary: "Critical errors detected in {{ $labels.service }}"
+        description: "Service {{ $labels.service }} has critical errors"
+
+    # Log ingestion stopped
+    - name: log-ingestion-stopped
+      expr: |
+        sum(rate({job="kubernetes-pods"}[5m])) == 0
+      for: 5m
+      labels:
+        severity: critical
+        component: logging
+      annotations:
+        summary: "Log ingestion has stopped"
+        description: "No logs have been ingested for the last 5 minutes"
+
+    # PII detected in logs (should never happen with sanitization)
+    - name: pii-detected
+      expr: |
+        sum(rate({message=~".*@.*"}[5m])) by (service) > 0
+      for: 1m
+      labels:
+        severity: critical
+        component: logging
+        compliance: gdpr
+      annotations:
+        summary: "Potential PII detected in logs from {{ $labels.service }}"
+        description: "Email pattern detected in logs - PII sanitization may have failed"
+
+    # High prescription processing errors
+    - name: prescription-processing-errors
+      expr: |
+        sum(rate({service="prescription-service", level="error"}[5m])) > 5
+      for: 5m
+      labels:
+        severity: warning
+        component: prescription
+      annotations:
+        summary: "High prescription processing error rate"
+        description: "Prescription service has more than 5 errors per second"
+
+    # Authentication failures
+    - name: auth-failures
+      expr: |
+        sum(rate({service=~".*auth.*", message=~".*failed.*"}[5m])) > 20
+      for: 5m
+      labels:
+        severity: warning
+        component: security
+      annotations:
+        summary: "High authentication failure rate"
+        description: "More than 20 authentication failures per second detected"
+
+    # Database connection errors
+    - name: database-connection-errors
+      expr: |
+        sum(rate({message=~".*database.*connection.*error.*"}[5m])) by (service) > 0
+      for: 2m
+      labels:
+        severity: critical
+        component: database
+      annotations:
+        summary: "Database connection errors in {{ $labels.service }}"
+        description: "Service {{ $labels.service }} is experiencing database connection errors"
+
+# Grafana datasource configuration
+grafana:
+  datasource:
+    enabled: true
+    name: Loki
+    type: loki
+    url: http://loki:3100
+    access: proxy
+    isDefault: false
+    jsonData:
+      maxLines: 1000
+    editable: true
+
+# Service account
+serviceAccount:
+  create: true
+  name: logging
+  annotations: {}
+
+# RBAC
+rbac:
+  create: true
+  pspEnabled: false
+
+# Security context
+securityContext:
+  fsGroup: 10001
+  runAsNonRoot: true
+  runAsUser: 10001
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 10001
+  runAsNonRoot: true
+  runAsUser: 10001

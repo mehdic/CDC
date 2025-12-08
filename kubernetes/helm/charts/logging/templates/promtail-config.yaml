@@ -1,0 +1,182 @@
+{{- if .Values.promtail.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "logging.fullname" . }}-promtail
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: promtail
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  promtail.yaml: |
+    server:
+      http_listen_port: {{ .Values.promtail.config.serverPort }}
+      grpc_listen_port: 0
+
+    positions:
+      filename: {{ .Values.promtail.config.positions.filename }}
+
+    clients:
+      {{- range .Values.promtail.config.clients }}
+      - url: {{ .url }}
+        {{- if .tenantId }}
+        tenant_id: {{ .tenantId }}
+        {{- end }}
+      {{- end }}
+
+    scrape_configs:
+      # Kubernetes pod logs
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+
+        relabel_configs:
+          # Only scrape pods with annotation prometheus.io/scrape: "true"
+          - source_labels:
+              - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+            action: keep
+            regex: true
+
+          # Rename pod labels
+          - source_labels:
+              - __meta_kubernetes_pod_name
+            target_label: pod
+
+          - source_labels:
+              - __meta_kubernetes_namespace
+            target_label: namespace
+
+          - source_labels:
+              - __meta_kubernetes_pod_label_app
+            target_label: app
+
+          - source_labels:
+              - __meta_kubernetes_pod_container_name
+            target_label: container
+
+          - source_labels:
+              - __meta_kubernetes_pod_node_name
+            target_label: node
+
+          # Extract log path
+          - source_labels:
+              - __meta_kubernetes_pod_uid
+              - __meta_kubernetes_pod_container_name
+            target_label: __path__
+            separator: /
+            replacement: /var/log/pods/*$1/*.log
+
+        # Pipeline stages for log processing and PII sanitization
+        pipeline_stages:
+          # Parse JSON logs
+          - json:
+              expressions:
+                level: level
+                service: service
+                message: message
+                traceId: traceId
+                spanId: spanId
+                timestamp: timestamp
+
+          # Extract labels from JSON
+          - labels:
+              level:
+              service:
+              traceId:
+              spanId:
+
+          {{- if .Values.promtail.piiSanitization.enabled }}
+          # PII Sanitization Pipeline (GDPR Compliance)
+
+          # Email addresses
+          - replace:
+              expression: '{{ .Values.promtail.piiSanitization.patterns.email }}'
+              replace: '{{ .Values.promtail.piiSanitization.replacements.email }}'
+
+          # Phone numbers (international format)
+          - replace:
+              expression: '{{ .Values.promtail.piiSanitization.patterns.phone }}'
+              replace: '{{ .Values.promtail.piiSanitization.replacements.phone }}'
+
+          # Swiss AHV numbers (social security)
+          - replace:
+              expression: '{{ .Values.promtail.piiSanitization.patterns.ahv }}'
+              replace: '{{ .Values.promtail.piiSanitization.replacements.ahv }}'
+
+          # IBAN numbers
+          - replace:
+              expression: '{{ .Values.promtail.piiSanitization.patterns.iban }}'
+              replace: '{{ .Values.promtail.piiSanitization.replacements.iban }}'
+
+          # Credit card numbers
+          - replace:
+              expression: '{{ .Values.promtail.piiSanitization.patterns.creditCard }}'
+              replace: '{{ .Values.promtail.piiSanitization.replacements.creditCard }}'
+          {{- end }}
+
+          # Timestamp parsing
+          - timestamp:
+              source: timestamp
+              format: RFC3339
+
+          # Output formatting
+          - output:
+              source: message
+
+      # Kubernetes events
+      - job_name: kubernetes-events
+        kubernetes_sd_configs:
+          - role: pod
+
+        relabel_configs:
+          - source_labels:
+              - __meta_kubernetes_pod_label_component
+            action: keep
+            regex: kube-event-exporter
+
+          - source_labels:
+              - __meta_kubernetes_pod_name
+            target_label: pod
+
+          - source_labels:
+              - __meta_kubernetes_namespace
+            target_label: namespace
+
+        pipeline_stages:
+          - json:
+              expressions:
+                level: level
+                message: message
+          - labels:
+              level:
+
+      # Systemd journal logs (node level)
+      - job_name: systemd-journal
+        journal:
+          max_age: 12h
+          labels:
+            job: systemd-journal
+
+        relabel_configs:
+          - source_labels:
+              - __journal__systemd_unit
+            target_label: unit
+
+          - source_labels:
+              - __journal__hostname
+            target_label: hostname
+
+        pipeline_stages:
+          {{- if .Values.promtail.piiSanitization.enabled }}
+          # PII sanitization for systemd logs
+          - replace:
+              expression: '{{ .Values.promtail.piiSanitization.patterns.email }}'
+              replace: '{{ .Values.promtail.piiSanitization.replacements.email }}'
+
+          - replace:
+              expression: '{{ .Values.promtail.piiSanitization.patterns.phone }}'
+              replace: '{{ .Values.promtail.piiSanitization.replacements.phone }}'
+          {{- end }}
+{{- end }}

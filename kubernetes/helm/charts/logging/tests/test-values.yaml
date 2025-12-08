@@ -1,0 +1,15 @@
+# Test values for Helm template validation
+
+global:
+  domain: test.metapharm.ch
+  environment: test
+
+loki:
+  enabled: true
+  replicas: 1
+
+promtail:
+  enabled: true
+
+alerts:
+  enabled: true
