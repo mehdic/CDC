@@ -1,0 +1,17 @@
+{{- if and .Values.prometheus.enabled .Values.prometheus.persistence.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.prometheus.name }}-pvc
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.prometheus.name }}
+    {{- include "prometheus.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.prometheus.persistence.storageClassName }}
+  resources:
+    requests:
+      storage: {{ .Values.prometheus.persistence.size }}
+{{- end }}

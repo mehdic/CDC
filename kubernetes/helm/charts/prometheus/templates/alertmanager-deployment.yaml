@@ -1,0 +1,92 @@
+{{- if .Values.alertmanager.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.alertmanager.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.alertmanager.name }}
+    {{- include "prometheus.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.alertmanager.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.alertmanager.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.alertmanager.name }}
+        {{- include "prometheus.labels" . | nindent 8 }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.alertmanager.service.port }}"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+      - name: {{ .Values.alertmanager.name }}
+        image: "{{ .Values.alertmanager.image.registry }}/{{ .Values.alertmanager.image.repository }}:{{ .Values.alertmanager.image.tag }}"
+        imagePullPolicy: {{ .Values.alertmanager.image.pullPolicy }}
+        args:
+          - '--config.file=/etc/alertmanager/config.yml'
+          - '--storage.path=/alertmanager'
+          - '--web.route-prefix=/'
+        ports:
+        - name: http
+          containerPort: {{ .Values.alertmanager.service.port }}
+          protocol: TCP
+        - name: cluster
+          containerPort: 9094
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        resources:
+          {{- toYaml .Values.alertmanager.resources | nindent 12 }}
+        env:
+        - name: SLACK_WEBHOOK_URL
+          valueFrom:
+            secretKeyRef:
+              name: alertmanager-secrets
+              key: slack-webhook-url
+              optional: true
+        - name: PAGERDUTY_SERVICE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: alertmanager-secrets
+              key: pagerduty-service-key
+              optional: true
+        volumeMounts:
+        - name: alertmanager-config
+          mountPath: /etc/alertmanager
+        {{- if .Values.alertmanager.persistence.enabled }}
+        - name: alertmanager-storage
+          mountPath: {{ .Values.alertmanager.persistence.mountPath }}
+        {{- end }}
+      volumes:
+      - name: alertmanager-config
+        configMap:
+          name: {{ .Values.alertmanager.name }}-config
+      {{- if .Values.alertmanager.persistence.enabled }}
+      - name: alertmanager-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.alertmanager.name }}-pvc
+      {{- end }}
+{{- end }}

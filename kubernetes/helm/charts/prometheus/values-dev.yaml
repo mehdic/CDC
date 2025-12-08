@@ -1,0 +1,55 @@
+# Development environment overrides
+global:
+  environment: development
+  imageTag: "2.50.0"
+
+prometheus:
+  replicaCount: 1
+  persistence:
+    enabled: true
+    size: 20Gi
+    retention: 7d
+    retentionSize: "18GB"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  autoscaling:
+    enabled: false
+
+alertmanager:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+serviceMonitors:
+  highTier:
+    scrapeInterval: 30s
+  mediumTier:
+    scrapeInterval: 60s
+  lowTier:
+    scrapeInterval: 120s
+
+ingress:
+  enabled: true
+  hosts:
+    - host: prometheus.dev.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+alertmanagerIngress:
+  enabled: true
+  hosts:
+    - host: alertmanager.dev.local
+      paths:
+        - path: /
+          pathType: Prefix

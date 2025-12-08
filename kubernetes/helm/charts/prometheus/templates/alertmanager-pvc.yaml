@@ -1,0 +1,17 @@
+{{- if and .Values.alertmanager.enabled .Values.alertmanager.persistence.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.alertmanager.name }}-pvc
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.alertmanager.name }}
+    {{- include "prometheus.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.alertmanager.persistence.storageClassName }}
+  resources:
+    requests:
+      storage: {{ .Values.alertmanager.persistence.size }}
+{{- end }}

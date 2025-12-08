@@ -1,0 +1,24 @@
+{{- if .Values.prometheus.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.prometheus.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.prometheus.name }}
+    {{- include "prometheus.labels" . | nindent 4 }}
+  {{- with .Values.prometheus.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.prometheus.service.type }}
+  ports:
+  - name: http
+    port: {{ .Values.prometheus.service.port }}
+    targetPort: {{ .Values.prometheus.service.targetPort }}
+    protocol: TCP
+  selector:
+    app: {{ .Values.prometheus.name }}
+    {{- include "prometheus.selectorLabels" . | nindent 4 }}
+{{- end }}

@@ -1,0 +1,23 @@
+{{- if .Values.alertmanager.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.alertmanager.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.alertmanager.name }}
+    {{- include "prometheus.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.alertmanager.service.type }}
+  ports:
+  - name: http
+    port: {{ .Values.alertmanager.service.port }}
+    targetPort: {{ .Values.alertmanager.service.targetPort }}
+    protocol: TCP
+  - name: cluster
+    port: 9094
+    targetPort: 9094
+    protocol: TCP
+  selector:
+    app: {{ .Values.alertmanager.name }}
+{{- end }}

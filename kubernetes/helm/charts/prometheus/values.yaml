@@ -1,0 +1,457 @@
+# Default values for prometheus Helm chart
+
+# Global configuration
+global:
+  # Environment: development, staging, production
+  environment: development
+  # Namespace where Prometheus will be deployed
+  namespace: monitoring
+  # Image registry for Prometheus
+  imageRegistry: prom
+  # Image tag
+  imageTag: "2.50.0"
+
+# Namespace configuration
+namespace:
+  create: true
+  name: monitoring
+  labels:
+    environment: development
+    project: metapharm-connect
+  annotations:
+    description: "Monitoring namespace for MetaPharm Connect"
+
+# Prometheus deployment configuration
+prometheus:
+  enabled: true
+  name: prometheus
+  replicaCount: 2
+
+  # Container image
+  image:
+    registry: prom
+    repository: prometheus
+    tag: "2.50.0"
+    pullPolicy: IfNotPresent
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9090
+    targetPort: 9090
+    annotations: {}
+
+  # Resource limits and requests
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Persistence configuration for metrics storage
+  persistence:
+    enabled: true
+    storageClassName: standard
+    size: 50Gi
+    mountPath: /prometheus
+    # Retention period for metrics
+    retention: 30d
+    # Retention size limit
+    retentionSize: "45GB"
+
+  # Prometheus configuration
+  config:
+    # Global scrape interval
+    scrapeInterval: 30s
+    # Evaluation interval for rules
+    evaluationInterval: 15s
+    # External labels applied to all metrics
+    externalLabels:
+      environment: "{{ .Values.global.environment }}"
+      cluster: "metapharm-prod"
+      platform: "kubernetes"
+
+    # Remote write configuration (optional)
+    remoteWrite: []
+    # Example for long-term storage:
+    # - url: "http://remote-storage:9009/api/v1/push"
+
+  # Autoscaling configuration
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPU: 70
+    targetMemory: 80
+
+  # Pod affinity/anti-affinity
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - prometheus
+            topologyKey: kubernetes.io/hostname
+
+# ServiceMonitor resources for scrape configuration
+# These use the Prometheus Operator CRD
+serviceMonitors:
+  enabled: true
+
+  # High-tier critical services (need frequent monitoring)
+  highTier:
+    scrapeInterval: 15s
+    scrapeTimeout: 10s
+    services:
+      - apiGateway
+      - authService
+      - prescriptionService
+      - medicalRecordsService
+      - messagingService
+      - paymentService
+      - teleconsultationService
+      - digitalTwinService
+      - drugInteractionService
+
+  # Medium-tier services
+  mediumTier:
+    scrapeInterval: 30s
+    scrapeTimeout: 10s
+    services:
+      - deliveryService
+      - inventoryService
+      - notificationService
+      - orderService
+      - adherenceService
+      - analyticsService
+      - appointmentService
+      - calendarService
+      - controlledSubstanceService
+      - doctorService
+      - ecommerceService
+      - esanteService
+      - insuranceService
+      - nurseService
+      - pharmacyService
+      - refillService
+      - userService
+      - vipService
+      - voiceService
+
+  # Low-tier services
+  lowTier:
+    scrapeInterval: 60s
+    scrapeTimeout: 10s
+    services:
+      - marketingService
+      - recyclingService
+
+  # Metrics path on all services
+  metricsPath: /metrics
+  # Kubernetes API server scrape (if enabled)
+  kubeStateMetrics:
+    enabled: true
+    scrapeInterval: 30s
+
+# Alert rules configuration
+alertRules:
+  enabled: true
+
+  # SLO-based alerts
+  sloAlerts:
+    enabled: true
+    # High latency alert - p95 > 500ms
+    highLatency:
+      enabled: true
+      threshold: 500
+      duration: 5m
+      severity: warning
+
+    # Error rate alert - > 1%
+    errorRate:
+      enabled: true
+      threshold: 0.01
+      duration: 5m
+      severity: critical
+
+    # Pod restart alert
+    podRestart:
+      enabled: true
+      threshold: 5
+      duration: 15m
+      severity: warning
+
+  # Resource-based alerts
+  resourceAlerts:
+    enabled: true
+    # CPU usage alert
+    cpu:
+      enabled: true
+      threshold: 80
+      duration: 5m
+      severity: warning
+
+    # Memory usage alert
+    memory:
+      enabled: true
+      threshold: 85
+      duration: 5m
+      severity: warning
+
+    # Disk usage alert
+    disk:
+      enabled: true
+      threshold: 85
+      duration: 5m
+      severity: critical
+
+  # Infrastructure alerts
+  infrastructureAlerts:
+    enabled: true
+    # Node down alert
+    nodeDown:
+      enabled: true
+      severity: critical
+
+    # Database connection pool exhausted
+    dbConnectionPool:
+      enabled: true
+      threshold: 90
+      duration: 2m
+      severity: critical
+
+    # Redis memory usage
+    redisMemory:
+      enabled: true
+      threshold: 80
+      duration: 5m
+      severity: warning
+
+# AlertManager configuration
+alertmanager:
+  enabled: true
+  name: alertmanager
+  replicaCount: 2
+
+  # Container image
+  image:
+    registry: prom
+    repository: alertmanager
+    tag: "0.26.0"
+    pullPolicy: IfNotPresent
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9093
+    targetPort: 9093
+
+  # Resource limits and requests
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # Persistence for alertmanager state
+  persistence:
+    enabled: true
+    storageClassName: standard
+    size: 10Gi
+    mountPath: /alertmanager
+
+  # AlertManager configuration
+  config:
+    # Global configuration
+    global:
+      resolve_timeout: 5m
+      slack_api_url: "" # Set via secret: SLACK_WEBHOOK_URL
+      pagerduty_url: "https://events.pagerduty.com/v2/enqueue"
+
+    # Root route definition
+    route:
+      # Default receiver
+      receiver: "default"
+      # Continue to other routes after matching
+      continue: false
+      # Group notifications by these labels
+      groupBy: ["alertname", "cluster", "service"]
+      # Wait before sending initial notification
+      groupWait: 10s
+      # Wait before sending new notification on alert change
+      groupInterval: 10s
+      # Resend alert notification if unchanged
+      repeatInterval: 12h
+
+      # Sub-routes for different alert types
+      routes:
+        # Critical alerts
+        - match:
+            severity: critical
+          receiver: "critical"
+          groupWait: 0s
+          groupInterval: 5m
+          repeatInterval: 30m
+          continue: true
+
+        # Warning alerts
+        - match:
+            severity: warning
+          receiver: "warnings"
+          groupWait: 30s
+          groupInterval: 10m
+          repeatInterval: 4h
+
+        # Informational alerts
+        - match:
+            severity: info
+          receiver: "info"
+          groupWait: 1m
+          groupInterval: 30m
+          repeatInterval: 24h
+
+    # Receivers definition
+    receivers:
+      # Default receiver
+      - name: "default"
+        slack_configs:
+          - channel: "#alerts-general"
+            title: "Alert: {{ .GroupLabels.alertname }}"
+            text: "{{ range .Alerts.Firing }}{{ .Annotations.description }}{{ end }}"
+
+      # Critical alerts receiver
+      - name: "critical"
+        slack_configs:
+          - channel: "#alerts-critical"
+            title: "CRITICAL: {{ .GroupLabels.alertname }}"
+            text: "{{ range .Alerts.Firing }}{{ .Annotations.description }}{{ end }}"
+            send_resolved: true
+        pagerduty_configs:
+          - service_key: "" # Set via secret: PAGERDUTY_SERVICE_KEY
+            description: "{{ .GroupLabels.alertname }}"
+            details:
+              firing: "{{ template \"__text_alert_list\" .Alerts.Firing }}"
+
+      # Warnings receiver
+      - name: "warnings"
+        slack_configs:
+          - channel: "#alerts-warnings"
+            title: "Warning: {{ .GroupLabels.alertname }}"
+            text: "{{ range .Alerts.Firing }}{{ .Annotations.description }}{{ end }}"
+
+      # Info receiver
+      - name: "info"
+        slack_configs:
+          - channel: "#alerts-info"
+            title: "Info: {{ .GroupLabels.alertname }}"
+            text: "{{ range .Alerts.Firing }}{{ .Annotations.description }}{{ end }}"
+
+    # Inhibition rules (suppress alerts under certain conditions)
+    inhibit_rules:
+      # Inhibit warning alerts if critical alert is firing
+      - source_match:
+          severity: "critical"
+        target_match:
+          severity: "warning"
+        equal: ["alertname", "cluster", "service"]
+
+      # Inhibit info alerts if warning or critical alert is firing
+      - source_match:
+          severity: "warning"
+        target_match:
+          severity: "info"
+        equal: ["alertname", "cluster", "service"]
+
+# Grafana Datasource configuration (optional)
+grafana:
+  enabled: false
+  name: grafana
+  adminPassword: "changeme"
+
+  # Grafana Prometheus datasource
+  datasources:
+    - name: Prometheus
+      type: prometheus
+      url: "http://prometheus:9090"
+      isDefault: true
+
+# PrometheusRule CRD support (if PrometheusOperator is installed)
+prometheusRules:
+  enabled: true
+  namespace: monitoring
+
+# RBAC configuration
+rbac:
+  create: true
+
+# ServiceAccount configuration
+serviceAccount:
+  create: true
+  name: prometheus
+  annotations: {}
+
+# Security context for Prometheus
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Network policies
+networkPolicy:
+  enabled: false
+  policyTypes:
+    - Ingress
+    - Egress
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Ingress configuration for Prometheus
+ingress:
+  enabled: false
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: prometheus-basic-auth
+  hosts:
+    - host: prometheus.metapharm.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: prometheus-tls
+      hosts:
+        - prometheus.metapharm.local
+
+# AlertManager Ingress configuration
+alertmanagerIngress:
+  enabled: false
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: alertmanager.metapharm.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: alertmanager-tls
+      hosts:
+        - alertmanager.metapharm.local

@@ -1,0 +1,80 @@
+{{- if .Values.alertmanager.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.alertmanager.name }}-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.alertmanager.name }}
+    {{- include "prometheus.labels" . | nindent 4 }}
+data:
+  config.yml: |
+    global:
+      resolve_timeout: {{ .Values.alertmanager.config.global.resolve_timeout }}
+      slack_api_url: '{{ .Values.alertmanager.config.global.slack_api_url }}'
+      pagerduty_url: '{{ .Values.alertmanager.config.global.pagerduty_url }}'
+
+    route:
+      receiver: '{{ .Values.alertmanager.config.route.receiver }}'
+      continue: {{ .Values.alertmanager.config.route.continue }}
+      group_by: {{ .Values.alertmanager.config.route.groupBy | toJson }}
+      group_wait: {{ .Values.alertmanager.config.route.groupWait }}
+      group_interval: {{ .Values.alertmanager.config.route.groupInterval }}
+      repeat_interval: {{ .Values.alertmanager.config.route.repeatInterval }}
+      routes:
+        {{- range $index, $route := .Values.alertmanager.config.route.routes }}
+        - match:
+            {{- range $key, $value := $route.match }}
+            {{ $key }}: {{ $value }}
+            {{- end }}
+          receiver: '{{ $route.receiver }}'
+          group_wait: {{ $route.groupWait }}
+          group_interval: {{ $route.groupInterval }}
+          repeat_interval: {{ $route.repeatInterval }}
+          continue: {{ $route.continue }}
+        {{- end }}
+
+    receivers:
+      {{- range .Values.alertmanager.config.receivers }}
+      - name: '{{ .name }}'
+        {{- if .slack_configs }}
+        slack_configs:
+          {{- range .slack_configs }}
+          - channel: '{{ .channel }}'
+            title: '{{ .title }}'
+            text: '{{ .text }}'
+            send_resolved: {{ .send_resolved | default false }}
+          {{- end }}
+        {{- end }}
+        {{- if .pagerduty_configs }}
+        pagerduty_configs:
+          {{- range .pagerduty_configs }}
+          - service_key: '{{ .service_key }}'
+            description: '{{ .description }}'
+            details:
+              firing: "{{ .details.firing }}"
+          {{- end }}
+        {{- end }}
+      {{- end }}
+
+    inhibit_rules:
+      {{- range .Values.alertmanager.config.inhibit_rules }}
+      - source_match:
+          {{- range $key, $value := .source_match }}
+          {{ $key }}: '{{ $value }}'
+          {{- end }}
+        target_match:
+          {{- range $key, $value := .target_match }}
+          {{ $key }}: '{{ $value }}'
+          {{- end }}
+        equal: {{ .equal | toJson }}
+      {{- end }}
+
+  templates.tmpl: |
+    {{ `{{ define "__text_alert_list" }}` }}
+    {{ `{{ range . }}` }}
+    {{ `{{ .Labels.alertname }}: {{ .Annotations.description }}` }}
+    {{ `{{ end }}` }}
+    {{ `{{ end }}` }}
+
+{{- end }}

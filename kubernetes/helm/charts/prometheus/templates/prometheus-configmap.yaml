@@ -1,0 +1,171 @@
+{{- if .Values.prometheus.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.prometheus.name }}-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.prometheus.name }}
+    {{- include "prometheus.labels" . | nindent 4 }}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: {{ .Values.prometheus.config.scrapeInterval }}
+      evaluation_interval: {{ .Values.prometheus.config.evaluationInterval }}
+      external_labels:
+        {{- range $key, $value := .Values.prometheus.config.externalLabels }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+
+    rule_files:
+      - /etc/prometheus/rules/*.yml
+
+    {{- if .Values.prometheus.config.remoteWrite }}
+    remote_write:
+      {{- toYaml .Values.prometheus.config.remoteWrite | nindent 6 }}
+    {{- end }}
+
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets:
+          - alertmanager:{{ .Values.alertmanager.service.port }}
+
+    scrape_configs:
+      # Prometheus self-monitoring
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:{{ .Values.prometheus.service.port }}']
+
+      {{- if .Values.serviceMonitors.kubeStateMetrics.enabled }}
+      # Kube State Metrics
+      - job_name: 'kube-state-metrics'
+        scrape_interval: {{ .Values.serviceMonitors.kubeStateMetrics.scrapeInterval }}
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            regex: 'kube-state-metrics'
+            action: keep
+      {{- end }}
+
+      # High-Tier Services (Critical)
+      {{- range .Values.serviceMonitors.highTier.services }}
+      - job_name: '{{ . }}'
+        scrape_interval: {{ .Values.serviceMonitors.highTier.scrapeInterval }}
+        scrape_timeout: {{ .Values.serviceMonitors.highTier.scrapeTimeout }}
+        metrics_path: {{ .Values.serviceMonitors.metricsPath }}
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - metapharm
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            regex: '{{ . }}'
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+      {{- end }}
+
+      # Medium-Tier Services
+      {{- range .Values.serviceMonitors.mediumTier.services }}
+      - job_name: '{{ . }}'
+        scrape_interval: {{ .Values.serviceMonitors.mediumTier.scrapeInterval }}
+        scrape_timeout: {{ .Values.serviceMonitors.mediumTier.scrapeTimeout }}
+        metrics_path: {{ .Values.serviceMonitors.metricsPath }}
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - metapharm
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            regex: '{{ . }}'
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+      {{- end }}
+
+      # Low-Tier Services
+      {{- range .Values.serviceMonitors.lowTier.services }}
+      - job_name: '{{ . }}'
+        scrape_interval: {{ .Values.serviceMonitors.lowTier.scrapeInterval }}
+        scrape_timeout: {{ .Values.serviceMonitors.lowTier.scrapeTimeout }}
+        metrics_path: {{ .Values.serviceMonitors.metricsPath }}
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - metapharm
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            regex: '{{ . }}'
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+      {{- end }}
+
+      # Kubernetes nodes
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics
+
+      # Kubernetes pods
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: 'true'
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+
+{{- end }}

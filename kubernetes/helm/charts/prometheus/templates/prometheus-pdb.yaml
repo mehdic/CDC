@@ -1,0 +1,16 @@
+{{- if and .Values.prometheus.enabled .Values.podDisruptionBudget.enabled -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.prometheus.name }}-pdb
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.prometheus.name }}
+    {{- include "prometheus.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      app: {{ .Values.prometheus.name }}
+      {{- include "prometheus.selectorLabels" . | nindent 6 }}
+{{- end }}

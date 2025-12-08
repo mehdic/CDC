@@ -1,0 +1,71 @@
+# Staging environment overrides
+global:
+  environment: staging
+  imageTag: "2.50.0"
+
+prometheus:
+  replicaCount: 2
+  persistence:
+    enabled: true
+    size: 40Gi
+    retention: 14d
+    retentionSize: "35GB"
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 750m
+      memory: 1.5Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 3
+
+alertmanager:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+serviceMonitors:
+  highTier:
+    scrapeInterval: 20s
+  mediumTier:
+    scrapeInterval: 30s
+  lowTier:
+    scrapeInterval: 60s
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+  hosts:
+    - host: prometheus.staging.metapharm.ch
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: prometheus-staging-tls
+      hosts:
+        - prometheus.staging.metapharm.ch
+
+alertmanagerIngress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+  hosts:
+    - host: alertmanager.staging.metapharm.ch
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: alertmanager-staging-tls
+      hosts:
+        - alertmanager.staging.metapharm.ch

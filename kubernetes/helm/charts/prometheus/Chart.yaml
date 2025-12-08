@@ -1,0 +1,51 @@
+apiVersion: v2
+name: prometheus
+description: Prometheus monitoring and alerting for MetaPharm Connect
+type: application
+
+# Chart version
+version: 1.0.0
+
+# Application version - Prometheus version
+appVersion: "2.50.0"
+
+keywords:
+  - prometheus
+  - monitoring
+  - metrics
+  - alerting
+  - metapharm
+
+maintainers:
+  - name: MetaPharm Connect DevOps Team
+    email: devops@metapharm.ch
+
+home: https://prometheus.io
+sources:
+  - https://github.com/prometheus/prometheus
+  - https://github.com/mehdic/CDC
+
+# Minimum Kubernetes version required
+kubeVersion: ">=1.24.0"
+
+annotations:
+  # Changelog
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Prometheus Helm chart for MetaPharm Connect monitoring
+    - kind: added
+      description: ServiceMonitor CRDs for all backend microservices
+    - kind: added
+      description: Alert rules for SLO monitoring
+    - kind: added
+      description: AlertManager integration with Slack and PagerDuty
+
+  # License information
+  artifacthub.io/license: Apache-2.0
+
+  # Support links
+  artifacthub.io/links: |
+    - name: Prometheus Documentation
+      url: https://prometheus.io/docs
+    - name: MetaPharm Docs
+      url: https://docs.metapharm.ch

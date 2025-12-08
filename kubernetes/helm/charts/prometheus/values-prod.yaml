@@ -1,0 +1,96 @@
+# Production environment overrides
+global:
+  environment: production
+  imageTag: "2.50.0"
+
+prometheus:
+  replicaCount: 3
+  persistence:
+    enabled: true
+    size: 100Gi
+    retention: 90d
+    retentionSize: "90GB"
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 5
+    targetCPU: 60
+    targetMemory: 70
+
+alertmanager:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+serviceMonitors:
+  highTier:
+    scrapeInterval: 15s
+  mediumTier:
+    scrapeInterval: 30s
+  lowTier:
+    scrapeInterval: 60s
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: prometheus-basic-auth
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+  hosts:
+    - host: prometheus.metapharm.ch
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: prometheus-prod-tls
+      hosts:
+        - prometheus.metapharm.ch
+
+alertmanagerIngress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: alertmanager.metapharm.ch
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: alertmanager-prod-tls
+      hosts:
+        - alertmanager.metapharm.ch
+
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+      slack_api_url: "{{ env \"SLACK_WEBHOOK_URL\" }}"
+      pagerduty_url: "https://events.pagerduty.com/v2/enqueue"
+
+alertRules:
+  sloAlerts:
+    highLatency:
+      duration: 2m
+      severity: critical
+    errorRate:
+      duration: 2m
+      severity: critical

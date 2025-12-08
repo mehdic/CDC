@@ -1,0 +1,139 @@
+{{- if .Values.alertRules.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.prometheus.name }}-rules
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.prometheus.name }}
+    {{- include "prometheus.labels" . | nindent 4 }}
+data:
+  alert-rules.yml: |
+    groups:
+      - name: slo.rules
+        interval: {{ .Values.prometheus.config.evaluationInterval }}
+        rules:
+          {{- if .Values.alertRules.sloAlerts.highLatency.enabled }}
+          - alert: HighLatency
+            expr: |
+              histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > {{ .Values.alertRules.sloAlerts.highLatency.threshold / 1000 }}
+            for: {{ .Values.alertRules.sloAlerts.highLatency.duration }}
+            labels:
+              severity: {{ .Values.alertRules.sloAlerts.highLatency.severity }}
+              component: api
+            annotations:
+              summary: "High latency detected on {{ $labels.service }}"
+              description: "P95 latency for {{ $labels.service }} is {{ $value | humanizeDuration }} (threshold: {{ .Values.alertRules.sloAlerts.highLatency.threshold }}ms)"
+          {{- end }}
+
+          {{- if .Values.alertRules.sloAlerts.errorRate.enabled }}
+          - alert: HighErrorRate
+            expr: |
+              rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > {{ .Values.alertRules.sloAlerts.errorRate.threshold }}
+            for: {{ .Values.alertRules.sloAlerts.errorRate.duration }}
+            labels:
+              severity: {{ .Values.alertRules.sloAlerts.errorRate.severity }}
+              component: api
+            annotations:
+              summary: "High error rate on {{ $labels.service }}"
+              description: "Error rate for {{ $labels.service }} is {{ $value | humanizePercentage }} (threshold: {{ .Values.alertRules.sloAlerts.errorRate.threshold | humanizePercentage }})"
+          {{- end }}
+
+          {{- if .Values.alertRules.sloAlerts.podRestart.enabled }}
+          - alert: PodRestartingTooOften
+            expr: |
+              rate(kube_pod_container_status_restarts_total[1h]) > {{ .Values.alertRules.sloAlerts.podRestart.threshold }}
+            for: {{ .Values.alertRules.sloAlerts.podRestart.duration }}
+            labels:
+              severity: {{ .Values.alertRules.sloAlerts.podRestart.severity }}
+              component: kubernetes
+            annotations:
+              summary: "Pod {{ $labels.pod }} restarting too often"
+              description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has restarted {{ $value | humanize }} times in the last hour"
+          {{- end }}
+
+      - name: resources.rules
+        interval: {{ .Values.prometheus.config.evaluationInterval }}
+        rules:
+          {{- if .Values.alertRules.resourceAlerts.cpu.enabled }}
+          - alert: HighCPUUsage
+            expr: |
+              (1 - (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > {{ .Values.alertRules.resourceAlerts.cpu.threshold / 100 }}
+            for: {{ .Values.alertRules.resourceAlerts.cpu.duration }}
+            labels:
+              severity: {{ .Values.alertRules.resourceAlerts.cpu.severity }}
+              component: infrastructure
+            annotations:
+              summary: "High CPU usage on node {{ $labels.node }}"
+              description: "Node {{ $labels.node }} CPU usage is {{ $value | humanizePercentage }} (threshold: {{ .Values.alertRules.resourceAlerts.cpu.threshold }}%)"
+          {{- end }}
+
+          {{- if .Values.alertRules.resourceAlerts.memory.enabled }}
+          - alert: HighMemoryUsage
+            expr: |
+              (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > {{ .Values.alertRules.resourceAlerts.memory.threshold / 100 }}
+            for: {{ .Values.alertRules.resourceAlerts.memory.duration }}
+            labels:
+              severity: {{ .Values.alertRules.resourceAlerts.memory.severity }}
+              component: infrastructure
+            annotations:
+              summary: "High memory usage on node {{ $labels.node }}"
+              description: "Node {{ $labels.node }} memory usage is {{ $value | humanizePercentage }} (threshold: {{ .Values.alertRules.resourceAlerts.memory.threshold }}%)"
+          {{- end }}
+
+          {{- if .Values.alertRules.resourceAlerts.disk.enabled }}
+          - alert: HighDiskUsage
+            expr: |
+              (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) > {{ .Values.alertRules.resourceAlerts.disk.threshold / 100 }}
+            for: {{ .Values.alertRules.resourceAlerts.disk.duration }}
+            labels:
+              severity: {{ .Values.alertRules.resourceAlerts.disk.severity }}
+              component: infrastructure
+            annotations:
+              summary: "High disk usage on node {{ $labels.node }}"
+              description: "Node {{ $labels.node }} disk usage is {{ $value | humanizePercentage }} (threshold: {{ .Values.alertRules.resourceAlerts.disk.threshold }}%)"
+          {{- end }}
+
+      - name: infrastructure.rules
+        interval: {{ .Values.prometheus.config.evaluationInterval }}
+        rules:
+          {{- if .Values.alertRules.infrastructureAlerts.nodeDown.enabled }}
+          - alert: NodeDown
+            expr: |
+              up{job="kubernetes-nodes"} == 0
+            for: 5m
+            labels:
+              severity: {{ .Values.alertRules.infrastructureAlerts.nodeDown.severity }}
+              component: kubernetes
+            annotations:
+              summary: "Node {{ $labels.node }} is down"
+              description: "Node {{ $labels.node }} has been unreachable for more than 5 minutes"
+          {{- end }}
+
+          {{- if .Values.alertRules.infrastructureAlerts.dbConnectionPool.enabled }}
+          - alert: DatabaseConnectionPoolExhausted
+            expr: |
+              pg_stat_activity_count > {{ .Values.alertRules.infrastructureAlerts.dbConnectionPool.threshold }}
+            for: {{ .Values.alertRules.infrastructureAlerts.dbConnectionPool.duration }}
+            labels:
+              severity: {{ .Values.alertRules.infrastructureAlerts.dbConnectionPool.severity }}
+              component: database
+            annotations:
+              summary: "Database connection pool nearly exhausted on {{ $labels.instance }}"
+              description: "{{ $value | humanize }} connections out of {{ .Values.alertRules.infrastructureAlerts.dbConnectionPool.threshold }} available"
+          {{- end }}
+
+          {{- if .Values.alertRules.infrastructureAlerts.redisMemory.enabled }}
+          - alert: RedisMemoryUsageHigh
+            expr: |
+              (redis_memory_used_bytes / redis_memory_max_bytes) > {{ .Values.alertRules.infrastructureAlerts.redisMemory.threshold / 100 }}
+            for: {{ .Values.alertRules.infrastructureAlerts.redisMemory.duration }}
+            labels:
+              severity: {{ .Values.alertRules.infrastructureAlerts.redisMemory.severity }}
+              component: cache
+            annotations:
+              summary: "Redis memory usage is high on {{ $labels.instance }}"
+              description: "Redis memory usage is {{ $value | humanizePercentage }} (threshold: {{ .Values.alertRules.infrastructureAlerts.redisMemory.threshold }}%)"
+          {{- end }}
+
+{{- end }}
