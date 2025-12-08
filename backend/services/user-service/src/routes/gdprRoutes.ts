@@ -1,6 +1,12 @@
 /**
- * GDPR Routes
+ * GDPR Routes - SECURITY HARDENED
  * Routes for GDPR compliance features
+ *
+ * Security Features:
+ * - JWT authentication required on all endpoints
+ * - Rate limiting on export endpoints (5 requests / 15 minutes)
+ * - Authorization checks in controllers
+ * - PII-safe logging
  *
  * Endpoints:
  * - POST /api/gdpr/export - Request data export
@@ -11,6 +17,7 @@
  */
 
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import {
   requestDataExport,
   downloadDataExport,
@@ -18,8 +25,29 @@ import {
   getErasureStatus,
   getAuditTrail,
 } from '../controllers/gdprController';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
+
+// ============================================================================
+// Rate Limiting Configuration (GDPR Security - Vulnerability Fix #3)
+// ============================================================================
+
+/**
+ * Rate limiter for GDPR export endpoints
+ * Prevents abuse, DDoS attacks, and patient ID enumeration attacks
+ * Limit: 5 requests per 15 minutes per IP address
+ */
+const gdprExportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: {
+    error: 'Too many export requests from this IP, please try again later',
+    retryAfter: '15 minutes',
+  },
+  standardHeaders: true, // Return rate limit info in the \`RateLimit-*\` headers
+  legacyHeaders: false, // Disable the \`X-RateLimit-*\` headers
+});
 
 // ============================================================================
 // GDPR Data Export Routes (Article 15 - Right to Access)
@@ -28,6 +56,8 @@ const router = Router();
 /**
  * POST /api/gdpr/export
  * Request a comprehensive data export for a user
+ *
+ * SECURITY: Requires authentication + rate limiting
  *
  * Request Body:
  * {
@@ -45,17 +75,19 @@ const router = Router();
  *   "timestamp": "2025-12-03T12:00:00Z"
  * }
  */
-router.post('/export', requestDataExport);
+router.post('/export', authenticateToken, gdprExportLimiter, requestDataExport);
 
 /**
  * GET /api/gdpr/export/:requestId/download
  * Download a previously created data export
  *
+ * SECURITY: Requires authentication (no rate limit - single download per request)
+ *
  * Response:
  * - JSON file (Content-Type: application/json) or
  * - CSV file (Content-Type: text/csv)
  */
-router.get('/export/:requestId/download', downloadDataExport);
+router.get('/export/:requestId/download', authenticateToken, downloadDataExport);
 
 // ============================================================================
 // GDPR Data Erasure Routes (Article 17 - Right to Erasure)
@@ -64,6 +96,8 @@ router.get('/export/:requestId/download', downloadDataExport);
 /**
  * POST /api/gdpr/erasure
  * Request right to be forgotten (data erasure/anonymization)
+ *
+ * SECURITY: Requires authentication + rate limiting
  *
  * Request Body:
  * {
@@ -83,11 +117,13 @@ router.get('/export/:requestId/download', downloadDataExport);
  *   "timestamp": "2025-12-03T12:00:00Z"
  * }
  */
-router.post('/erasure', requestDataErasure);
+router.post('/erasure', authenticateToken, gdprExportLimiter, requestDataErasure);
 
 /**
  * GET /api/gdpr/erasure/:requestId
  * Get the status and details of an erasure request
+ *
+ * SECURITY: Requires authentication
  *
  * Response:
  * {
@@ -100,7 +136,7 @@ router.post('/erasure', requestDataErasure);
  *   "verificationHash": "sha256-hash"
  * }
  */
-router.get('/erasure/:requestId', getErasureStatus);
+router.get('/erasure/:requestId', authenticateToken, getErasureStatus);
 
 // ============================================================================
 // GDPR Audit Routes
@@ -109,7 +145,9 @@ router.get('/erasure/:requestId', getErasureStatus);
 /**
  * GET /api/gdpr/audit/:userId
  * Get the GDPR audit trail for a specific user
- * (Admin/User access only - implement authorization middleware in production)
+ *
+ * SECURITY: Requires authentication
+ * (Admin/User access only - authorization check in controller)
  *
  * Response:
  * {
@@ -130,6 +168,6 @@ router.get('/erasure/:requestId', getErasureStatus);
  *   "timestamp": "2025-12-03T12:00:00Z"
  * }
  */
-router.get('/audit/:userId', getAuditTrail);
+router.get('/audit/:userId', authenticateToken, getAuditTrail);
 
 export default router;
