@@ -7,6 +7,11 @@
  * - GET /api/analytics/metrics/:pharmacyId - Get metrics summary
  * - GET /api/analytics/revenue/:pharmacyId - Get revenue trends
  * - GET /api/analytics/prescriptions/:pharmacyId - Get prescription trends
+ * - POST /api/analytics/events - Track user behavior event (GDPR consent required)
+ * - GET /api/analytics/users/:userId/segment - Get user segment classification
+ * - GET /api/analytics/users/:userId/churn-risk - Get churn risk prediction
+ * - POST /api/analytics/consent/grant - Grant tracking consent
+ * - POST /api/analytics/consent/revoke - Revoke tracking consent
  * - GET /health - Health check
  */
 
@@ -20,6 +25,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { authenticateToken, requireRole } from './middleware/auth';
 import { AnalyticsController } from './controllers/analytics.controller';
+import { BehaviorController } from './controllers/behaviorController';
+import { createBehaviorRoutes } from './routes/behaviorRoutes';
 
 // ============================================================================
 // Configuration
@@ -65,6 +72,7 @@ if (NODE_ENV === 'development') {
 // ============================================================================
 
 const analyticsController = new AnalyticsController();
+const behaviorController = new BehaviorController();
 
 // ============================================================================
 // Health Check
@@ -130,6 +138,13 @@ app.get(
   requireRole(['pharmacist', 'admin']),
   analyticsController.getPrescriptionTrends
 );
+
+// ============================================================================
+// Behavior Tracking Routes (GDPR-Compliant)
+// ============================================================================
+
+// Mount behavior tracking routes under /api/analytics
+app.use('/api/analytics', createBehaviorRoutes(behaviorController));
 
 // ============================================================================
 // Error Handling
