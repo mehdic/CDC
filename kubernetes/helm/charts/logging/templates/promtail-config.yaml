@@ -80,16 +80,8 @@ data:
                 spanId: spanId
                 timestamp: timestamp
 
-          # Extract labels from JSON
-          - labels:
-              level:
-              service:
-              traceId:
-              spanId:
-
           {{- if .Values.promtail.piiSanitization.enabled }}
-          # PII Sanitization Pipeline (GDPR Compliance)
-
+          # PII Sanitization Pipeline (GDPR Compliance) - MUST HAPPEN BEFORE LABEL EXTRACTION
           # Email addresses
           - replace:
               expression: '{{ .Values.promtail.piiSanitization.patterns.email }}'
@@ -115,6 +107,13 @@ data:
               expression: '{{ .Values.promtail.piiSanitization.patterns.creditCard }}'
               replace: '{{ .Values.promtail.piiSanitization.replacements.creditCard }}'
           {{- end }}
+
+          # Extract labels from JSON (NOW HAPPENS AFTER PII SANITIZATION)
+          - labels:
+              level:
+              service:
+              traceId:
+              spanId:
 
           # Timestamp parsing
           - timestamp:
