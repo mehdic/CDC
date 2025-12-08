@@ -1,0 +1,1022 @@
+# Default values for metapharm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global configuration
+global:
+  # Environment: development, staging, production
+  environment: development
+  # Primary domain
+  domain: metapharm.local
+  # Image registry
+  imageRegistry: metapharm
+  # Image pull policy
+  imagePullPolicy: IfNotPresent
+  # Image tag (overrides appVersion from Chart.yaml)
+  imageTag: latest
+  # Namespace
+  namespace: metapharm
+
+# Namespace configuration
+namespace:
+  create: true
+  name: metapharm
+  labels:
+    environment: development
+    project: metapharm-connect
+  annotations:
+    description: "MetaPharm Connect - Healthcare Platform Namespace"
+
+# ConfigMap configuration
+configMap:
+  create: true
+  data:
+    nodeEnv: "development"
+    logLevel: "debug"
+    logFormat: "json"
+    rateLimitWindow: "900000"
+    rateLimitMaxRequests: "100"
+    jwtExpiry: "3600"
+    jwtRefreshExpiry: "604800"
+    corsOrigin: "*"
+    healthCheckInterval: "30"
+    # Feature flags
+    featureAiOcr: "true"
+    featureDrugInteraction: "true"
+    featureTeleconsultation: "true"
+    featureDeliveryTracking: "true"
+
+# Secret configuration (not the actual secrets, just metadata)
+secrets:
+  # Database credentials
+  dbCredentials:
+    enabled: true
+    name: metapharm-db-credentials
+  # JWT secrets
+  jwtSecret:
+    enabled: true
+    name: metapharm-jwt-secret
+  # Redis password
+  redisPassword:
+    enabled: true
+    name: metapharm-redis-password
+  # RabbitMQ credentials
+  rabbitmqCredentials:
+    enabled: true
+    name: metapharm-rabbitmq-credentials
+  # External API keys
+  externalApiKeys:
+    enabled: true
+    name: metapharm-external-api-keys
+
+# Service definitions with their configurations
+services:
+  # API Gateway (High Tier - Critical)
+  apiGateway:
+    enabled: true
+    name: api-gateway
+    tier: high
+    component: microservice
+    port: 3000
+    replicas: 3
+    serviceType: LoadBalancer
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      targetCPU: 70
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3000
+
+  # Auth Service (High Tier - Critical)
+  authService:
+    enabled: true
+    name: auth-service
+    tier: high
+    component: microservice
+    port: 3001
+    replicas: 3
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3001
+
+  # Prescription Service (High Tier - Critical)
+  prescriptionService:
+    enabled: true
+    name: prescription-service
+    tier: high
+    component: microservice
+    port: 3009
+    replicas: 3
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3009
+
+  # Delivery Service (Medium Tier)
+  deliveryService:
+    enabled: true
+    name: delivery-service
+    tier: medium
+    component: microservice
+    port: 3002
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3002
+
+  # Inventory Service (Medium Tier)
+  inventoryService:
+    enabled: true
+    name: inventory-service
+    tier: medium
+    component: microservice
+    port: 3003
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3003
+
+  # Medical Records Service (High Tier - Critical)
+  medicalRecordsService:
+    enabled: true
+    name: medical-records-service
+    tier: high
+    component: microservice
+    port: 3004
+    replicas: 3
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3004
+
+  # Messaging Service (High Tier - Critical)
+  messagingService:
+    enabled: true
+    name: messaging-service
+    tier: high
+    component: microservice
+    port: 3005
+    replicas: 3
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3005
+
+  # Notification Service (Medium Tier)
+  notificationService:
+    enabled: true
+    name: notification-service
+    tier: medium
+    component: microservice
+    port: 3006
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3006
+
+  # Order Service (Medium Tier)
+  orderService:
+    enabled: true
+    name: order-service
+    tier: medium
+    component: microservice
+    port: 3007
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3007
+
+  # Payment Service (High Tier - Critical)
+  paymentService:
+    enabled: true
+    name: payment-service
+    tier: high
+    component: microservice
+    port: 3008
+    replicas: 3
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3008
+
+  # Teleconsultation Service (High Tier - Critical)
+  teleconsultationService:
+    enabled: true
+    name: teleconsultation-service
+    tier: high
+    component: microservice
+    port: 3010
+    replicas: 3
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3010
+
+  # Adherence Service (Medium Tier)
+  adherenceService:
+    enabled: true
+    name: adherence-service
+    tier: medium
+    component: microservice
+    port: 3011
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3011
+
+  # Analytics Service (Medium Tier)
+  analyticsService:
+    enabled: true
+    name: analytics-service
+    tier: medium
+    component: microservice
+    port: 3012
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3012
+
+  # Appointment Service (Medium Tier)
+  appointmentService:
+    enabled: true
+    name: appointment-service
+    tier: medium
+    component: microservice
+    port: 3013
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3013
+
+  # Calendar Service (Medium Tier)
+  calendarService:
+    enabled: true
+    name: calendar-service
+    tier: medium
+    component: microservice
+    port: 3014
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3014
+
+  # Controlled Substance Service (Medium Tier)
+  controlledSubstanceService:
+    enabled: true
+    name: controlled-substance-service
+    tier: medium
+    component: microservice
+    port: 3015
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3015
+
+  # Digital Twin Service (High Tier - Critical)
+  digitalTwinService:
+    enabled: true
+    name: digital-twin-service
+    tier: high
+    component: microservice
+    port: 3016
+    replicas: 3
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3016
+
+  # Doctor Service (Medium Tier)
+  doctorService:
+    enabled: true
+    name: doctor-service
+    tier: medium
+    component: microservice
+    port: 3017
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3017
+
+  # Drug Interaction Service (High Tier - Critical)
+  drugInteractionService:
+    enabled: true
+    name: drug-interaction-service
+    tier: high
+    component: microservice
+    port: 3018
+    replicas: 3
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPU: 70
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3018
+
+  # Ecommerce Service (Medium Tier)
+  ecommerceService:
+    enabled: true
+    name: ecommerce-service
+    tier: medium
+    component: microservice
+    port: 3019
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3019
+
+  # Esante Service (Medium Tier)
+  esanteService:
+    enabled: true
+    name: esante-service
+    tier: medium
+    component: microservice
+    port: 3020
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3020
+
+  # Insurance Service (Medium Tier)
+  insuranceService:
+    enabled: true
+    name: insurance-service
+    tier: medium
+    component: microservice
+    port: 3021
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3021
+
+  # Marketing Service (Low Tier)
+  marketingService:
+    enabled: true
+    name: marketing-service
+    tier: low
+    component: microservice
+    port: 3022
+    replicas: 1
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 4
+      targetCPU: 80
+      targetMemory: 85
+    healthCheck:
+      path: /health
+      port: 3022
+
+  # Nurse Service (Medium Tier)
+  nurseService:
+    enabled: true
+    name: nurse-service
+    tier: medium
+    component: microservice
+    port: 3023
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3023
+
+  # Pharmacy Service (Medium Tier)
+  pharmacyService:
+    enabled: true
+    name: pharmacy-service
+    tier: medium
+    component: microservice
+    port: 3024
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3024
+
+  # Recycling Service (Low Tier)
+  recyclingService:
+    enabled: true
+    name: recycling-service
+    tier: low
+    component: microservice
+    port: 3025
+    replicas: 1
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 4
+      targetCPU: 80
+      targetMemory: 85
+    healthCheck:
+      path: /health
+      port: 3025
+
+  # Refill Service (Medium Tier)
+  refillService:
+    enabled: true
+    name: refill-service
+    tier: medium
+    component: microservice
+    port: 3026
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3026
+
+  # User Service (Medium Tier)
+  userService:
+    enabled: true
+    name: user-service
+    tier: medium
+    component: microservice
+    port: 3027
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3027
+
+  # VIP Service (Medium Tier)
+  vipService:
+    enabled: true
+    name: vip-service
+    tier: medium
+    component: microservice
+    port: 3028
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3028
+
+  # Voice Service (Medium Tier)
+  voiceService:
+    enabled: true
+    name: voice-service
+    tier: medium
+    component: microservice
+    port: 3029
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPU: 75
+      targetMemory: 80
+    healthCheck:
+      path: /health
+      port: 3029
+
+# Infrastructure services
+infrastructure:
+  # PostgreSQL Primary Database
+  postgresPrimary:
+    enabled: true
+    name: postgres-primary
+    tier: high
+    component: infrastructure
+    port: 5432
+    replicas: 1
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+    storage:
+      size: 20Gi
+      storageClass: standard
+
+  # PostgreSQL Replica
+  postgresReplica:
+    enabled: true
+    name: postgres-replica
+    tier: high
+    component: infrastructure
+    port: 5432
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+    storage:
+      size: 20Gi
+      storageClass: standard
+
+  # Redis Cache
+  redis:
+    enabled: true
+    name: redis
+    tier: medium
+    component: infrastructure
+    port: 6379
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    enabled: true
+    name: rabbitmq
+    tier: medium
+    component: infrastructure
+    port: 5672
+    managementPort: 15672
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+  # Elasticsearch Search Engine
+  elasticsearch:
+    enabled: true
+    name: elasticsearch
+    tier: medium
+    component: infrastructure
+    port: 9200
+    replicas: 2
+    serviceType: ClusterIP
+    resources:
+      requests:
+        cpu: 250m
+        memory: 1Gi
+      limits:
+        cpu: 500m
+        memory: 2Gi
+    storage:
+      size: 30Gi
+      storageClass: standard
+
+# Security context for all pods
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Health probe defaults
+healthProbe:
+  liveness:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 1
+    failureThreshold: 3
+
+# Rolling update strategy
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+# Pod affinity/anti-affinity
+affinity:
+  podAntiAffinity:
+    enabled: true
+    weight: 100
+
+# Session affinity
+sessionAffinity:
+  enabled: true
+  type: ClientIP
+  timeout: 10800
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: api.metapharm.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api-gateway-svc
+          port: 3000
+  tls:
+    - secretName: metapharm-tls
+      hosts:
+        - api.metapharm.local
+
+# Monitoring and observability
+monitoring:
+  prometheus:
+    enabled: true
+    scrapeInterval: 30s
+  metrics:
+    enabled: true
+    path: /metrics

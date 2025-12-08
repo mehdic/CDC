@@ -1,0 +1,113 @@
+suite: test HPA templates
+templates:
+  - hpa/autoscaling.yaml
+tests:
+  # Test HPA creation when autoscaling is enabled
+  - it: should create HPA when autoscaling is enabled
+    set:
+      services.apiGateway.enabled: true
+      services.apiGateway.name: api-gateway
+      services.apiGateway.autoscaling.enabled: true
+      services.apiGateway.autoscaling.minReplicas: 3
+      services.apiGateway.autoscaling.maxReplicas: 10
+      services.apiGateway.autoscaling.targetCPU: 70
+      services.apiGateway.autoscaling.targetMemory: 80
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - equal:
+          path: metadata.name
+          value: api-gateway-hpa
+      - equal:
+          path: spec.minReplicas
+          value: 3
+      - equal:
+          path: spec.maxReplicas
+          value: 10
+
+  # Test HPA not created when autoscaling is disabled
+  - it: should not create HPA when autoscaling is disabled
+    set:
+      services.authService.enabled: true
+      services.authService.name: auth-service
+      services.authService.autoscaling.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # Test CPU metric configuration
+  - it: should configure CPU metric correctly
+    set:
+      services.prescriptionService.enabled: true
+      services.prescriptionService.name: prescription-service
+      services.prescriptionService.autoscaling.enabled: true
+      services.prescriptionService.autoscaling.minReplicas: 2
+      services.prescriptionService.autoscaling.maxReplicas: 8
+      services.prescriptionService.autoscaling.targetCPU: 75
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 75
+
+  # Test memory metric configuration
+  - it: should configure memory metric when specified
+    set:
+      services.deliveryService.enabled: true
+      services.deliveryService.name: delivery-service
+      services.deliveryService.autoscaling.enabled: true
+      services.deliveryService.autoscaling.minReplicas: 2
+      services.deliveryService.autoscaling.maxReplicas: 6
+      services.deliveryService.autoscaling.targetCPU: 70
+      services.deliveryService.autoscaling.targetMemory: 80
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+              target:
+                type: Utilization
+                averageUtilization: 80
+
+  # Test scale target reference
+  - it: should reference correct deployment
+    set:
+      services.inventoryService.enabled: true
+      services.inventoryService.name: inventory-service
+      services.inventoryService.autoscaling.enabled: true
+      services.inventoryService.autoscaling.minReplicas: 2
+      services.inventoryService.autoscaling.maxReplicas: 6
+      services.inventoryService.autoscaling.targetCPU: 75
+    asserts:
+      - equal:
+          path: spec.scaleTargetRef.kind
+          value: Deployment
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: inventory-service-deployment
+
+  # Test scaling behavior
+  - it: should have scale down stabilization window
+    set:
+      services.messagingService.enabled: true
+      services.messagingService.name: messaging-service
+      services.messagingService.autoscaling.enabled: true
+      services.messagingService.autoscaling.minReplicas: 2
+      services.messagingService.autoscaling.maxReplicas: 8
+      services.messagingService.autoscaling.targetCPU: 70
+    asserts:
+      - equal:
+          path: spec.behavior.scaleDown.stabilizationWindowSeconds
+          value: 300
+      - equal:
+          path: spec.behavior.scaleUp.stabilizationWindowSeconds
+          value: 0

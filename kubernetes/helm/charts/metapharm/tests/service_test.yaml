@@ -1,0 +1,79 @@
+suite: test service templates
+templates:
+  - services/microservices.yaml
+tests:
+  # Test that services are created for enabled services
+  - it: should create service for api-gateway when enabled
+    set:
+      services.apiGateway.enabled: true
+      services.apiGateway.name: api-gateway
+      services.apiGateway.port: 3000
+      services.apiGateway.serviceType: LoadBalancer
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: api-gateway-svc
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.ports[0].port
+          value: 3000
+
+  # Test ClusterIP service type
+  - it: should create ClusterIP service for internal services
+    set:
+      services.authService.enabled: true
+      services.authService.name: auth-service
+      services.authService.port: 3001
+      services.authService.serviceType: ClusterIP
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  # Test session affinity
+  - it: should configure session affinity when enabled
+    set:
+      services.prescriptionService.enabled: true
+      services.prescriptionService.name: prescription-service
+      services.prescriptionService.port: 3009
+      services.prescriptionService.serviceType: ClusterIP
+      sessionAffinity.enabled: true
+      sessionAffinity.type: ClientIP
+      sessionAffinity.timeout: 10800
+    asserts:
+      - equal:
+          path: spec.sessionAffinity
+          value: ClientIP
+      - equal:
+          path: spec.sessionAffinityConfig.clientIP.timeoutSeconds
+          value: 10800
+
+  # Test selector labels
+  - it: should have correct selector labels
+    set:
+      services.deliveryService.enabled: true
+      services.deliveryService.name: delivery-service
+      services.deliveryService.port: 3002
+      services.deliveryService.serviceType: ClusterIP
+    asserts:
+      - equal:
+          path: spec.selector.app
+          value: delivery-service
+
+  # Test service annotations
+  - it: should include topology-aware annotations
+    set:
+      services.inventoryService.enabled: true
+      services.inventoryService.name: inventory-service
+      services.inventoryService.port: 3003
+      services.inventoryService.serviceType: ClusterIP
+    asserts:
+      - equal:
+          path: metadata.annotations["service.kubernetes.io/topology-aware-hints"]
+          value: auto

@@ -1,0 +1,143 @@
+suite: test deployment templates
+templates:
+  - deployments/microservices.yaml
+tests:
+  # Test that deployments are created for enabled services
+  - it: should create deployment for api-gateway when enabled
+    set:
+      services.apiGateway.enabled: true
+      services.apiGateway.name: api-gateway
+      services.apiGateway.tier: high
+      services.apiGateway.component: microservice
+      services.apiGateway.port: 3000
+      services.apiGateway.replicas: 3
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: api-gateway-deployment
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  # Test that deployments are not created when disabled
+  - it: should not create deployment when service is disabled
+    set:
+      services.apiGateway.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # Test resource requests and limits
+  - it: should set correct resource requests and limits
+    set:
+      services.authService.enabled: true
+      services.authService.name: auth-service
+      services.authService.tier: high
+      services.authService.component: microservice
+      services.authService.port: 3001
+      services.authService.replicas: 2
+      services.authService.resources.requests.cpu: "500m"
+      services.authService.resources.requests.memory: "512Mi"
+      services.authService.resources.limits.cpu: "1000m"
+      services.authService.resources.limits.memory: "1Gi"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "500m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: "512Mi"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "1000m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: "1Gi"
+
+  # Test security context
+  - it: should apply security context correctly
+    set:
+      services.prescriptionService.enabled: true
+      services.prescriptionService.name: prescription-service
+      services.prescriptionService.tier: high
+      services.prescriptionService.component: microservice
+      services.prescriptionService.port: 3009
+      services.prescriptionService.replicas: 2
+      securityContext.runAsNonRoot: true
+      securityContext.runAsUser: 1000
+      securityContext.allowPrivilegeEscalation: false
+      securityContext.readOnlyRootFilesystem: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+
+  # Test health probes
+  - it: should configure liveness and readiness probes
+    set:
+      services.deliveryService.enabled: true
+      services.deliveryService.name: delivery-service
+      services.deliveryService.tier: medium
+      services.deliveryService.component: microservice
+      services.deliveryService.port: 3002
+      services.deliveryService.replicas: 2
+      services.deliveryService.healthCheck.path: /health
+      healthProbe.liveness.initialDelaySeconds: 30
+      healthProbe.readiness.initialDelaySeconds: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /health
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.initialDelaySeconds
+          value: 30
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
+          value: 10
+
+  # Test pod anti-affinity for replicas > 1
+  - it: should apply pod anti-affinity when replicas > 1
+    set:
+      services.messagingService.enabled: true
+      services.messagingService.name: messaging-service
+      services.messagingService.tier: high
+      services.messagingService.component: microservice
+      services.messagingService.port: 3005
+      services.messagingService.replicas: 3
+      affinity.podAntiAffinity.enabled: true
+      affinity.podAntiAffinity.weight: 100
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.affinity
+      - equal:
+          path: spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight
+          value: 100
+
+  # Test image configuration
+  - it: should use correct image with tag
+    set:
+      services.paymentService.enabled: true
+      services.paymentService.name: payment-service
+      services.paymentService.tier: high
+      services.paymentService.component: microservice
+      services.paymentService.port: 3008
+      services.paymentService.replicas: 2
+      global.imageRegistry: metapharm
+      global.imageTag: v1.0.0
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: metapharm/payment-service:v1.0.0
