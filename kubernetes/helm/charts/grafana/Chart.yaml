@@ -1,0 +1,55 @@
+apiVersion: v2
+name: grafana
+description: Grafana dashboards and visualization for MetaPharm Connect
+type: application
+
+# Chart version
+version: 1.0.0
+
+# Application version - Grafana version
+appVersion: "10.2.0"
+
+keywords:
+  - grafana
+  - dashboards
+  - visualization
+  - metrics
+  - metapharm
+
+maintainers:
+  - name: MetaPharm Connect DevOps Team
+    email: devops@metapharm.ch
+
+home: https://grafana.com
+sources:
+  - https://github.com/grafana/grafana
+  - https://github.com/mehdic/CDC
+
+# Minimum Kubernetes version required
+kubeVersion: ">=1.24.0"
+
+annotations:
+  # Changelog
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Grafana Helm chart for MetaPharm Connect dashboards
+    - kind: added
+      description: Platform Overview Dashboard with system health summary
+    - kind: added
+      description: Service Health Dashboard with per-service latency and error rates
+    - kind: added
+      description: Business Metrics Dashboard for prescriptions and consultations
+    - kind: added
+      description: Delivery Operations Dashboard for logistics monitoring
+    - kind: added
+      description: On-Call Dashboard for alert management and runbook links
+
+  # License information
+  artifacthub.io/license: Apache-2.0
+
+  # Support links
+  artifacthub.io/links: |
+    - name: Grafana Documentation
+      url: https://grafana.com/docs
+    - name: MetaPharm Docs
+      url: https://docs.metapharm.ch

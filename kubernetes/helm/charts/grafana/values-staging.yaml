@@ -1,0 +1,51 @@
+# Staging environment overrides for Grafana
+
+global:
+  environment: staging
+
+grafana:
+  replicaCount: 2
+
+  image:
+    tag: "10.2.0"
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  persistence:
+    enabled: true
+    size: 10Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 3
+    targetCPU: 70
+    targetMemory: 80
+
+  admin:
+    password: "staging-password-change-me"
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+  hosts:
+    - host: "grafana.staging.metapharm.ch"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: grafana-tls-staging
+      hosts:
+        - grafana.staging.metapharm.ch
+
+datasources:
+  prometheus:
+    url: "http://prometheus-staging:9090"

@@ -29,6 +29,7 @@ import { scanRouter } from './routes/scan';
 import { itemsRouter } from './routes/items';
 import { alertsRouter } from './routes/alerts';
 import { analyticsRouter } from './routes/analytics';
+import { predictionRouter } from './routes/predictionRoutes';
 
 // Workers
 import { startAlertWorkers } from './workers/alertWorker';
@@ -311,6 +312,7 @@ app.use('/inventory/scan', scanRouter);
 app.use('/inventory/items', itemsRouter);
 app.use('/inventory/alerts', alertsRouter);
 app.use('/inventory/analytics', analyticsRouter);
+app.use('/inventory', predictionRouter);
 
 // ============================================================================
 // Error Handling

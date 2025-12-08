@@ -1,0 +1,41 @@
+# Development environment overrides for Grafana
+
+global:
+  environment: development
+
+grafana:
+  replicaCount: 1
+
+  image:
+    tag: "10.2.0"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+  autoscaling:
+    enabled: false
+
+  admin:
+    password: "dev-password-change-me"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: "grafana.local"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+datasources:
+  prometheus:
+    url: "http://prometheus:9090"

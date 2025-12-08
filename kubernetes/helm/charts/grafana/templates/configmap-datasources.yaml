@@ -1,0 +1,69 @@
+{{- if .Values.grafana.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.grafana.name }}-config
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.grafana.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+data:
+  grafana.ini: |
+    [server]
+    root_url = {{ .Values.grafana.config.server.root_url }}
+    serve_from_sub_path = {{ .Values.grafana.config.server.serve_from_sub_path }}
+    enable_gzip = {{ .Values.grafana.config.server.enable_gzip }}
+
+    [database]
+    type = {{ .Values.grafana.config.database.type }}
+    url = {{ .Values.grafana.config.database.url }}
+
+    [security]
+    secret_key = ${GF_SECURITY_SECRET_KEY}
+    cookie_secure = {{ .Values.grafana.config.security.cookie_secure }}
+    cookie_httponly = {{ .Values.grafana.config.security.cookie_httponly }}
+    cookie_samesite = {{ .Values.grafana.config.security.cookie_samesite }}
+
+    [users]
+    allow_sign_up = {{ .Values.grafana.config.users.allow_sign_up }}
+    auto_assign_org_role = {{ .Values.grafana.config.users.auto_assign_org_role }}
+
+    [auth]
+    disable_login_form = {{ .Values.grafana.config.auth.disable_login_form }}
+    disable_signout_menu = {{ .Values.grafana.config.auth.disable_signout_menu }}
+
+    [auth.ldap]
+    enabled = {{ .Values.grafana.config.ldap.enabled }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.grafana.name }}-datasources
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.grafana.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    datasources:
+      {{- if .Values.datasources.prometheus.enabled }}
+      - name: Prometheus
+        type: prometheus
+        access: {{ .Values.datasources.prometheus.access }}
+        url: {{ .Values.datasources.prometheus.url }}
+        isDefault: {{ .Values.datasources.prometheus.isDefault }}
+        editable: {{ .Values.datasources.prometheus.editable }}
+        jsonData:
+          httpMethod: GET
+          timeInterval: 30s
+        secureJsonData:
+          tlsClientAuth: false
+          tlsSkipVerify: false
+      {{- end }}
+
+{{- end }}

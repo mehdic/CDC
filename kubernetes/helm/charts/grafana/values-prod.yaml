@@ -1,0 +1,66 @@
+# Production environment overrides for Grafana
+
+global:
+  environment: production
+
+grafana:
+  replicaCount: 3
+
+  image:
+    tag: "10.2.0"
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  persistence:
+    enabled: true
+    storageClassName: ssd
+    size: 50Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 6
+    targetCPU: 70
+    targetMemory: 80
+
+  admin:
+    password: "CHANGE_ME_IN_PRODUCTION"
+
+  config:
+    database:
+      type: postgres
+      url: "postgres://grafana:${GRAFANA_DB_PASSWORD}@postgres-prod:5432/grafana"
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: "grafana.metapharm.ch"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: grafana-tls-prod
+      hosts:
+        - grafana.metapharm.ch
+
+datasources:
+  prometheus:
+    url: "http://prometheus-prod:9090"
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+networkPolicy:
+  enabled: true

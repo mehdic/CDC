@@ -236,13 +236,13 @@ export interface PaginationResult<T> {
 // ============================================================================
 
 export interface OAuthAuthorizationRequest {
-  provider: CalendarProvider;
+  provider: 'google' | 'apple' | CalendarProvider;
   user_id: string;
   redirect_uri: string;
 }
 
 export interface OAuthCallbackRequest {
-  provider: CalendarProvider;
+  provider: 'google' | 'apple' | CalendarProvider;
   code: string;
   state: string;
 }

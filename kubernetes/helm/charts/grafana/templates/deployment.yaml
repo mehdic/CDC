@@ -1,0 +1,175 @@
+{{- if .Values.grafana.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.grafana.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.grafana.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    description: "Grafana dashboard server for MetaPharm Connect monitoring"
+spec:
+  replicas: {{ .Values.grafana.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.grafana.name }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.grafana.name }}
+        release: {{ .Release.Name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      {{- if .Values.grafana.affinity }}
+      affinity:
+        {{- toYaml .Values.grafana.affinity | nindent 8 }}
+      {{- end }}
+
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        fsGroup: 472
+        runAsNonRoot: true
+        runAsUser: 472
+        seccompProfile:
+          type: RuntimeDefault
+
+      initContainers:
+        # Initialize dashboards directory
+        - name: dashboard-init
+          image: "{{ .Values.grafana.image.registry }}/grafana:{{ .Values.grafana.image.tag }}"
+          imagePullPolicy: {{ .Values.grafana.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /var/lib/grafana/dashboards
+              chmod 755 /var/lib/grafana/dashboards
+          volumeMounts:
+            - name: storage
+              mountPath: /var/lib/grafana
+
+      containers:
+        - name: {{ .Values.grafana.name }}
+          image: "{{ .Values.grafana.image.registry }}/grafana:{{ .Values.grafana.image.tag }}"
+          imagePullPolicy: {{ .Values.grafana.image.pullPolicy }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.grafana.service.targetPort }}
+              protocol: TCP
+
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin
+                  key: {{ .Values.grafana.admin.userKey }}
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin
+                  key: {{ .Values.grafana.admin.passwordKey }}
+            - name: GF_SERVER_ROOT_URL
+              value: "{{ .Values.grafana.config.server.root_url }}"
+            - name: GF_SERVER_SERVE_FROM_SUB_PATH
+              value: "{{ .Values.grafana.config.server.serve_from_sub_path }}"
+            - name: GF_SERVER_ENABLE_GZIP
+              value: "{{ .Values.grafana.config.server.enable_gzip }}"
+            - name: GF_DATABASE_TYPE
+              value: "{{ .Values.grafana.config.database.type }}"
+            - name: GF_DATABASE_URL
+              value: "{{ .Values.grafana.config.database.url }}"
+            - name: GF_SECURITY_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-security
+                  key: secret-key
+            - name: GF_SECURITY_COOKIE_SECURE
+              value: "{{ .Values.grafana.config.security.cookie_secure }}"
+            - name: GF_SECURITY_COOKIE_HTTPONLY
+              value: "{{ .Values.grafana.config.security.cookie_httponly }}"
+            - name: GF_SECURITY_COOKIE_SAMESITE
+              value: "{{ .Values.grafana.config.security.cookie_samesite }}"
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: "{{ .Values.grafana.config.users.allow_sign_up }}"
+            - name: GF_AUTH_DISABLE_LOGIN_FORM
+              value: "{{ .Values.grafana.config.auth.disable_login_form }}"
+
+          resources:
+            {{- toYaml .Values.grafana.resources | nindent 12 }}
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+
+          volumeMounts:
+            - name: storage
+              mountPath: /var/lib/grafana
+            - name: config
+              mountPath: /etc/grafana
+            - name: dashboards-configmap
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: datasources-configmap
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: storage
+          {{- if .Values.grafana.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.grafana.name }}-pvc
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: config
+          configMap:
+            name: {{ .Values.grafana.name }}-config
+        - name: dashboards-configmap
+          configMap:
+            name: {{ .Values.grafana.name }}-dashboards-provisioning
+        - name: datasources-configmap
+          configMap:
+            name: {{ .Values.grafana.name }}-datasources
+        - name: tmp
+          emptyDir: {}
+
+{{- end }}

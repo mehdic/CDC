@@ -1,0 +1,260 @@
+# Default values for Grafana Helm chart
+
+# Global configuration
+global:
+  # Environment: development, staging, production
+  environment: development
+  # Namespace where Grafana will be deployed
+  namespace: monitoring
+  # Image registry for Grafana
+  imageRegistry: grafana
+  # Image tag
+  imageTag: "10.2.0"
+
+# Namespace configuration
+namespace:
+  create: true
+  name: monitoring
+  labels:
+    environment: development
+    project: metapharm-connect
+  annotations:
+    description: "Monitoring namespace for MetaPharm Connect"
+
+# Grafana deployment configuration
+grafana:
+  enabled: true
+  name: grafana
+  replicaCount: 2
+
+  # Container image
+  image:
+    registry: grafana
+    repository: grafana
+    tag: "10.2.0"
+    pullPolicy: IfNotPresent
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+    annotations: {}
+
+  # Resource limits and requests
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  # Persistence configuration for dashboards and provisioning
+  persistence:
+    enabled: true
+    storageClassName: standard
+    size: 10Gi
+    mountPath: /var/lib/grafana
+    # Dashboards storage
+    dashboardsSize: 2Gi
+    dashboardsMountPath: /var/lib/grafana/dashboards
+
+  # Admin user configuration
+  admin:
+    existingSecret: ""
+    userKey: admin-user
+    passwordKey: admin-password
+    # If no secret is provided, these defaults are used
+    user: admin
+    password: "metapharm-secure-password-change-me"
+
+  # Grafana configuration
+  config:
+    # Server configuration
+    server:
+      root_url: "%(protocol)s://%(domain)s/grafana"
+      serve_from_sub_path: true
+      enable_gzip: true
+
+    # Database configuration (SQLite by default, use PostgreSQL for production)
+    database:
+      type: sqlite3
+      url: "file:/var/lib/grafana/grafana.db"
+      # For production, use PostgreSQL:
+      # type: postgres
+      # url: "postgres://user:password@postgres:5432/grafana"
+
+    # Security configuration
+    security:
+      admin_user: "{{ .Values.grafana.admin.user }}"
+      admin_password: "{{ .Values.grafana.admin.password }}"
+      secret_key: "CHANGE_ME_SECRET_KEY"
+      cookie_secure: true
+      cookie_httponly: true
+      cookie_samesite: "strict"
+
+    # Session configuration
+    session:
+      provider: memory
+      provider_config: "$(GRAFANA_SESSION_PROVIDER_CONFIG)"
+
+    # Users configuration
+    users:
+      allow_sign_up: false
+      auto_assign_org_role: Viewer
+
+    # Authorization configuration
+    auth:
+      disable_login_form: false
+      disable_signout_menu: false
+
+    # LDAP configuration (optional)
+    ldap:
+      enabled: false
+
+  # Autoscaling configuration
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPU: 70
+    targetMemory: 80
+
+  # Pod affinity/anti-affinity
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - grafana
+
+# Datasources configuration
+datasources:
+  prometheus:
+    enabled: true
+    url: "http://prometheus:9090"
+    access: proxy
+    isDefault: true
+    editable: true
+
+# Dashboard provisioning
+dashboards:
+  # Platform Overview Dashboard
+  platformOverview:
+    enabled: true
+    title: "Platform Overview"
+    description: "System health summary and key metrics at a glance"
+    timezone: "browser"
+    refresh: "30s"
+
+  # Service Health Dashboard
+  serviceHealth:
+    enabled: true
+    title: "Service Health"
+    description: "Per-service latency (p50, p95, p99) and error rates"
+    timezone: "browser"
+    refresh: "30s"
+
+  # Business Metrics Dashboard
+  businessMetrics:
+    enabled: true
+    title: "Business Metrics"
+    description: "Prescriptions processed, consultations completed, active users"
+    timezone: "browser"
+    refresh: "1m"
+
+  # Delivery Operations Dashboard
+  deliveryOps:
+    enabled: true
+    title: "Delivery Operations"
+    description: "Active deliveries, delivery times, driver status"
+    timezone: "browser"
+    refresh: "30s"
+
+  # On-Call Dashboard
+  onCall:
+    enabled: true
+    title: "On-Call"
+    description: "Active alerts, alert history, runbook links"
+    timezone: "browser"
+    refresh: "15s"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: "Grafana Dashboard"
+  hosts:
+    - host: "grafana.metapharm.local"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: grafana-tls
+      hosts:
+        - grafana.metapharm.local
+
+# Service Monitor configuration (for Prometheus)
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+
+# RBAC configuration
+rbac:
+  create: true
+  pspEnabled: false
+
+# Service Account configuration
+serviceAccount:
+  create: true
+  name: grafana
+
+# Pod Security Policy
+podSecurityPolicy:
+  enabled: false
+
+# Network Policy
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 9090 # Prometheus
+        - protocol: TCP
+          port: 5432 # PostgreSQL (if used)
+        - protocol: TCP
+          port: 53  # DNS
+        - protocol: UDP
+          port: 53  # DNS
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Node affinity
+nodeSelector: {}
+
+# Node tolerations
+tolerations: []
