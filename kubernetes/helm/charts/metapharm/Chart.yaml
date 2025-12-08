@@ -1,0 +1,44 @@
+apiVersion: v2
+name: metapharm
+description: MetaPharm Connect - Comprehensive Healthcare Platform Helm Chart
+type: application
+
+# Chart version - increment on changes to the chart
+version: 1.0.0
+
+# Application version - the version of the MetaPharm platform
+appVersion: "1.0.0"
+
+keywords:
+  - healthcare
+  - pharmacy
+  - telemedicine
+  - microservices
+  - metapharm
+
+maintainers:
+  - name: MetaPharm Connect Team
+    email: devops@metapharm.ch
+
+home: https://metapharm.ch
+sources:
+  - https://github.com/metapharm/connect
+
+# Minimum Kubernetes version required
+kubeVersion: ">=1.24.0"
+
+annotations:
+  # Changelog for this release
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Helm chart for MetaPharm Connect platform
+
+  # License information
+  artifacthub.io/license: Proprietary
+
+  # Support links
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://docs.metapharm.ch
+    - name: Support
+      url: https://support.metapharm.ch
