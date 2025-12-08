@@ -40,7 +40,7 @@ export interface DeletionReport {
 export const RETENTION_REQUIREMENTS = {
   prescriptions: { years: 10, action: 'anonymize' as const },
   controlled_substances: { years: 10, action: 'anonymize' as const },
-  financial_records: { years: 10, action: 'anonymize' as const },
+  financial_records: { years: 7, action: 'anonymize' as const },
   medical_records: { years: 20, action: 'anonymize' as const },
   audit_logs: { years: 5, action: 'anonymize' as const },
 };
