@@ -124,6 +124,8 @@ app.get('/health', (_req: Request, res: Response) => {
 // ============================================================================
 
 import gdprRoutes from './routes/gdprRoutes';
+import forgetRoutes from './routes/forgetRoutes';
+import deletionScheduler from './jobs/deletionScheduler';
 
 // ============================================================================
 // API Routes
@@ -131,6 +133,7 @@ import gdprRoutes from './routes/gdprRoutes';
 
 // GDPR routes
 app.use('/api/gdpr', gdprRoutes);
+app.use('/api/gdpr', forgetRoutes);
 
 /**
  * GET /api/users/search?email=... - Search users by email
@@ -401,6 +404,9 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 async function startServer() {
   try {
+    // Start GDPR deletion scheduler
+    deletionScheduler.start();
+
     // Start Express server
     const server = app.listen(PORT, () => {
       console.log(`🚀 User Service running on port ${PORT}`);
@@ -411,6 +417,9 @@ async function startServer() {
     // Graceful shutdown
     const shutdown = () => {
       console.log('\n🛑 Shutting down gracefully...');
+
+      // Stop deletion scheduler
+      deletionScheduler.stop();
 
       server.close(() => {
         console.log('✅ HTTP server closed');
