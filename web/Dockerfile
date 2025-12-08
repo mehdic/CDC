@@ -3,11 +3,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files including lock file for reproducible builds
 COPY package*.json ./
 
-# Install dependencies (using npm install since this is a workspace project)
-RUN npm install
+# Install dependencies using ci for deterministic builds
+RUN npm ci
 
 # Copy source code
 COPY . .
