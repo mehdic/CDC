@@ -1,0 +1,150 @@
+{{- if .Values.loki.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.loki.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.loki.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  serviceName: {{ .Values.loki.name }}
+  replicas: {{ .Values.loki.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.loki.name }}
+  {{- with .Values.loki.statefulSet.updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.loki.name }}
+        chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+        release: {{ .Release.Name }}
+      {{- with .Values.loki.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- with .Values.loki.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      # Init container to prepare directories
+      initContainers:
+      - name: ensure-directories
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+          - |
+            mkdir -p /loki/chunks
+            mkdir -p /loki/boltdb-shipper-active
+            mkdir -p /loki/boltdb-shipper-cache
+            chmod -R 777 /loki
+        volumeMounts:
+        - name: storage
+          mountPath: /loki
+
+      containers:
+      - name: {{ .Values.loki.name }}
+        image: "{{ .Values.loki.image.repository }}:{{ .Values.loki.image.tag }}"
+        imagePullPolicy: {{ .Values.loki.image.pullPolicy }}
+
+        ports:
+        - name: http
+          containerPort: {{ .Values.loki.service.port }}
+          protocol: TCP
+
+        env:
+        - name: GOGC
+          value: "80"
+
+        {{- with .Values.loki.containerSecurityContext }}
+        securityContext:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+
+        {{- with .Values.loki.resources }}
+        resources:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+
+        {{- with .Values.loki.healthCheck.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+
+        {{- with .Values.loki.healthCheck.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+
+        volumeMounts:
+        - name: config
+          mountPath: /etc/loki
+        - name: storage
+          mountPath: {{ .Values.loki.persistence.mountPath }}
+        - name: tmp
+          mountPath: /tmp
+
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.configMap.name }}
+      - name: tmp
+        emptyDir: {}
+
+      {{- with .Values.loki.affinity }}
+      affinity:
+        {{- if eq .podAntiAffinity "prefer" }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ $.Values.loki.name }}
+              topologyKey: kubernetes.io/hostname
+        {{- else if eq .podAntiAffinity "require" }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ $.Values.loki.name }}
+            topologyKey: kubernetes.io/hostname
+        {{- end }}
+        {{- with .nodeAffinity }}
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
+
+  {{- if .Values.loki.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+      labels:
+        app: {{ .Values.loki.name }}
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      {{- if .Values.loki.persistence.storageClassName }}
+      storageClassName: {{ .Values.loki.persistence.storageClassName }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.loki.persistence.size }}
+  {{- end }}
+{{- end }}

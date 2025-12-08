@@ -1,0 +1,327 @@
+{{- if .Values.configMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMap.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.promtail.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  config.yaml: |
+    # ===== SERVER CONFIGURATION =====
+    server:
+      http_listen_port: {{ .Values.promtail.service.port }}
+      grpc_listen_port: 0
+      log_level: info
+
+    # ===== POSITIONS CONFIGURATION =====
+    positions:
+      filename: /tmp/positions/positions.yaml
+      # Don't sync position file too frequently to reduce I/O
+      sync_period: 10s
+
+    # ===== LOKI CLIENT CONFIGURATION =====
+    clients:
+    - url: {{ .Values.lokiClient.url }}
+      {{- if .Values.lokiClient.basicAuth.enabled }}
+      basic_auth:
+        username: {{ .Values.lokiClient.basicAuth.username }}
+        password: {{ .Values.lokiClient.basicAuth.password }}
+      {{- end }}
+      {{- if .Values.lokiClient.tenantID }}
+      tenant_id: {{ .Values.lokiClient.tenantID }}
+      {{- end }}
+      batches:
+        min_backoff: 500ms
+        max_backoff: 5s
+        max_retries: 3
+      min_backoff: 500ms
+      max_backoff: 5s
+      max_retries: 3
+      tls_config:
+        insecure_skip_verify: true  # For development only; use proper certs in production
+
+    # ===== SCRAPE CONFIGURATIONS =====
+    scrape_configs:
+    # Kubernetes Pod Logs
+    - job_name: kubernetes-pods
+      {{- if .Values.scrapeConfigs.kubernetesSD.enabled }}
+      kubernetes_sd_configs:
+      - role: pod
+        {{- if .Values.scrapeConfigs.kubernetesSD.namespaces }}
+        namespaces:
+          names:
+          {{- range .Values.scrapeConfigs.kubernetesSD.namespaces }}
+          - {{ . }}
+          {{- end }}
+        {{- end }}
+
+      # Standard Kubernetes relabeling
+      relabel_configs:
+      # Relabel to scrape only pods in specific namespaces
+      - source_labels: [__meta_kubernetes_namespace]
+        action: keep
+        regex: metapharm|kube-system|kube-public
+
+      # Extract pod name
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod_name
+
+      # Extract namespace
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+
+      # Extract app label
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: replace
+        target_label: app
+
+      # Extract container name
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        action: replace
+        target_label: container
+
+      # Extract pod labels
+      - source_labels: [__meta_kubernetes_pod_label_tier]
+        action: replace
+        target_label: tier
+
+      # Extract node name
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        action: replace
+        target_label: node_name
+
+      # ===== PIPELINE STAGES =====
+      pipeline_stages:
+
+      # Stage 1: Parse JSON logs
+      - json:
+          expressions:
+            level: level
+            timestamp: timestamp
+            message: message
+            service: service
+            correlation_id: correlation_id
+            user_id: user_id
+            action: action
+            status: status
+            duration: duration
+            error: error
+
+      # Stage 2: Extract timestamp
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+          fallbacks:
+            - RFC3339
+            - Unix
+
+      # Stage 3: PII SANITIZATION PIPELINE
+      {{- if .Values.piiSanitization.enabled }}
+      # Email sanitization
+      - regex:
+          expression: '{{ .Values.piiSanitization.emailPattern }}'
+          action: replace
+          replace: "[REDACTED-EMAIL]"
+
+      # Phone number sanitization (Swiss format)
+      - regex:
+          expression: '{{ .Values.piiSanitization.phonePattern }}'
+          action: replace
+          replace: "[REDACTED-PHONE]"
+
+      # SSN/HIN sanitization (Swiss Social Security)
+      - regex:
+          expression: '{{ .Values.piiSanitization.ssnPattern }}'
+          action: replace
+          replace: "[REDACTED-SSN]"
+
+      # Credit card sanitization
+      - regex:
+          expression: '{{ .Values.piiSanitization.creditCardPattern }}'
+          action: replace
+          replace: "[REDACTED-CARD]"
+
+      # IBAN sanitization (Swiss/European)
+      - regex:
+          expression: '{{ .Values.piiSanitization.ibanPattern }}'
+          action: replace
+          replace: "[REDACTED-IBAN]"
+
+      # Passport number sanitization
+      - regex:
+          expression: '{{ .Values.piiSanitization.passportPattern }}'
+          action: replace
+          replace: "[REDACTED-PASSPORT]"
+
+      # Medical record number sanitization
+      - regex:
+          expression: '{{ .Values.piiSanitization.medicalRecordPattern }}'
+          action: replace
+          replace: "[REDACTED-MRN]"
+
+      # Patient ID sanitization
+      - regex:
+          expression: '{{ .Values.piiSanitization.patientIdPattern }}'
+          action: replace
+          replace: "[REDACTED-PATIENT-ID]"
+
+      # Prescription number sanitization
+      - regex:
+          expression: '{{ .Values.piiSanitization.prescriptionPattern }}'
+          action: replace
+          replace: "[REDACTED-RX]"
+
+      # Insurance/AHVN number sanitization (Swiss format XXXXX.XXXX.XXXX.XX)
+      - regex:
+          expression: '{{ .Values.piiSanitization.insurancePattern }}'
+          action: replace
+          replace: "[REDACTED-INSURANCE]"
+      {{- end }}
+
+      # Stage 4: Add output labels for aggregation
+      - labels:
+          level:
+          pod_name:
+          namespace:
+          app:
+          container:
+          tier:
+          node_name:
+
+    # Kubernetes System Pods (optional - for infrastructure logs)
+    - job_name: kubernetes-system-pods
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - kube-system
+          - kube-public
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace]
+        action: keep
+        regex: kube-system|kube-public
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod_name
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: replace
+        target_label: app
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        action: replace
+        target_label: container
+      pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            timestamp: timestamp
+            message: message
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+          fallbacks:
+            - RFC3339
+            - Unix
+      - labels:
+          pod_name:
+          namespace:
+          app:
+          container:
+
+  # ===== PII SANITIZATION PATTERNS DOCUMENTATION =====
+  pii-patterns.md: |
+    # PII Sanitization Patterns for MetaPharm Connect
+
+    This Promtail configuration applies PII (Personally Identifiable Information) sanitization
+    to all logs before sending them to Loki. This ensures GDPR and HIPAA compliance.
+
+    ## Sanitized Patterns
+
+    ### 1. Email Addresses
+    - **Pattern**: Matches any valid email format (name@domain.com)
+    - **Redaction**: `[REDACTED-EMAIL]`
+    - **Examples**:
+      - patient@example.com → [REDACTED-EMAIL]
+      - doctor.smith@hospital.ch → [REDACTED-EMAIL]
+
+    ### 2. Phone Numbers
+    - **Pattern**: Swiss format (+41 or 0, followed by area code and number)
+    - **Redaction**: `[REDACTED-PHONE]`
+    - **Examples**:
+      - +41 79 123 4567 → [REDACTED-PHONE]
+      - 0791234567 → [REDACTED-PHONE]
+
+    ### 3. Social Security Numbers (HIN)
+    - **Pattern**: Swiss format or standard SSN (XXX-XX-XXXX or 13-digit)
+    - **Redaction**: `[REDACTED-SSN]`
+    - **Examples**:
+      - 756.1234.5678.90 → [REDACTED-SSN]
+      - 123-45-6789 → [REDACTED-SSN]
+
+    ### 4. Credit Card Numbers
+    - **Pattern**: 16-digit card numbers with optional separators
+    - **Redaction**: `[REDACTED-CARD]`
+    - **Examples**:
+      - 4532-1488-0343-6467 → [REDACTED-CARD]
+
+    ### 5. IBAN (Swiss/European)
+    - **Pattern**: International Bank Account Number format
+    - **Redaction**: `[REDACTED-IBAN]`
+    - **Examples**:
+      - CH9300762011623852957 → [REDACTED-IBAN]
+
+    ### 6. Passport Numbers
+    - **Pattern**: Passport format (2 letters + 6-9 digits)
+    - **Redaction**: `[REDACTED-PASSPORT]`
+    - **Examples**:
+      - CH123456 → [REDACTED-PASSPORT]
+
+    ### 7. Medical Record Numbers
+    - **Pattern**: MRN followed by alphanumeric code
+    - **Redaction**: `[REDACTED-MRN]`
+    - **Examples**:
+      - MRN-ABC12345 → [REDACTED-MRN]
+
+    ### 8. Patient IDs
+    - **Pattern**: Patient ID followed by alphanumeric code
+    - **Redaction**: `[REDACTED-PATIENT-ID]`
+    - **Examples**:
+      - patient_id_ABC123456 → [REDACTED-PATIENT-ID]
+
+    ### 9. Prescription Numbers
+    - **Pattern**: RX prefix or prescription keyword with code
+    - **Redaction**: `[REDACTED-RX]`
+    - **Examples**:
+      - RX-123456 → [REDACTED-RX]
+      - prescription_ABC123456 → [REDACTED-RX]
+
+    ### 10. Insurance/AHVN Numbers (Swiss)
+    - **Pattern**: Swiss format XXXXX.XXXX.XXXX.XX
+    - **Redaction**: `[REDACTED-INSURANCE]`
+    - **Examples**:
+      - 12345.6789.0123.45 → [REDACTED-INSURANCE]
+
+    ## Verification
+
+    To verify PII sanitization is working:
+
+    1. Check that logs contain only `[REDACTED-*]` placeholders for sensitive data
+    2. Monitor Loki logs for any patterns that slipped through
+    3. Update patterns if new PII formats are discovered
+
+    Example LogQL query to detect unsanitized data:
+    ```
+    {namespace="metapharm"} | json | message =~ ".*\\d{3}-\\d{2}-\\d{4}.*"
+    ```
+
+    If this query returns results, the sanitization pipeline may need adjustment.
+
+{{- end }}

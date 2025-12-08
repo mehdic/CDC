@@ -1,0 +1,40 @@
+apiVersion: v2
+name: loki
+description: Loki log aggregation system for MetaPharm Connect
+type: application
+
+version: 1.0.0
+appVersion: "2.9.3"
+
+keywords:
+  - logging
+  - observability
+  - loki
+  - log-aggregation
+  - healthcare
+
+maintainers:
+  - name: MetaPharm Connect Team
+    email: devops@metapharm.ch
+
+home: https://grafana.com/oss/loki/
+sources:
+  - https://github.com/grafana/loki
+  - https://github.com/mehdic/CDC
+
+kubeVersion: ">=1.24.0"
+
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Loki log aggregation Helm chart for MetaPharm
+    - kind: added
+      description: PII sanitization pipeline for GDPR compliance
+    - kind: added
+      description: LogQL query examples and documentation
+  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/links: |
+    - name: Loki Documentation
+      url: https://grafana.com/docs/loki/latest/
+    - name: LogQL Query Language
+      url: https://grafana.com/docs/loki/latest/query/

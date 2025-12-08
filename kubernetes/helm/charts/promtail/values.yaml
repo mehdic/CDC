@@ -1,0 +1,165 @@
+# Default values for Promtail
+# This is a YAML-formatted file.
+
+global:
+  environment: development
+  namespace: logging
+  clusterName: metapharm-cluster
+
+# Promtail DaemonSet configuration
+promtail:
+  enabled: true
+  name: promtail
+
+  image:
+    repository: grafana/promtail
+    tag: 2.9.3
+    pullPolicy: IfNotPresent
+
+  # Service configuration for metrics
+  service:
+    type: ClusterIP
+    port: 3101
+    targetPort: 3101
+    annotations: {}
+
+  # DaemonSet configuration
+  podAnnotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '3101'
+    prometheus.io/path: '/metrics'
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    fsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 10001
+    capabilities:
+      drop:
+        - ALL
+
+  # Resource limits for DaemonSet
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # Health check configuration
+  healthCheck:
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: 3101
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 3
+
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 3101
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      successThreshold: 1
+      failureThreshold: 3
+
+  # Node selection
+  nodeSelector: {}
+  tolerations:
+    # Tolerate all taints to collect logs from all nodes
+    - operator: Exists
+  affinity: {}
+
+# Loki client configuration
+lokiClient:
+  # URL to Loki server
+  url: http://loki:3100/loki/api/v1/push
+  # Batch size for sending logs
+  batchSize: 1048576  # 1MB
+  # Batch timeout
+  batchTimeout: 3s
+  # TenantID for Loki (if multi-tenant)
+  tenantID: null
+  # Basic auth (if required)
+  basicAuth:
+    enabled: false
+    username: null
+    password: null
+
+# Log scraping and processing configuration
+scrapeConfigs:
+  # Kubernetes Pod scraping
+  kubernetesSD:
+    enabled: true
+    role: pod
+    # Namespaces to scrape
+    namespaces:
+      - metapharm
+      - kube-system
+      - kube-public
+    # Pod label selectors (leave empty to scrape all)
+    labelSelectors: {}
+
+  # Service scraping
+  serviceSD:
+    enabled: false
+    role: service
+
+# PII Sanitization Configuration
+piiSanitization:
+  enabled: true
+  # Email pattern: email@example.com
+  emailPattern: 'email\s*=\s*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+  # Phone pattern: +41 79 123 4567 or 0791234567
+  phonePattern: '(?:\+41|0)[\s\-]?\(?\d{1,2}\)?[\s\-]?\d{3}[\s\-]?\d{3}[\s\-]?\d{2,3}'
+  # Social Security Number pattern: SSN or HIN
+  ssnPattern: '\b\d{3}\-\d{2}\-\d{4}\b|\b\d{13}\b'
+  # Credit card pattern (Luhn algorithm not checked here)
+  creditCardPattern: '\b\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{4}\b'
+  # IBAN pattern
+  ibanPattern: '\b[A-Z]{2}\d{2}[A-Z0-9]{1,30}\b'
+  # Passport number (simplified)
+  passportPattern: '\b[A-Z]{1,2}\d{6,9}\b'
+  # Medical record number
+  medicalRecordPattern: 'MRN[\s\-]*[A-Z0-9]{6,12}'
+  # Patient ID
+  patientIdPattern: 'patient[\s\-]*id[\s\-]*[A-Z0-9]{6,12}'
+  # Prescription number
+  prescriptionPattern: 'RX[\s\-]*\d{6,10}|prescription[\s\-]*[A-Z0-9]{6,12}'
+  # Insurance/Ahvn Number (Swiss)
+  insurancePattern: '\b\d{5}\.\d{4}\.\d{4}\.\d{2}\b'
+
+# RBAC configuration
+rbac:
+  create: true
+
+# ServiceAccount configuration
+serviceAccount:
+  create: true
+  name: promtail
+  annotations: {}
+
+# ConfigMap for Promtail configuration
+configMap:
+  create: true
+  name: promtail-config
+
+# Test configuration
+test:
+  enabled: true
+  image:
+    repository: busybox
+    tag: latest

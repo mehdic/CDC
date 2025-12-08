@@ -1,0 +1,164 @@
+{{- if .Values.configMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMap.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.loki.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  loki-config.yaml: |
+    {{- if .Values.config.auth_enabled }}
+    auth_enabled: true
+    {{- else }}
+    auth_enabled: false
+    {{- end }}
+
+    # ===== INGESTER CONFIGURATION =====
+    ingester:
+      chunk_idle_period: {{ .Values.config.ingester.chunk_idle_period }}
+      chunk_retain_period: {{ .Values.config.ingester.chunk_retain_period }}
+      max_chunk_age: {{ .Values.config.ingester.max_chunk_age }}
+      chunk_size_bytes: {{ .Values.config.ingester.chunk_size_bytes }}
+      max_streams_per_user: {{ .Values.config.ingester.max_streams_per_user }}
+      lifecycler:
+        ring:
+          kvstore:
+            store: {{ .Values.config.ingester.lifecycler.ring.kvstore.store }}
+
+    # ===== SCHEMA CONFIGURATION =====
+    schema_config:
+      configs:
+      {{- range .Values.config.schema_config.configs }}
+      - from: {{ .from }}
+        store: {{ .store }}
+        object_store: {{ .object_store }}
+        schema: {{ .schema }}
+        index:
+          prefix: {{ .index.prefix }}
+          period: {{ .index.period }}
+      {{- end }}
+
+    # ===== SERVER CONFIGURATION =====
+    server:
+      http_listen_port: {{ .Values.config.server.http_listen_port }}
+      http_server_read_timeout: {{ .Values.config.server.http_server_read_timeout }}
+      http_server_write_timeout: {{ .Values.config.server.http_server_write_timeout }}
+      log_level: {{ .Values.config.server.log_level }}
+      # Disable request logging at debug level to avoid log spam
+      http_server_idle_timeout: 600s
+
+    # ===== STORAGE CONFIGURATION =====
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: {{ .Values.config.storage_config.boltdb_shipper.active_index_directory }}
+        cache_location: {{ .Values.config.storage_config.boltdb_shipper.cache_location }}
+        shared_store: {{ .Values.config.storage_config.boltdb_shipper.shared_store }}
+      filesystem:
+        directory: {{ .Values.config.storage_config.filesystem.directory }}
+
+    # ===== LIMITS CONFIGURATION (GDPR/HIPAA COMPLIANCE) =====
+    limits_config:
+      # Maximum number of log streams per tenant
+      max_streams_per_user: {{ .Values.config.limits_config.max_streams_per_user }}
+      # Rate limiting: max bytes per second
+      max_bytes_per_second: {{ .Values.config.limits_config.max_bytes_per_second }}
+      # Retention period: 30 days for GDPR/HIPAA compliance
+      retention_period: {{ .Values.config.limits_config.retention_period }}
+      # Minimum entropy for rate limiting
+      enforce_metric_name: false
+      # Allow graceful period handling
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h  # 7 days
+      ingestion_rate_mb: 10
+      ingestion_burst_size_mb: 20
+
+    # ===== TABLE MANAGER CONFIGURATION =====
+    table_manager:
+      poll_interval: 10m
+      retention_deletes_enabled: {{ .Values.config.table_manager.retention_deletes_enabled }}
+      retention_period: {{ .Values.config.table_manager.retention_period }}
+
+    # ===== QUERIER CONFIGURATION =====
+    querier:
+      max_concurrent: 20
+      query_timeout: 1m
+
+    # ===== QUERY FRONTEND (FOR DISTRIBUTED QUERIES) =====
+    query_range:
+      align_queries_with_step: true
+      max_cache_freshness_per_query: 10m
+      cache_results: true
+      compression: snappy
+      results_cache:
+        cache:
+          enable_fifocache: true
+          default_validity: 1m
+          memcached:
+            batch_size: 1024
+            parallelism: 100
+
+    # ===== DISTRIBUTOR CONFIGURATION =====
+    distributor:
+      ring:
+        kvstore:
+          store: inmemory
+
+    # ===== CHUNK ENCODING =====
+    chunk_store_config:
+      max_look_back_period: 0s
+
+  # ===== LOGQL QUERY EXAMPLES =====
+  # Available via: kubectl get configmap loki-config -n logging -o jsonpath='{.data.logql-examples}'
+  logql-examples.md: |
+    # LogQL Query Examples for MetaPharm Connect
+
+    ## 1. Error Analysis - Find all errors in last hour
+    {namespace="metapharm"} | json | level="error" | __error__=""
+
+    ## 2. Request Tracing by Correlation ID
+    {namespace="metapharm"} | json | correlation_id="abc-123-def"
+
+    ## 3. Service-Specific Filtering
+    {namespace="metapharm", app="auth-service"} | json
+
+    ## 4. Performance Analysis - Requests slower than 1 second
+    {namespace="metapharm"} | json | duration > 1000
+
+    ## 5. Rate Limiting Analysis
+    {namespace="metapharm"} | json | status_code="429"
+
+    ## 6. Patient Data Access Audit
+    {namespace="metapharm"} | json | action="access_patient_record"
+
+    ## 7. Prescription Processing Workflow
+    {namespace="metapharm", app="prescription-service"} | json | event="prescription_created"
+
+    ## 8. Delivery Tracking Events
+    {namespace="metapharm", app="delivery-service"} | json | status=~"in_transit|delivered"
+
+    ## 9. Teleconsultation Metrics
+    {namespace="metapharm", app="teleconsultation-service"} | json | event=~"call_started|call_ended"
+
+    ## 10. Error Rate by Service
+    count_over_time({namespace="metapharm"} | json | level="error" [5m]) by (app)
+
+    ## 11. Throughput Analysis
+    sum(rate({namespace="metapharm"} | json [5m])) by (app)
+
+    ## 12. PII Detection (should be empty if sanitization works)
+    {namespace="metapharm"} | json | message =~ ".*\\d{3}-\\d{2}-\\d{4}.*"
+
+    ## 13. GDPR Right to be Forgotten - User data deletion
+    {namespace="metapharm"} | json | user_id="user-12345"
+
+    ## 14. Alert on High Error Rate
+    sum(rate({namespace="metapharm"} | json | level="error" [1m])) by (app) > 0.05
+
+    ## 15. Container Restart Analysis
+    {namespace="metapharm"} | "Starting application" | json
+
+{{- end }}

@@ -1,0 +1,48 @@
+{{- if .Values.loki.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.loki.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.loki.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  {{- with .Values.loki.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.loki.service.type }}
+  ports:
+  - port: {{ .Values.loki.service.port }}
+    targetPort: {{ .Values.loki.service.targetPort }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.loki.name }}
+  # ClusterIP service - no session affinity needed
+  # Use headless service for StatefulSet DNS
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.loki.name }}-headless
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.loki.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: {{ .Values.loki.service.port }}
+    targetPort: {{ .Values.loki.service.targetPort }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.loki.name }}
+{{- end }}

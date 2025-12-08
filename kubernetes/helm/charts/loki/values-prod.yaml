@@ -1,0 +1,27 @@
+# Production environment values for Loki
+
+loki:
+  replicaCount: 3  # High availability
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+config:
+  limits_config:
+    max_bytes_per_second: 52428800  # 50MB/s
+    retention_period: 720h  # 30 days (GDPR/HIPAA requirement)
+  querier:
+    max_concurrent: 50
+  table_manager:
+    retention_period: 720h  # 30 days
+
+persistence:
+  size: 100Gi
+  storageClassName: fast-ssd  # Use SSD for production
+
+affinity:
+  podAntiAffinity: require  # Enforce spreading across nodes

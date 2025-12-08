@@ -1,0 +1,25 @@
+{{- if .Values.promtail.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.promtail.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.promtail.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  {{- with .Values.promtail.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.promtail.service.type }}
+  ports:
+  - port: {{ .Values.promtail.service.port }}
+    targetPort: {{ .Values.promtail.service.targetPort }}
+    protocol: TCP
+    name: http-metrics
+  selector:
+    app: {{ .Values.promtail.name }}
+{{- end }}

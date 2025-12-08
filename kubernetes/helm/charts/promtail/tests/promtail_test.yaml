@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: promtail-test
+  namespace: logging
+spec:
+  serviceAccountName: promtail
+  containers:
+  - name: test
+    image: alpine:latest
+    command:
+      - sh
+      - -c
+      - |
+        apk add --no-cache curl
+
+        echo "=== Testing Promtail Deployment ==="
+
+        # Test 1: Check if DaemonSet exists
+        echo "Test 1: DaemonSet discovery..."
+        if nslookup promtail.logging.svc.cluster.local > /dev/null 2>&1; then
+          echo "✓ Service promtail.logging.svc.cluster.local is accessible"
+        else
+          echo "✗ Service promtail.logging.svc.cluster.local is NOT accessible"
+          exit 1
+        fi
+
+        # Test 2: Check Promtail readiness
+        echo ""
+        echo "Test 2: Promtail readiness probe..."
+        response=$(curl -s -w "\n%{http_code}" http://promtail:3101/ready)
+        http_code=$(echo "$response" | tail -n1)
+        if [ "$http_code" = "200" ]; then
+          echo "✓ Promtail is ready (HTTP $http_code)"
+        else
+          echo "✗ Promtail returned HTTP $http_code"
+          exit 1
+        fi
+
+        # Test 3: Check metrics endpoint
+        echo ""
+        echo "Test 3: Metrics endpoint..."
+        metrics=$(curl -s http://promtail:3101/metrics | grep -c "promtail_")
+        if [ "$metrics" -gt 0 ]; then
+          echo "✓ Promtail metrics available ($metrics metrics found)"
+        else
+          echo "✗ Promtail metrics not accessible"
+          exit 1
+        fi
+
+        # Test 4: Check if Promtail is pushing logs
+        echo ""
+        echo "Test 4: Promtail log collection..."
+        read_bytes=$(curl -s http://promtail:3101/metrics | grep "promtail_read_bytes_total" | head -1 | awk '{print $2}')
+        if [ ! -z "$read_bytes" ] && [ "$read_bytes" != "0" ]; then
+          echo "✓ Promtail is reading logs ($read_bytes bytes processed)"
+        else
+          echo "⚠ Promtail metrics show 0 bytes (may be normal on quiet cluster)"
+        fi
+
+        # Test 5: Verify Loki connectivity
+        echo ""
+        echo "Test 5: Loki connectivity..."
+        loki_check=$(curl -s -w "\n%{http_code}" http://loki:3100/ready)
+        loki_code=$(echo "$loki_check" | tail -n1)
+        if [ "$loki_code" = "200" ]; then
+          echo "✓ Promtail can reach Loki (HTTP $loki_code)"
+        else
+          echo "✗ Promtail cannot reach Loki (HTTP $loki_code)"
+          exit 1
+        fi
+
+        # Test 6: Verify ConfigMap is mounted
+        echo ""
+        echo "Test 6: Configuration file..."
+        if [ -f "/etc/promtail/config.yaml" ]; then
+          echo "✓ Promtail config file is mounted"
+          if grep -q "http://loki:3100/loki/api/v1/push" /etc/promtail/config.yaml; then
+            echo "✓ Loki endpoint is configured correctly"
+          else
+            echo "✗ Loki endpoint is NOT configured correctly"
+            exit 1
+          fi
+        else
+          echo "✗ Promtail config file NOT mounted"
+          exit 1
+        fi
+
+        echo ""
+        echo "=== All Promtail Tests Passed ==="
+
+  restartPolicy: Never

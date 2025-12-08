@@ -25,6 +25,73 @@ repositories:
 
 # Release definitions
 releases:
+  # Loki log aggregation platform (dependency for Promtail)
+  - name: loki
+    namespace: logging
+    createNamespace: true
+    chart: ./charts/loki
+    version: 1.0.0
+    values:
+      - charts/loki/values.yaml
+      {{`- charts/loki/values-{{ .Environment.Name }}.yaml`}}
+    wait: true
+    timeout: 300
+    atomic: true
+    cleanupOnFail: true
+
+    hooks:
+      - events: ["postsync"]
+        showlogs: true
+        command: "/bin/sh"
+        args:
+          - "-c"
+          - |
+            echo "Waiting for Loki StatefulSet to be ready..."
+            kubectl wait --for=condition=ready pod -l app=loki -n logging --timeout=300s || true
+            echo "Loki deployment complete!"
+
+    labels:
+      app: logging
+      component: loki
+      {{`environment: {{ .Environment.Name }}`}}
+
+    installed: true
+
+  # Promtail log collector (DaemonSet for all nodes)
+  - name: promtail
+    namespace: logging
+    createNamespace: true
+    chart: ./charts/promtail
+    version: 1.0.0
+    values:
+      - charts/promtail/values.yaml
+      {{`- charts/promtail/values-{{ .Environment.Name }}.yaml`}}
+    wait: true
+    timeout: 300
+    atomic: true
+    cleanupOnFail: true
+    # Promtail depends on Loki being available
+    needs:
+      - logging/loki
+
+    hooks:
+      - events: ["postsync"]
+        showlogs: true
+        command: "/bin/sh"
+        args:
+          - "-c"
+          - |
+            echo "Verifying Promtail DaemonSet deployment..."
+            kubectl rollout status daemonset/promtail -n logging --timeout=300s || true
+            echo "Promtail deployment complete!"
+
+    labels:
+      app: logging
+      component: promtail
+      {{`environment: {{ .Environment.Name }}`}}
+
+    installed: true
+
   # MetaPharm Connect platform
   - name: metapharm
     namespace: metapharm
@@ -39,6 +106,10 @@ releases:
     atomic: true
     cleanupOnFail: true
     force: false
+    # MetaPharm depends on logging infrastructure
+    needs:
+      - logging/loki
+      - logging/promtail
 
     # Hooks for pre/post install operations
     hooks:

@@ -1,0 +1,24 @@
+# Development environment values for Promtail
+
+promtail:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+lokiClient:
+  batchSize: 524288  # 512KB for dev (smaller batches)
+  batchTimeout: 5s
+
+scrapeConfigs:
+  kubernetesSD:
+    namespaces:
+      - metapharm
+      - kube-system
+
+# Reduce PII pattern matching overhead in dev
+piiSanitization:
+  enabled: true  # Still enabled to test patterns

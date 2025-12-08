@@ -1,0 +1,31 @@
+# Development environment values for Loki
+
+loki:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+
+config:
+  limits_config:
+    max_bytes_per_second: 5242880  # 5MB/s
+  table_manager:
+    retention_period: 168h  # 7 days for dev
+
+persistence:
+  size: 5Gi
+  storageClassName: standard
+
+# Disable PII sanitization verification queries in dev
+promtail:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi

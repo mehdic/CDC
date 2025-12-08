@@ -1,0 +1,47 @@
+apiVersion: v2
+name: promtail
+description: Promtail log collector DaemonSet for MetaPharm Connect with PII sanitization
+type: application
+
+version: 1.0.0
+appVersion: "2.9.3"
+
+keywords:
+  - logging
+  - log-collector
+  - promtail
+  - daemonset
+  - pii-sanitization
+  - gdpr
+
+maintainers:
+  - name: MetaPharm Connect Team
+    email: devops@metapharm.ch
+
+home: https://grafana.com/docs/loki/latest/clients/promtail/
+sources:
+  - https://github.com/grafana/loki
+  - https://github.com/mehdic/CDC
+
+kubeVersion: ">=1.24.0"
+
+dependencies:
+  - name: loki
+    version: "1.0.0"
+    repository: "file://../loki"
+    condition: loki.enabled
+
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Promtail DaemonSet for distributed log collection
+    - kind: added
+      description: PII sanitization pipeline with regex patterns for emails, phones, SSN
+    - kind: added
+      description: Multi-stage pipeline with JSON parsing and label extraction
+  artifacthub.io/license: AGPL-3.0
+  artifacthub.io/links: |
+    - name: Promtail Documentation
+      url: https://grafana.com/docs/loki/latest/clients/promtail/
+    - name: Scrape Configuration
+      url: https://grafana.com/docs/loki/latest/clients/promtail/configuration/

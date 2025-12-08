@@ -1,0 +1,27 @@
+# Production environment values for Promtail
+
+promtail:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+lokiClient:
+  # Larger batches in production for efficiency
+  batchSize: 2097152  # 2MB
+  batchTimeout: 1s
+
+scrapeConfigs:
+  kubernetesSD:
+    namespaces:
+      - metapharm
+      - kube-system
+      - kube-public
+
+# Full PII sanitization enabled in production
+piiSanitization:
+  enabled: true
+  # All patterns enabled by default in values.yaml
