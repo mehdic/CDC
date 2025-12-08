@@ -247,7 +247,6 @@ export const LoginPage: React.FC = () => {
                 helperText={errors.email}
                 disabled={loading}
                 autoComplete="email"
-                autoFocus
               />
 
               <TextField

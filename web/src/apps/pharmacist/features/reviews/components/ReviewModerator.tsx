@@ -176,7 +176,7 @@ export const ReviewModerator: React.FC<ReviewModeratorProps> = ({
                   <img
                     key={index}
                     src={photo}
-                    alt={`Review photo ${index + 1}`}
+                    alt={`Submitted review attachment ${index + 1}`}
                     className="photo-thumbnail"
                   />
                 ))}

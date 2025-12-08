@@ -106,20 +106,21 @@ export function TranscriptEditor({
 
           {/* Original text */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="original-text-display" className="block text-sm font-medium text-gray-700 mb-2">
               Texte original:
             </label>
-            <div className="p-3 bg-gray-50 rounded border border-gray-200 text-sm text-gray-700">
+            <div id="original-text-display" className="p-3 bg-gray-50 rounded border border-gray-200 text-sm text-gray-700">
               {segment.text}
             </div>
           </div>
 
           {/* Edited text */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="edited-text-input" className="block text-sm font-medium text-gray-700 mb-2">
               Texte corrigé: *
             </label>
             <textarea
+              id="edited-text-input"
               value={editedText}
               onChange={(e) => setEditedText(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -130,10 +131,11 @@ export function TranscriptEditor({
 
           {/* Reason (optional) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="edit-reason-input" className="block text-sm font-medium text-gray-700 mb-2">
               Raison de la modification (optionnel):
             </label>
             <input
+              id="edit-reason-input"
               type="text"
               value={reason}
               onChange={(e) => setReason(e.target.value)}

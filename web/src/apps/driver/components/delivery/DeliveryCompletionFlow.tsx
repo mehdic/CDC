@@ -231,7 +231,6 @@ export const DeliveryCompletionFlow: React.FC<DeliveryCompletionFlowProps> = ({
               value={state.recipientName}
               onChange={(e) => setState({ ...state, recipientName: e.target.value })}
               placeholder="Enter full name"
-              autoFocus
               data-testid="recipient-name-input"
             />
           </Box>

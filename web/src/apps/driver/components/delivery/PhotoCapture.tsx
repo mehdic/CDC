@@ -275,7 +275,9 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
                 height: 'auto',
                 display: 'block',
               }}
-            />
+            >
+              <track kind="captions" src="" />
+            </video>
           </Box>
 
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between' }}>

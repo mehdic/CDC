@@ -237,7 +237,6 @@ export function QRScannerDialog({ open, onClose, onScan }: QRScannerDialogProps)
                   }
                 }}
                 disabled={processing}
-                autoFocus
               />
             </Box>
           )}

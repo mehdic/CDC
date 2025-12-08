@@ -1,0 +1,76 @@
+{{- $root := . -}}
+{{- range $serviceName, $serviceConfig := .Values.frontend }}
+{{- if $serviceConfig.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "metapharm-connect.fullname" $root }}-frontend-{{ $serviceConfig.name }}
+  labels:
+    {{- include "metapharm-connect.serviceLabels" (dict "root" $root "serviceName" (printf "frontend-%s" $serviceConfig.name)) | nindent 4 }}
+spec:
+  replicas: {{ $serviceConfig.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "metapharm-connect.serviceSelectorLabels" (dict "root" $root "serviceName" (printf "frontend-%s" $serviceConfig.name)) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $root | sha256sum }}
+        {{- with $root.Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "metapharm-connect.serviceSelectorLabels" (dict "root" $root "serviceName" (printf "frontend-%s" $serviceConfig.name)) | nindent 8 }}
+    spec:
+      {{- include "metapharm-connect.imagePullSecrets" $root | nindent 6 }}
+      serviceAccountName: {{ include "metapharm-connect.serviceAccountName" $root }}
+      {{- include "metapharm-connect.podSecurityContext" $root | nindent 6 }}
+      containers:
+      - name: {{ $serviceConfig.name }}
+        {{- include "metapharm-connect.securityContext" $root | nindent 8 }}
+        image: {{ include "metapharm-connect.image" (dict "Values" $root.Values "serviceName" $serviceConfig.name "Chart" $root.Chart) }}
+        imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ $serviceConfig.port }}
+          protocol: TCP
+        env:
+        - name: PORT
+          value: {{ $serviceConfig.port | quote }}
+        {{- if $serviceConfig.env }}
+        {{- range $key, $value := $serviceConfig.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
+        {{- include "metapharm-connect.healthProbes" (dict "port" $serviceConfig.port) | nindent 8 }}
+        {{- if $serviceConfig.resources }}
+        {{- include "metapharm-connect.resources" (dict "serviceResources" $serviceConfig.resources "root" $root) | nindent 8 }}
+        {{- else }}
+        {{- include "metapharm-connect.resources" (dict "root" $root) | nindent 8 }}
+        {{- end }}
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /.next
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+      {{- with $root.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

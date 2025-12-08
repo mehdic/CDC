@@ -1,0 +1,154 @@
+# Staging environment overrides
+# Usage: helm install metapharm-connect ./helm/metapharm-connect -f values-staging.yaml
+
+image:
+  tag: "staging"
+  pullPolicy: IfNotPresent
+
+# Ingress for staging
+ingress:
+  enabled: true
+  hosts:
+    - host: staging-api.metapharm.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend: api-gateway
+  tls:
+    - secretName: metapharm-staging-tls
+      hosts:
+        - staging-api.metapharm.com
+
+# Resource limits - Medium for staging
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Autoscaling enabled for key services
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+
+# PostgreSQL for staging
+postgresql:
+  auth:
+    password: "staging_password_from_secret"
+  primary:
+    persistence:
+      size: 20Gi
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+# Redis for staging
+redis:
+  auth:
+    password: "staging_password_from_secret"
+  master:
+    persistence:
+      size: 5Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+  replica:
+    replicaCount: 1
+
+# Service replicas for staging
+services:
+  apiGateway:
+    replicaCount: 2
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 5
+  userService:
+    replicaCount: 2
+  authService:
+    replicaCount: 2
+  pharmacyService:
+    replicaCount: 2
+  prescriptionService:
+    replicaCount: 2
+  teleconsultationService:
+    replicaCount: 2
+  inventoryService:
+    replicaCount: 2
+  analyticsService:
+    replicaCount: 1
+  deliveryService:
+    replicaCount: 2
+  ecommerceService:
+    replicaCount: 2
+  paymentService:
+    replicaCount: 2
+  messagingService:
+    replicaCount: 2
+  notificationService:
+    replicaCount: 2
+  doctorService:
+    replicaCount: 2
+  nurseService:
+    replicaCount: 2
+  patientService:
+    replicaCount: 2
+  appointmentService:
+    replicaCount: 2
+  medicalRecordsService:
+    replicaCount: 2
+  insuranceService:
+    replicaCount: 2
+  esanteService:
+    replicaCount: 2
+  vipService:
+    replicaCount: 1
+  marketingService:
+    replicaCount: 1
+  refillService:
+    replicaCount: 2
+  voiceService:
+    replicaCount: 2
+  controlledSubstanceService:
+    replicaCount: 2
+  orderService:
+    replicaCount: 2
+  recyclingService:
+    replicaCount: 1
+  calendarService:
+    replicaCount: 2
+  adherenceService:
+    replicaCount: 1
+  digitalTwinService:
+    replicaCount: 1
+  subscriptionService:
+    replicaCount: 1
+
+# Frontend services
+frontend:
+  web:
+    replicaCount: 2
+  mobile:
+    replicaCount: 2
+  dashboard:
+    replicaCount: 1
+
+# Configuration for staging
+config:
+  database:
+    url: "postgresql://metapharm:staging_password_from_secret@postgresql:5432/metapharm_db"
+  redis:
+    url: "redis://:staging_password_from_secret@redis:6379"
+  logging:
+    level: "info"

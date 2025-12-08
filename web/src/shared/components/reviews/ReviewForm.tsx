@@ -125,8 +125,8 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
   return (
     <form className="review-form" onSubmit={handleSubmit} data-testid="review-form">
       <div className="review-form__group">
-        <label className="review-form__label">Rating *</label>
-        <div data-testid="review-rating-input">
+        <label htmlFor="review-rating-input" className="review-form__label">Rating *</label>
+        <div id="review-rating-input" data-testid="review-rating-input">
           <StarRating value={formData.rating} onChange={handleRatingChange} size="large" />
         </div>
         {errors.rating && <div className="review-form__error">{errors.rating}</div>}

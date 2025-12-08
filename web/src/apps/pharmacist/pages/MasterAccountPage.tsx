@@ -150,8 +150,9 @@ const AddUserDialog: React.FC<{
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
+                <label htmlFor="email-input" className="block text-sm font-medium mb-1">Email</label>
                 <input
+                  id="email-input"
                   type="email"
                   value={formData.email}
                   onChange={(e) =>
@@ -164,10 +165,11 @@ const AddUserDialog: React.FC<{
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label htmlFor="firstname-input" className="block text-sm font-medium mb-1">
                     Prénom / First Name
                   </label>
                   <input
+                    id="firstname-input"
                     type="text"
                     value={formData.firstName}
                     onChange={(e) =>
@@ -177,10 +179,11 @@ const AddUserDialog: React.FC<{
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label htmlFor="lastname-input" className="block text-sm font-medium mb-1">
                     Nom / Last Name
                   </label>
                   <input
+                    id="lastname-input"
                     type="text"
                     value={formData.lastName}
                     onChange={(e) =>
@@ -192,10 +195,11 @@ const AddUserDialog: React.FC<{
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label htmlFor="role-select" className="block text-sm font-medium mb-1">
                   Rôle / Role
                 </label>
                 <select
+                  id="role-select"
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded"
@@ -207,9 +211,9 @@ const AddUserDialog: React.FC<{
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <legend className="block text-sm font-medium mb-2">
                   Permissions
-                </label>
+                </legend>
                 <div className="space-y-2">
                   {availablePermissions.map((perm) => (
                     <label key={perm} className="flex items-center">
@@ -383,10 +387,11 @@ const AuditLogTab: React.FC = () => {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-2">
+        <label htmlFor="filter-user-select" className="block text-sm font-medium mb-2">
           Filtrer par utilisateur / Filter by User
         </label>
         <select
+          id="filter-user-select"
           data-testid="filter-by-user"
           value={selectedUser}
           onChange={(e) => setSelectedUser(e.target.value)}
@@ -513,10 +518,11 @@ const SettingsTab: React.FC = () => {
       {error && <div className="p-3 bg-red-100 text-red-700 rounded">{error}</div>}
 
       <div>
-        <label className="block text-sm font-medium mb-1">
+        <label htmlFor="pharmacy-name-input" className="block text-sm font-medium mb-1">
           Nom de la pharmacie / Pharmacy Name
         </label>
         <input
+          id="pharmacy-name-input"
           type="text"
           value={settings.pharmacyName || ''}
           onChange={(e) =>
@@ -527,8 +533,9 @@ const SettingsTab: React.FC = () => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Téléphone / Phone</label>
+        <label htmlFor="pharmacy-phone-input" className="block text-sm font-medium mb-1">Téléphone / Phone</label>
         <input
+          id="pharmacy-phone-input"
           type="tel"
           value={settings.phone || ''}
           onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
@@ -537,8 +544,9 @@ const SettingsTab: React.FC = () => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Email</label>
+        <label htmlFor="pharmacy-email-input" className="block text-sm font-medium mb-1">Email</label>
         <input
+          id="pharmacy-email-input"
           type="email"
           value={settings.email || ''}
           onChange={(e) => setSettings({ ...settings, email: e.target.value })}

@@ -1,0 +1,643 @@
+# Default values for metapharm-connect
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings applied to all services
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# Image settings
+image:
+  registry: docker.io
+  repository: metapharm
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+# Name override
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 2000
+
+# Security context
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  hosts:
+    - host: api.metapharm.local
+      paths:
+        - path: /
+          pathType: Prefix
+          backend: api-gateway
+  tls:
+    - secretName: metapharm-tls
+      hosts:
+        - api.metapharm.local
+
+# Resource defaults (can be overridden per service)
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Autoscaling configuration
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# ========================================
+# Infrastructure Services
+# ========================================
+
+postgresql:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: postgres
+    tag: "16-alpine"
+  auth:
+    username: metapharm
+    password: metapharm_dev_password
+    database: metapharm_db
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    initdb:
+      args: "-c max_connections=200"
+  readReplicas:
+    replicaCount: 0
+
+redis:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: redis
+    tag: "7-alpine"
+  auth:
+    enabled: true
+    password: "redis_dev_password"
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: ""
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+  replica:
+    replicaCount: 0
+
+jaeger:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: jaegertracing/all-in-one
+    tag: "latest"
+  collector:
+    otlp:
+      enabled: true
+  query:
+    service:
+      type: ClusterIP
+      port: 16686
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# ========================================
+# Backend Microservices (32 services)
+# ========================================
+
+services:
+  # API Gateway - Main entry point (port 4000)
+  apiGateway:
+    enabled: true
+    name: api-gateway
+    replicaCount: 2
+    port: 4000
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+
+  # User Service (port 4001)
+  userService:
+    enabled: true
+    name: user-service
+    replicaCount: 2
+    port: 4001
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+  # Auth Service (port 4002)
+  authService:
+    enabled: true
+    name: auth-service
+    replicaCount: 2
+    port: 4002
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+      JWT_SECRET: "changeme"
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+  # Pharmacy Service (port 4003)
+  pharmacyService:
+    enabled: true
+    name: pharmacy-service
+    replicaCount: 2
+    port: 4003
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Prescription Service (port 4004)
+  prescriptionService:
+    enabled: true
+    name: prescription-service
+    replicaCount: 2
+    port: 4004
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Teleconsultation Service (port 4005)
+  teleconsultationService:
+    enabled: true
+    name: teleconsultation-service
+    replicaCount: 2
+    port: 4005
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Inventory Service (port 4006)
+  inventoryService:
+    enabled: true
+    name: inventory-service
+    replicaCount: 2
+    port: 4006
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Analytics Service (port 4007)
+  analyticsService:
+    enabled: true
+    name: analytics-service
+    replicaCount: 1
+    port: 4007
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Delivery Service (port 4008)
+  deliveryService:
+    enabled: true
+    name: delivery-service
+    replicaCount: 2
+    port: 4008
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Ecommerce Service (port 4009)
+  ecommerceService:
+    enabled: true
+    name: ecommerce-service
+    replicaCount: 2
+    port: 4009
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Payment Service (port 4010)
+  paymentService:
+    enabled: true
+    name: payment-service
+    replicaCount: 2
+    port: 4010
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Messaging Service (port 4011)
+  messagingService:
+    enabled: true
+    name: messaging-service
+    replicaCount: 2
+    port: 4011
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Notification Service (port 4012)
+  notificationService:
+    enabled: true
+    name: notification-service
+    replicaCount: 2
+    port: 4012
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Doctor Service (port 4013)
+  doctorService:
+    enabled: true
+    name: doctor-service
+    replicaCount: 2
+    port: 4013
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Nurse Service (port 4014)
+  nurseService:
+    enabled: true
+    name: nurse-service
+    replicaCount: 2
+    port: 4014
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Patient Service (port 4015)
+  patientService:
+    enabled: true
+    name: patient-service
+    replicaCount: 2
+    port: 4015
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Appointment Service (port 4016)
+  appointmentService:
+    enabled: true
+    name: appointment-service
+    replicaCount: 2
+    port: 4016
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Medical Records Service (port 4017)
+  medicalRecordsService:
+    enabled: true
+    name: medical-records-service
+    replicaCount: 2
+    port: 4017
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Insurance Service (port 4018)
+  insuranceService:
+    enabled: true
+    name: insurance-service
+    replicaCount: 2
+    port: 4018
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Esante Service (port 4019)
+  esanteService:
+    enabled: true
+    name: esante-service
+    replicaCount: 2
+    port: 4019
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # VIP Service (port 4020)
+  vipService:
+    enabled: true
+    name: vip-service
+    replicaCount: 1
+    port: 4020
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Marketing Service (port 4021)
+  marketingService:
+    enabled: true
+    name: marketing-service
+    replicaCount: 1
+    port: 4021
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Refill Service (port 4022)
+  refillService:
+    enabled: true
+    name: refill-service
+    replicaCount: 2
+    port: 4022
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Voice Service (port 4023)
+  voiceService:
+    enabled: true
+    name: voice-service
+    replicaCount: 2
+    port: 4023
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Controlled Substance Service (port 4024)
+  controlledSubstanceService:
+    enabled: true
+    name: controlled-substance-service
+    replicaCount: 2
+    port: 4024
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Order Service (port 4025)
+  orderService:
+    enabled: true
+    name: order-service
+    replicaCount: 2
+    port: 4025
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Recycling Service (port 4026)
+  recyclingService:
+    enabled: true
+    name: recycling-service
+    replicaCount: 1
+    port: 4026
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Calendar Service (port 4027)
+  calendarService:
+    enabled: true
+    name: calendar-service
+    replicaCount: 2
+    port: 4027
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Adherence Service (port 4028)
+  adherenceService:
+    enabled: true
+    name: adherence-service
+    replicaCount: 1
+    port: 4028
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Digital Twin Service (port 4029)
+  digitalTwinService:
+    enabled: true
+    name: digital-twin-service
+    replicaCount: 1
+    port: 4029
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+  # Subscription Service (port 4030)
+  subscriptionService:
+    enabled: true
+    name: subscription-service
+    replicaCount: 1
+    port: 4030
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      LOG_LEVEL: "info"
+
+# ========================================
+# Frontend Services
+# ========================================
+
+frontend:
+  # Web Application (port 3000)
+  web:
+    enabled: true
+    name: web
+    replicaCount: 2
+    port: 3000
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+      NEXT_PUBLIC_API_URL: "http://api-gateway:4000"
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+  # Mobile Backend (port 3001)
+  mobile:
+    enabled: true
+    name: mobile
+    replicaCount: 2
+    port: 3001
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+  # Dashboard (port 3002)
+  dashboard:
+    enabled: true
+    name: dashboard
+    replicaCount: 1
+    port: 3002
+    type: ClusterIP
+    env:
+      NODE_ENV: "production"
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# ========================================
+# Configuration
+# ========================================
+
+config:
+  # Database configuration
+  database:
+    url: "postgresql://metapharm:metapharm_dev_password@postgresql:5432/metapharm_db"
+    maxConnections: 200
+
+  # Redis configuration
+  redis:
+    url: "redis://:redis_dev_password@redis:6379"
+
+  # JWT configuration
+  jwt:
+    secret: "dev-secret-key-change-in-production"
+    expiresIn: "1h"
+    refreshExpiresIn: "7d"
+
+  # Observability
+  tracing:
+    enabled: true
+    otlpExporterUrl: "http://jaeger:4318/v1/traces"
+
+  # Logging
+  logging:
+    level: "info"
+    format: "json"
+
+# ========================================
+# Secrets (should be stored in Kubernetes secrets)
+# ========================================
+
+secrets:
+  # These should be overridden in production
+  postgresql:
+    password: "changeme"
+  redis:
+    password: "changeme"
+  jwt:
+    secret: "changeme"
+  # Add other secrets as needed
+  stripe:
+    apiKey: "changeme"
+  sendgrid:
+    apiKey: "changeme"
+  twilio:
+    accountSid: "changeme"
+    authToken: "changeme"

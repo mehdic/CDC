@@ -329,7 +329,7 @@ export const ProductReviews: React.FC<ProductReviewsProps> = ({
                     <img
                       key={idx}
                       src={url}
-                      alt={`Review image ${idx + 1}`}
+                      alt={`Product review by customer ${idx + 1}`}
                       className="product-reviews__item-image"
                       data-testid={`review-image-${review.id}`}
                     />

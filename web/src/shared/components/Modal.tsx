@@ -108,7 +108,6 @@ export const Modal: React.FC<ModalProps> = ({
               variant="contained"
               color={confirmColor}
               disabled={confirmDisabled}
-              autoFocus
             >
               {confirmText}
             </Button>

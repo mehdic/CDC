@@ -127,7 +127,6 @@ export const ContactSelector: React.FC<ContactSelectorProps> = ({
         <Stack spacing={2}>
           {/* Search Field */}
           <TextField
-            autoFocus
             fullWidth
             placeholder="Rechercher par nom, email ou téléphone..."
             value={searchQuery}

@@ -220,7 +220,7 @@ export const WriteReviewPage: React.FC<WriteReviewPageProps> = ({
 
           {/* Photo Upload */}
           <div className="form-group">
-            <label className="form-label">
+            <label htmlFor="photo-upload-group" className="form-label">
               Ajouter des photos (optionnel, max 3)
             </label>
             <div className="photo-upload">

@@ -94,11 +94,12 @@ export function TranscriptSearch({ consultationId, onSearch }: TranscriptSearchP
       {/* Search Form */}
       <form onSubmit={handleSearch} className="p-4 border-b space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="transcript-search-input" className="block text-sm font-medium text-gray-700 mb-2">
             Recherche dans les transcriptions
           </label>
           <div className="flex gap-2">
             <input
+              id="transcript-search-input"
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -172,8 +173,9 @@ export function TranscriptSearch({ consultationId, onSearch }: TranscriptSearchP
         {/* Date filters */}
         <div className="flex gap-4">
           <div className="flex-1">
-            <label className="block text-xs text-gray-600 mb-1">Date de début</label>
+            <label htmlFor="date-from-input" className="block text-xs text-gray-600 mb-1">Date de début</label>
             <input
+              id="date-from-input"
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
@@ -182,8 +184,9 @@ export function TranscriptSearch({ consultationId, onSearch }: TranscriptSearchP
             />
           </div>
           <div className="flex-1">
-            <label className="block text-xs text-gray-600 mb-1">Date de fin</label>
+            <label htmlFor="date-to-input" className="block text-xs text-gray-600 mb-1">Date de fin</label>
             <input
+              id="date-to-input"
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}

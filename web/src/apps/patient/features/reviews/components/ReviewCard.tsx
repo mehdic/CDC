@@ -143,7 +143,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
           <div className="photo-main">
             <img
               src={review.photos![currentPhotoIndex]}
-              alt={`Review photo ${currentPhotoIndex + 1}`}
+              alt={`Customer review ${currentPhotoIndex + 1} of ${review.photos!.length}`}
               className="photo-image"
             />
           </div>

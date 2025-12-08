@@ -254,8 +254,9 @@ const DeliveryZonesSection: React.FC = () => {
       <div className="mb-6">
         <div className="flex gap-2 mb-4">
           <div className="flex-1">
-            <label className="block text-sm font-medium mb-1">Code Postal</label>
+            <label htmlFor="postal-code-input" className="block text-sm font-medium mb-1">Code Postal</label>
             <input
+              id="postal-code-input"
               type="text"
               value={postalCodeInput}
               onChange={(e) => setPostalCodeInput(e.target.value)}
@@ -668,8 +669,9 @@ export const PharmacyProfileManager: React.FC = () => {
         {editing ? (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Nom</label>
+              <label htmlFor="location-name-input" className="block text-sm font-medium mb-1">Nom</label>
               <input
+                id="location-name-input"
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -684,8 +686,9 @@ export const PharmacyProfileManager: React.FC = () => {
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
+              <label htmlFor="location-description-input" className="block text-sm font-medium mb-1">Description</label>
               <textarea
+                id="location-description-input"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full border rounded px-3 py-2"
@@ -694,8 +697,9 @@ export const PharmacyProfileManager: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Téléphone</label>
+              <label htmlFor="location-phone-input" className="block text-sm font-medium mb-1">Téléphone</label>
               <input
+                id="location-phone-input"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -704,8 +708,9 @@ export const PharmacyProfileManager: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Adresse</label>
+              <label htmlFor="location-address-input" className="block text-sm font-medium mb-1">Adresse</label>
               <input
+                id="location-address-input"
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}

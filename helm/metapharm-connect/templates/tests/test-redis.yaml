@@ -1,0 +1,33 @@
+{{- if .Values.redis.enabled -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "metapharm-connect.fullname" . }}-test-redis"
+  labels:
+    {{- include "metapharm-connect.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  containers:
+    - name: redis-test
+      image: {{ .Values.redis.image.registry }}/{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}
+      command:
+        - sh
+        - -c
+        - |
+          {{- if .Values.redis.auth.enabled }}
+          redis-cli -h {{ include "metapharm-connect.fullname" . }}-redis-master -a $REDIS_PASSWORD ping
+          {{- else }}
+          redis-cli -h {{ include "metapharm-connect.fullname" . }}-redis-master ping
+          {{- end }}
+      {{- if .Values.redis.auth.enabled }}
+      env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "metapharm-connect.fullname" . }}-redis-secret
+              key: redis-password
+      {{- end }}
+  restartPolicy: Never
+{{- end }}

@@ -112,13 +112,12 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         {isOpen && (
           <ul className="language-switcher-menu" role="listbox">
             {AVAILABLE_LANGUAGES.map(lang => (
-              <li key={lang.code} role="option">
+              <li key={lang.code} role="option" aria-selected={lang.code === i18n.language}>
                 <button
                   onClick={() => handleLanguageChange(lang.code)}
                   className={`language-option ${
                     lang.code === i18n.language ? 'active' : ''
                   }`}
-                  aria-selected={lang.code === i18n.language}
                 >
                   {renderLanguageLabel(lang)}
                 </button>

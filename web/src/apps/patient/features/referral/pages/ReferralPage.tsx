@@ -298,8 +298,9 @@ export const ReferralPage: React.FC = () => {
               </div>
 
               <div className="share-url">
-                <label>Share Link:</label>
+                <label htmlFor="share-link-input">Share Link:</label>
                 <Input
+                  id="share-link-input"
                   value={getShareUrl()}
                   readOnly
                   addonAfter={

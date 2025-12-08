@@ -455,7 +455,9 @@ const TwilioVideoRoom: React.FC<TwilioVideoRoomProps> = ({
                   height: '100%',
                   objectFit: 'cover',
                 }}
-              />
+              >
+                <track kind="captions" src="" />
+              </video>
               <Box
                 sx={{
                   position: 'absolute',

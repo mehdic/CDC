@@ -168,7 +168,9 @@ export const VoiceNotePlayer: React.FC<VoiceNotePlayerProps> = ({
         onEnded={handlePlaybackEnd}
         onError={handleError}
         onCanPlay={handleCanPlay}
-      />
+      >
+        <track kind="captions" src="" />
+      </audio>
 
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

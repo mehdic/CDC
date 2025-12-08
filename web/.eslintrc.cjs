@@ -6,6 +6,7 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
+    'plugin:jsx-a11y/recommended',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -14,7 +15,7 @@ module.exports = {
     project: './tsconfig.json',
     tsconfigRootDir: __dirname,
   },
-  plugins: ['react', 'react-hooks', '@typescript-eslint'],
+  plugins: ['react', 'react-hooks', '@typescript-eslint', 'jsx-a11y'],
   settings: {
     react: { version: 'detect' },
   },
@@ -26,6 +27,15 @@ module.exports = {
     'react/no-unescaped-entities': 'warn',
     '@typescript-eslint/no-var-requires': 'warn',
     'react/no-unknown-property': ['error', { ignore: ['jsx'] }],
+    'jsx-a11y/alt-text': 'error',
+    'jsx-a11y/anchor-has-content': 'error',
+    'jsx-a11y/click-events-have-key-events': 'warn',
+    'jsx-a11y/no-static-element-interactions': 'warn',
+    'jsx-a11y/label-has-associated-control': 'error',
+    'jsx-a11y/aria-role': 'error',
+    'jsx-a11y/aria-props': 'error',
+    'jsx-a11y/aria-unsupported-elements': 'error',
+    'jsx-a11y/role-has-required-aria-props': 'error',
   },
   overrides: [
     {
