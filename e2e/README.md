@@ -36,11 +36,20 @@ e2e/
 │   │   └── medication-orders.spec.ts (11 tests)
 │   ├── delivery/
 │   │   └── delivery-tracking.spec.ts (12 tests)
+│   └── journeys/ (NEW - T7-008)
+│       ├── prescription-lifecycle.spec.ts (5 tests)
+│       ├── teleconsultation.spec.ts (5 tests)
+│       ├── vip-membership.spec.ts (6 tests)
+│       └── delivery-workflow.spec.ts (7 tests)
 ├── pages/
 │   ├── LoginPage.ts
 │   ├── DashboardPage.ts
 │   ├── AppointmentPage.ts
-│   └── MessagingPage.ts
+│   ├── MessagingPage.ts
+│   ├── PrescriptionPage.ts (NEW)
+│   ├── TeleconsultationPage.ts (NEW)
+│   ├── VIPMembershipPage.ts (NEW)
+│   └── DeliveryPage.ts (NEW)
 ├── fixtures/
 │   ├── users.ts
 │   └── test-data.ts
@@ -95,6 +104,9 @@ npm run test:nurse --workspace=e2e
 
 # Delivery flows
 npm run test:delivery --workspace=e2e
+
+# Journey tests (NEW - T7-008)
+npm run test:journeys --workspace=e2e
 ```
 
 ### Run Tests in Headed Mode
@@ -139,8 +151,13 @@ npm run test:mobile --workspace=e2e
 - **Doctor Flows**: 10 tests
 - **Nurse Flows**: 11 tests
 - **Delivery Personnel**: 12 tests
+- **Journey Tests** (NEW): 23 tests
+  - Prescription Lifecycle: 5 tests
+  - Teleconsultation: 5 tests
+  - VIP Membership: 6 tests
+  - Delivery Workflow: 7 tests
 
-**Total: 113 tests**
+**Total: 136 tests** (previously 113)
 
 ### Coverage by Feature
 
