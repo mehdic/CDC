@@ -1,0 +1,58 @@
+{{- if .Values.configMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "metapharm.configMapName" . }}
+  namespace: {{ include "metapharm.namespace" . }}
+  labels:
+    app: metapharm-connect
+    component: configuration
+    {{- include "metapharm.labels" . | nindent 4 }}
+data:
+  # Node environment
+  NODE_ENV: {{ .Values.configMap.data.nodeEnv | quote }}
+
+  # Logging
+  LOG_LEVEL: {{ .Values.configMap.data.logLevel | quote }}
+  LOG_FORMAT: {{ .Values.configMap.data.logFormat | quote }}
+
+  # API Gateway URL
+  API_GATEWAY_URL: {{ include "metapharm.apiGatewayUrl" . | quote }}
+
+  # Database connection (host only, credentials in secrets)
+  DB_HOST: {{ include "metapharm.dbHost" . | quote }}
+  DB_PORT: "5432"
+  DB_NAME: "metapharm_db"
+
+  # Redis cache
+  REDIS_HOST: {{ include "metapharm.redisHost" . | quote }}
+  REDIS_PORT: "6379"
+
+  # RabbitMQ
+  RABBITMQ_HOST: {{ include "metapharm.rabbitmqHost" . | quote }}
+  RABBITMQ_PORT: "5672"
+
+  # Elasticsearch
+  ELASTICSEARCH_HOST: {{ include "metapharm.elasticsearchHost" . | quote }}
+  ELASTICSEARCH_PORT: "9200"
+
+  # Rate limiting
+  RATE_LIMIT_WINDOW: {{ .Values.configMap.data.rateLimitWindow | quote }}
+  RATE_LIMIT_MAX_REQUESTS: {{ .Values.configMap.data.rateLimitMaxRequests | quote }}
+
+  # JWT
+  JWT_EXPIRY: {{ .Values.configMap.data.jwtExpiry | quote }}
+  JWT_REFRESH_EXPIRY: {{ .Values.configMap.data.jwtRefreshExpiry | quote }}
+
+  # CORS
+  CORS_ORIGIN: {{ .Values.configMap.data.corsOrigin | quote }}
+
+  # Health check intervals
+  HEALTH_CHECK_INTERVAL: {{ .Values.configMap.data.healthCheckInterval | quote }}
+
+  # Feature flags
+  FEATURE_AI_OCR: {{ .Values.configMap.data.featureAiOcr | quote }}
+  FEATURE_DRUG_INTERACTION: {{ .Values.configMap.data.featureDrugInteraction | quote }}
+  FEATURE_TELECONSULTATION: {{ .Values.configMap.data.featureTeleconsultation | quote }}
+  FEATURE_DELIVERY_TRACKING: {{ .Values.configMap.data.featureDeliveryTracking | quote }}
+{{- end }}

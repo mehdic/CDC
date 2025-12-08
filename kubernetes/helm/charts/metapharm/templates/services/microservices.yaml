@@ -1,0 +1,31 @@
+{{- range $serviceName, $config := .Values.services }}
+{{- if $config.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $config.name }}-svc
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app: {{ $config.name }}
+    service: 'true'
+    {{- include "metapharm.labels" $ | nindent 4 }}
+  annotations:
+    service.kubernetes.io/topology-aware-hints: auto
+spec:
+  selector:
+    app: {{ $config.name }}
+  ports:
+  - name: {{ $config.name | replace "-" "" }}
+    protocol: TCP
+    port: {{ $config.port }}
+    targetPort: {{ $config.name | replace "-" "" }}
+  {{- if $.Values.sessionAffinity.enabled }}
+  sessionAffinity: {{ $.Values.sessionAffinity.type }}
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: {{ $.Values.sessionAffinity.timeout }}
+  {{- end }}
+  type: {{ $config.serviceType }}
+{{- end }}
+{{- end }}

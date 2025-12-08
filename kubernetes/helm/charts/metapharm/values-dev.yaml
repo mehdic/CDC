@@ -1,0 +1,236 @@
+# Development environment specific values
+global:
+  environment: development
+  domain: metapharm-dev.local
+  imageTag: latest
+  imagePullPolicy: Always
+
+namespace:
+  labels:
+    environment: development
+
+configMap:
+  data:
+    nodeEnv: "development"
+    logLevel: "debug"
+    logFormat: "pretty"
+    corsOrigin: "*"
+
+# Reduced resource requests for development
+services:
+  apiGateway:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+
+  authService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+
+  prescriptionService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+
+  deliveryService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    autoscaling:
+      enabled: false
+
+  inventoryService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    autoscaling:
+      enabled: false
+
+  medicalRecordsService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+
+  messagingService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+
+  notificationService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    autoscaling:
+      enabled: false
+
+  orderService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    autoscaling:
+      enabled: false
+
+  paymentService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+
+  teleconsultationService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+
+  digitalTwinService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+
+  drugInteractionService:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+    autoscaling:
+      enabled: false
+
+# Reduced infrastructure resources for development
+infrastructure:
+  postgresPrimary:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+    storage:
+      size: 5Gi
+
+  postgresReplica:
+    enabled: false
+
+  redis:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+
+  rabbitmq:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 256Mi
+
+  elasticsearch:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 250m
+        memory: 512Mi
+    storage:
+      size: 5Gi
+
+# Development ingress
+ingress:
+  enabled: true
+  hosts:
+    - host: api.metapharm-dev.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api-gateway-svc
+          port: 3000
+  tls: []

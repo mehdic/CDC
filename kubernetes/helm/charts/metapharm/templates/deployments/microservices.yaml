@@ -1,0 +1,123 @@
+{{- range $serviceName, $config := .Values.services }}
+{{- if $config.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $serviceName }}-deployment
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app: {{ $config.name }}
+    tier: {{ $config.tier }}
+    component: {{ $config.component }}
+    version: v1
+    {{- include "metapharm.labels" $ | nindent 4 }}
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+spec:
+  replicas: {{ $config.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $config.name }}
+      version: v1
+  {{- include "metapharm.updateStrategy" $ | nindent 2 }}
+  template:
+    metadata:
+      labels:
+        app: {{ $config.name }}
+        tier: {{ $config.tier }}
+        version: v1
+      annotations:
+        {{- if $.Values.monitoring.prometheus.enabled }}
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: {{ $config.port | quote }}
+        prometheus.io/path: {{ $.Values.monitoring.metrics.path }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ $config.name }}-sa
+      {{- include "metapharm.podSecurityContext" $ | nindent 6 }}
+      containers:
+      - name: {{ $config.name }}
+        image: {{ $.Values.global.imageRegistry }}/{{ $config.name }}:{{ $.Values.global.imageTag }}
+        imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+        ports:
+        - name: {{ $config.name | replace "-" "" }}
+          containerPort: {{ $config.port }}
+          protocol: TCP
+        env:
+        - name: PORT
+          value: {{ $config.port | quote }}
+        - name: SERVICE_NAME
+          value: {{ $config.name }}
+        envFrom:
+        - configMapRef:
+            name: {{ include "metapharm.configMapName" $ }}
+        {{- if $.Values.secrets.dbCredentials.enabled }}
+        - secretRef:
+            name: {{ $.Values.secrets.dbCredentials.name }}
+        {{- end }}
+        {{- if $.Values.secrets.jwtSecret.enabled }}
+        - secretRef:
+            name: {{ $.Values.secrets.jwtSecret.name }}
+        {{- end }}
+        {{- if $.Values.secrets.externalApiKeys.enabled }}
+        - secretRef:
+            name: {{ $.Values.secrets.externalApiKeys.name }}
+        {{- end }}
+        resources:
+          requests:
+            cpu: {{ $config.resources.requests.cpu }}
+            memory: {{ $config.resources.requests.memory }}
+          limits:
+            cpu: {{ $config.resources.limits.cpu }}
+            memory: {{ $config.resources.limits.memory }}
+        {{- include "metapharm.containerSecurityContext" $ | nindent 8 }}
+        livenessProbe:
+          httpGet:
+            path: {{ $config.healthCheck.path }}
+            port: {{ $config.name | replace "-" "" }}
+            scheme: HTTP
+          initialDelaySeconds: {{ $.Values.healthProbe.liveness.initialDelaySeconds }}
+          periodSeconds: {{ $.Values.healthProbe.liveness.periodSeconds }}
+          timeoutSeconds: {{ $.Values.healthProbe.liveness.timeoutSeconds }}
+          successThreshold: {{ $.Values.healthProbe.liveness.successThreshold }}
+          failureThreshold: {{ $.Values.healthProbe.liveness.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: {{ $config.healthCheck.path }}
+            port: {{ $config.name | replace "-" "" }}
+            scheme: HTTP
+          initialDelaySeconds: {{ $.Values.healthProbe.readiness.initialDelaySeconds }}
+          periodSeconds: {{ $.Values.healthProbe.readiness.periodSeconds }}
+          timeoutSeconds: {{ $.Values.healthProbe.readiness.timeoutSeconds }}
+          successThreshold: {{ $.Values.healthProbe.readiness.successThreshold }}
+          failureThreshold: {{ $.Values.healthProbe.readiness.failureThreshold }}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      {{- if gt ($config.replicas | int) 1 }}
+      {{- if $.Values.affinity.podAntiAffinity.enabled }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: {{ $.Values.affinity.podAntiAffinity.weight }}
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ $config.name }}
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+      {{- end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $config.name }}-sa
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app: {{ $config.name }}
+    {{- include "metapharm.labels" $ | nindent 4 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,120 @@
+# Helmfile for MetaPharm Connect multi-environment deployment
+# Usage:
+#   helmfile -e dev sync       # Deploy to development
+#   helmfile -e staging sync   # Deploy to staging
+#   helmfile -e prod sync      # Deploy to production
+
+# Environment definitions
+environments:
+  dev:
+    values:
+      - charts/metapharm/values-dev.yaml
+  staging:
+    values:
+      - charts/metapharm/values-staging.yaml
+  prod:
+    values:
+      - charts/metapharm/values-prod.yaml
+
+# Helm repositories (if needed for dependencies)
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+  - name: stable
+    url: https://charts.helm.sh/stable
+
+# Release definitions
+releases:
+  # MetaPharm Connect platform
+  - name: metapharm
+    namespace: metapharm
+    createNamespace: true
+    chart: ./charts/metapharm
+    version: 1.0.0
+    values:
+      - charts/metapharm/values.yaml
+      {{`- charts/metapharm/values-{{ .Environment.Name }}.yaml`}}
+    wait: true
+    timeout: 600
+    atomic: true
+    cleanupOnFail: true
+    force: false
+
+    # Hooks for pre/post install operations
+    hooks:
+      # Pre-install: Validate secrets exist
+      - events: ["presync"]
+        showlogs: true
+        command: "/bin/sh"
+        args:
+          - "-c"
+          - |
+            echo "Validating secrets exist in namespace metapharm..."
+            kubectl get secret metapharm-db-credentials -n metapharm || echo "WARNING: metapharm-db-credentials secret not found!"
+            kubectl get secret metapharm-jwt-secret -n metapharm || echo "WARNING: metapharm-jwt-secret not found!"
+
+      # Post-install: Wait for pods to be ready
+      - events: ["postsync"]
+        showlogs: true
+        command: "/bin/sh"
+        args:
+          - "-c"
+          - |
+            echo "Waiting for pods to be ready..."
+            kubectl wait --for=condition=ready pod -l app=api-gateway -n metapharm --timeout=300s || true
+            kubectl wait --for=condition=ready pod -l app=auth-service -n metapharm --timeout=300s || true
+            echo "Deployment complete!"
+
+    # Labels for tracking
+    labels:
+      app: metapharm-connect
+      tier: platform
+      {{`environment: {{ .Environment.Name }}`}}
+
+    # Only install if condition is met
+    installed: true
+
+# Helmfile settings
+helmDefaults:
+  # Wait for resources to be ready
+  wait: true
+  # Timeout for operations (in seconds)
+  timeout: 600
+  # Recreate pods on changes
+  recreatePods: false
+  # Force resource updates
+  force: false
+  # Verify installation
+  verify: false
+  # Clean up on failure
+  cleanupOnFail: true
+  # Atomic operations (rollback on failure)
+  atomic: true
+  # History limit
+  historyMax: 10
+  # Create namespace if it doesn't exist
+  createNamespace: true
+  # Skip TLS verification (only for development)
+  {{`skipTLSVerify: {{ eq .Environment.Name "dev" }}`}}
+  # Kubeconfig context
+  # kubeContext: ""
+
+# Miscellaneous
+missingFileHandler: Error
+
+# Environment-specific overrides
+{{`{{ if eq .Environment.Name "prod" }}`}}
+# Production-specific settings
+helmDefaults:
+  timeout: 900
+  recreatePods: true
+  atomic: true
+{{`{{ end }}`}}
+
+{{`{{ if eq .Environment.Name "dev" }}`}}
+# Development-specific settings
+helmDefaults:
+  timeout: 300
+  wait: false
+  atomic: false
+{{`{{ end }}`}}

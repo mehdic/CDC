@@ -1,0 +1,116 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your MetaPharm Connect platform release is named {{ .Release.Name }}.
+
+═══════════════════════════════════════════════════════════════
+  MetaPharm Connect - Healthcare Platform
+  Version: {{ .Chart.AppVersion }}
+  Environment: {{ .Values.global.environment }}
+═══════════════════════════════════════════════════════════════
+
+📋 DEPLOYMENT SUMMARY:
+
+Namespace: {{ .Values.global.namespace }}
+Services Deployed: {{ len .Values.services }}
+{{- if .Values.ingress.enabled }}
+Ingress: Enabled
+{{- else }}
+Ingress: Disabled
+{{- end }}
+
+🔍 To check the status of your deployment:
+
+  kubectl get pods -n {{ .Values.global.namespace }}
+  kubectl get svc -n {{ .Values.global.namespace }}
+  kubectl get deployments -n {{ .Values.global.namespace }}
+
+📊 To view autoscaling status:
+
+  kubectl get hpa -n {{ .Values.global.namespace }}
+
+🌐 To access the API Gateway:
+
+{{- if eq .Values.services.apiGateway.serviceType "LoadBalancer" }}
+
+  Get the LoadBalancer IP:
+    kubectl get svc api-gateway-svc -n {{ .Values.global.namespace }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+  Then access: http://<EXTERNAL-IP>:3000
+{{- else }}
+
+  Port-forward to localhost:
+    kubectl port-forward -n {{ .Values.global.namespace }} svc/api-gateway-svc 3000:3000
+
+  Then access: http://localhost:3000
+{{- end }}
+
+🔐 REQUIRED SECRETS:
+
+Make sure the following secrets exist in the {{ .Values.global.namespace }} namespace:
+
+{{- if .Values.secrets.dbCredentials.enabled }}
+  ✓ {{ .Values.secrets.dbCredentials.name }}
+{{- end }}
+{{- if .Values.secrets.jwtSecret.enabled }}
+  ✓ {{ .Values.secrets.jwtSecret.name }}
+{{- end }}
+{{- if .Values.secrets.redisPassword.enabled }}
+  ✓ {{ .Values.secrets.redisPassword.name }}
+{{- end }}
+{{- if .Values.secrets.rabbitmqCredentials.enabled }}
+  ✓ {{ .Values.secrets.rabbitmqCredentials.name }}
+{{- end }}
+{{- if .Values.secrets.externalApiKeys.enabled }}
+  ✓ {{ .Values.secrets.externalApiKeys.name }}
+{{- end }}
+
+To verify secrets:
+  kubectl get secrets -n {{ .Values.global.namespace }}
+
+📚 DOCUMENTATION:
+
+  - Helm Chart README: kubernetes/helm/README.md
+  - Architecture Docs: docs/architecture.md
+  - Kubernetes Manifests: kubernetes/README.md
+
+🔄 COMMON OPERATIONS:
+
+Upgrade release:
+  helm upgrade {{ .Release.Name }} ./charts/metapharm -f ./charts/metapharm/values-{{ .Values.global.environment }}.yaml -n {{ .Values.global.namespace }}
+
+Rollback release:
+  helm rollback {{ .Release.Name }} -n {{ .Values.global.namespace }}
+
+View history:
+  helm history {{ .Release.Name }} -n {{ .Values.global.namespace }}
+
+Uninstall:
+  helm uninstall {{ .Release.Name }} -n {{ .Values.global.namespace }}
+
+⚠️  IMPORTANT NOTES:
+
+{{- if eq .Values.global.environment "development" }}
+  - Development environment: Resources are minimized
+  - Autoscaling is disabled
+  - Not suitable for production workloads
+{{- end }}
+
+{{- if eq .Values.global.environment "production" }}
+  - Production environment: Full resources allocated
+  - Ensure all secrets are properly configured
+  - Monitor resource usage and autoscaling
+  - Backup PostgreSQL databases regularly
+{{- end }}
+
+{{- if not .Values.secrets.dbCredentials.enabled }}
+  ⚠️  Database credentials secret is disabled!
+{{- end }}
+
+{{- if not .Values.secrets.jwtSecret.enabled }}
+  ⚠️  JWT secret is disabled!
+{{- end }}
+
+🎉 Your MetaPharm Connect platform is ready!
+
+For support, visit: https://support.metapharm.ch
+Documentation: https://docs.metapharm.ch
