@@ -1,0 +1,95 @@
+{
+  "prescriptionProcessing": {
+    "name": "Prescription Processing Load Test",
+    "description": "Tests prescription upload and processing with 100 concurrent users",
+    "target": {
+      "p95_latency_ms": 5000,
+      "p99_latency_ms": 10000,
+      "error_rate": 0.05,
+      "concurrent_users": 100
+    },
+    "thresholds": {
+      "prescription_upload_duration": ["p(95)<5000", "p(99)<10000"],
+      "prescription_upload_errors": ["rate<0.05"],
+      "prescription_processing_duration": ["p(95)<3000"]
+    }
+  },
+  "deliveryTracking": {
+    "name": "Delivery Tracking - WebSocket Load Test",
+    "description": "Tests WebSocket connections for real-time delivery tracking",
+    "target": {
+      "p95_latency_ms": 2000,
+      "p99_latency_ms": 5000,
+      "error_rate": 0.05,
+      "concurrent_connections": 500,
+      "messages_latency": 2000
+    },
+    "thresholds": {
+      "delivery_ws_message_latency": ["p(95)<2000", "p(99)<5000"],
+      "delivery_ws_connect_errors": ["rate<0.05"],
+      "delivery_ws_message_errors": ["rate<0.10"]
+    }
+  },
+  "messaging": {
+    "name": "Messaging Throughput Load Test",
+    "description": "Tests messaging API with 1000 messages/minute target",
+    "target": {
+      "messages_per_minute": 1000,
+      "p95_latency_ms": 1000,
+      "p99_latency_ms": 3000,
+      "error_rate": 0.05,
+      "concurrent_users": 200
+    },
+    "thresholds": {
+      "messaging_duration": ["p(95)<1000", "p(99)<3000"],
+      "messaging_errors": ["rate<0.05"],
+      "message_delivery_time": ["p(95)<2000"]
+    }
+  },
+  "apiGateway": {
+    "name": "API Gateway Load Test",
+    "description": "Tests API Gateway with 1000 concurrent requests",
+    "target": {
+      "p95_latency_ms": 500,
+      "p99_latency_ms": 1000,
+      "error_rate": 0.05,
+      "concurrent_requests": 1000,
+      "requests_per_second": 10000
+    },
+    "thresholds": {
+      "gateway_duration": ["p(95)<500", "p(99)<1000"],
+      "gateway_errors": ["rate<0.05"]
+    }
+  },
+  "databaseQueries": {
+    "name": "Database Query Performance Load Test",
+    "description": "Tests complex database queries under load",
+    "target": {
+      "simple_query_p95_ms": 100,
+      "join_query_p95_ms": 500,
+      "aggregation_query_p95_ms": 2000,
+      "error_rate": 0.05,
+      "slow_query_rate": 0.02,
+      "concurrent_users": 100
+    },
+    "thresholds": {
+      "db_query_duration": ["p(95)<1000", "p(99)<3000"],
+      "db_query_errors": ["rate<0.05"],
+      "db_slow_queries": ["rate<0.02"]
+    }
+  },
+  "global": {
+    "timeout_seconds": 30,
+    "http_req_failed_global": ["rate<0.1"],
+    "error_threshold": 0.05,
+    "warning_threshold": 0.02,
+    "performance_baseline": {
+      "api_p95": 500,
+      "api_p99": 1000,
+      "db_p95": 1000,
+      "db_p99": 3000,
+      "ws_p95": 2000,
+      "ws_p99": 5000
+    }
+  }
+}
