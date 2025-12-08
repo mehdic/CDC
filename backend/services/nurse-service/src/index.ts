@@ -49,6 +49,7 @@ import { User } from '@shared/models/User';
 import nurseRouter from './routes/nurses';
 import orderRouter from './routes/orders';
 import patientRouter from './routes/patients';
+import pdfRouter from './routes/pdf';
 import { initializeSocketEvents } from './websocket/events';
 
 // ============================================================================
@@ -191,6 +192,9 @@ app.use('/api/nurse/orders', orderRouter);
 
 // Nurse patient management routes
 app.use('/api/nurse/patients', patientRouter);
+
+// Nurse PDF export routes
+app.use('/api/nurse/pdf', pdfRouter);
 
 // ============================================================================
 // Error Handling
