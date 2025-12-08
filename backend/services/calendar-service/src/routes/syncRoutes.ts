@@ -6,6 +6,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { Repository } from 'typeorm';
+import jwt from 'jsonwebtoken';
 import { SyncController } from '../controllers/syncController';
 import { GoogleSyncService } from '../services/googleSyncService';
 import { CalendarIntegration } from '../entities/CalendarIntegration';
@@ -26,7 +27,8 @@ declare global {
 
 /**
  * Middleware to validate JWT token
- * Extracts user ID from JWT and attaches to req.user
+ * Extracts user ID and role from JWT and attaches to req.user
+ * Uses proper JWT signature verification for security
  */
 const jwtAuthMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   try {
@@ -39,22 +41,27 @@ const jwtAuthMiddleware = (req: Request, res: Response, next: NextFunction): voi
 
     const token = authHeader.substring(7); // Remove "Bearer " prefix
 
-    // In production, validate JWT token properly
-    // This is a simplified example - use jsonwebtoken library in production
     if (!token) {
       res.status(401).json({ error: 'Invalid token' });
       return;
     }
 
-    // Decode token and extract user ID
-    // In production: jwt.verify(token, process.env.JWT_SECRET)
+    // Use JWT secret from environment variable with fallback
+    const JWT_SECRET = process.env.JWT_SECRET || 'metapharm-calendar-secret';
+
     try {
-      // Simplified token parsing - in production use proper JWT verification
-      const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-      req.user = { id: decoded.sub || decoded.userId || decoded.id };
+      // Verify JWT signature and decode payload
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+
+      // Extract user ID and role from JWT claims
+      req.user = {
+        id: decoded.sub || decoded.userId || decoded.id || '',
+        role: decoded.role || decoded.userRole || 'PATIENT', // Extract role from JWT
+      };
+
       next();
-    } catch {
-      res.status(401).json({ error: 'Invalid token format' });
+    } catch (err) {
+      res.status(401).json({ error: 'Invalid or expired token' });
     }
   } catch (error) {
     res.status(500).json({ error: 'Authentication error' });

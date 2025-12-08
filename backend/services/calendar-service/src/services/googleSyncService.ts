@@ -6,6 +6,7 @@
 
 import axios, { AxiosInstance } from 'axios';
 import { Repository } from 'typeorm';
+import * as crypto from 'crypto';
 import { CalendarEvent, CalendarProvider, SyncStatus, EventType } from '../entities/CalendarEvent';
 import { CalendarIntegration, IntegrationStatus } from '../entities/CalendarIntegration';
 import {
@@ -23,6 +24,7 @@ export class GoogleSyncService {
   private googleApi: AxiosInstance;
   private readonly GOOGLE_CALENDAR_API_URL = 'https://www.googleapis.com/calendar/v3';
   private readonly GOOGLE_AUTH_URL = 'https://oauth2.googleapis.com';
+  private readonly STATE_SECRET = process.env.OAUTH_STATE_SECRET || 'metapharm-oauth-state-secret';
 
   constructor(
     private calendarEventRepository: Repository<CalendarEvent>,
@@ -42,13 +44,29 @@ export class GoogleSyncService {
   /**
    * Initiate OAuth2 authorization flow
    * Returns authorization URL for user to grant calendar access
+   * Uses HMAC signature to prevent state tampering
    */
   initiateOAuthFlow(request: OAuthAuthorizationRequest): string {
-    const state = Buffer.from(
+    // Generate cryptographically secure nonce
+    const nonce = crypto.randomBytes(16).toString('hex');
+
+    const statePayload = JSON.stringify({
+      userId: request.user_id,
+      timestamp: Date.now(),
+      nonce,
+    });
+
+    // Create HMAC signature for state integrity
+    const signature = crypto
+      .createHmac('sha256', this.STATE_SECRET)
+      .update(statePayload)
+      .digest('hex');
+
+    // Combine payload and signature
+    const signedState = Buffer.from(
       JSON.stringify({
-        userId: request.user_id,
-        timestamp: Date.now(),
-        nonce: Math.random().toString(36).substring(7),
+        payload: statePayload,
+        signature,
       })
     ).toString('base64');
 
@@ -60,7 +78,7 @@ export class GoogleSyncService {
         'https://www.googleapis.com/auth/calendar',
         'https://www.googleapis.com/auth/calendar.events',
       ].join(' '),
-      state,
+      state: signedState,
       access_type: 'offline',
       prompt: 'consent',
     });
@@ -71,6 +89,7 @@ export class GoogleSyncService {
   /**
    * Handle OAuth2 callback and exchange code for tokens
    * Creates calendar integration record with encrypted tokens
+   * Verifies HMAC signature to prevent state tampering
    */
   async handleOAuthCallback(
     request: OAuthCallbackRequest
@@ -81,9 +100,25 @@ export class GoogleSyncService {
         throw new Error('Invalid OAuth state parameter');
       }
 
-      const decodedState = JSON.parse(
+      const decoded = JSON.parse(
         Buffer.from(request.state, 'base64').toString('utf-8')
       );
+
+      if (!decoded.payload || !decoded.signature) {
+        throw new Error('Malformed state parameter');
+      }
+
+      // Verify HMAC signature
+      const expectedSignature = crypto
+        .createHmac('sha256', this.STATE_SECRET)
+        .update(decoded.payload)
+        .digest('hex');
+
+      if (decoded.signature !== expectedSignature) {
+        throw new Error('Invalid state signature - possible tampering detected');
+      }
+
+      const decodedState = JSON.parse(decoded.payload);
 
       // Exchange code for tokens
       const tokenResponse = await axios.post(`${this.GOOGLE_AUTH_URL}/token`, {
