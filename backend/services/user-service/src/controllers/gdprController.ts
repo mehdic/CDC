@@ -11,6 +11,14 @@
  */
 
 import { Request, Response } from 'express';
+import * as crypto from 'crypto';
+import {
+  createDeletionRequest,
+  getDeletionRequest,
+  confirmDeletionRequest,
+  cancelDeletionRequest,
+  executeDeletion,
+} from '../services/deletion.service';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -20,8 +28,6 @@ interface AuthenticatedRequest extends Request {
     roles?: string[];
   };
 }
-
-import * as crypto from 'crypto';
 
 // ============================================================================
 // Types and Interfaces
@@ -686,4 +692,253 @@ function convertToCSV(data: GDPRExportResponse): string {
   lines.push(`Teleconsultations,${data.data.teleconsultationData.length}`);
 
   return lines.join('\n');
+}
+
+// ============================================================================
+// Right to Be Forgotten - New Deletion Workflow with Cooling-off Period
+// ============================================================================
+
+/**
+ * POST /api/gdpr/deletion/request
+ * Request account deletion with 30-day cooling-off period
+ */
+export async function requestAccountDeletion(req: AuthenticatedRequest, res: Response): Promise<Response> {
+  try {
+    const { userId } = req.body;
+
+    // Validate required fields
+    if (!userId) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'userId is required',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // SECURITY: Authorization check - user can only request deletion of their own account
+    const authenticatedUserId = req.user?.userId;
+    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+
+    if (!isAdmin && authenticatedUserId !== userId) {
+      console.warn(
+        `⚠️ SECURITY: Unauthorized deletion attempt - User ${hashForLogging(authenticatedUserId || 'unknown')} tried to delete account of ${hashForLogging(userId)}`
+      );
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only request deletion of your own account',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Create deletion request with 30-day cooling-off period
+    const deletionRequest = createDeletionRequest(userId);
+
+    // Create audit log
+    createAuditLogEntry(userId, 'data_erasure', deletionRequest.requestId, 'success', req, {
+      action: 'deletion_requested',
+      scheduledFor: deletionRequest.scheduledFor,
+    });
+
+    return res.status(200).json({
+      message: 'Account deletion requested successfully',
+      requestId: deletionRequest.requestId,
+      scheduledFor: deletionRequest.scheduledFor.toISOString(),
+      status: deletionRequest.status,
+      coolingOffPeriodDays: 30,
+      confirmationUrl: `/api/gdpr/deletion/confirm/${deletionRequest.requestId}`,
+      cancellationUrl: `/api/gdpr/deletion/cancel/${deletionRequest.requestId}`,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error requesting account deletion:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to request account deletion',
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
+/**
+ * GET /api/gdpr/deletion/status/:requestId
+ * Check deletion request status
+ */
+export async function getDeletionStatus(req: AuthenticatedRequest, res: Response): Promise<Response> {
+  try {
+    const { requestId } = req.params;
+
+    const deletionRequest = getDeletionRequest(requestId);
+
+    if (!deletionRequest) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Deletion request ${requestId} not found`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // SECURITY: Authorization check - user can only view their own deletion status
+    const authenticatedUserId = req.user?.userId;
+    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+
+    if (!isAdmin && authenticatedUserId !== deletionRequest.patientId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only view status of your own deletion requests',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.status(200).json({
+      requestId: deletionRequest.requestId,
+      patientId: deletionRequest.patientId,
+      status: deletionRequest.status,
+      requestedAt: deletionRequest.requestedAt.toISOString(),
+      scheduledFor: deletionRequest.scheduledFor.toISOString(),
+      confirmedAt: deletionRequest.confirmedAt?.toISOString(),
+      completedAt: deletionRequest.completedAt?.toISOString(),
+      cancelledAt: deletionRequest.cancelledAt?.toISOString(),
+      deletionReport: deletionRequest.deletionReport,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error fetching deletion status:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch deletion status',
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
+/**
+ * POST /api/gdpr/deletion/confirm/:requestId
+ * Confirm deletion after cooling-off period and execute
+ */
+export async function confirmAccountDeletion(req: AuthenticatedRequest, res: Response): Promise<Response> {
+  try {
+    const { requestId } = req.params;
+
+    const deletionRequest = getDeletionRequest(requestId);
+
+    if (!deletionRequest) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Deletion request ${requestId} not found`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // SECURITY: Authorization check - user can only confirm their own deletion
+    const authenticatedUserId = req.user?.userId;
+    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+
+    if (!isAdmin && authenticatedUserId !== deletionRequest.patientId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only confirm your own deletion requests',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Confirm the request (checks cooling-off period)
+    try {
+      confirmDeletionRequest(requestId);
+    } catch (error: any) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Execute deletion
+    const completedRequest = await executeDeletion(requestId);
+
+    // Create audit log
+    createAuditLogEntry(deletionRequest.patientId, 'data_erasure', requestId, 'success', req, {
+      action: 'deletion_executed',
+      recordsDeleted: completedRequest.deletionReport?.recordsDeleted,
+      recordsAnonymized: completedRequest.deletionReport?.recordsAnonymized,
+    });
+
+    return res.status(200).json({
+      message: 'Account deletion completed successfully',
+      requestId: completedRequest.requestId,
+      status: completedRequest.status,
+      completedAt: completedRequest.completedAt?.toISOString(),
+      deletionReport: completedRequest.deletionReport,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error confirming account deletion:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to confirm account deletion',
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
+/**
+ * POST /api/gdpr/deletion/cancel/:requestId
+ * Cancel deletion request before execution
+ */
+export async function cancelAccountDeletion(req: AuthenticatedRequest, res: Response): Promise<Response> {
+  try {
+    const { requestId } = req.params;
+
+    const deletionRequest = getDeletionRequest(requestId);
+
+    if (!deletionRequest) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Deletion request ${requestId} not found`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // SECURITY: Authorization check - user can only cancel their own deletion
+    const authenticatedUserId = req.user?.userId;
+    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+
+    if (!isAdmin && authenticatedUserId !== deletionRequest.patientId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only cancel your own deletion requests',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Cancel the request
+    try {
+      const cancelledRequest = cancelDeletionRequest(requestId);
+
+      // Create audit log
+      createAuditLogEntry(deletionRequest.patientId, 'data_erasure', requestId, 'success', req, {
+        action: 'deletion_cancelled',
+      });
+
+      return res.status(200).json({
+        message: 'Account deletion cancelled successfully',
+        requestId: cancelledRequest.requestId,
+        status: cancelledRequest.status,
+        cancelledAt: cancelledRequest.cancelledAt?.toISOString(),
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  } catch (error) {
+    console.error('Error cancelling account deletion:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to cancel account deletion',
+      timestamp: new Date().toISOString(),
+    });
+  }
 }

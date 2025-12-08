@@ -24,6 +24,10 @@ import {
   requestDataErasure,
   getErasureStatus,
   getAuditTrail,
+  requestAccountDeletion,
+  getDeletionStatus,
+  confirmAccountDeletion,
+  cancelAccountDeletion,
 } from '../controllers/gdprController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -169,5 +173,98 @@ router.get('/erasure/:requestId', authenticateToken, getErasureStatus);
  * }
  */
 router.get('/audit/:userId', authenticateToken, getAuditTrail);
+
+// ============================================================================
+// Right to Be Forgotten - New Deletion Workflow (30-day cooling-off period)
+// ============================================================================
+
+/**
+ * POST /api/gdpr/deletion/request
+ * Request account deletion with 30-day cooling-off period
+ *
+ * SECURITY: Requires authentication + rate limiting
+ *
+ * Request Body:
+ * {
+ *   "userId": "string"
+ * }
+ *
+ * Response:
+ * {
+ *   "message": "Account deletion requested successfully",
+ *   "requestId": "deletion-1234567890-abcd1234",
+ *   "scheduledFor": "2026-01-07T12:00:00Z",
+ *   "status": "pending",
+ *   "coolingOffPeriodDays": 30,
+ *   "confirmationUrl": "/api/gdpr/deletion/confirm/:requestId",
+ *   "cancellationUrl": "/api/gdpr/deletion/cancel/:requestId",
+ *   "timestamp": "2025-12-08T12:00:00Z"
+ * }
+ */
+router.post('/deletion/request', authenticateToken, gdprExportLimiter, requestAccountDeletion);
+
+/**
+ * GET /api/gdpr/deletion/status/:requestId
+ * Check deletion request status
+ *
+ * SECURITY: Requires authentication
+ *
+ * Response:
+ * {
+ *   "requestId": "deletion-1234567890-abcd1234",
+ *   "patientId": "patient123",
+ *   "status": "pending" | "confirmed" | "processing" | "completed" | "cancelled",
+ *   "requestedAt": "2025-12-08T12:00:00Z",
+ *   "scheduledFor": "2026-01-07T12:00:00Z",
+ *   "confirmedAt": "2026-01-07T12:05:00Z" (optional),
+ *   "completedAt": "2026-01-07T12:10:00Z" (optional),
+ *   "cancelledAt": "2025-12-15T12:00:00Z" (optional),
+ *   "deletionReport": {...} (optional),
+ *   "timestamp": "2025-12-08T12:00:00Z"
+ * }
+ */
+router.get('/deletion/status/:requestId', authenticateToken, getDeletionStatus);
+
+/**
+ * POST /api/gdpr/deletion/confirm/:requestId
+ * Confirm deletion after cooling-off period and execute
+ *
+ * SECURITY: Requires authentication
+ * NOTE: Can only be executed after 30-day cooling-off period
+ *
+ * Response:
+ * {
+ *   "message": "Account deletion completed successfully",
+ *   "requestId": "deletion-1234567890-abcd1234",
+ *   "status": "completed",
+ *   "completedAt": "2026-01-07T12:10:00Z",
+ *   "deletionReport": {
+ *     "servicesProcessed": [...],
+ *     "recordsDeleted": 150,
+ *     "recordsAnonymized": 25,
+ *     "retainedCategories": ["prescriptions: 10-year retention", ...],
+ *     "completedAt": "2026-01-07T12:10:00Z"
+ *   },
+ *   "timestamp": "2026-01-07T12:10:00Z"
+ * }
+ */
+router.post('/deletion/confirm/:requestId', authenticateToken, confirmAccountDeletion);
+
+/**
+ * POST /api/gdpr/deletion/cancel/:requestId
+ * Cancel deletion request before execution
+ *
+ * SECURITY: Requires authentication
+ *
+ * Response:
+ * {
+ *   "message": "Account deletion cancelled successfully",
+ *   "requestId": "deletion-1234567890-abcd1234",
+ *   "status": "cancelled",
+ *   "cancelledAt": "2025-12-15T12:00:00Z",
+ *   "timestamp": "2025-12-15T12:00:00Z"
+ * }
+ */
+router.post('/deletion/cancel/:requestId', authenticateToken, cancelAccountDeletion);
 
 export default router;
