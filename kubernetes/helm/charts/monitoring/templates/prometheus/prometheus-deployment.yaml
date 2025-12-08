@@ -1,0 +1,120 @@
+{{- if .Values.prometheus.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: prometheus
+    component: monitoring
+    tier: infrastructure
+    {{- with .Values.namespace.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.prometheus.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: prometheus
+      component: monitoring
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        component: monitoring
+        tier: infrastructure
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+        checksum/config: {{ include (print $.Template.BasePath "/prometheus/prometheus-config.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        {{- toYaml .Values.prometheus.securityContext | nindent 8 }}
+
+      containers:
+      - name: prometheus
+        image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
+        imagePullPolicy: {{ .Values.prometheus.image.pullPolicy }}
+
+        args:
+          - '--config.file=/etc/prometheus/prometheus.yml'
+          - '--storage.tsdb.path=/prometheus'
+          - '--storage.tsdb.retention.time={{ .Values.prometheus.storage.retention }}'
+          - '--storage.tsdb.retention.size={{ .Values.prometheus.storage.retentionSize }}'
+          - '--web.enable-lifecycle'
+          - '--web.enable-admin-api'
+          - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+          - '--web.console.templates=/usr/share/prometheus/consoles'
+
+        ports:
+        - name: http
+          containerPort: 9090
+          protocol: TCP
+
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        resources:
+          {{- toYaml .Values.prometheus.resources | nindent 10 }}
+
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+          readOnly: true
+        - name: storage
+          mountPath: /prometheus
+        - name: rules
+          mountPath: /etc/prometheus/rules
+          readOnly: true
+
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+      - name: rules
+        configMap:
+          name: prometheus-rules
+      {{- if .Values.prometheus.storage.enabled }}
+      - name: storage
+        persistentVolumeClaim:
+          claimName: prometheus-storage
+      {{- else }}
+      - name: storage
+        emptyDir: {}
+      {{- end }}
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - prometheus
+              topologyKey: kubernetes.io/hostname
+{{- end }}

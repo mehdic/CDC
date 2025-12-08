@@ -1,0 +1,208 @@
+{{- if .Values.alertmanager.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: alertmanager
+    component: monitoring
+data:
+  alertmanager.yml: |
+    # AlertManager configuration for MetaPharm Connect
+    global:
+      # Global defaults
+      resolve_timeout: 5m
+      {{- if .Values.alertmanager.notifications.slack.enabled }}
+      slack_api_url: '{{ .Values.alertmanager.notifications.slack.webhookUrl }}'
+      {{- end }}
+
+    # Templates for notifications
+    templates:
+      - '/etc/alertmanager/templates/*.tmpl'
+
+    # Routing tree
+    route:
+      # Root route - group alerts
+      group_by: {{ toYaml .Values.alertmanager.grouping.groupBy | nindent 8 }}
+      group_wait: {{ .Values.alertmanager.grouping.groupWait }}
+      group_interval: {{ .Values.alertmanager.grouping.groupInterval }}
+      repeat_interval: {{ .Values.alertmanager.grouping.repeatInterval }}
+      receiver: 'default'
+
+      # Child routes for different severity levels
+      routes:
+        # Critical alerts - immediate notification
+        - match:
+            severity: critical
+          receiver: 'critical-alerts'
+          group_wait: 10s
+          group_interval: 1m
+          repeat_interval: 1h
+          continue: false
+
+        # Patient safety alerts - highest priority
+        - match:
+            compliance: patient-safety
+          receiver: 'patient-safety'
+          group_wait: 0s
+          group_interval: 30s
+          repeat_interval: 30m
+          continue: false
+
+        # HIPAA compliance alerts
+        - match:
+            compliance: hipaa
+          receiver: 'compliance-alerts'
+          group_wait: 10s
+          group_interval: 2m
+          repeat_interval: 2h
+
+        # Warning alerts - less urgent
+        - match:
+            severity: warning
+          receiver: 'warning-alerts'
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+
+        # Business metrics alerts
+        - match:
+            category: business
+          receiver: 'business-alerts'
+          group_wait: 1m
+          group_interval: 10m
+          repeat_interval: 12h
+
+    # Inhibition rules - suppress certain alerts when others are firing
+    inhibit_rules:
+      # Inhibit warning if critical is firing for same service
+      - source_match:
+          severity: 'critical'
+        target_match:
+          severity: 'warning'
+        equal: ['service', 'namespace']
+
+      # Inhibit individual service alerts if the entire cluster is down
+      - source_match:
+          alertname: 'KubernetesNodeDown'
+        target_match_re:
+          alertname: 'Service.*'
+        equal: ['node']
+
+    # Receivers - notification endpoints
+    receivers:
+      # Default receiver
+      - name: 'default'
+        {{- if .Values.alertmanager.notifications.slack.enabled }}
+        slack_configs:
+          - channel: '{{ .Values.alertmanager.notifications.slack.channel }}'
+            send_resolved: {{ .Values.alertmanager.notifications.slack.sendResolved }}
+            title: 'MetaPharm Alert'
+            text: |
+              {{ "{{" }} range .Alerts {{ "}}" }}
+              *Alert:* {{ "{{" }} .Labels.alertname {{ "}}" }}
+              *Severity:* {{ "{{" }} .Labels.severity {{ "}}" }}
+              *Service:* {{ "{{" }} .Labels.service {{ "}}" }}
+              *Description:* {{ "{{" }} .Annotations.description {{ "}}" }}
+              {{ "{{" }} end {{ "}}" }}
+        {{- end }}
+
+      # Critical alerts - multiple channels
+      - name: 'critical-alerts'
+        {{- if .Values.alertmanager.notifications.slack.enabled }}
+        slack_configs:
+          - channel: '{{ .Values.alertmanager.notifications.slack.channel }}'
+            send_resolved: true
+            title: '🚨 CRITICAL: MetaPharm Alert'
+            title_link: '{{ .Values.alertmanager.notifications.slack.titleLink }}'
+            color: 'danger'
+            text: |
+              {{ "{{" }} range .Alerts {{ "}}" }}
+              *Alert:* {{ "{{" }} .Labels.alertname {{ "}}" }}
+              *Severity:* {{ "{{" }} .Labels.severity {{ "}}" }}
+              *Service:* {{ "{{" }} .Labels.service {{ "}}" }}
+              *Namespace:* {{ "{{" }} .Labels.namespace {{ "}}" }}
+              *Description:* {{ "{{" }} .Annotations.description {{ "}}" }}
+              *Runbook:* {{ "{{" }} .Annotations.runbook_url {{ "}}" }}
+              {{ "{{" }} end {{ "}}" }}
+        {{- end }}
+        {{- if .Values.alertmanager.notifications.pagerduty.enabled }}
+        pagerduty_configs:
+          - service_key: '{{ .Values.alertmanager.notifications.pagerduty.serviceKey }}'
+            severity: '{{ .Values.alertmanager.notifications.pagerduty.severity }}'
+        {{- end }}
+
+      # Patient safety alerts - highest priority
+      - name: 'patient-safety'
+        {{- if .Values.alertmanager.notifications.slack.enabled }}
+        slack_configs:
+          - channel: '#patient-safety-alerts'
+            send_resolved: true
+            title: '🏥 PATIENT SAFETY ALERT'
+            title_link: '{{ .Values.alertmanager.notifications.slack.titleLink }}'
+            color: 'danger'
+            text: |
+              ⚠️ IMMEDIATE ACTION REQUIRED ⚠️
+              {{ "{{" }} range .Alerts {{ "}}" }}
+              *Alert:* {{ "{{" }} .Labels.alertname {{ "}}" }}
+              *Service:* {{ "{{" }} .Labels.service {{ "}}" }}
+              *Description:* {{ "{{" }} .Annotations.description {{ "}}" }}
+              *Runbook:* {{ "{{" }} .Annotations.runbook_url {{ "}}" }}
+              {{ "{{" }} end {{ "}}" }}
+        {{- end }}
+        {{- if .Values.alertmanager.notifications.pagerduty.enabled }}
+        pagerduty_configs:
+          - service_key: '{{ .Values.alertmanager.notifications.pagerduty.serviceKey }}'
+            severity: 'critical'
+        {{- end }}
+
+      # Compliance alerts (HIPAA, GDPR)
+      - name: 'compliance-alerts'
+        {{- if .Values.alertmanager.notifications.slack.enabled }}
+        slack_configs:
+          - channel: '#compliance-alerts'
+            send_resolved: true
+            title: '⚖️ Compliance Alert'
+            color: 'warning'
+            text: |
+              {{ "{{" }} range .Alerts {{ "}}" }}
+              *Alert:* {{ "{{" }} .Labels.alertname {{ "}}" }}
+              *Compliance:* {{ "{{" }} .Labels.compliance {{ "}}" }}
+              *Service:* {{ "{{" }} .Labels.service {{ "}}" }}
+              *Description:* {{ "{{" }} .Annotations.description {{ "}}" }}
+              {{ "{{" }} end {{ "}}" }}
+        {{- end }}
+
+      # Warning alerts
+      - name: 'warning-alerts'
+        {{- if .Values.alertmanager.notifications.slack.enabled }}
+        slack_configs:
+          - channel: '{{ .Values.alertmanager.notifications.slack.channel }}'
+            send_resolved: true
+            title: '⚠️ Warning: MetaPharm Alert'
+            color: 'warning'
+            text: |
+              {{ "{{" }} range .Alerts {{ "}}" }}
+              *Alert:* {{ "{{" }} .Labels.alertname {{ "}}" }}
+              *Service:* {{ "{{" }} .Labels.service {{ "}}" }}
+              *Description:* {{ "{{" }} .Annotations.description {{ "}}" }}
+              {{ "{{" }} end {{ "}}" }}
+        {{- end }}
+
+      # Business metrics alerts
+      - name: 'business-alerts'
+        {{- if .Values.alertmanager.notifications.slack.enabled }}
+        slack_configs:
+          - channel: '#business-metrics'
+            send_resolved: true
+            title: '📊 Business Metric Alert'
+            color: 'good'
+            text: |
+              {{ "{{" }} range .Alerts {{ "}}" }}
+              *Metric:* {{ "{{" }} .Labels.alertname {{ "}}" }}
+              *Service:* {{ "{{" }} .Labels.service {{ "}}" }}
+              *Description:* {{ "{{" }} .Annotations.description {{ "}}" }}
+              {{ "{{" }} end {{ "}}" }}
+        {{- end }}
+{{- end }}

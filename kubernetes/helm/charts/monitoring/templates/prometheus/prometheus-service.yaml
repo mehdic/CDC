@@ -1,0 +1,43 @@
+{{- if .Values.prometheus.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: prometheus
+    component: monitoring
+    tier: infrastructure
+  annotations:
+    {{- with .Values.prometheus.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .Values.prometheus.service.type }}
+  ports:
+  - name: http
+    port: {{ .Values.prometheus.service.port }}
+    targetPort: {{ .Values.prometheus.service.targetPort }}
+    protocol: TCP
+  selector:
+    app: prometheus
+    component: monitoring
+---
+{{- if .Values.prometheus.storage.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-storage
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: prometheus
+    component: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.prometheus.storage.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.prometheus.storage.size }}
+{{- end }}
+{{- end }}

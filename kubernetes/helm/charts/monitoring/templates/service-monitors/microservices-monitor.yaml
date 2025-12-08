@@ -1,0 +1,104 @@
+{{- if .Values.serviceMonitors.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: metapharm-microservices
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: prometheus
+    component: monitoring
+    prometheus: kube-prometheus
+spec:
+  # Select all MetaPharm microservices
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: metapharm
+      component: microservice
+  # Monitor services in the metapharm namespace
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.global.servicesNamespace }}
+  # Endpoint configuration
+  endpoints:
+    # High-tier services (more frequent scraping)
+    - port: http
+      path: /metrics
+      interval: {{ .Values.serviceMonitors.interval }}
+      scrapeTimeout: {{ .Values.serviceMonitors.scrapeTimeout }}
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_service_label_tier]
+          action: keep
+          regex: high
+        - sourceLabels: [__meta_kubernetes_service_name]
+          targetLabel: service
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - sourceLabels: [__meta_kubernetes_service_label_tier]
+          targetLabel: tier
+      metricRelabelings:
+        # Keep only relevant metrics
+        - sourceLabels: [__name__]
+          regex: 'http_request.*|prescription_.*|drug_interaction_.*|payment_.*|authentication_.*'
+          action: keep
+
+    # Medium-tier services
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: {{ .Values.serviceMonitors.scrapeTimeout }}
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_service_label_tier]
+          action: keep
+          regex: medium
+        - sourceLabels: [__meta_kubernetes_service_name]
+          targetLabel: service
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - sourceLabels: [__meta_kubernetes_service_label_tier]
+          targetLabel: tier
+
+    # Low-tier services (less frequent scraping)
+    - port: http
+      path: /metrics
+      interval: 60s
+      scrapeTimeout: {{ .Values.serviceMonitors.scrapeTimeout }}
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_service_label_tier]
+          action: keep
+          regex: low
+        - sourceLabels: [__meta_kubernetes_service_name]
+          targetLabel: service
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - sourceLabels: [__meta_kubernetes_service_label_tier]
+          targetLabel: tier
+---
+# Infrastructure services monitoring
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: metapharm-infrastructure
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: prometheus
+    component: monitoring
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: metapharm
+      component: infrastructure
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.global.servicesNamespace }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .Values.serviceMonitors.interval }}
+      scrapeTimeout: {{ .Values.serviceMonitors.scrapeTimeout }}
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_service_name]
+          targetLabel: service
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+{{- end }}

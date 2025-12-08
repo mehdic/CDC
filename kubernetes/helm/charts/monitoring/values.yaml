@@ -1,0 +1,569 @@
+# Default values for metapharm-monitoring
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  # Environment: development, staging, production
+  environment: development
+  # Namespace where monitoring stack will be deployed
+  namespace: metapharm-monitoring
+  # Namespace where MetaPharm services are deployed
+  servicesNamespace: metapharm
+
+# Namespace configuration
+namespace:
+  create: true
+  name: metapharm-monitoring
+  labels:
+    name: metapharm-monitoring
+    environment: development
+
+# Prometheus configuration
+prometheus:
+  enabled: true
+  # Prometheus server image
+  image:
+    repository: prom/prometheus
+    tag: v2.48.0
+    pullPolicy: IfNotPresent
+
+  # Prometheus server resources
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+  # Prometheus replicas for high availability
+  replicas: 2
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9090
+    targetPort: 9090
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9090"
+
+  # Persistent storage configuration
+  storage:
+    enabled: true
+    size: 50Gi
+    storageClass: standard
+    # Retention period: 15 days
+    retention: 15d
+    retentionSize: 45GB
+
+  # Scrape configuration
+  scrapeInterval: 15s
+  scrapeTimeout: 10s
+  evaluationInterval: 15s
+
+  # External labels for federated setup
+  externalLabels:
+    cluster: metapharm
+    environment: development
+    platform: healthcare
+
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    fsGroup: 65534
+    allowPrivilegeEscalation: false
+
+  # Service discovery for MetaPharm services
+  serviceDiscovery:
+    enabled: true
+    namespaces:
+      - metapharm
+      - metapharm-monitoring
+
+# AlertManager configuration
+alertmanager:
+  enabled: true
+  # AlertManager image
+  image:
+    repository: prom/alertmanager
+    tag: v0.26.0
+    pullPolicy: IfNotPresent
+
+  # AlertManager resources
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # AlertManager replicas for high availability
+  replicas: 2
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9093
+    targetPort: 9093
+
+  # Persistent storage
+  storage:
+    enabled: true
+    size: 2Gi
+    storageClass: standard
+
+  # Notification configuration
+  notifications:
+    # Slack integration
+    slack:
+      enabled: true
+      webhookUrl: "" # Set via secret
+      channel: "#metapharm-alerts"
+      sendResolved: true
+      title: "MetaPharm Alert"
+      titleLink: "https://prometheus.metapharm.local"
+
+    # Email integration
+    email:
+      enabled: false
+      from: "alerts@metapharm.ch"
+      to: "devops@metapharm.ch"
+      smarthost: "smtp.metapharm.ch:587"
+      requireTLS: true
+
+    # PagerDuty integration (for critical alerts)
+    pagerduty:
+      enabled: false
+      serviceKey: "" # Set via secret
+      severity: critical
+
+  # Alert grouping configuration
+  grouping:
+    groupBy:
+      - alertname
+      - cluster
+      - service
+    groupWait: 10s
+    groupInterval: 5m
+    repeatInterval: 4h
+
+# ServiceMonitor configuration for all MetaPharm services
+serviceMonitors:
+  enabled: true
+  # Scrape interval for all services
+  interval: 15s
+  scrapeTimeout: 10s
+
+  # All 31 MetaPharm microservices
+  services:
+    - name: api-gateway
+      namespace: metapharm
+      port: 3000
+      path: /metrics
+      tier: high
+    - name: auth-service
+      namespace: metapharm
+      port: 3001
+      path: /metrics
+      tier: high
+    - name: delivery-service
+      namespace: metapharm
+      port: 3002
+      path: /metrics
+      tier: medium
+    - name: inventory-service
+      namespace: metapharm
+      port: 3003
+      path: /metrics
+      tier: medium
+    - name: medical-records-service
+      namespace: metapharm
+      port: 3004
+      path: /metrics
+      tier: high
+    - name: messaging-service
+      namespace: metapharm
+      port: 3005
+      path: /metrics
+      tier: high
+    - name: notification-service
+      namespace: metapharm
+      port: 3006
+      path: /metrics
+      tier: medium
+    - name: order-service
+      namespace: metapharm
+      port: 3007
+      path: /metrics
+      tier: medium
+    - name: payment-service
+      namespace: metapharm
+      port: 3008
+      path: /metrics
+      tier: high
+    - name: prescription-service
+      namespace: metapharm
+      port: 3009
+      path: /metrics
+      tier: high
+    - name: teleconsultation-service
+      namespace: metapharm
+      port: 3010
+      path: /metrics
+      tier: high
+    - name: adherence-service
+      namespace: metapharm
+      port: 3011
+      path: /metrics
+      tier: medium
+    - name: analytics-service
+      namespace: metapharm
+      port: 3012
+      path: /metrics
+      tier: medium
+    - name: appointment-service
+      namespace: metapharm
+      port: 3013
+      path: /metrics
+      tier: medium
+    - name: calendar-service
+      namespace: metapharm
+      port: 3014
+      path: /metrics
+      tier: medium
+    - name: controlled-substance-service
+      namespace: metapharm
+      port: 3015
+      path: /metrics
+      tier: medium
+    - name: digital-twin-service
+      namespace: metapharm
+      port: 3016
+      path: /metrics
+      tier: high
+    - name: doctor-service
+      namespace: metapharm
+      port: 3017
+      path: /metrics
+      tier: medium
+    - name: drug-interaction-service
+      namespace: metapharm
+      port: 3018
+      path: /metrics
+      tier: high
+    - name: ecommerce-service
+      namespace: metapharm
+      port: 3019
+      path: /metrics
+      tier: medium
+    - name: esante-service
+      namespace: metapharm
+      port: 3020
+      path: /metrics
+      tier: medium
+    - name: insurance-service
+      namespace: metapharm
+      port: 3021
+      path: /metrics
+      tier: medium
+    - name: marketing-service
+      namespace: metapharm
+      port: 3022
+      path: /metrics
+      tier: low
+    - name: nurse-service
+      namespace: metapharm
+      port: 3023
+      path: /metrics
+      tier: medium
+    - name: pharmacy-service
+      namespace: metapharm
+      port: 3024
+      path: /metrics
+      tier: medium
+    - name: recycling-service
+      namespace: metapharm
+      port: 3025
+      path: /metrics
+      tier: low
+    - name: refill-service
+      namespace: metapharm
+      port: 3026
+      path: /metrics
+      tier: medium
+    - name: user-service
+      namespace: metapharm
+      port: 3027
+      path: /metrics
+      tier: medium
+    - name: vip-service
+      namespace: metapharm
+      port: 3028
+      path: /metrics
+      tier: medium
+    - name: voice-service
+      namespace: metapharm
+      port: 3029
+      path: /metrics
+      tier: medium
+    - name: patient-service
+      namespace: metapharm
+      port: 3030
+      path: /metrics
+      tier: medium
+
+  # Infrastructure services
+  infrastructure:
+    - name: postgres-primary
+      namespace: metapharm
+      port: 9187
+      path: /metrics
+      tier: high
+    - name: redis
+      namespace: metapharm
+      port: 9121
+      path: /metrics
+      tier: medium
+
+# PrometheusRules - Alert definitions
+prometheusRules:
+  enabled: true
+
+  # Critical alerts for healthcare platform
+  rules:
+    # Service availability alerts
+    - name: service-availability
+      interval: 30s
+      rules:
+        - alert: ServiceDown
+          expr: up{job=~"metapharm-.*"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            category: availability
+          annotations:
+            summary: "MetaPharm service is down"
+            description: "Service {{ $labels.job }} in namespace {{ $labels.namespace }} has been down for more than 1 minute."
+            runbook_url: "https://docs.metapharm.ch/runbooks/service-down"
+
+        - alert: HighServiceErrorRate
+          expr: rate(http_requests_total{status=~"5..", job=~"metapharm-.*"}[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            category: errors
+          annotations:
+            summary: "High error rate detected"
+            description: "Service {{ $labels.job }} has error rate of {{ $value }} (>10%) over the last 5 minutes."
+            runbook_url: "https://docs.metapharm.ch/runbooks/high-error-rate"
+
+    # Performance alerts
+    - name: performance
+      interval: 30s
+      rules:
+        - alert: HighLatency
+          expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=~"metapharm-.*"}[5m])) > 2
+          for: 5m
+          labels:
+            severity: warning
+            category: performance
+          annotations:
+            summary: "High latency detected"
+            description: "Service {{ $labels.job }} has 95th percentile latency of {{ $value }}s (>2s) over the last 5 minutes."
+            runbook_url: "https://docs.metapharm.ch/runbooks/high-latency"
+
+        - alert: CriticalLatency
+          expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=~"metapharm-.*"}[5m])) > 5
+          for: 2m
+          labels:
+            severity: critical
+            category: performance
+          annotations:
+            summary: "Critical latency detected"
+            description: "Service {{ $labels.job }} has 95th percentile latency of {{ $value }}s (>5s) over the last 2 minutes."
+            runbook_url: "https://docs.metapharm.ch/runbooks/critical-latency"
+
+    # Healthcare-specific alerts
+    - name: healthcare-critical
+      interval: 15s
+      rules:
+        - alert: PrescriptionProcessingFailure
+          expr: rate(prescription_processing_errors_total[5m]) > 0.05
+          for: 2m
+          labels:
+            severity: critical
+            category: healthcare
+            compliance: hipaa
+          annotations:
+            summary: "Prescription processing failures detected"
+            description: "Prescription service is experiencing {{ $value }} errors per second. This is a patient safety issue."
+            runbook_url: "https://docs.metapharm.ch/runbooks/prescription-errors"
+
+        - alert: DrugInteractionCheckFailure
+          expr: rate(drug_interaction_check_errors_total[5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+            category: healthcare
+            compliance: patient-safety
+          annotations:
+            summary: "Drug interaction check failures"
+            description: "Drug interaction service is failing. This is a critical patient safety issue."
+            runbook_url: "https://docs.metapharm.ch/runbooks/drug-interaction-failure"
+
+        - alert: MedicalRecordsUnavailable
+          expr: up{job="metapharm-medical-records-service"} == 0
+          for: 30s
+          labels:
+            severity: critical
+            category: healthcare
+            compliance: hipaa
+          annotations:
+            summary: "Medical records service unavailable"
+            description: "Medical records service is down. This impacts patient care."
+            runbook_url: "https://docs.metapharm.ch/runbooks/medical-records-down"
+
+    # Authentication and security alerts
+    - name: security
+      interval: 30s
+      rules:
+        - alert: HighAuthenticationFailureRate
+          expr: rate(authentication_failures_total[5m]) > 10
+          for: 2m
+          labels:
+            severity: warning
+            category: security
+          annotations:
+            summary: "High authentication failure rate"
+            description: "Authentication service is experiencing {{ $value }} failed attempts per second. Possible brute force attack."
+            runbook_url: "https://docs.metapharm.ch/runbooks/auth-failures"
+
+        - alert: UnauthorizedAccessAttempts
+          expr: rate(http_requests_total{status="403", job=~"metapharm-.*"}[5m]) > 5
+          for: 5m
+          labels:
+            severity: warning
+            category: security
+          annotations:
+            summary: "High rate of unauthorized access attempts"
+            description: "Service {{ $labels.job }} is receiving {{ $value }} unauthorized requests per second."
+            runbook_url: "https://docs.metapharm.ch/runbooks/unauthorized-access"
+
+    # Database alerts
+    - name: database
+      interval: 30s
+      rules:
+        - alert: DatabaseConnectionPoolExhausted
+          expr: database_connections_active / database_connections_max > 0.9
+          for: 2m
+          labels:
+            severity: critical
+            category: database
+          annotations:
+            summary: "Database connection pool nearly exhausted"
+            description: "Database connection pool is at {{ $value | humanizePercentage }} capacity."
+            runbook_url: "https://docs.metapharm.ch/runbooks/db-connections"
+
+        - alert: SlowDatabaseQueries
+          expr: histogram_quantile(0.95, rate(database_query_duration_seconds_bucket[5m])) > 1
+          for: 5m
+          labels:
+            severity: warning
+            category: database
+          annotations:
+            summary: "Slow database queries detected"
+            description: "95th percentile database query time is {{ $value }}s (>1s)."
+            runbook_url: "https://docs.metapharm.ch/runbooks/slow-queries"
+
+    # Infrastructure alerts
+    - name: infrastructure
+      interval: 30s
+      rules:
+        - alert: HighMemoryUsage
+          expr: container_memory_usage_bytes{job=~"metapharm-.*"} / container_spec_memory_limit_bytes > 0.9
+          for: 5m
+          labels:
+            severity: warning
+            category: infrastructure
+          annotations:
+            summary: "High memory usage"
+            description: "Container {{ $labels.container }} is using {{ $value | humanizePercentage }} of its memory limit."
+            runbook_url: "https://docs.metapharm.ch/runbooks/high-memory"
+
+        - alert: HighCPUUsage
+          expr: rate(container_cpu_usage_seconds_total{job=~"metapharm-.*"}[5m]) > 0.9
+          for: 10m
+          labels:
+            severity: warning
+            category: infrastructure
+          annotations:
+            summary: "High CPU usage"
+            description: "Container {{ $labels.container }} is using {{ $value | humanizePercentage }} CPU."
+            runbook_url: "https://docs.metapharm.ch/runbooks/high-cpu"
+
+        - alert: PodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total{namespace="metapharm"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+            category: infrastructure
+          annotations:
+            summary: "Pod is crash looping"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is crash looping."
+            runbook_url: "https://docs.metapharm.ch/runbooks/crash-loop"
+
+    # Business metrics alerts
+    - name: business-metrics
+      interval: 60s
+      rules:
+        - alert: LowPrescriptionProcessingRate
+          expr: rate(prescription_processing_success_total[10m]) < 0.5
+          for: 10m
+          labels:
+            severity: warning
+            category: business
+          annotations:
+            summary: "Low prescription processing rate"
+            description: "Prescription processing rate has dropped to {{ $value }} per second."
+            runbook_url: "https://docs.metapharm.ch/runbooks/low-prescription-rate"
+
+        - alert: PaymentServiceDegraded
+          expr: rate(payment_transactions_failed_total[5m]) / rate(payment_transactions_total[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+            category: business
+          annotations:
+            summary: "Payment service degraded"
+            description: "Payment failure rate is {{ $value | humanizePercentage }}."
+            runbook_url: "https://docs.metapharm.ch/runbooks/payment-failures"
+
+# Prometheus Operator configuration
+prometheusOperator:
+  enabled: true
+  createCustomResource: true
+
+# RBAC configuration
+rbac:
+  create: true
+
+# Service account
+serviceAccount:
+  create: true
+  name: prometheus
+
+# Network policies
+networkPolicy:
+  enabled: true
+  # Allow Prometheus to scrape all services in metapharm namespace
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: metapharm
+        - namespaceSelector:
+            matchLabels:
+              name: metapharm-monitoring

@@ -1,0 +1,65 @@
+{{- if .Values.rbac.create }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: prometheus
+    component: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+    component: monitoring
+rules:
+  # Prometheus needs to read pods, services, and endpoints
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/metrics
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list", "watch"]
+
+  # Access to configmaps for configuration
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs: ["get"]
+
+  # Access to ingresses for monitoring
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+
+  # Access to ServiceMonitors and PrometheusRules (Prometheus Operator CRDs)
+  - apiGroups: ["monitoring.coreos.com"]
+    resources:
+      - servicemonitors
+      - podmonitors
+      - prometheusrules
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+    component: monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccount.name }}
+    namespace: {{ .Values.global.namespace }}
+{{- end }}

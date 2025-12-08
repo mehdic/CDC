@@ -1,0 +1,57 @@
+apiVersion: v2
+name: metapharm-monitoring
+description: Prometheus and AlertManager monitoring stack for MetaPharm Connect
+type: application
+
+# Chart version - increment on changes to the chart
+version: 1.0.0
+
+# Application version - Prometheus version
+appVersion: "v2.48.0"
+
+keywords:
+  - monitoring
+  - prometheus
+  - alertmanager
+  - metrics
+  - metapharm
+  - healthcare
+
+maintainers:
+  - name: MetaPharm Connect DevOps Team
+    email: devops@metapharm.ch
+
+home: https://metapharm.ch
+sources:
+  - https://github.com/metapharm/connect
+  - https://github.com/prometheus/prometheus
+  - https://github.com/prometheus/alertmanager
+
+# Minimum Kubernetes version required
+kubeVersion: ">=1.24.0"
+
+dependencies:
+  # Prometheus Operator CRDs required for ServiceMonitor and PrometheusRule
+  - name: prometheus-operator-crds
+    version: ">=4.0.0"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    condition: prometheusOperator.enabled
+
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Prometheus monitoring setup for MetaPharm Connect
+    - kind: added
+      description: ServiceMonitors for all 31 microservices
+    - kind: added
+      description: AlertManager integration with Slack notifications
+    - kind: added
+      description: Critical alert rules for healthcare platform
+
+  artifacthub.io/license: Proprietary
+
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://docs.metapharm.ch/monitoring
+    - name: Support
+      url: https://support.metapharm.ch
