@@ -1,0 +1,21 @@
+{{- if .Values.postgresql.enabled -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "metapharm-connect.fullname" . }}-test-database"
+  labels:
+    {{- include "metapharm-connect.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  containers:
+    - name: postgres-test
+      image: {{ .Values.postgresql.image.registry }}/{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}
+      command:
+        - sh
+        - -c
+        - |
+          pg_isready -h {{ include "metapharm-connect.fullname" . }}-postgresql -U {{ .Values.postgresql.auth.username }}
+  restartPolicy: Never
+{{- end }}

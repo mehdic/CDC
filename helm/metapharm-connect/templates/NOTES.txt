@@ -1,0 +1,182 @@
+████████████████████████████████████████████████████████████████████████
+   ___  ___     _        ___  _
+  |  \/  |    | |      / _ \| |
+  | .  . | ___| |_ __ / /_\ \ |__   __ _ _ __ _ __ ___
+  | |\/| |/ _ \ __/ _` |  _  | '_ \ / _` | '__| '_ ` _ \
+  | |  | |  __/ || (_| | | | | |_) | (_| | |  | | | | | |
+  \_|  |_/\___|\__\__,_\_| |_/_.__/ \__,_|_|  |_| |_| |_|
+
+  MetaPharm Connect - Healthcare Platform
+████████████████████████████████████████████████████████████████████████
+
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named: {{ .Release.Name }}
+Deployed in namespace: {{ .Release.Namespace }}
+
+Chart version: {{ .Chart.Version }}
+App version: {{ .Chart.AppVersion }}
+
+═══════════════════════════════════════════════════════════════════════
+📦 DEPLOYMENT SUMMARY
+═══════════════════════════════════════════════════════════════════════
+
+✅ Infrastructure Services:
+{{- if .Values.postgresql.enabled }}
+   • PostgreSQL Database (port 5432)
+{{- end }}
+{{- if .Values.redis.enabled }}
+   • Redis Cache (port 6379)
+{{- end }}
+{{- if .Values.jaeger.enabled }}
+   • Jaeger Tracing (port 16686)
+{{- end }}
+
+✅ Backend Services ({{ len .Values.services }} microservices):
+   • API Gateway ({{ .Values.services.apiGateway.port }})
+   • User Service ({{ .Values.services.userService.port }})
+   • Auth Service ({{ .Values.services.authService.port }})
+   • Pharmacy Service ({{ .Values.services.pharmacyService.port }})
+   • And 27 more services...
+
+✅ Frontend Services:
+{{- if .Values.frontend.web.enabled }}
+   • Web Application ({{ .Values.frontend.web.port }})
+{{- end }}
+{{- if .Values.frontend.mobile.enabled }}
+   • Mobile Backend ({{ .Values.frontend.mobile.port }})
+{{- end }}
+{{- if .Values.frontend.dashboard.enabled }}
+   • Dashboard ({{ .Values.frontend.dashboard.port }})
+{{- end }}
+
+═══════════════════════════════════════════════════════════════════════
+🌐 ACCESSING YOUR APPLICATION
+═══════════════════════════════════════════════════════════════════════
+
+{{- if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+
+The application is available at:
+
+  🔗 https://{{ .host }}
+
+{{- end }}
+
+To access via kubectl port-forward:
+
+{{- else }}
+
+1. Get the API Gateway URL:
+
+{{- if contains "NodePort" .Values.services.apiGateway.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "metapharm-connect.fullname" . }}-api-gateway)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+{{- else if contains "LoadBalancer" .Values.services.apiGateway.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "metapharm-connect.fullname" . }}-api-gateway --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.services.apiGateway.port }}
+
+{{- else if contains "ClusterIP" .Values.services.apiGateway.type }}
+{{- end }}
+{{- end }}
+
+  kubectl port-forward --namespace {{ .Release.Namespace }} \
+    svc/{{ include "metapharm-connect.fullname" . }}-api-gateway \
+    {{ .Values.services.apiGateway.port }}:{{ .Values.services.apiGateway.port }}
+
+  Then access: http://localhost:{{ .Values.services.apiGateway.port }}
+
+═══════════════════════════════════════════════════════════════════════
+🔍 MONITORING & OBSERVABILITY
+═══════════════════════════════════════════════════════════════════════
+
+{{- if .Values.jaeger.enabled }}
+
+📊 Jaeger UI (Distributed Tracing):
+
+  kubectl port-forward --namespace {{ .Release.Namespace }} \
+    svc/{{ include "metapharm-connect.fullname" . }}-jaeger 16686:16686
+
+  Then access: http://localhost:16686
+
+{{- end }}
+
+📋 Check all pods status:
+
+  kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/instance={{ .Release.Name }}"
+
+📊 View logs from API Gateway:
+
+  kubectl logs --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/component=api-gateway" -f
+
+═══════════════════════════════════════════════════════════════════════
+🧪 RUNNING TESTS
+═══════════════════════════════════════════════════════════════════════
+
+To verify the installation, run the Helm tests:
+
+  helm test {{ .Release.Name }} --namespace {{ .Release.Namespace }}
+
+This will verify:
+  ✓ API Gateway connectivity
+  ✓ PostgreSQL database availability
+  ✓ Redis cache connectivity
+
+═══════════════════════════════════════════════════════════════════════
+🔐 SECURITY NOTES
+═══════════════════════════════════════════════════════════════════════
+
+⚠️  IMPORTANT: Default credentials are used for development!
+
+For PRODUCTION deployments:
+
+1. Update secrets in values.yaml or use Kubernetes secrets:
+   - PostgreSQL password
+   - Redis password
+   - JWT secret
+   - External API keys (Stripe, SendGrid, Twilio)
+
+2. Enable TLS/SSL with proper certificates
+
+3. Review and adjust resource limits
+
+4. Configure backup strategies for databases
+
+5. Set up monitoring and alerting
+
+═══════════════════════════════════════════════════════════════════════
+📚 USEFUL COMMANDS
+═══════════════════════════════════════════════════════════════════════
+
+Upgrade the release:
+  helm upgrade {{ .Release.Name }} metapharm-connect/metapharm-connect \
+    --namespace {{ .Release.Namespace }} \
+    -f values-{{ .Values.environment | default "prod" }}.yaml
+
+Rollback to previous version:
+  helm rollback {{ .Release.Name }} --namespace {{ .Release.Namespace }}
+
+Uninstall the release:
+  helm uninstall {{ .Release.Name }} --namespace {{ .Release.Namespace }}
+
+View release history:
+  helm history {{ .Release.Name }} --namespace {{ .Release.Namespace }}
+
+═══════════════════════════════════════════════════════════════════════
+📖 DOCUMENTATION
+═══════════════════════════════════════════════════════════════════════
+
+For detailed documentation, see:
+  • README: helm/README.md
+  • Values: helm/metapharm-connect/values.yaml
+  • GitHub: https://github.com/mehdic/CDC
+
+═══════════════════════════════════════════════════════════════════════
+
+Happy healthcare platform deployment! 🏥💊🩺
+
+For support: support@metapharm.com

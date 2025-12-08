@@ -1,0 +1,148 @@
+# Development environment overrides
+# Usage: helm install metapharm-connect ./helm/metapharm-connect -f values-dev.yaml
+
+image:
+  tag: "dev"
+  pullPolicy: Always
+
+# Ingress for development
+ingress:
+  enabled: true
+  hosts:
+    - host: dev-api.metapharm.local
+      paths:
+        - path: /
+          pathType: Prefix
+          backend: api-gateway
+  tls:
+    - secretName: metapharm-dev-tls
+      hosts:
+        - dev-api.metapharm.local
+
+# Resource limits - Lower for dev environment
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Autoscaling disabled in dev
+autoscaling:
+  enabled: false
+
+# PostgreSQL for dev
+postgresql:
+  auth:
+    password: "dev_password"
+  primary:
+    persistence:
+      size: 5Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+
+# Redis for dev
+redis:
+  auth:
+    password: "dev_password"
+  master:
+    persistence:
+      size: 2Gi
+    resources:
+      limits:
+        cpu: 250m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+# Reduce replica counts for dev
+services:
+  apiGateway:
+    replicaCount: 1
+    autoscaling:
+      enabled: false
+  userService:
+    replicaCount: 1
+  authService:
+    replicaCount: 1
+  pharmacyService:
+    replicaCount: 1
+  prescriptionService:
+    replicaCount: 1
+  teleconsultationService:
+    replicaCount: 1
+  inventoryService:
+    replicaCount: 1
+  analyticsService:
+    replicaCount: 1
+  deliveryService:
+    replicaCount: 1
+  ecommerceService:
+    replicaCount: 1
+  paymentService:
+    replicaCount: 1
+  messagingService:
+    replicaCount: 1
+  notificationService:
+    replicaCount: 1
+  doctorService:
+    replicaCount: 1
+  nurseService:
+    replicaCount: 1
+  patientService:
+    replicaCount: 1
+  appointmentService:
+    replicaCount: 1
+  medicalRecordsService:
+    replicaCount: 1
+  insuranceService:
+    replicaCount: 1
+  esanteService:
+    replicaCount: 1
+  vipService:
+    replicaCount: 1
+  marketingService:
+    replicaCount: 1
+  refillService:
+    replicaCount: 1
+  voiceService:
+    replicaCount: 1
+  controlledSubstanceService:
+    replicaCount: 1
+  orderService:
+    replicaCount: 1
+  recyclingService:
+    replicaCount: 1
+  calendarService:
+    replicaCount: 1
+  adherenceService:
+    replicaCount: 1
+  digitalTwinService:
+    replicaCount: 1
+  subscriptionService:
+    replicaCount: 1
+
+# Frontend services - Single replica for dev
+frontend:
+  web:
+    replicaCount: 1
+  mobile:
+    replicaCount: 1
+  dashboard:
+    replicaCount: 1
+
+# Configuration for dev
+config:
+  database:
+    url: "postgresql://metapharm:dev_password@postgresql:5432/metapharm_db"
+  redis:
+    url: "redis://:dev_password@redis:6379"
+  logging:
+    level: "debug"
