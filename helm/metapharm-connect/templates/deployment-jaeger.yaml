@@ -1,0 +1,69 @@
+{{- if .Values.jaeger.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "metapharm-connect.fullname" . }}-jaeger
+  labels:
+    {{- include "metapharm-connect.serviceLabels" (dict "root" . "serviceName" "jaeger") | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "metapharm-connect.serviceSelectorLabels" (dict "root" . "serviceName" "jaeger") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "metapharm-connect.serviceSelectorLabels" (dict "root" . "serviceName" "jaeger") | nindent 8 }}
+    spec:
+      containers:
+      - name: jaeger
+        image: {{ .Values.jaeger.image.registry }}/{{ .Values.jaeger.image.repository }}:{{ .Values.jaeger.image.tag }}
+        ports:
+        - name: jaeger-ui
+          containerPort: 16686
+          protocol: TCP
+        - name: otlp-grpc
+          containerPort: 4317
+          protocol: TCP
+        - name: otlp-http
+          containerPort: 4318
+          protocol: TCP
+        - name: jaeger-udp
+          containerPort: 6831
+          protocol: UDP
+        env:
+        - name: COLLECTOR_OTLP_ENABLED
+          value: "true"
+        {{- if .Values.jaeger.resources }}
+        resources:
+          {{- toYaml .Values.jaeger.resources | nindent 10 }}
+        {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "metapharm-connect.fullname" . }}-jaeger
+  labels:
+    {{- include "metapharm-connect.serviceLabels" (dict "root" . "serviceName" "jaeger") | nindent 4 }}
+spec:
+  type: {{ .Values.jaeger.query.service.type | default "ClusterIP" }}
+  ports:
+    - name: jaeger-ui
+      port: {{ .Values.jaeger.query.service.port | default 16686 }}
+      targetPort: jaeger-ui
+      protocol: TCP
+    - name: otlp-grpc
+      port: 4317
+      targetPort: otlp-grpc
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: otlp-http
+      protocol: TCP
+    - name: jaeger-udp
+      port: 6831
+      targetPort: jaeger-udp
+      protocol: UDP
+  selector:
+    {{- include "metapharm-connect.serviceSelectorLabels" (dict "root" . "serviceName" "jaeger") | nindent 4 }}
+{{- end }}

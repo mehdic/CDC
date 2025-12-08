@@ -1,0 +1,23 @@
+apiVersion: v2
+name: metapharm-connect
+description: A comprehensive healthcare platform connecting pharmacists, doctors, nurses, delivery personnel, and patients
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - healthcare
+  - pharmacy
+  - telemedicine
+  - microservices
+home: https://github.com/mehdic/CDC
+sources:
+  - https://github.com/mehdic/CDC
+maintainers:
+  - name: MetaPharm Team
+    email: support@metapharm.com
+icon: https://metapharm.com/icon.png
+annotations:
+  # Recommended best practices annotations
+  "helm.sh/chart-type": "application"
+  "helm.sh/release-policy": "keep-history"
+dependencies: []

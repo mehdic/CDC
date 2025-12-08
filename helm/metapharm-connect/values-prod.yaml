@@ -1,0 +1,303 @@
+# Production environment overrides
+# Usage: helm install metapharm-connect ./helm/metapharm-connect -f values-prod.yaml
+
+image:
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+# Ingress for production
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+  hosts:
+    - host: api.metapharm.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend: api-gateway
+  tls:
+    - secretName: metapharm-prod-tls
+      hosts:
+        - api.metapharm.com
+
+# Resource limits - Production
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Autoscaling enabled for production
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+
+# PostgreSQL for production - High availability
+postgresql:
+  auth:
+    existingSecret: "metapharm-postgresql-secret"
+    secretKeys:
+      adminPasswordKey: "postgres-password"
+      userPasswordKey: "password"
+  primary:
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: "fast-ssd"
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+    initdb:
+      args: "-c max_connections=500 -c shared_buffers=256MB -c effective_cache_size=1GB"
+  readReplicas:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: "fast-ssd"
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+
+# Redis for production - High availability
+redis:
+  auth:
+    existingSecret: "metapharm-redis-secret"
+    existingSecretPasswordKey: "redis-password"
+  master:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "fast-ssd"
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+  replica:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "fast-ssd"
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+# Jaeger for production
+jaeger:
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+
+# Service replicas for production - High availability
+services:
+  apiGateway:
+    replicaCount: 3
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 20
+  userService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  authService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  pharmacyService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  prescriptionService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  teleconsultationService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  inventoryService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  analyticsService:
+    replicaCount: 2
+  deliveryService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  ecommerceService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  paymentService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  messagingService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  notificationService:
+    replicaCount: 3
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+  doctorService:
+    replicaCount: 3
+  nurseService:
+    replicaCount: 3
+  patientService:
+    replicaCount: 3
+  appointmentService:
+    replicaCount: 3
+  medicalRecordsService:
+    replicaCount: 3
+  insuranceService:
+    replicaCount: 3
+  esanteService:
+    replicaCount: 3
+  vipService:
+    replicaCount: 2
+  marketingService:
+    replicaCount: 2
+  refillService:
+    replicaCount: 3
+  voiceService:
+    replicaCount: 3
+  controlledSubstanceService:
+    replicaCount: 3
+  orderService:
+    replicaCount: 3
+  recyclingService:
+    replicaCount: 2
+  calendarService:
+    replicaCount: 3
+  adherenceService:
+    replicaCount: 2
+  digitalTwinService:
+    replicaCount: 2
+  subscriptionService:
+    replicaCount: 2
+
+# Frontend services for production
+frontend:
+  web:
+    replicaCount: 3
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+  mobile:
+    replicaCount: 3
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+  dashboard:
+    replicaCount: 2
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Configuration for production
+config:
+  database:
+    url: "postgresql://metapharm:password_from_secret@postgresql:5432/metapharm_db"
+    maxConnections: 500
+  redis:
+    url: "redis://:password_from_secret@redis:6379"
+  logging:
+    level: "info"
+    format: "json"
+
+# Pod disruption budgets for production
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Network policies for production
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+
+# Security settings for production
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
