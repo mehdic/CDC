@@ -17,11 +17,10 @@ import * as crypto from 'crypto';
 // Helper to check if user has admin role
 function isAdminUser(user: AuthenticatedRequest['user']): boolean {
   if (!user) return false;
-  // Check role directly
-  if (user.role === 'ADMIN' || user.role === 'admin') return true;
-  // Check tokenPayload for additional roles
+  // Check tokenPayload for additional roles (admin is not a UserRole enum value)
   const payload = user.tokenPayload as any;
   if (payload?.roles?.includes('admin')) return true;
+  if (payload?.isAdmin === true) return true;
   return false;
 }
 
@@ -114,7 +113,7 @@ function createAuditLogEntry(
   action: AuditLogEntry['action'],
   requestId: string,
   status: AuditLogEntry['status'],
-  req: Request,
+  req: AuthenticatedRequest,
   details?: any
 ): AuditLogEntry {
   const id = `audit-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
@@ -125,7 +124,7 @@ function createAuditLogEntry(
     action,
     requestId,
     timestamp: new Date().toISOString(),
-    ipAddress: req.ip || req.socket.remoteAddress,
+    ipAddress: req.ip || (req.socket ? req.socket.remoteAddress : undefined),
     userAgent: req.get('user-agent'),
     status,
     details,

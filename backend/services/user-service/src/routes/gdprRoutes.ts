@@ -25,7 +25,7 @@ import {
   getErasureStatus,
   getAuditTrail,
 } from '../controllers/gdprController';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateJWT } from '../middleware/auth';
 
 const router = Router();
 
@@ -75,7 +75,7 @@ const gdprExportLimiter = rateLimit({
  *   "timestamp": "2025-12-03T12:00:00Z"
  * }
  */
-router.post('/export', authenticateToken, gdprExportLimiter, requestDataExport);
+router.post('/export', authenticateJWT, gdprExportLimiter, requestDataExport);
 
 /**
  * GET /api/gdpr/export/:requestId/download
@@ -87,7 +87,7 @@ router.post('/export', authenticateToken, gdprExportLimiter, requestDataExport);
  * - JSON file (Content-Type: application/json) or
  * - CSV file (Content-Type: text/csv)
  */
-router.get('/export/:requestId/download', authenticateToken, downloadDataExport);
+router.get('/export/:requestId/download', authenticateJWT, downloadDataExport);
 
 // ============================================================================
 // GDPR Data Erasure Routes (Article 17 - Right to Erasure)
@@ -117,7 +117,7 @@ router.get('/export/:requestId/download', authenticateToken, downloadDataExport)
  *   "timestamp": "2025-12-03T12:00:00Z"
  * }
  */
-router.post('/erasure', authenticateToken, gdprExportLimiter, requestDataErasure);
+router.post('/erasure', authenticateJWT, gdprExportLimiter, requestDataErasure);
 
 /**
  * GET /api/gdpr/erasure/:requestId
@@ -136,7 +136,7 @@ router.post('/erasure', authenticateToken, gdprExportLimiter, requestDataErasure
  *   "verificationHash": "sha256-hash"
  * }
  */
-router.get('/erasure/:requestId', authenticateToken, getErasureStatus);
+router.get('/erasure/:requestId', authenticateJWT, getErasureStatus);
 
 // ============================================================================
 // GDPR Audit Routes
@@ -168,6 +168,6 @@ router.get('/erasure/:requestId', authenticateToken, getErasureStatus);
  *   "timestamp": "2025-12-03T12:00:00Z"
  * }
  */
-router.get('/audit/:userId', authenticateToken, getAuditTrail);
+router.get('/audit/:userId', authenticateJWT, getAuditTrail);
 
 export default router;

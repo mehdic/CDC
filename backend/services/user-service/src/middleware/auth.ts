@@ -91,3 +91,6 @@ export function requireRole(roles: string | string[]) {
     next();
   };
 }
+
+// Export authenticateJWT as an alias for compatibility with shared auth middleware
+export const authenticateJWT = authenticateToken;

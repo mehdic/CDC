@@ -3,7 +3,7 @@
  * Tests for GDPR Article 15 (Right to Access) and Article 17 (Right to Erasure)
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import {
   requestDataExport,
   downloadDataExport,
@@ -11,31 +11,34 @@ import {
   getErasureStatus,
   getAuditTrail,
 } from '../controllers/gdprController';
+import { AuthenticatedRequest, AuthenticatedUser } from '../../../../shared/middleware/auth';
+import { UserRole } from '../../../../shared/models/User';
+import { TokenType } from '../../../../shared/utils/jwt';
 
 // ============================================================================
 // Mock Request and Response
 // ============================================================================
 
-interface MockUser {
-  userId: string;
-  email: string;
-  role: string;
-  pharmacyId: string | null;
-  tokenPayload: any;
-}
-
-function mockRequest(body: any = {}, params: any = {}, query: any = {}, user?: MockUser | string): Partial<Request> {
+function mockRequest(body: any = {}, params: any = {}, query: any = {}, user?: AuthenticatedUser | string): Partial<AuthenticatedRequest> {
   // If user is a string (userId), create a default user object
   // If user is undefined and body.userId exists, auto-create user from body.userId
-  let userObj: MockUser | undefined;
+  let userObj: AuthenticatedUser | undefined;
 
   if (typeof user === 'string') {
     userObj = {
       userId: user,
       email: `${user}@test.com`,
-      role: 'patient',
+      role: UserRole.PATIENT,
       pharmacyId: null,
-      tokenPayload: { userId: user, role: 'patient' },
+      tokenPayload: {
+        userId: user,
+        email: `${user}@test.com`,
+        role: UserRole.PATIENT,
+        pharmacyId: null,
+        type: TokenType.ACCESS,
+        iat: Date.now(),
+        exp: Date.now() + 3600
+      },
     };
   } else if (user) {
     userObj = user;
@@ -44,18 +47,34 @@ function mockRequest(body: any = {}, params: any = {}, query: any = {}, user?: M
     userObj = {
       userId: body.userId,
       email: `${body.userId}@test.com`,
-      role: 'patient',
+      role: UserRole.PATIENT,
       pharmacyId: null,
-      tokenPayload: { userId: body.userId, role: 'patient' },
+      tokenPayload: {
+        userId: body.userId,
+        email: `${body.userId}@test.com`,
+        role: UserRole.PATIENT,
+        pharmacyId: null,
+        type: TokenType.ACCESS,
+        iat: Date.now(),
+        exp: Date.now() + 3600
+      },
     };
   } else if (params.userId) {
     // Auto-create user from params.userId for convenience
     userObj = {
       userId: params.userId,
       email: `${params.userId}@test.com`,
-      role: 'patient',
+      role: UserRole.PATIENT,
       pharmacyId: null,
-      tokenPayload: { userId: params.userId, role: 'patient' },
+      tokenPayload: {
+        userId: params.userId,
+        email: `${params.userId}@test.com`,
+        role: UserRole.PATIENT,
+        pharmacyId: null,
+        type: TokenType.ACCESS,
+        iat: Date.now(),
+        exp: Date.now() + 3600
+      },
     };
   }
 
@@ -63,11 +82,11 @@ function mockRequest(body: any = {}, params: any = {}, query: any = {}, user?: M
     body,
     params,
     query,
-    user: userObj as any,
+    user: userObj,
     ip: '127.0.0.1',
     socket: { remoteAddress: '127.0.0.1' } as any,
     get: jest.fn((header: string) => header === 'user-agent' ? 'test-agent' : undefined) as any,
-  } as Partial<Request>;
+  } as Partial<AuthenticatedRequest>;
 }
 
 function mockResponse(): Partial<Response> {
@@ -92,7 +111,7 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const req = mockRequest({ userId: 'user123', format: 'json' });
       const res = mockResponse();
 
-      await requestDataExport(req as Request, res as Response);
+      await requestDataExport(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(
@@ -110,7 +129,7 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const req = mockRequest({ format: 'json' });
       const res = mockResponse();
 
-      await requestDataExport(req as Request, res as Response);
+      await requestDataExport(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
@@ -125,7 +144,7 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const req = mockRequest({ userId: 'user123', format: 'xml' });
       const res = mockResponse();
 
-      await requestDataExport(req as Request, res as Response);
+      await requestDataExport(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
@@ -140,7 +159,7 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const req = mockRequest({ userId: 'user123' });
       const res = mockResponse();
 
-      await requestDataExport(req as Request, res as Response);
+      await requestDataExport(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       // Format defaults to 'json' in the controller
@@ -150,7 +169,7 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const req = mockRequest({ userId: 'user123', format: 'json' });
       const res = mockResponse();
 
-      await requestDataExport(req as Request, res as Response);
+      await requestDataExport(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       // Audit log is created internally (verified by console output in production)
@@ -164,7 +183,7 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const req = mockRequest({}, { requestId: 'nonexistent-request' });
       const res = mockResponse();
 
-      await downloadDataExport(req as Request, res as Response);
+      await downloadDataExport(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith(
@@ -180,7 +199,7 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const createReq = mockRequest({ userId: 'user123', format: 'json' });
       const createRes = mockResponse();
 
-      await requestDataExport(createReq as Request, createRes as Response);
+      await requestDataExport(createReq as AuthenticatedRequest, createRes as Response);
 
       // Extract requestId from response
       const jsonCall = (createRes.json as jest.Mock).mock.calls[0][0];
@@ -190,7 +209,7 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const downloadReq = mockRequest({}, { requestId }, {}, 'user123');
       const downloadRes = mockResponse();
 
-      await downloadDataExport(downloadReq as Request, downloadRes as Response);
+      await downloadDataExport(downloadReq as AuthenticatedRequest, downloadRes as Response);
 
       expect(downloadRes.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
       expect(downloadRes.setHeader).toHaveBeenCalledWith(
@@ -205,7 +224,7 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const createReq = mockRequest({ userId: 'user123', format: 'csv' });
       const createRes = mockResponse();
 
-      await requestDataExport(createReq as Request, createRes as Response);
+      await requestDataExport(createReq as AuthenticatedRequest, createRes as Response);
 
       // Extract requestId from response
       const jsonCall = (createRes.json as jest.Mock).mock.calls[0][0];
@@ -215,7 +234,7 @@ describe('GDPR Data Export - Article 15 (Right to Access)', () => {
       const downloadReq = mockRequest({}, { requestId }, {}, 'user123');
       const downloadRes = mockResponse();
 
-      await downloadDataExport(downloadReq as Request, downloadRes as Response);
+      await downloadDataExport(downloadReq as AuthenticatedRequest, downloadRes as Response);
 
       expect(downloadRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/csv');
       expect(downloadRes.setHeader).toHaveBeenCalledWith(
@@ -241,7 +260,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const req = mockRequest({ userId: 'user456', keepLegalRecords: true });
       const res = mockResponse();
 
-      await requestDataErasure(req as Request, res as Response);
+      await requestDataErasure(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(
@@ -261,7 +280,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const req = mockRequest({ keepLegalRecords: true });
       const res = mockResponse();
 
-      await requestDataErasure(req as Request, res as Response);
+      await requestDataErasure(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
@@ -276,7 +295,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const req = mockRequest({ userId: 'user456' });
       const res = mockResponse();
 
-      await requestDataErasure(req as Request, res as Response);
+      await requestDataErasure(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       // Verify legal records are retained (status should be 'partial' or 'completed')
@@ -288,7 +307,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const req = mockRequest({ userId: 'user456', keepLegalRecords: true });
       const res = mockResponse();
 
-      await requestDataErasure(req as Request, res as Response);
+      await requestDataErasure(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       const jsonCall = (res.json as jest.Mock).mock.calls[0][0];
@@ -305,7 +324,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const req = mockRequest({ userId: 'user456', keepLegalRecords: true });
       const res = mockResponse();
 
-      await requestDataErasure(req as Request, res as Response);
+      await requestDataErasure(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       const jsonCall = (res.json as jest.Mock).mock.calls[0][0];
@@ -318,7 +337,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const req = mockRequest({ userId: 'user456', keepLegalRecords: true });
       const res = mockResponse();
 
-      await requestDataErasure(req as Request, res as Response);
+      await requestDataErasure(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       const jsonCall = (res.json as jest.Mock).mock.calls[0][0];
@@ -342,7 +361,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const req = mockRequest({ userId: 'user456', keepLegalRecords: false });
       const res = mockResponse();
 
-      await requestDataErasure(req as Request, res as Response);
+      await requestDataErasure(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       const jsonCall = (res.json as jest.Mock).mock.calls[0][0];
@@ -358,7 +377,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const req = mockRequest({ userId: 'user456', keepLegalRecords: true });
       const res = mockResponse();
 
-      await requestDataErasure(req as Request, res as Response);
+      await requestDataErasure(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       // Audit log is created internally (verified by console output in production)
@@ -372,7 +391,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const req = mockRequest({}, { requestId: 'nonexistent-request' });
       const res = mockResponse();
 
-      await getErasureStatus(req as Request, res as Response);
+      await getErasureStatus(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith(
@@ -388,7 +407,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const createReq = mockRequest({ userId: 'user789', keepLegalRecords: true });
       const createRes = mockResponse();
 
-      await requestDataErasure(createReq as Request, createRes as Response);
+      await requestDataErasure(createReq as AuthenticatedRequest, createRes as Response);
 
       // Extract requestId from response
       const jsonCall = (createRes.json as jest.Mock).mock.calls[0][0];
@@ -398,7 +417,7 @@ describe('GDPR Data Erasure - Article 17 (Right to Erasure)', () => {
       const statusReq = mockRequest({}, { requestId }, {}, 'user789');
       const statusRes = mockResponse();
 
-      await getErasureStatus(statusReq as Request, statusRes as Response);
+      await getErasureStatus(statusReq as AuthenticatedRequest, statusRes as Response);
 
       expect(statusRes.status).toHaveBeenCalledWith(200);
       expect(statusRes.json).toHaveBeenCalledWith(
@@ -429,7 +448,7 @@ describe('GDPR Audit Trail', () => {
       const req = mockRequest({}, { userId: 'newuser123' });
       const res = mockResponse();
 
-      await getAuditTrail(req as Request, res as Response);
+      await getAuditTrail(req as AuthenticatedRequest, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(
@@ -446,17 +465,17 @@ describe('GDPR Audit Trail', () => {
       // First create some activity (export and erasure)
       const exportReq = mockRequest({ userId: 'activeuser123', format: 'json' });
       const exportRes = mockResponse();
-      await requestDataExport(exportReq as Request, exportRes as Response);
+      await requestDataExport(exportReq as AuthenticatedRequest, exportRes as Response);
 
       const erasureReq = mockRequest({ userId: 'activeuser123', keepLegalRecords: true });
       const erasureRes = mockResponse();
-      await requestDataErasure(erasureReq as Request, erasureRes as Response);
+      await requestDataErasure(erasureReq as AuthenticatedRequest, erasureRes as Response);
 
       // Now get audit trail
       const auditReq = mockRequest({}, { userId: 'activeuser123' });
       const auditRes = mockResponse();
 
-      await getAuditTrail(auditReq as Request, auditRes as Response);
+      await getAuditTrail(auditReq as AuthenticatedRequest, auditRes as Response);
 
       expect(auditRes.status).toHaveBeenCalledWith(200);
       const jsonCall = (auditRes.json as jest.Mock).mock.calls[0][0];
@@ -478,11 +497,11 @@ describe('GDPR Audit Trail', () => {
     it('should include IP address and user agent in audit logs', async () => {
       const exportReq = mockRequest({ userId: 'trackeduser123', format: 'json' });
       const exportRes = mockResponse();
-      await requestDataExport(exportReq as Request, exportRes as Response);
+      await requestDataExport(exportReq as AuthenticatedRequest, exportRes as Response);
 
       const auditReq = mockRequest({}, { userId: 'trackeduser123' });
       const auditRes = mockResponse();
-      await getAuditTrail(auditReq as Request, auditRes as Response);
+      await getAuditTrail(auditReq as AuthenticatedRequest, auditRes as Response);
 
       const jsonCall = (auditRes.json as jest.Mock).mock.calls[0][0];
 
@@ -498,18 +517,18 @@ describe('GDPR Audit Trail', () => {
 
       const req1 = mockRequest({ userId, format: 'json' });
       const res1 = mockResponse();
-      await requestDataExport(req1 as Request, res1 as Response);
+      await requestDataExport(req1 as AuthenticatedRequest, res1 as Response);
 
       // Small delay to ensure different timestamps
       await new Promise(resolve => setTimeout(resolve, 10));
 
       const req2 = mockRequest({ userId, format: 'csv' });
       const res2 = mockResponse();
-      await requestDataExport(req2 as Request, res2 as Response);
+      await requestDataExport(req2 as AuthenticatedRequest, res2 as Response);
 
       const auditReq = mockRequest({}, { userId });
       const auditRes = mockResponse();
-      await getAuditTrail(auditReq as Request, auditRes as Response);
+      await getAuditTrail(auditReq as AuthenticatedRequest, auditRes as Response);
 
       const jsonCall = (auditRes.json as jest.Mock).mock.calls[0][0];
       const timestamps = jsonCall.auditLogs.map((log: any) => new Date(log.timestamp).getTime());
@@ -536,7 +555,7 @@ describe('GDPR Integration Tests', () => {
     // Step 1: Request data export
     const exportReq = mockRequest({ userId, format: 'json' });
     const exportRes = mockResponse();
-    await requestDataExport(exportReq as Request, exportRes as Response);
+    await requestDataExport(exportReq as AuthenticatedRequest, exportRes as Response);
 
     expect(exportRes.status).toHaveBeenCalledWith(200);
     const exportJson = (exportRes.json as jest.Mock).mock.calls[0][0];
@@ -545,14 +564,14 @@ describe('GDPR Integration Tests', () => {
     // Step 2: Download export (with same user)
     const downloadReq = mockRequest({}, { requestId: exportRequestId }, {}, userId);
     const downloadRes = mockResponse();
-    await downloadDataExport(downloadReq as Request, downloadRes as Response);
+    await downloadDataExport(downloadReq as AuthenticatedRequest, downloadRes as Response);
 
     expect(downloadRes.status).toHaveBeenCalledWith(200);
 
     // Step 3: Request erasure
     const erasureReq = mockRequest({ userId, keepLegalRecords: true });
     const erasureRes = mockResponse();
-    await requestDataErasure(erasureReq as Request, erasureRes as Response);
+    await requestDataErasure(erasureReq as AuthenticatedRequest, erasureRes as Response);
 
     expect(erasureRes.status).toHaveBeenCalledWith(200);
     const erasureJson = (erasureRes.json as jest.Mock).mock.calls[0][0];
@@ -561,14 +580,14 @@ describe('GDPR Integration Tests', () => {
     // Step 4: Verify erasure status (with same user)
     const statusReq = mockRequest({}, { requestId: erasureRequestId }, {}, userId);
     const statusRes = mockResponse();
-    await getErasureStatus(statusReq as Request, statusRes as Response);
+    await getErasureStatus(statusReq as AuthenticatedRequest, statusRes as Response);
 
     expect(statusRes.status).toHaveBeenCalledWith(200);
 
     // Step 5: Check audit trail (uses params.userId which auto-creates user)
     const auditReq = mockRequest({}, { userId });
     const auditRes = mockResponse();
-    await getAuditTrail(auditReq as Request, auditRes as Response);
+    await getAuditTrail(auditReq as AuthenticatedRequest, auditRes as Response);
 
     expect(auditRes.status).toHaveBeenCalledWith(200);
     const auditJson = (auditRes.json as jest.Mock).mock.calls[0][0];

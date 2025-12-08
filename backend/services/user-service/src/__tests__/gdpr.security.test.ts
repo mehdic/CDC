@@ -9,7 +9,7 @@
  * 4. PII-safe logging (no raw patient IDs in logs)
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import * as crypto from 'crypto';
 import {
   requestDataExport,
@@ -18,28 +18,41 @@ import {
   getErasureStatus,
   getAuditTrail,
 } from '../controllers/gdprController';
+import { AuthenticatedRequest, AuthenticatedUser } from '../../../../shared/middleware/auth';
+import { UserRole } from '../../../../shared/models/User';
 
 // ============================================================================
 // Mock Request and Response Helpers
 // ============================================================================
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    role: string;
-    roles?: string[];
-  };
-}
-
 function mockAuthenticatedRequest(
-  user: AuthenticatedRequest['user'],
+  userId: string,
+  email: string,
+  role: UserRole,
   body: any = {},
   params: any = {},
-  query: any = {}
+  query: any = {},
+  tokenPayloadExtras?: any
 ): Partial<AuthenticatedRequest> {
+  const tokenPayload = {
+    userId,
+    email,
+    role,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    ...tokenPayloadExtras,
+  };
+
+  const authenticatedUser: AuthenticatedUser = {
+    userId,
+    email,
+    role,
+    pharmacyId: null,
+    tokenPayload,
+  };
+
   return {
-    user,
+    user: authenticatedUser,
     body,
     params,
     query,
@@ -92,7 +105,9 @@ describe('GDPR Security - Authentication', () => {
   describe('POST /api/gdpr/export', () => {
     it('should return 403 when authenticated user tries to export another patient\'s data', async () => {
       const req = mockAuthenticatedRequest(
-        { userId: 'patient-A', email: 'patientA@example.com', role: 'patient' },
+        'patient-A',
+        'patientA@example.com',
+        UserRole.PATIENT,
         { userId: 'patient-B', format: 'json' }
       );
       const res = mockResponse();
@@ -110,7 +125,9 @@ describe('GDPR Security - Authentication', () => {
 
     it('should allow authenticated user to export their own data', async () => {
       const req = mockAuthenticatedRequest(
-        { userId: 'patient-A', email: 'patientA@example.com', role: 'patient' },
+        'patient-A',
+        'patientA@example.com',
+        UserRole.PATIENT,
         { userId: 'patient-A', format: 'json' }
       );
       const res = mockResponse();
@@ -128,8 +145,13 @@ describe('GDPR Security - Authentication', () => {
 
     it('should allow admin to export any patient\'s data', async () => {
       const req = mockAuthenticatedRequest(
-        { userId: 'admin-1', email: 'admin@example.com', role: 'admin' },
-        { userId: 'patient-B', format: 'json' }
+        'admin-1',
+        'admin@example.com',
+        UserRole.PHARMACIST, // Use existing role, set isAdmin in tokenPayload
+        { userId: 'patient-B', format: 'json' },
+        {}, // params
+        {}, // query
+        { isAdmin: true, roles: ['admin'] } // tokenPayloadExtras
       );
       const res = mockResponse();
 
@@ -148,9 +170,11 @@ describe('GDPR Security - Authentication', () => {
     it('should return 403 when authenticated user tries to download another patient\'s export', async () => {
       // First create an export for patient-A
       const createReq = mockAuthenticatedRequest(
-        { userId: 'patient-A', email: 'patientA@example.com', role: 'patient' },
-        { userId: 'patient-A', format: 'json' }
-      );
+   'patient-A',
+   'patientA@example.com',
+   UserRole.PATIENT,
+   { userId: 'patient-A', format: 'json' }
+ );
       const createRes = mockResponse();
       await requestDataExport(createReq as AuthenticatedRequest, createRes as Response);
 
@@ -160,10 +184,12 @@ describe('GDPR Security - Authentication', () => {
 
       // Try to download as patient-B
       const downloadReq = mockAuthenticatedRequest(
-        { userId: 'patient-B', email: 'patientB@example.com', role: 'patient' },
-        {},
-        { requestId }
-      );
+   'patient-B',
+   'patientB@example.com',
+   UserRole.PATIENT,
+   {},
+   { requestId }
+ );
       const downloadRes = mockResponse();
 
       await downloadDataExport(downloadReq as AuthenticatedRequest, downloadRes as Response);
@@ -180,9 +206,11 @@ describe('GDPR Security - Authentication', () => {
     it('should allow authenticated user to download their own export', async () => {
       // Create an export for patient-A
       const createReq = mockAuthenticatedRequest(
-        { userId: 'patient-A', email: 'patientA@example.com', role: 'patient' },
-        { userId: 'patient-A', format: 'json' }
-      );
+   'patient-A',
+   'patientA@example.com',
+   UserRole.PATIENT,
+   { userId: 'patient-A', format: 'json' }
+ );
       const createRes = mockResponse();
       await requestDataExport(createReq as AuthenticatedRequest, createRes as Response);
 
@@ -192,10 +220,12 @@ describe('GDPR Security - Authentication', () => {
 
       // Download as patient-A
       const downloadReq = mockAuthenticatedRequest(
-        { userId: 'patient-A', email: 'patientA@example.com', role: 'patient' },
-        {},
-        { requestId }
-      );
+   'patient-A',
+   'patientA@example.com',
+   UserRole.PATIENT,
+   {},
+   { requestId }
+ );
       const downloadRes = mockResponse();
 
       await downloadDataExport(downloadReq as AuthenticatedRequest, downloadRes as Response);
@@ -207,9 +237,11 @@ describe('GDPR Security - Authentication', () => {
   describe('POST /api/gdpr/erasure', () => {
     it('should return 403 when authenticated user tries to erase another patient\'s data', async () => {
       const req = mockAuthenticatedRequest(
-        { userId: 'patient-A', email: 'patientA@example.com', role: 'patient' },
-        { userId: 'patient-B', keepLegalRecords: true }
-      );
+   'patient-A',
+   'patientA@example.com',
+   UserRole.PATIENT,
+   { userId: 'patient-B', keepLegalRecords: true }
+ );
       const res = mockResponse();
 
       await requestDataErasure(req as AuthenticatedRequest, res as Response);
@@ -225,9 +257,11 @@ describe('GDPR Security - Authentication', () => {
 
     it('should allow authenticated user to erase their own data', async () => {
       const req = mockAuthenticatedRequest(
-        { userId: 'patient-A', email: 'patientA@example.com', role: 'patient' },
-        { userId: 'patient-A', keepLegalRecords: true }
-      );
+   'patient-A',
+   'patientA@example.com',
+   UserRole.PATIENT,
+   { userId: 'patient-A', keepLegalRecords: true }
+ );
       const res = mockResponse();
 
       await requestDataErasure(req as AuthenticatedRequest, res as Response);
@@ -246,9 +280,11 @@ describe('GDPR Security - Authentication', () => {
     it('should return 403 when authenticated user tries to view another patient\'s erasure status', async () => {
       // Create erasure for patient-A
       const createReq = mockAuthenticatedRequest(
-        { userId: 'patient-A', email: 'patientA@example.com', role: 'patient' },
-        { userId: 'patient-A', keepLegalRecords: true }
-      );
+   'patient-A',
+   'patientA@example.com',
+   UserRole.PATIENT,
+   { userId: 'patient-A', keepLegalRecords: true }
+ );
       const createRes = mockResponse();
       await requestDataErasure(createReq as AuthenticatedRequest, createRes as Response);
 
@@ -258,10 +294,12 @@ describe('GDPR Security - Authentication', () => {
 
       // Try to view as patient-B
       const viewReq = mockAuthenticatedRequest(
-        { userId: 'patient-B', email: 'patientB@example.com', role: 'patient' },
-        {},
-        { requestId }
-      );
+   'patient-B',
+   'patientB@example.com',
+   UserRole.PATIENT,
+   {},
+   { requestId }
+ );
       const viewRes = mockResponse();
 
       await getErasureStatus(viewReq as AuthenticatedRequest, viewRes as Response);
@@ -279,10 +317,12 @@ describe('GDPR Security - Authentication', () => {
   describe('GET /api/gdpr/audit/:userId', () => {
     it('should return 403 when authenticated user tries to view another patient\'s audit trail', async () => {
       const req = mockAuthenticatedRequest(
-        { userId: 'patient-A', email: 'patientA@example.com', role: 'patient' },
-        {},
-        { userId: 'patient-B' }
-      );
+   'patient-A',
+   'patientA@example.com',
+   UserRole.PATIENT,
+   {},
+   { userId: 'patient-B' }
+ );
       const res = mockResponse();
 
       await getAuditTrail(req as AuthenticatedRequest, res as Response);
@@ -298,10 +338,12 @@ describe('GDPR Security - Authentication', () => {
 
     it('should allow authenticated user to view their own audit trail', async () => {
       const req = mockAuthenticatedRequest(
-        { userId: 'patient-A', email: 'patientA@example.com', role: 'patient' },
-        {},
-        { userId: 'patient-A' }
-      );
+   'patient-A',
+   'patientA@example.com',
+   UserRole.PATIENT,
+   {},
+   { userId: 'patient-A' }
+ );
       const res = mockResponse();
 
       await getAuditTrail(req as AuthenticatedRequest, res as Response);
@@ -318,10 +360,14 @@ describe('GDPR Security - Authentication', () => {
 
     it('should allow admin to view any patient\'s audit trail', async () => {
       const req = mockAuthenticatedRequest(
-        { userId: 'admin-1', email: 'admin@example.com', role: 'admin' },
-        {},
-        { userId: 'patient-B' }
-      );
+   'admin-1',
+   'admin@example.com',
+   UserRole.PHARMACIST, // Use existing role, set isAdmin in tokenPayload
+   {},
+   { userId: 'patient-B' },
+   {}, // query
+   { isAdmin: true, roles: ['admin'] } // tokenPayloadExtras
+ );
       const res = mockResponse();
 
       await getAuditTrail(req as AuthenticatedRequest, res as Response);
@@ -361,7 +407,9 @@ describe('GDPR Security - PII-Safe Logging', () => {
     const hashedId = hashPatientId(patientId);
 
     const req = mockAuthenticatedRequest(
-      { userId: patientId, email: 'patient@example.com', role: 'patient' },
+      patientId,
+      'patient@example.com',
+      UserRole.PATIENT,
       { userId: patientId, format: 'json' }
     );
     const res = mockResponse();
@@ -385,7 +433,9 @@ describe('GDPR Security - PII-Safe Logging', () => {
 
     // Create export
     const createReq = mockAuthenticatedRequest(
-      { userId: patientId, email: 'patient@example.com', role: 'patient' },
+      patientId,
+      'patient@example.com',
+      UserRole.PATIENT,
       { userId: patientId, format: 'json' }
     );
     const createRes = mockResponse();
@@ -399,7 +449,9 @@ describe('GDPR Security - PII-Safe Logging', () => {
     const requestId = createJsonCall.requestId;
 
     const downloadReq = mockAuthenticatedRequest(
-      { userId: patientId, email: 'patient@example.com', role: 'patient' },
+      patientId,
+      'patient@example.com',
+      UserRole.PATIENT,
       {},
       { requestId }
     );
@@ -423,7 +475,9 @@ describe('GDPR Security - PII-Safe Logging', () => {
     const hashedId = hashPatientId(patientId);
 
     const req = mockAuthenticatedRequest(
-      { userId: patientId, email: 'patient@example.com', role: 'patient' },
+      patientId,
+      'patient@example.com',
+      UserRole.PATIENT,
       { userId: patientId, keepLegalRecords: true }
     );
     const res = mockResponse();
@@ -450,7 +504,9 @@ describe('GDPR Security - PII-Safe Logging', () => {
     const targetHash = hashPatientId(targetId);
 
     const req = mockAuthenticatedRequest(
-      { userId: attackerId, email: 'attacker@example.com', role: 'patient' },
+      attackerId,
+      'attacker@example.com',
+      UserRole.PATIENT,
       { userId: targetId, format: 'json' }
     );
     const res = mockResponse();
@@ -484,7 +540,9 @@ describe('GDPR Security - Integration Tests', () => {
 
     // Step 1: Create export (authenticated, own data)
     const createReq = mockAuthenticatedRequest(
-      { userId: patientId, email: 'patient@example.com', role: 'patient' },
+      patientId,
+      'patient@example.com',
+      UserRole.PATIENT,
       { userId: patientId, format: 'json' }
     );
     const createRes = mockResponse();
@@ -498,7 +556,9 @@ describe('GDPR Security - Integration Tests', () => {
     const requestId = createJsonCall.requestId;
 
     const downloadReq = mockAuthenticatedRequest(
-      { userId: patientId, email: 'patient@example.com', role: 'patient' },
+      patientId,
+      'patient@example.com',
+      UserRole.PATIENT,
       {},
       { requestId }
     );
@@ -510,7 +570,9 @@ describe('GDPR Security - Integration Tests', () => {
 
     // Step 3: View audit trail (authenticated, own data)
     const auditReq = mockAuthenticatedRequest(
-      { userId: patientId, email: 'patient@example.com', role: 'patient' },
+      patientId,
+      'patient@example.com',
+      UserRole.PATIENT,
       {},
       { userId: patientId }
     );
@@ -531,7 +593,9 @@ describe('GDPR Security - Integration Tests', () => {
 
     // Patient A creates export
     const createReq = mockAuthenticatedRequest(
-      { userId: patientA, email: 'patientA@example.com', role: 'patient' },
+      patientA,
+      'patientA@example.com',
+      UserRole.PATIENT,
       { userId: patientA, format: 'json' }
     );
     const createRes = mockResponse();
@@ -543,7 +607,9 @@ describe('GDPR Security - Integration Tests', () => {
 
     // Patient B tries to download Patient A's export - SHOULD FAIL
     const downloadReq = mockAuthenticatedRequest(
-      { userId: patientB, email: 'patientB@example.com', role: 'patient' },
+      patientB,
+      'patientB@example.com',
+      UserRole.PATIENT,
       {},
       { requestId }
     );
@@ -555,7 +621,9 @@ describe('GDPR Security - Integration Tests', () => {
 
     // Patient B tries to view Patient A's audit trail - SHOULD FAIL
     const auditReq = mockAuthenticatedRequest(
-      { userId: patientB, email: 'patientB@example.com', role: 'patient' },
+      patientB,
+      'patientB@example.com',
+      UserRole.PATIENT,
       {},
       { userId: patientA }
     );
