@@ -11,6 +11,16 @@
  */
 
 import { Request, Response } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    userId: string;
+    email: string;
+    role: string;
+    roles?: string[];
+  };
+}
+
 import * as crypto from 'crypto';
 
 // ============================================================================
@@ -120,7 +130,7 @@ function createAuditLogEntry(
   };
 
   gdprAuditLog.set(id, entry);
-  console.log(`📝 GDPR Audit: ${action} for user ${userId} - ${status}`);
+  console.log(`📝 GDPR Audit: ${action} for user ${hashForLogging(userId)} - ${status}`);
 
   return entry;
 }
@@ -295,6 +305,14 @@ function generateVerificationHash(erasureResponse: any): string {
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
+/**
+ * Hash patient/user ID for safe logging (GDPR compliance)
+ * Never log raw user IDs to prevent PII leakage
+ */
+function hashForLogging(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex').substring(0, 8);
+}
+
 // ============================================================================
 // Controller Functions
 // ============================================================================
@@ -303,7 +321,7 @@ function generateVerificationHash(erasureResponse: any): string {
  * POST /api/gdpr/export
  * Request data export (GDPR Article 15 - Right to Access)
  */
-export async function requestDataExport(req: Request, res: Response): Promise<Response> {
+export async function requestDataExport(req: AuthenticatedRequest, res: Response): Promise<Response> {
   try {
     const { userId, format = 'json' } = req.body;
     // Note: includeServices parameter can be added in future for selective exports
@@ -313,6 +331,19 @@ export async function requestDataExport(req: Request, res: Response): Promise<Re
       return res.status(400).json({
         error: 'Validation Error',
         message: 'userId is required',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // SECURITY: Authorization check - user can only access their own data
+    const authenticatedUserId = req.user?.userId;
+    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+
+    if (!isAdmin && authenticatedUserId !== userId) {
+      console.warn(`⚠️ SECURITY: Unauthorized data export attempt - User ${hashForLogging(authenticatedUserId || 'unknown')} tried to access data of ${hashForLogging(userId)}`);
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only request export of your own data',
         timestamp: new Date().toISOString(),
       });
     }
@@ -351,7 +382,7 @@ export async function requestDataExport(req: Request, res: Response): Promise<Re
       servicesIncluded: Object.keys(aggregatedData),
     });
 
-    console.log(`✅ GDPR Data Export: Created export ${requestId} for user ${userId}`);
+    console.log(`✅ GDPR Data Export: Created export ${requestId} for user ${hashForLogging(userId)}`);
 
     return res.status(200).json({
       message: 'Data export created successfully',
@@ -375,7 +406,7 @@ export async function requestDataExport(req: Request, res: Response): Promise<Re
  * GET /api/gdpr/export/:requestId/download
  * Download data export file
  */
-export async function downloadDataExport(req: Request, res: Response): Promise<Response> {
+export async function downloadDataExport(req: AuthenticatedRequest, res: Response): Promise<Response> {
   try {
     const { requestId } = req.params;
 
@@ -389,6 +420,18 @@ export async function downloadDataExport(req: Request, res: Response): Promise<R
       });
     }
 
+    // SECURITY: Authorization check - user can only download their own data
+    const authenticatedUserId = req.user?.userId;
+    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+
+    if (!isAdmin && authenticatedUserId !== exportData.userId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only download your own data exports',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     // Create audit log for download
     createAuditLogEntry(
       exportData.userId,
@@ -398,7 +441,7 @@ export async function downloadDataExport(req: Request, res: Response): Promise<R
       req
     );
 
-    console.log(`📥 GDPR Data Export: Download ${requestId} for user ${exportData.userId}`);
+    console.log(`📥 GDPR Data Export: Download ${requestId} for user ${hashForLogging(exportData.userId)}`);
 
     // Return JSON export
     if (exportData.format === 'json') {
@@ -435,7 +478,7 @@ export async function downloadDataExport(req: Request, res: Response): Promise<R
  * POST /api/gdpr/erasure
  * Request right to be forgotten (GDPR Article 17 - Right to Erasure)
  */
-export async function requestDataErasure(req: Request, res: Response): Promise<Response> {
+export async function requestDataErasure(req: AuthenticatedRequest, res: Response): Promise<Response> {
   try {
     const { userId, reason, keepLegalRecords = true } = req.body;
 
@@ -444,6 +487,18 @@ export async function requestDataErasure(req: Request, res: Response): Promise<R
       return res.status(400).json({
         error: 'Validation Error',
         message: 'userId is required',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // SECURITY: Authorization check - user can only erase their own data
+    const authenticatedUserId = req.user?.userId;
+    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+
+    if (!isAdmin && authenticatedUserId !== userId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only request erasure of your own data',
         timestamp: new Date().toISOString(),
       });
     }
@@ -488,7 +543,7 @@ export async function requestDataErasure(req: Request, res: Response): Promise<R
       servicesProcessed: servicesProcessed.length,
     });
 
-    console.log(`✅ GDPR Data Erasure: Processed request ${requestId} for user ${userId} - ${overallStatus}`);
+    console.log(`✅ GDPR Data Erasure: Processed request ${requestId} for user ${hashForLogging(userId)} - ${overallStatus}`);
 
     return res.status(200).json({
       message: 'Data erasure request processed',
@@ -514,7 +569,7 @@ export async function requestDataErasure(req: Request, res: Response): Promise<R
  * GET /api/gdpr/erasure/:requestId
  * Get erasure request status
  */
-export async function getErasureStatus(req: Request, res: Response): Promise<Response> {
+export async function getErasureStatus(req: AuthenticatedRequest, res: Response): Promise<Response> {
   try {
     const { requestId } = req.params;
 
@@ -524,6 +579,18 @@ export async function getErasureStatus(req: Request, res: Response): Promise<Res
       return res.status(404).json({
         error: 'Not Found',
         message: `Erasure request ${requestId} not found`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // SECURITY: Authorization check - user can only access their own erasure status
+    const authenticatedUserId = req.user?.userId;
+    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+
+    if (!isAdmin && authenticatedUserId !== erasureData.userId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only view status of your own erasure requests',
         timestamp: new Date().toISOString(),
       });
     }
@@ -547,11 +614,21 @@ export async function getErasureStatus(req: Request, res: Response): Promise<Res
  * GET /api/gdpr/audit/:userId
  * Get GDPR audit trail for a user (admin only)
  */
-export async function getAuditTrail(req: Request, res: Response): Promise<Response> {
+export async function getAuditTrail(req: AuthenticatedRequest, res: Response): Promise<Response> {
   try {
     const { userId } = req.params;
 
-    // In production, verify admin/user authorization here
+    // SECURITY: Authorization check - only admin or the user themselves can access audit trail
+    const authenticatedUserId = req.user?.userId;
+    const isAdmin = req.user?.roles?.includes('admin') || req.user?.role === 'admin';
+
+    if (!isAdmin && authenticatedUserId !== userId) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only view your own audit trail',
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     const userAuditLogs = Array.from(gdprAuditLog.values())
       .filter(log => log.userId === userId)
