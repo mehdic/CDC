@@ -23,7 +23,7 @@
     "qrcode": "^1.5.3",
     "speakeasy": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
-    "typeorm": "^0.3.17"
+    "typeorm": "^0.3.28"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

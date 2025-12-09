@@ -19,7 +19,7 @@
     "helmet": "^7.1.0",
     "pg": "^8.11.3",
     "tsconfig-paths": "^4.2.0",
-    "typeorm": "^0.3.17",
+    "typeorm": "^0.3.28",
     "zod": "^3.22.4"
   },
   "devDependencies": {
