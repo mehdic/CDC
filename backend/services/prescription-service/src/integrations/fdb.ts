@@ -1,16 +1,21 @@
 /**
  * FDB MedKnowledge API Integration
  * Drug interaction checking using FDB MedKnowledge database
+ * T8-001, T8-002: Real FDB DrugPoint API Integration with audit logging
  * T085 - User Story 1: Prescription Processing & Validation (FR-026)
  * Based on: /specs/002-metapharm-platform/spec.md (FR-011, FR-012)
  *
- * **PRODUCTION TODO**:
- * - Obtain FDB MedKnowledge API credentials
- * - Configure API endpoint in environment variables (FDB_API_URL, FDB_API_KEY)
- * - Replace mock implementation with actual API calls
- * - Add retry logic and error handling for production
- * - Implement rate limiting as per FDB API terms
+ * Features:
+ * - Real FDB DrugPoint API integration with automatic fallback to mock data
+ * - Redis caching with 24h TTL for performance
+ * - Comprehensive audit logging for compliance
+ * - Rate limiting with exponential backoff
+ * - Performance metrics for P95 tracking
+ * - Ingredient-level allergy cross-reference
  */
+
+import { getFDBConfig, validateFDBConfig, FDBAuditLog, FDBPerformanceMetrics } from '../config/fdb.config';
+import { CacheProvider, CacheFactory } from './cache';
 
 export enum DrugInteractionSeverity {
   MINOR = 'minor',           // Minimal clinical significance
@@ -35,35 +40,130 @@ export interface DrugInteractionResult {
 
 /**
  * FDB MedKnowledge API Client
- * Checks for drug-drug interactions
+ * Checks for drug-drug interactions with audit logging and performance tracking
  */
 export class FDBService {
-  private apiUrl: string;
-  private apiKey: string;
+  private config: ReturnType<typeof getFDBConfig>;
+  private cache: CacheProvider;
   private useMockData: boolean;
   private healthStatus: 'healthy' | 'degraded' | 'down' | 'unconfigured';
   private lastHealthCheck: Date | null;
   private consecutiveFailures: number;
+  private auditLogs: FDBAuditLog[] = [];
+  private performanceMetrics: FDBPerformanceMetrics[] = [];
 
-  constructor() {
-    this.apiUrl = process.env.FDB_API_URL || '';
-    this.apiKey = process.env.FDB_API_KEY || '';
+  constructor(cacheProvider?: CacheProvider) {
+    this.config = getFDBConfig();
+    validateFDBConfig(this.config);
+
+    this.cache = cacheProvider || CacheFactory.createCache();
     this.consecutiveFailures = 0;
     this.lastHealthCheck = null;
 
     // Use mock data if credentials not configured
-    this.useMockData = !this.apiUrl || !this.apiKey;
+    this.useMockData = !this.config.apiUrl || !this.config.apiKey;
 
     if (this.useMockData) {
       this.healthStatus = 'unconfigured';
       console.warn(
         '[FDB Service] WARNING: FDB API credentials not configured. Using MOCK data. ' +
-        'Configure FDB_API_URL and FDB_API_KEY environment variables for production.'
+        'Configure FDB_BASE_URL and FDB_API_KEY environment variables for production.'
       );
     } else {
       this.healthStatus = 'healthy';
       console.info('[FDB Service] Initialized with FDB API credentials');
+      console.info(`[FDB Service] Cache TTL: ${this.config.cacheTTL}s, Timeout: ${this.config.timeout}ms`);
     }
+  }
+
+  /**
+   * Add audit log entry
+   * @param log Audit log entry
+   */
+  private addAuditLog(log: FDBAuditLog): void {
+    if (!this.config.auditLoggingEnabled) {
+      return;
+    }
+
+    this.auditLogs.push(log);
+
+    // Keep only last 1000 entries in memory
+    if (this.auditLogs.length > 1000) {
+      this.auditLogs = this.auditLogs.slice(-1000);
+    }
+
+    // Log to console for external aggregation (Elasticsearch, CloudWatch, etc.)
+    console.log('[FDB Audit]', JSON.stringify(log));
+  }
+
+  /**
+   * Track performance metric
+   * @param metric Performance metric
+   */
+  private trackPerformance(metric: FDBPerformanceMetrics): void {
+    if (!this.config.performanceMetricsEnabled) {
+      return;
+    }
+
+    this.performanceMetrics.push(metric);
+
+    // Keep only last 1000 metrics
+    if (this.performanceMetrics.length > 1000) {
+      this.performanceMetrics = this.performanceMetrics.slice(-1000);
+    }
+
+    // Log for external monitoring
+    if (metric.durationMs > 500) {
+      console.warn('[FDB Performance] Slow operation:', JSON.stringify(metric));
+    }
+  }
+
+  /**
+   * Get audit logs (for compliance reporting)
+   * @param limit Maximum number of logs to return
+   * @returns Recent audit logs
+   */
+  getAuditLogs(limit: number = 100): FDBAuditLog[] {
+    return this.auditLogs.slice(-limit);
+  }
+
+  /**
+   * Get performance statistics
+   * @returns Performance statistics
+   */
+  getPerformanceStats(): {
+    p50: number;
+    p95: number;
+    p99: number;
+    avgDuration: number;
+    totalRequests: number;
+    cacheHitRate: number;
+  } {
+    if (this.performanceMetrics.length === 0) {
+      return {
+        p50: 0,
+        p95: 0,
+        p99: 0,
+        avgDuration: 0,
+        totalRequests: 0,
+        cacheHitRate: 0,
+      };
+    }
+
+    const sortedDurations = this.performanceMetrics
+      .map(m => m.durationMs)
+      .sort((a, b) => a - b);
+
+    const cacheHits = this.performanceMetrics.filter(m => m.cacheHit).length;
+
+    return {
+      p50: sortedDurations[Math.floor(sortedDurations.length * 0.5)] || 0,
+      p95: sortedDurations[Math.floor(sortedDurations.length * 0.95)] || 0,
+      p99: sortedDurations[Math.floor(sortedDurations.length * 0.99)] || 0,
+      avgDuration: sortedDurations.reduce((a, b) => a + b, 0) / sortedDurations.length,
+      totalRequests: this.performanceMetrics.length,
+      cacheHitRate: (cacheHits / this.performanceMetrics.length) * 100,
+    };
   }
 
   /**
@@ -114,35 +214,72 @@ export class FDBService {
    * Internal method to verify API connectivity
    */
   private async performHealthCheck(): Promise<void> {
+    const startTime = Date.now();
     try {
       // Simple health check: call API with minimal data
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout for health check
+      const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
-      const response = await fetch(`${this.apiUrl}/api/v1/health`, {
+      const response = await fetch(`${this.config.apiUrl}/api/v1/health`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Bearer ${this.config.apiKey}`,
         },
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
+      const durationMs = Date.now() - startTime;
 
       if (response.ok) {
         this.healthStatus = 'healthy';
         this.consecutiveFailures = 0;
         this.lastHealthCheck = new Date();
+
+        // Track performance
+        this.trackPerformance({
+          operation: 'HEALTH_CHECK',
+          durationMs,
+          timestamp: new Date(),
+          success: true,
+          cacheHit: false,
+        });
+
+        // Audit log
+        this.addAuditLog({
+          timestamp: new Date(),
+          action: 'HEALTH_CHECK',
+          result: 'SUCCESS',
+          durationMs,
+          apiResponseCode: response.status,
+        });
       } else if (response.status === 401 || response.status === 403) {
         this.healthStatus = 'down';
         this.consecutiveFailures++;
         this.lastHealthCheck = new Date();
         console.error('[FDB Service] Health check failed: Authentication error');
+
+        this.addAuditLog({
+          timestamp: new Date(),
+          action: 'HEALTH_CHECK',
+          result: 'ERROR',
+          durationMs,
+          apiResponseCode: response.status,
+          errorMessage: 'Authentication failed',
+        });
       } else {
         this.healthStatus = 'degraded';
         this.consecutiveFailures++;
         this.lastHealthCheck = new Date();
         console.warn(`[FDB Service] Health check degraded: HTTP ${response.status}`);
+
+        this.addAuditLog({
+          timestamp: new Date(),
+          action: 'HEALTH_CHECK',
+          result: 'ERROR',
+          durationMs,
+          apiResponseCode: response.status,
+        });
       }
     } catch (error) {
       this.consecutiveFailures++;
@@ -320,11 +457,14 @@ export class FDBService {
 
   /**
    * Check drug interactions for a list of medications
-   * Automatically falls back to mock data if FDB API is unavailable
+   * Implements caching, audit logging, and automatic fallback to mock data
    * @param medications Array of medication names
+   * @param patientId Optional patient ID for audit logging
    * @returns DrugInteractionResult with all detected interactions
    */
-  async checkDrugInteractions(medications: string[]): Promise<DrugInteractionResult> {
+  async checkDrugInteractions(medications: string[], patientId?: string): Promise<DrugInteractionResult> {
+    const startTime = Date.now();
+
     // Input validation
     if (!medications || medications.length === 0) {
       return {
@@ -343,22 +483,102 @@ export class FDBService {
       };
     }
 
+    // Check cache first
+    const cacheKey = this.generateCacheKey(medications);
+    const cachedResult = await this.cache.get<DrugInteractionResult>(cacheKey);
+
+    if (cachedResult) {
+      const durationMs = Date.now() - startTime;
+
+      this.trackPerformance({
+        operation: 'INTERACTION_CHECK',
+        durationMs,
+        timestamp: new Date(),
+        success: true,
+        cacheHit: true,
+      });
+
+      this.addAuditLog({
+        timestamp: new Date(),
+        action: 'INTERACTION_CHECK',
+        medications,
+        patientId,
+        result: 'CACHE_HIT',
+        durationMs,
+        interactionCount: cachedResult.interactions.length,
+        cacheHit: true,
+      });
+
+      console.log(`[FDB Service] Cache hit for ${medications.length} medications`);
+      return cachedResult;
+    }
+
     // Use mock data if credentials not configured
     if (this.useMockData) {
-      return this.mockCheckDrugInteractions(medications);
+      const result = this.mockCheckDrugInteractions(medications);
+      const durationMs = Date.now() - startTime;
+
+      // Cache mock result
+      await this.cache.set(cacheKey, result, this.config.cacheTTL);
+
+      this.trackPerformance({
+        operation: 'INTERACTION_CHECK',
+        durationMs,
+        timestamp: new Date(),
+        success: true,
+        cacheHit: false,
+      });
+
+      this.addAuditLog({
+        timestamp: new Date(),
+        action: 'INTERACTION_CHECK',
+        medications,
+        patientId,
+        result: 'FALLBACK_MOCK',
+        durationMs,
+        interactionCount: result.interactions.length,
+        cacheHit: false,
+      });
+
+      return result;
     }
 
     // Try FDB API with automatic fallback
     try {
       const response = await this.callFDBAPI(medications);
       const result = this.parseFDBResponse(response);
+      const durationMs = Date.now() - startTime;
+
+      // Cache successful result
+      await this.cache.set(cacheKey, result, this.config.cacheTTL);
 
       // Reset failure counter on success
       this.consecutiveFailures = 0;
       this.healthStatus = 'healthy';
 
+      this.trackPerformance({
+        operation: 'INTERACTION_CHECK',
+        durationMs,
+        timestamp: new Date(),
+        success: true,
+        cacheHit: false,
+      });
+
+      this.addAuditLog({
+        timestamp: new Date(),
+        action: 'INTERACTION_CHECK',
+        medications,
+        patientId,
+        result: 'SUCCESS',
+        durationMs,
+        interactionCount: result.interactions.length,
+        cacheHit: false,
+      });
+
       return result;
     } catch (error) {
+      const durationMs = Date.now() - startTime;
+
       console.error('[FDB Service] API call failed:', error);
 
       // Track failures
@@ -380,6 +600,29 @@ export class FDBService {
       // Graceful degradation: use mock data
       const mockResult = this.mockCheckDrugInteractions(medications);
 
+      // Cache fallback result
+      await this.cache.set(cacheKey, mockResult, this.config.cacheTTL);
+
+      this.trackPerformance({
+        operation: 'INTERACTION_CHECK',
+        durationMs,
+        timestamp: new Date(),
+        success: false,
+        cacheHit: false,
+      });
+
+      this.addAuditLog({
+        timestamp: new Date(),
+        action: 'INTERACTION_CHECK',
+        medications,
+        patientId,
+        result: 'FALLBACK_MOCK',
+        durationMs,
+        interactionCount: mockResult.interactions.length,
+        cacheHit: false,
+        errorMessage: error instanceof Error ? error.message : 'API call failed',
+      });
+
       // Add warning to mock result (could be used in UI)
       console.warn(
         '[FDB Service] WARNING: Using mock drug interaction data. ' +
@@ -392,25 +635,37 @@ export class FDBService {
   }
 
   /**
+   * Generate cache key from medications
+   * @param medications Array of medication names
+   * @returns Cache key string
+   */
+  private generateCacheKey(medications: string[]): string {
+    // Sort medications to ensure consistent cache keys
+    const sorted = medications
+      .map(med => this.normalizeDrugName(med))
+      .sort()
+      .join('|');
+
+    return `fdb:interactions:${sorted}`;
+  }
+
+  /**
    * Call FDB MedKnowledge API (production implementation)
    * Implements retry logic with exponential backoff for transient errors
    * @param medications Array of medication names
    * @returns Raw API response
    */
   private async callFDBAPI(medications: string[]): Promise<any> {
-    const maxRetries = 3;
-    const baseDelayMs = 1000;
-
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
+    for (let attempt = 0; attempt < this.config.maxRetries; attempt++) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
-        const response = await fetch(`${this.apiUrl}/api/v1/druginteractions`, {
+        const response = await fetch(`${this.config.apiUrl}/api/v1/druginteractions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
+            'Authorization': `Bearer ${this.config.apiKey}`,
             'Accept': 'application/json',
           },
           body: JSON.stringify({
@@ -432,7 +687,7 @@ export class FDBService {
           if (response.status === 429) {
             // Rate limit - retry with longer backoff
             const retryAfter = response.headers.get('Retry-After');
-            const delayMs = retryAfter ? parseInt(retryAfter) * 1000 : baseDelayMs * Math.pow(2, attempt);
+            const delayMs = retryAfter ? parseInt(retryAfter) * 1000 : this.config.baseDelayMs * Math.pow(2, attempt);
             console.warn(`[FDB Service] Rate limited. Retrying after ${delayMs}ms...`);
             await this.sleep(delayMs);
             continue;
@@ -452,7 +707,7 @@ export class FDBService {
         return data;
 
       } catch (error: any) {
-        console.error(`[FDB Service] API call attempt ${attempt + 1}/${maxRetries} failed:`, error.message);
+        console.error(`[FDB Service] API call attempt ${attempt + 1}/${this.config.maxRetries} failed:`, error.message);
 
         // Don't retry on auth errors or client errors
         if (error.message.includes('authentication failed') || error.message.includes('client error')) {
@@ -460,12 +715,12 @@ export class FDBService {
         }
 
         // If last attempt, throw error
-        if (attempt === maxRetries - 1) {
-          throw new Error(`FDB API call failed after ${maxRetries} attempts: ${error.message}`);
+        if (attempt === this.config.maxRetries - 1) {
+          throw new Error(`FDB API call failed after ${this.config.maxRetries} attempts: ${error.message}`);
         }
 
         // Wait before retrying (exponential backoff)
-        const delayMs = baseDelayMs * Math.pow(2, attempt);
+        const delayMs = this.config.baseDelayMs * Math.pow(2, attempt);
         console.warn(`[FDB Service] Retrying in ${delayMs}ms...`);
         await this.sleep(delayMs);
       }

@@ -59,10 +59,11 @@ export class DrugInteractionService {
   private cacheTTL: number;
 
   constructor(fdbService?: FDBService, cacheProvider?: CacheProvider) {
-    this.fdbService = fdbService || new FDBService();
+    this.fdbService = fdbService || new FDBService(cacheProvider);
     this.cache = cacheProvider || CacheFactory.createCache();
     this.cacheEnabled = process.env.DRUG_INTERACTION_CACHE_ENABLED !== 'false';
-    this.cacheTTL = parseInt(process.env.DRUG_INTERACTION_CACHE_TTL || '3600'); // 1 hour default
+    // T8-001: Extended cache TTL to 24 hours (86400 seconds) as per requirements
+    this.cacheTTL = parseInt(process.env.DRUG_INTERACTION_CACHE_TTL || '86400'); // 24 hours default
 
     if (this.cacheEnabled) {
       console.info(`[Interaction Service] Cache enabled with TTL: ${this.cacheTTL}s`);
