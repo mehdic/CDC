@@ -1,7 +1,7 @@
 /**
- * Video Call Screen - Patient App
- * Twilio Video integration for teleconsultation
- * Task: T154, T8-003
+ * Video Call Screen - Doctor App
+ * Twilio Video integration for teleconsultation with prescription overlay
+ * Task: T8-005
  * FR-023: Video calls MUST use end-to-end encryption with visible security indicators
  * FR-026: Consultations MUST support audio-only fallback for poor network conditions
  */
@@ -14,6 +14,8 @@ import {
   ActivityIndicator,
   Text,
   Platform,
+  TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
@@ -24,12 +26,13 @@ import { teleconsultationService } from '../services/teleconsultationService';
 
 interface VideoCallProps {
   teleconsultationId: string;
+  prescriptionId?: string; // Optional prescription to display during call
 }
 
 const VideoCallScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const { teleconsultationId } = route.params as VideoCallProps;
+  const { teleconsultationId, prescriptionId } = route.params as VideoCallProps;
 
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [roomName, setRoomName] = useState<string | null>(null);
@@ -38,6 +41,7 @@ const VideoCallScreen: React.FC = () => {
   const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioOnly, setAudioOnly] = useState(false);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const [showPrescriptionOverlay, setShowPrescriptionOverlay] = useState(false);
 
   const twilioRef = useRef<TwilioVideoHandle>(null);
 
@@ -168,6 +172,13 @@ const VideoCallScreen: React.FC = () => {
   };
 
   /**
+   * Toggle prescription overlay (T8-005 requirement)
+   */
+  const togglePrescriptionOverlay = () => {
+    setShowPrescriptionOverlay(!showPrescriptionOverlay);
+  };
+
+  /**
    * Handle video connection established
    */
   const handleConnected = () => {
@@ -224,8 +235,41 @@ const VideoCallScreen: React.FC = () => {
         audioOnly={audioOnly}
       />
 
+      {/* Prescription Overlay (T8-005) */}
+      {showPrescriptionOverlay && prescriptionId && (
+        <View style={styles.prescriptionOverlay}>
+          <ScrollView style={styles.prescriptionContent}>
+            <Text style={styles.prescriptionTitle}>Prescription Details</Text>
+            <Text style={styles.prescriptionText}>
+              Prescription ID: {prescriptionId}
+            </Text>
+            <Text style={styles.prescriptionNote}>
+              [Prescription details would be loaded from API]
+            </Text>
+          </ScrollView>
+          <TouchableOpacity
+            style={styles.closeOverlayButton}
+            onPress={togglePrescriptionOverlay}
+          >
+            <Text style={styles.closeOverlayText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Video Controls */}
       <View style={styles.controlsContainer}>
+        {/* Prescription Toggle Button (if prescriptionId provided) */}
+        {prescriptionId && (
+          <TouchableOpacity
+            style={styles.prescriptionButton}
+            onPress={togglePrescriptionOverlay}
+          >
+            <Text style={styles.prescriptionButtonText}>
+              {showPrescriptionOverlay ? 'Hide' : 'Show'} Prescription
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <VideoControls
           audioEnabled={audioEnabled}
           videoEnabled={videoEnabled}
@@ -266,6 +310,67 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  prescriptionButton: {
+    backgroundColor: 'rgba(0, 122, 255, 0.9)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  prescriptionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  prescriptionOverlay: {
+    position: 'absolute',
+    top: 60,
+    right: 16,
+    width: 300,
+    maxHeight: 400,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  prescriptionContent: {
+    flex: 1,
+  },
+  prescriptionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#000',
+  },
+  prescriptionText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 8,
+  },
+  prescriptionNote: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  closeOverlayButton: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  closeOverlayText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

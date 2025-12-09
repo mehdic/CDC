@@ -34,6 +34,13 @@ import { corsMiddleware, additionalCorsHeaders } from './middleware/cors';
 import { requestLoggerWithSkip } from './middleware/logger';
 import { generalLimiter, authLimiter } from './middleware/rateLimiter';
 import { authenticateJWT } from '../../../shared/middleware/auth';
+// Security middleware (T8-012, T8-013, T8-014)
+import {
+  configureSecurityHeaders,
+  configureCSP,
+  addCustomSecurityHeaders
+} from '../../../shared/middleware/securityHeaders';
+import { sanitizeInput, blockXSSPayloads } from './middleware/inputSanitizer';
 
 // Route imports
 import healthRouter from './routes/health';
@@ -64,24 +71,37 @@ app.set('trust proxy', 1);
 // Middleware Stack (ORDER MATTERS!)
 // ============================================================================
 
-// 1. CORS - Must be first to handle preflight requests
+// 1. Security Headers (Helmet.js) - T8-013: Must be early in stack
+app.use(configureSecurityHeaders());
+
+// 2. CSP (Content Security Policy) - T8-012: Defense in depth
+app.use(configureCSP());
+
+// 3. Custom Security Headers - T8-012: Additional security controls
+app.use(addCustomSecurityHeaders);
+
+// 4. CORS - Must be early to handle preflight requests
 app.use(corsMiddleware);
 app.use(additionalCorsHeaders);
 
-// 2. Tracing - Create spans for all requests
+// 5. Tracing - Create spans for all requests
 app.use(tracingMiddleware);
 
-// 3. Request Logging - Log all incoming requests
+// 6. Request Logging - Log all incoming requests
 app.use(requestLoggerWithSkip);
 
-// 4. General Rate Limiting - Apply to all routes
+// 7. General Rate Limiting - T8-016: Apply to all routes
 app.use(generalLimiter);
 
-// 5. Body Parsing - Must be BEFORE routes that need it
+// 8. Body Parsing - Must be BEFORE routes that need it
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 6. JSON Parsing Error Handler - Must come AFTER body parser
+// 9. Input Sanitization - T8-014: XSS Protection (AFTER body parsing)
+app.use(blockXSSPayloads);
+app.use(sanitizeInput);
+
+// 10. JSON Parsing Error Handler - Must come AFTER body parser
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof SyntaxError && 'body' in err) {
     // Invalid JSON payload
