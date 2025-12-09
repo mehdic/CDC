@@ -27,7 +27,9 @@ const Dashboard = lazy(() => import('@apps/pharmacist/pages/Dashboard'));
 const PrescriptionDashboard = lazy(() => import('@apps/pharmacist/pages/PrescriptionDashboard'));
 const PrescriptionReview = lazy(() => import('@apps/pharmacist/pages/PrescriptionReview'));
 const InventoryManagement = lazy(() => import('@apps/pharmacist/pages/InventoryManagement'));
-const VideoCall = lazy(() => import('@apps/pharmacist/pages/VideoCall'));
+const PharmacistVideoCall = lazy(() => import('@apps/pharmacist/pages/VideoCall'));
+const PatientVideoCall = lazy(() => import('@apps/patient/pages/VideoCall'));
+const DoctorVideoCall = lazy(() => import('@apps/doctor/pages/VideoCall'));
 const PharmacyProfileManager = lazy(() => import('@apps/pharmacist/pages/pharmacy-profile/PharmacyProfileManager'));
 const MasterAccountPage = lazy(() => import('@apps/pharmacist/pages/MasterAccountPage'));
 const ProductCatalog = lazy(() => import('@apps/pharmacist/pages/ProductCatalog'));
@@ -136,6 +138,32 @@ const AppLayout: React.FC<LayoutProps> = ({ children }) => {
 };
 
 /**
+ * Role-aware VideoCall component
+ * Renders the appropriate VideoCall page based on user role
+ */
+const RoleAwareVideoCall: React.FC = () => {
+  const userData = getUserData();
+  const userRole = userData?.role as UserRole | undefined;
+
+  // Render role-specific VideoCall component
+  switch (userRole) {
+    case 'patient':
+      return <PatientVideoCall />;
+    case 'doctor':
+      return <DoctorVideoCall />;
+    case 'pharmacist':
+    case 'admin':
+      return <PharmacistVideoCall />;
+    case 'nurse':
+      // Nurses likely use pharmacist interface for consultations
+      return <PharmacistVideoCall />;
+    default:
+      // Fallback to pharmacist version
+      return <PharmacistVideoCall />;
+  }
+};
+
+/**
  * Main Routes configuration
  * Defines all application routes with authentication and role-based access control
  */
@@ -216,23 +244,23 @@ export const AppRoutes: React.FC = () => {
           }
         />
 
-        {/* Teleconsultation route - All authenticated users */}
+        {/* Teleconsultation route - All authenticated users (role-aware) */}
         <Route
           path="/teleconsultation"
           element={
             <ProtectedRoute>
               <AppLayout>
-                <VideoCall />
+                <RoleAwareVideoCall />
               </AppLayout>
             </ProtectedRoute>
           }
         />
         <Route
-          path="/teleconsultation/:sessionId"
+          path="/teleconsultation/:consultationId"
           element={
             <ProtectedRoute>
               <AppLayout>
-                <VideoCall />
+                <RoleAwareVideoCall />
               </AppLayout>
             </ProtectedRoute>
           }
