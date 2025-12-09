@@ -171,7 +171,31 @@ Limit: 3
 ```
 Then invoke: `Skill(command: "bazinga-db")`. Include returned packages in that group's prompt (see Simple Mode §Context Package Routing Rules for format). Query errors are non-blocking.
 
-**Build PER GROUP:** Read agent file + `bazinga/templates/prompt_building.md`. **Include:** Agent, Group=[A/B/C/D], Mode=Parallel, Session, Branch (group branch), Skills/Testing, Task from PM, **Context Packages (if any)**, **Specializations (per §Specialization Loading)**. **Validate EACH:** ✓ Skills, ✓ Workflow, ✓ Group branch, ✓ Testing, ✓ Report format, ✓ Specializations.
+**🔴 Reasoning Context Query (PER GROUP, AFTER context packages):**
+
+For each group, query prior agent reasoning:
+```bash
+python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet get-reasoning \
+  "{session_id}" --group_id "{group_id}" --limit 5
+```
+Include returned reasoning in prompt (see Simple Mode §Reasoning Context Routing Rules for format). Query errors are non-blocking (proceed without reasoning if query fails).
+
+**Build PER GROUP:** Read agent file + `bazinga/templates/prompt_building.md` (testing_config + skills_config + **specializations**). **Include:** Agent, Group=[A/B/C/D], Mode=Parallel, Session, Branch (group branch), Skills/Testing, Task from PM, **Context Packages (if any)**, **Reasoning Context (if any)**, **Specializations (loaded via prompt_building.md)**. **Validate EACH:** ✓ Skills, ✓ Workflow, ✓ Group branch, ✓ Testing, ✓ Report format, ✓ Specializations.
+
+**Show Prompt Summaries (PER GROUP):** Output structured summary for each group (NOT full prompts):
+```text
+📝 **{agent_type} Prompt** | Group: {group_id} | Model: {model}
+
+   **Task:** {task_title}
+   {task_description_2_3_sentences}
+
+   **Requirements:**
+   • {requirement_1}
+   • {requirement_2}
+
+   **Branch:** {group_branch}
+   **Config:** Context: {context_pkg_count} pkgs | Specs: {specs_status} | Specializations: {specializations_status} | Skills: {skills_list}
+```
 
 **Spawn ALL in ONE message (MAX 4 groups):**
 ```
