@@ -88,7 +88,7 @@ export class AWSTranscribeProvider extends BaseTranscriptionProvider {
         '[AWSTranscribeProvider] AWS Region: ' +
         config.AWS_REGION +
         ', Bucket: ' +
-        config.S3_BUCKET || 'default'
+        (config.S3_BUCKET || 'default')
       );
     }
   }
