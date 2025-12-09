@@ -9,6 +9,8 @@ import { Request, Response } from 'express';
 import { DataSource } from 'typeorm';
 import { Prescription } from '../../../../shared/models/Prescription';
 import { PrescriptionStateMachine } from '../utils/stateMachine';
+import { auditClient } from '../services/auditClient';
+import { notificationClient } from '../services/notificationClient';
 
 export interface RejectionRequest {
   pharmacist_id: string;   // ID of pharmacist rejecting
@@ -98,96 +100,75 @@ export async function rejectPrescription(req: Request, res: Response): Promise<v
     await prescriptionRepo.save(prescription);
 
     // ========================================================================
-    // TODO: Integrate Audit Service from Phase 2 (FR-018)
+    // Audit Service Integration (FR-018)
+    // Log the prescription rejection for compliance
     // ========================================================================
-    // Integration Point: POST http://localhost:4003/audit/events
-    // Service: Audit Service (T043-T045) - Completed in Phase 2
-    //
-    // Required payload:
-    // await fetch('http://audit-service:4003/audit/events', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${JWT_TOKEN}`, // Pass through from request
-    //   },
-    //   body: JSON.stringify({
-    //     event_type: 'prescription.rejected',
-    //     user_id: rejectionData.pharmacist_id,
-    //     resource_type: 'prescription',
-    //     resource_id: prescription.id,
-    //     pharmacy_id: prescription.pharmacy_id,
-    //     changes: {
-    //       status: { old: 'in_review', new: 'rejected' },
-    //       rejection_reason: { old: null, new: rejectionData.reason },
-    //     },
-    //     ip_address: req.ip,
-    //     user_agent: req.headers['user-agent'],
-    //   }),
-    // });
-    //
-    // Error handling: Log failure but don't block rejection (audit is supplementary)
+    const auditDetails = {
+      previous_status: prescription.status,
+      new_status: 'rejected',
+      rejection_reason: rejectionData.reason,
+      rejection_category: rejectionData.category,
+    };
+
+    await auditClient.logPrescriptionRejection(
+      rejectionData.pharmacist_id,
+      prescription.id,
+      rejectionData.reason,
+      req.ip || '0.0.0.0',
+      req.headers['user-agent'] || 'unknown',
+    );
+
+    console.log(`[Reject Controller] Audit logged for prescription ${prescription.id}`);
+    // Note: Audit failures don't block the rejection (supplementary logging)
 
     // ========================================================================
-    // TODO: Integrate Notification Service from Phase 2 (FR-029)
+    // Notification Service Integration (FR-029)
+    // Send rejection notifications to patient and doctor
     // ========================================================================
-    // Integration Point: POST http://localhost:4006/notifications/send
-    // Service: Notification Service (T051-T054) - Completed in Phase 2
-
-    // Send notifications (FR-029)
     const notifyPatient = rejectionData.notify_patient !== false; // Default: true
     const notifyDoctor = rejectionData.notify_doctor !== false;   // Default: true
 
     let patientNotified = false;
     let doctorNotified = false;
 
-    if (notifyPatient) {
+    // Notify patient about rejection
+    if (notifyPatient && prescription.patient_id) {
       try {
-        // TODO: Implement actual notification call
-        // await fetch('http://notification-service:4006/notifications/send', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({
-        //     user_id: prescription.patient_id,
-        //     type: 'prescription_rejected',
-        //     channel: 'in_app', // Also support: email, sms
-        //     priority: 'high',
-        //     title: 'Prescription Rejected',
-        //     message: `Your prescription has been rejected. Reason: ${rejectionData.reason}`,
-        //     data: {
-        //       prescription_id: prescription.id,
-        //       rejection_reason: rejectionData.reason,
-        //       pharmacy_id: prescription.pharmacy_id,
-        //     },
-        //   }),
-        // });
-        patientNotified = true;
+        const patientResult = await notificationClient.sendPrescriptionRejectedNotification(
+          prescription.patient_id,
+          prescription.id,
+          rejectionData.reason,
+        );
+
+        patientNotified = patientResult !== null && patientResult.status !== 'failed';
+        console.log(`[Reject Controller] Patient notification ${patientNotified ? 'sent' : 'failed'} for prescription ${prescription.id}`);
       } catch (error) {
         console.error('[Reject Controller] Failed to notify patient:', error);
       }
     }
 
+    // Notify doctor about rejection
     if (notifyDoctor && prescription.prescribing_doctor_id) {
       try {
-        // TODO: Implement actual notification call
-        // await fetch('http://notification-service:4006/notifications/send', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({
-        //     user_id: prescription.prescribing_doctor_id,
-        //     type: 'prescription_rejected',
-        //     channel: 'in_app', // Also support: email
-        //     priority: 'high',
-        //     title: 'Prescription Rejected by Pharmacy',
-        //     message: `A prescription you issued has been rejected. Reason: ${rejectionData.reason}`,
-        //     data: {
-        //       prescription_id: prescription.id,
-        //       rejection_reason: rejectionData.reason,
-        //       pharmacy_id: prescription.pharmacy_id,
-        //       patient_id: prescription.patient_id,
-        //     },
-        //   }),
-        // });
-        doctorNotified = true;
+        const doctorResult = await notificationClient.sendNotification({
+          userId: prescription.prescribing_doctor_id,
+          channel: ['push', 'email'],
+          type: 'prescription_rejected_by_pharmacy',
+          priority: 'high',
+          title: 'Prescription Rejected by Pharmacy',
+          subject: 'Prescription Rejection Notice',
+          message: `A prescription you issued has been rejected. Reason: ${rejectionData.reason}`,
+          data: {
+            prescription_id: prescription.id,
+            rejection_reason: rejectionData.reason,
+            pharmacy_id: prescription.pharmacy_id,
+            patient_id: prescription.patient_id,
+            patient_name: prescription.patient?.name,
+          },
+        });
+
+        doctorNotified = doctorResult !== null && doctorResult.status !== 'failed';
+        console.log(`[Reject Controller] Doctor notification ${doctorNotified ? 'sent' : 'failed'} for prescription ${prescription.id}`);
       } catch (error) {
         console.error('[Reject Controller] Failed to notify doctor:', error);
       }
