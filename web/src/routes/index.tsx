@@ -27,7 +27,9 @@ const Dashboard = lazy(() => import('@apps/pharmacist/pages/Dashboard'));
 const PrescriptionDashboard = lazy(() => import('@apps/pharmacist/pages/PrescriptionDashboard'));
 const PrescriptionReview = lazy(() => import('@apps/pharmacist/pages/PrescriptionReview'));
 const InventoryManagement = lazy(() => import('@apps/pharmacist/pages/InventoryManagement'));
-const VideoCall = lazy(() => import('@apps/pharmacist/pages/VideoCall'));
+const PharmacistVideoCall = lazy(() => import('@apps/pharmacist/pages/VideoCall'));
+const PatientVideoCall = lazy(() => import('@apps/patient/pages/VideoCall'));
+const DoctorVideoCall = lazy(() => import('@apps/doctor/pages/VideoCall'));
 const PharmacyProfileManager = lazy(() => import('@apps/pharmacist/pages/pharmacy-profile/PharmacyProfileManager'));
 const MasterAccountPage = lazy(() => import('@apps/pharmacist/pages/MasterAccountPage'));
 const ProductCatalog = lazy(() => import('@apps/pharmacist/pages/ProductCatalog'));
@@ -77,6 +79,32 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRoles
 
   console.log('[ProtectedRoute] Authenticated - rendering protected content');
   return <>{children}</>;
+};
+
+/**
+ * Role-aware Video Call Component
+ * Renders the appropriate VideoCall component based on user role
+ * Task: T8-003, T8-004, T8-005 - Twilio Video SDK integration per role
+ */
+const RoleAwareVideoCall: React.FC = () => {
+  const userData = getUserData();
+  const userRole = userData?.role as UserRole | undefined;
+
+  // Select component based on role
+  switch (userRole) {
+    case 'pharmacist':
+    case 'admin':
+      return <PharmacistVideoCall />;
+    case 'doctor':
+      return <DoctorVideoCall />;
+    case 'patient':
+      return <PatientVideoCall />;
+    case 'nurse':
+      // Nurses can join consultations as observers/assistants
+      return <PatientVideoCall />;
+    default:
+      return <PharmacistVideoCall />;
+  }
 };
 
 /**
@@ -216,23 +244,23 @@ export const AppRoutes: React.FC = () => {
           }
         />
 
-        {/* Teleconsultation route - All authenticated users */}
+        {/* Teleconsultation routes - Role-aware video call component */}
         <Route
           path="/teleconsultation"
           element={
             <ProtectedRoute>
               <AppLayout>
-                <VideoCall />
+                <RoleAwareVideoCall />
               </AppLayout>
             </ProtectedRoute>
           }
         />
         <Route
-          path="/teleconsultation/:sessionId"
+          path="/teleconsultation/:consultationId"
           element={
             <ProtectedRoute>
               <AppLayout>
-                <VideoCall />
+                <RoleAwareVideoCall />
               </AppLayout>
             </ProtectedRoute>
           }
