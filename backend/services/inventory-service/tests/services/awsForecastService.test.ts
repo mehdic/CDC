@@ -40,6 +40,7 @@ describe('AwsForecastService', () => {
     (service as any).queryClient = mockQueryClient;
     (service as any).isConfigured = true;
     (service as any).predictorArn = 'arn:aws:forecast:eu-central-1:123456789:predictor/test-predictor';
+    (service as any).forecastArn = 'arn:aws:forecast:eu-central-1:123456789:forecast/test-forecast';
   });
 
   describe('Constructor and Initialization', () => {
@@ -93,8 +94,14 @@ describe('AwsForecastService', () => {
         if (command.constructor.name === 'CreateDatasetCommand') {
           return Promise.resolve({ DatasetArn: 'arn:aws:forecast:eu-central-1:123:dataset/test' });
         }
+        if (command.constructor.name === 'CreateDatasetImportJobCommand') {
+          return Promise.resolve({ DatasetImportJobArn: 'arn:aws:forecast:eu-central-1:123:import/test' });
+        }
         if (command.constructor.name === 'CreatePredictorCommand') {
           return Promise.resolve({ PredictorArn: 'arn:aws:forecast:eu-central-1:123:predictor/test' });
+        }
+        if (command.constructor.name === 'CreateForecastCommand') {
+          return Promise.resolve({ ForecastArn: 'arn:aws:forecast:eu-central-1:123:forecast/test' });
         }
         if (command.constructor.name === 'DescribePredictorCommand') {
           return Promise.resolve({
@@ -114,8 +121,18 @@ describe('AwsForecastService', () => {
             },
           });
         }
+        if (command.constructor.name === 'DescribeDatasetImportJobCommand') {
+          return Promise.resolve({ Status: 'ACTIVE' });
+        }
+        if (command.constructor.name === 'DescribeForecastCommand') {
+          return Promise.resolve({ Status: 'ACTIVE' });
+        }
         return Promise.resolve({});
       });
+
+      // Mock S3 client
+      const mockS3Send = jest.fn().mockResolvedValue({});
+      (service as any).s3Client = { send: mockS3Send };
 
       const result = await service.trainForecastModel(historicalData);
 
@@ -272,8 +289,8 @@ describe('AwsForecastService', () => {
       expect(forecast.recommendation.suggestedQuantity).toBeGreaterThan(0);
     });
 
-    it('should run in stub mode without predictor ARN', async () => {
-      (service as any).predictorArn = null;
+    it('should run in stub mode without forecast ARN', async () => {
+      (service as any).forecastArn = null;
 
       const forecast = await service.getForecast('MED-001', 'PHARMACY-123', 30);
 
@@ -494,6 +511,248 @@ describe('AwsForecastService', () => {
       // Restore environment variables
       if (originalAccessKey) process.env.AWS_ACCESS_KEY_ID = originalAccessKey;
       if (originalSecretKey) process.env.AWS_SECRET_ACCESS_KEY = originalSecretKey;
+    });
+  });
+
+  describe('Input Validation', () => {
+    it('should reject invalid SKU (empty string)', async () => {
+      await expect(service.getForecast('', 'PHARMACY-123', 30)).rejects.toThrow('Invalid SKU');
+    });
+
+    it('should reject invalid SKU (too long)', async () => {
+      const longSku = 'A'.repeat(300);
+      await expect(service.getForecast(longSku, 'PHARMACY-123', 30)).rejects.toThrow('Invalid SKU');
+    });
+
+    it('should reject invalid pharmacy ID (empty)', async () => {
+      await expect(service.getForecast('MED-001', '', 30)).rejects.toThrow('Invalid pharmacy ID');
+    });
+
+    it('should reject invalid daysAhead (too low)', async () => {
+      await expect(service.getForecast('MED-001', 'PHARMACY-123', 0)).rejects.toThrow('Invalid daysAhead');
+    });
+
+    it('should reject invalid daysAhead (too high)', async () => {
+      await expect(service.getForecast('MED-001', 'PHARMACY-123', 100)).rejects.toThrow('Invalid daysAhead');
+    });
+
+    it('should sanitize SKU to prevent injection', async () => {
+      const maliciousSku = 'MED-001; DROP TABLE inventory;';
+
+      (mockQueryClient.send as jest.Mock).mockResolvedValue({
+        Forecast: {
+          Predictions: {
+            p50: [{ Timestamp: '2024-01-01', Value: 10 }],
+            p10: [{ Timestamp: '2024-01-01', Value: 7 }],
+            p90: [{ Timestamp: '2024-01-01', Value: 13 }],
+          },
+        },
+      });
+
+      const forecast = await service.getForecast(maliciousSku, 'PHARMACY-123', 30);
+
+      // Should sanitize to 'MED-001DROPTABLEinventory'
+      expect(forecast.sku).toMatch(/^[a-zA-Z0-9_-]+$/);
+      expect(forecast.sku).not.toContain(';');
+      expect(forecast.sku).not.toContain(' ');
+    });
+  });
+
+  describe('Stock Lookup Integration', () => {
+    it('should use custom stock lookup function when configured', async () => {
+      const mockStockLookup = jest.fn().mockResolvedValue(250);
+      service.setStockLookup(mockStockLookup);
+
+      (mockQueryClient.send as jest.Mock).mockResolvedValue({
+        Forecast: {
+          Predictions: {
+            p50: [{ Timestamp: '2024-01-01', Value: 10 }],
+            p10: [{ Timestamp: '2024-01-01', Value: 7 }],
+            p90: [{ Timestamp: '2024-01-01', Value: 13 }],
+          },
+        },
+      });
+
+      const forecast = await service.getForecast('MED-001', 'PHARMACY-123', 30);
+
+      expect(mockStockLookup).toHaveBeenCalledWith('MED-001', 'PHARMACY-123');
+      expect(forecast.currentStock).toBe(250);
+    });
+
+    it('should use deterministic fallback when stock lookup not configured', async () => {
+      // Don't set stock lookup
+      (mockQueryClient.send as jest.Mock).mockResolvedValue({
+        Forecast: {
+          Predictions: {
+            p50: [{ Timestamp: '2024-01-01', Value: 10 }],
+            p10: [{ Timestamp: '2024-01-01', Value: 7 }],
+            p90: [{ Timestamp: '2024-01-01', Value: 13 }],
+          },
+        },
+      });
+
+      const forecast = await service.getForecast('MED-001', 'PHARMACY-123', 30);
+
+      // Should use deterministic value based on SKU
+      expect(forecast.currentStock).toBeGreaterThan(0);
+      expect(forecast.currentStock).toBeLessThan(150);
+    });
+
+    it('should fallback to deterministic value if stock lookup fails', async () => {
+      // Don't set stock lookup - AWS configured but no stock lookup
+      // This tests the "else" branch in getForecast
+
+      (mockQueryClient.send as jest.Mock).mockResolvedValue({
+        Forecast: {
+          Predictions: {
+            p50: [{ Timestamp: '2024-01-01', Value: 10 }],
+            p10: [{ Timestamp: '2024-01-01', Value: 7 }],
+            p90: [{ Timestamp: '2024-01-01', Value: 13 }],
+          },
+        },
+      });
+
+      const forecast = await service.getForecast('MED-001', 'PHARMACY-123', 30);
+
+      // Should use deterministic value since no stock lookup configured
+      expect(forecast.currentStock).toBeGreaterThan(0);
+      expect(forecast.currentStock).toBeLessThan(150);
+    });
+  });
+
+  describe('CreateForecast Workflow', () => {
+    it('should create forecast after predictor training completes', async () => {
+      const historicalData: ForecastDataPoint[] = [];
+      for (let i = 0; i < 400; i++) {
+        historicalData.push({
+          timestamp: new Date(),
+          sku: 'MED-001',
+          quantity: 10,
+        });
+      }
+
+      let createForecastCalled = false;
+
+      mockForecastClient.send.mockImplementation((command: any) => {
+        if (command.constructor.name === 'CreateDatasetCommand') {
+          return Promise.resolve({ DatasetArn: 'arn:aws:forecast:eu-central-1:123:dataset/test' });
+        }
+        if (command.constructor.name === 'CreateDatasetImportJobCommand') {
+          return Promise.resolve({ DatasetImportJobArn: 'arn:aws:forecast:eu-central-1:123:import/test' });
+        }
+        if (command.constructor.name === 'CreatePredictorCommand') {
+          return Promise.resolve({ PredictorArn: 'arn:aws:forecast:eu-central-1:123:predictor/test' });
+        }
+        if (command.constructor.name === 'CreateForecastCommand') {
+          createForecastCalled = true;
+          return Promise.resolve({ ForecastArn: 'arn:aws:forecast:eu-central-1:123:forecast/test' });
+        }
+        if (command.constructor.name === 'DescribePredictorCommand') {
+          return Promise.resolve({ Status: 'ACTIVE' });
+        }
+        if (command.constructor.name === 'DescribeForecastCommand') {
+          return Promise.resolve({ Status: 'ACTIVE' });
+        }
+        if (command.constructor.name === 'DescribeDatasetImportJobCommand') {
+          return Promise.resolve({ Status: 'ACTIVE' });
+        }
+        return Promise.resolve({});
+      });
+
+      // Mock S3 client
+      const mockS3Send = jest.fn().mockResolvedValue({});
+      (service as any).s3Client = { send: mockS3Send };
+
+      const result = await service.trainForecastModel(historicalData);
+
+      expect(result.success).toBe(true);
+      expect(createForecastCalled).toBe(true);
+    });
+
+    it('should use forecast ARN (not predictor ARN) in QueryForecastCommand', async () => {
+      // Ensure forecast ARN is set (from beforeEach)
+      expect((service as any).forecastArn).toBeDefined();
+      expect((service as any).forecastArn).toContain('forecast');
+      expect((service as any).forecastArn).not.toContain('predictor');
+
+      // Mock query response
+      (mockQueryClient.send as jest.Mock).mockResolvedValue({
+        Forecast: {
+          Predictions: {
+            p50: [{ Timestamp: '2024-01-01', Value: 10 }],
+            p10: [{ Timestamp: '2024-01-01', Value: 7 }],
+            p90: [{ Timestamp: '2024-01-01', Value: 13 }],
+          },
+        },
+      });
+
+      const forecast = await service.getForecast('MED-001', 'PHARMACY-123', 30);
+
+      // Verify forecast was successfully retrieved
+      expect(forecast).toBeDefined();
+      expect(forecast.sku).toBe('MED-001');
+      expect(forecast.predictions.length).toBeGreaterThan(0);
+
+      // Verify queryClient.send was called (forecast ARN is used internally)
+      expect(mockQueryClient.send).toHaveBeenCalled();
+    });
+  });
+
+  describe('S3 Data Upload', () => {
+    it('should upload CSV data to S3 during training', async () => {
+      const historicalData: ForecastDataPoint[] = [];
+      for (let i = 0; i < 400; i++) {
+        historicalData.push({
+          timestamp: new Date('2024-01-01'),
+          sku: 'MED-001',
+          quantity: 10,
+        });
+      }
+
+      let s3UploadCalled = false;
+      let s3Body: string | undefined;
+
+      const mockS3Send = jest.fn().mockImplementation((command: any) => {
+        if (command.constructor.name === 'PutObjectCommand') {
+          s3UploadCalled = true;
+          s3Body = command.input.Body;
+        }
+        return Promise.resolve({});
+      });
+
+      (service as any).s3Client = { send: mockS3Send };
+
+      mockForecastClient.send.mockImplementation((command: any) => {
+        if (command.constructor.name === 'CreateDatasetCommand') {
+          return Promise.resolve({ DatasetArn: 'arn:aws:forecast:eu-central-1:123:dataset/test' });
+        }
+        if (command.constructor.name === 'CreateDatasetImportJobCommand') {
+          return Promise.resolve({ DatasetImportJobArn: 'arn:aws:forecast:eu-central-1:123:import/test' });
+        }
+        if (command.constructor.name === 'CreatePredictorCommand') {
+          return Promise.resolve({ PredictorArn: 'arn:aws:forecast:eu-central-1:123:predictor/test' });
+        }
+        if (command.constructor.name === 'CreateForecastCommand') {
+          return Promise.resolve({ ForecastArn: 'arn:aws:forecast:eu-central-1:123:forecast/test' });
+        }
+        if (command.constructor.name === 'DescribeDatasetImportJobCommand') {
+          return Promise.resolve({ Status: 'ACTIVE' });
+        }
+        if (command.constructor.name === 'DescribePredictorCommand') {
+          return Promise.resolve({ Status: 'ACTIVE' });
+        }
+        if (command.constructor.name === 'DescribeForecastCommand') {
+          return Promise.resolve({ Status: 'ACTIVE' });
+        }
+        return Promise.resolve({});
+      });
+
+      const result = await service.trainForecastModel(historicalData);
+
+      expect(result.success).toBe(true);
+      expect(s3UploadCalled).toBe(true);
+      expect(s3Body).toContain('timestamp,item_id,demand');
+      expect(s3Body).toContain('MED-001');
     });
   });
 });

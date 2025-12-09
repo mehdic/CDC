@@ -17,7 +17,10 @@ import {
   CreateDatasetCommand,
   CreateDatasetImportJobCommand,
   CreatePredictorCommand,
+  CreateForecastCommand,
   DescribePredictorCommand,
+  DescribeDatasetImportJobCommand,
+  DescribeForecastCommand,
   DatasetType,
   Domain,
   AttributeType,
@@ -27,6 +30,8 @@ import {
   ForecastqueryClient,
   QueryForecastCommand,
 } from '@aws-sdk/client-forecastquery';
+
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 export interface ForecastDataPoint {
   timestamp: Date;
@@ -65,6 +70,8 @@ export interface ForecastConfig {
   datasetGroupName?: string;
   forecastHorizon?: number; // Days to forecast
   predictionInterval?: number; // Confidence interval (e.g., 90 = 90%)
+  s3Bucket?: string; // S3 bucket for dataset uploads
+  forecastRoleArn?: string; // IAM role ARN for Forecast service
 }
 
 /**
@@ -74,9 +81,12 @@ export interface ForecastConfig {
 export class AwsForecastService {
   private client: ForecastClient | null = null;
   private queryClient: ForecastqueryClient | null = null;
+  private s3Client: S3Client | null = null;
   private config: Required<ForecastConfig>;
   private isConfigured: boolean = false;
   private predictorArn: string | null = null;
+  private forecastArn: string | null = null;
+  private stockLookup?: (sku: string, pharmacyId: string) => Promise<number>;
 
   constructor(config: ForecastConfig = {}) {
     this.config = {
@@ -86,9 +96,19 @@ export class AwsForecastService {
       datasetGroupName: config.datasetGroupName || 'metapharm-inventory',
       forecastHorizon: config.forecastHorizon || 30, // 30 days ahead
       predictionInterval: config.predictionInterval || 90, // 90% confidence
+      s3Bucket: config.s3Bucket || process.env.AWS_FORECAST_S3_BUCKET || 'metapharm-forecast-data',
+      forecastRoleArn: config.forecastRoleArn || process.env.AWS_FORECAST_ROLE_ARN || '',
     };
 
     this.initializeClient();
+  }
+
+  /**
+   * Set custom stock lookup function for inventory integration
+   * @param fn - Function that returns current stock for a given SKU and pharmacy
+   */
+  public setStockLookup(fn: (sku: string, pharmacyId: string) => Promise<number>): void {
+    this.stockLookup = fn;
   }
 
   /**
@@ -113,6 +133,11 @@ export class AwsForecastService {
       });
 
       this.queryClient = new ForecastqueryClient({
+        region: this.config.region,
+        credentials,
+      });
+
+      this.s3Client = new S3Client({
         region: this.config.region,
         credentials,
       });
@@ -186,14 +211,38 @@ export class AwsForecastService {
 
       console.log('[AwsForecastService] Dataset created:', datasetArn);
 
-      // Step 2: Import historical data
-      // Note: In production, historicalData would be uploaded to S3 first
-      // For now, we'll simulate the import job
-      console.log('[AwsForecastService] Step 2: Importing historical data...');
-      console.log('[AwsForecastService] Note: Data import requires S3 upload in production');
+      // Step 2: Upload data to S3 and import
+      console.log('[AwsForecastService] Step 2: Uploading data to S3...');
+      const csvContent = this.convertToCSV(historicalData);
+      const s3Key = `forecast-data/${datasetName}.csv`;
 
-      // Step 3: Create Predictor (ML model)
-      console.log('[AwsForecastService] Step 3: Creating predictor...');
+      await this.uploadToS3(csvContent, s3Key);
+
+      console.log('[AwsForecastService] Step 3: Creating dataset import job...');
+      const importJobName = `${datasetName}-import`;
+      const importJobCmd = new CreateDatasetImportJobCommand({
+        DatasetImportJobName: importJobName,
+        DatasetArn: datasetArn,
+        DataSource: {
+          S3Config: {
+            Path: `s3://${this.config.s3Bucket}/${s3Key}`,
+            RoleArn: this.config.forecastRoleArn,
+          },
+        },
+      });
+
+      const importJobResponse = await this.client.send(importJobCmd);
+      const importJobArn = importJobResponse.DatasetImportJobArn;
+
+      if (!importJobArn) {
+        throw new Error('Failed to create dataset import job: no ARN returned');
+      }
+
+      console.log('[AwsForecastService] Dataset import job created:', importJobArn);
+      await this.waitForImportCompletion(importJobArn);
+
+      // Step 4: Create Predictor (ML model)
+      console.log('[AwsForecastService] Step 4: Creating predictor...');
 
       const createPredictorCmd = new CreatePredictorCommand({
         PredictorName: predictorName,
@@ -217,9 +266,26 @@ export class AwsForecastService {
       console.log('[AwsForecastService] Predictor created:', this.predictorArn);
       console.log('[AwsForecastService] Note: Training is asynchronous. Use DescribePredictorCommand to check status.');
 
-      // Step 4: Poll for training completion (simplified for this implementation)
-      // In production, you would poll DescribePredictorCommand until status is 'ACTIVE'
+      // Step 5: Poll for training completion
       const accuracy = await this.waitForTrainingCompletion(this.predictorArn);
+
+      // Step 6: Create Forecast from trained predictor
+      console.log('[AwsForecastService] Step 5: Creating forecast from predictor...');
+      const forecastName = `metapharm-forecast-${timestamp}`;
+      const createForecastCmd = new CreateForecastCommand({
+        ForecastName: forecastName,
+        PredictorArn: this.predictorArn,
+      });
+
+      const forecastResponse = await this.client.send(createForecastCmd);
+      this.forecastArn = forecastResponse.ForecastArn || null;
+
+      if (!this.forecastArn) {
+        throw new Error('Failed to create forecast: no ARN returned');
+      }
+
+      console.log('[AwsForecastService] Forecast created:', this.forecastArn);
+      await this.waitForForecastCompletion(this.forecastArn);
 
       return {
         success: true,
@@ -297,6 +363,134 @@ export class AwsForecastService {
   }
 
   /**
+   * Wait for dataset import job to complete
+   * @param importJobArn - Import job ARN
+   */
+  private async waitForImportCompletion(importJobArn: string): Promise<void> {
+    if (!this.client) {
+      return;
+    }
+
+    try {
+      const maxAttempts = 60; // Wait up to 5 minutes
+      let attempts = 0;
+
+      while (attempts < maxAttempts) {
+        const describeCmd = new DescribeDatasetImportJobCommand({
+          DatasetImportJobArn: importJobArn,
+        });
+
+        const response = await this.client.send(describeCmd);
+        const status = response.Status;
+
+        if (status === 'ACTIVE') {
+          console.log('[AwsForecastService] Dataset import completed successfully');
+          return;
+        }
+
+        if (status === 'CREATE_FAILED') {
+          throw new Error(`Dataset import failed: ${response.Message || 'Unknown reason'}`);
+        }
+
+        // Still importing, wait and retry
+        await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
+        attempts++;
+      }
+
+      console.warn('[AwsForecastService] Import timeout. Import is still running asynchronously.');
+    } catch (error) {
+      console.error('[AwsForecastService] Failed to check import status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Wait for forecast creation to complete
+   * @param forecastArn - Forecast ARN
+   */
+  private async waitForForecastCompletion(forecastArn: string): Promise<void> {
+    if (!this.client) {
+      return;
+    }
+
+    try {
+      const maxAttempts = 60; // Wait up to 5 minutes
+      let attempts = 0;
+
+      while (attempts < maxAttempts) {
+        const describeCmd = new DescribeForecastCommand({
+          ForecastArn: forecastArn,
+        });
+
+        const response = await this.client.send(describeCmd);
+        const status = response.Status;
+
+        if (status === 'ACTIVE') {
+          console.log('[AwsForecastService] Forecast creation completed successfully');
+          return;
+        }
+
+        if (status === 'CREATE_FAILED') {
+          throw new Error(`Forecast creation failed: ${response.Message || 'Unknown reason'}`);
+        }
+
+        // Still creating, wait and retry
+        await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
+        attempts++;
+      }
+
+      console.warn('[AwsForecastService] Forecast creation timeout. Forecast is still being created asynchronously.');
+    } catch (error) {
+      console.error('[AwsForecastService] Failed to check forecast status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload CSV data to S3
+   * @param csvContent - CSV file content
+   * @param s3Key - S3 object key
+   */
+  private async uploadToS3(csvContent: string, s3Key: string): Promise<void> {
+    if (!this.s3Client) {
+      throw new Error('S3 client not initialized');
+    }
+
+    try {
+      const putCmd = new PutObjectCommand({
+        Bucket: this.config.s3Bucket,
+        Key: s3Key,
+        Body: csvContent,
+        ContentType: 'text/csv',
+      });
+
+      await this.s3Client.send(putCmd);
+      console.log(`[AwsForecastService] Data uploaded to s3://${this.config.s3Bucket}/${s3Key}`);
+    } catch (error) {
+      console.error('[AwsForecastService] Failed to upload to S3:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Convert historical data to CSV format for AWS Forecast
+   * @param data - Historical forecast data points
+   * @returns CSV string
+   */
+  private convertToCSV(data: ForecastDataPoint[]): string {
+    // AWS Forecast expects: timestamp,item_id,demand
+    const header = 'timestamp,item_id,demand\n';
+    const rows = data.map((point) => {
+      const timestamp = point.timestamp.toISOString();
+      const itemId = point.sku;
+      const demand = point.quantity;
+      return `${timestamp},${itemId},${demand}`;
+    });
+
+    return header + rows.join('\n');
+  }
+
+  /**
    * Get demand forecast for a product
    * @param sku - Product SKU
    * @param pharmacyId - Pharmacy ID
@@ -307,20 +501,34 @@ export class AwsForecastService {
     pharmacyId: string,
     daysAhead: number = 30,
   ): Promise<ForecastPrediction> {
-    if (!this.isConfigured || !this.queryClient || !this.predictorArn) {
+    // Validate inputs
+    if (!sku || typeof sku !== 'string' || sku.length > 256) {
+      throw new Error('Invalid SKU: must be a non-empty string up to 256 characters');
+    }
+    if (!pharmacyId || typeof pharmacyId !== 'string') {
+      throw new Error('Invalid pharmacy ID: must be a non-empty string');
+    }
+    if (daysAhead < 1 || daysAhead > 90) {
+      throw new Error('Invalid daysAhead: must be between 1 and 90');
+    }
+
+    // Sanitize SKU to prevent injection
+    const sanitizedSku = sku.replace(/[^a-zA-Z0-9_-]/g, '');
+
+    if (!this.isConfigured || !this.queryClient || !this.forecastArn) {
       console.warn('[AwsForecastService] Stub mode - returning mock forecast');
-      return this.generateMockForecast(sku, daysAhead);
+      return this.generateMockForecast(sanitizedSku, daysAhead, pharmacyId);
     }
 
     try {
       const startDate = new Date();
       const endDate = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000);
 
-      // Query AWS Forecast for predictions
+      // Query AWS Forecast for predictions using FORECAST ARN (not predictor ARN)
       const queryCmd = new QueryForecastCommand({
-        ForecastArn: this.predictorArn,
+        ForecastArn: this.forecastArn,
         Filters: {
-          item_id: sku,
+          item_id: sanitizedSku,
         },
         StartDate: startDate.toISOString(),
         EndDate: endDate.toISOString(),
@@ -331,21 +539,28 @@ export class AwsForecastService {
 
       if (!forecastData || !forecastData.Predictions) {
         console.warn('[AwsForecastService] No forecast data returned, using mock');
-        return this.generateMockForecast(sku, daysAhead);
+        return this.generateMockForecast(sanitizedSku, daysAhead, pharmacyId);
       }
 
       // Parse predictions from AWS response
       const predictions = this.parseForecastPredictions(forecastData.Predictions as any, daysAhead);
 
-      // Get current stock (this would come from inventory database in production)
-      const currentStock = 50 + Math.floor(Math.random() * 100); // Mock for now
+      // Get current stock from inventory service or fallback
+      let currentStock: number;
+      if (this.stockLookup) {
+        currentStock = await this.stockLookup(sanitizedSku, pharmacyId);
+      } else {
+        console.warn(`[AwsForecastService] No stock lookup configured. Using deterministic estimate for ${sanitizedSku}`);
+        // Deterministic fallback based on SKU hash
+        currentStock = 50 + (sanitizedSku.charCodeAt(0) % 100);
+      }
 
       // Calculate recommendation
       const recommendation = this.calculateRecommendation(predictions, currentStock);
 
       return {
-        sku,
-        productName: `Product ${sku}`,
+        sku: sanitizedSku,
+        productName: `Product ${sanitizedSku}`,
         currentStock,
         predictions,
         recommendation,
@@ -356,7 +571,7 @@ export class AwsForecastService {
       // Graceful fallback to mock on AWS errors
       if (error.name === 'ResourceNotFoundException' || error.name === 'InvalidInputException') {
         console.warn('[AwsForecastService] AWS Forecast error, falling back to mock');
-        return this.generateMockForecast(sku, daysAhead);
+        return this.generateMockForecast(sanitizedSku, daysAhead, pharmacyId);
       }
 
       throw new Error(`Failed to get forecast: ${error.message || 'Unknown error'}`);
@@ -628,9 +843,25 @@ export class AwsForecastService {
 
   /**
    * Generate mock forecast (stub mode)
+   * @param sku - Product SKU
+   * @param daysAhead - Days to forecast
+   * @param pharmacyId - Pharmacy ID (for deterministic stock calculation)
    */
-  private generateMockForecast(sku: string, daysAhead: number): ForecastPrediction {
-    const currentStock = 50 + Math.floor(Math.random() * 100);
+  private async generateMockForecast(sku: string, daysAhead: number, pharmacyId: string): Promise<ForecastPrediction> {
+    // Use stock lookup if available, otherwise use deterministic estimate
+    let currentStock: number;
+    if (this.stockLookup) {
+      try {
+        currentStock = await this.stockLookup(sku, pharmacyId);
+      } catch (error) {
+        console.warn(`[AwsForecastService] Stock lookup failed for ${sku}, using estimate`);
+        currentStock = 50 + (sku.charCodeAt(0) % 100);
+      }
+    } else {
+      // Deterministic based on SKU hash
+      currentStock = 50 + (sku.charCodeAt(0) % 100);
+    }
+
     const baseDemand = 5 + Math.random() * 10;
 
     const predictions = [];
