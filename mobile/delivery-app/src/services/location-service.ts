@@ -5,7 +5,6 @@
  */
 
 import Geolocation, { GeoPosition } from 'react-native-geolocation-service';
-import Geofencing from '@react-native-community/geofencing';
 import { Platform, PermissionsAndroid, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Coordinates } from '../types/delivery';
@@ -458,20 +457,10 @@ class LocationService {
     this.geofences.set(deliveryId, geofence);
 
     try {
-      // Note: Geofencing API varies by platform
-      // This is a simplified version
-      if (Platform.OS === 'android' || Platform.OS === 'ios') {
-        await Geofencing.addCircularRegion({
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          radius: radiusMeters,
-          identifier: deliveryId,
-          notifyOnEntry: true,
-          notifyOnExit: true,
-        });
-
-        console.log(`[LocationService] Geofence set for delivery ${deliveryId}`);
-      }
+      // Note: Geofencing API is not available - use distance-based checking instead
+      // The geofence is stored in memory and checked against current location
+      // This provides similar functionality without native geofencing dependencies
+      console.log(`[LocationService] Geofence set for delivery ${deliveryId}`);
     } catch (error) {
       console.error('[LocationService] Failed to set up geofence:', error);
     }
