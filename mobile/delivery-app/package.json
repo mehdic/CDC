@@ -8,8 +8,9 @@
     "start": "react-native start --reset-cache",
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "test": "jest --coverage",
+    "test": "jest",
     "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx}'",
@@ -37,7 +38,8 @@
     "axios": "^1.6.7",
     "@react-native-async-storage/async-storage": "^1.22.2",
     "date-fns": "^3.3.1",
-    "@metapharm/api-types": "^0.1.0"
+    "@metapharm/api-types": "^0.1.0",
+    "expo-haptics": "^15.0.3"
   },
   "devDependencies": {
     "@types/react": "^18.2.57",
