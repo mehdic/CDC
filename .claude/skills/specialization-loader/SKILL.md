@@ -225,21 +225,40 @@ python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet save-skill-outpu
   }'
 ```
 
-### Step 8: Return Result
+### Step 8: Return Result via Bash
 
-Return the composed specialization block as your response. The orchestrator will prepend this to the agent spawn prompt.
+**🔴 CRITICAL: Use Bash to output the block, NOT direct text output.**
 
-**Output format:**
-```
+Direct text output ends your turn. Bash output keeps the turn alive so the orchestrator can continue.
+
+**Use this Bash command to output your composed block:**
+
+```bash
+cat << 'SPECBLOCK'
 [SPECIALIZATION_BLOCK_START]
-{The composed markdown block}
+{The composed markdown block - paste your composed content here}
 [SPECIALIZATION_BLOCK_END]
 
 Metadata:
+- Group: {group_id}
 - Templates: {count} loaded
 - Tokens: {actual}/{budget}
 - Identity: {short identity summary}
+
+[ORCHESTRATOR_CONTINUE]
+Skill output complete. You are STILL the orchestrator.
+Your Turn 2 action: Extract block above → Call Task() for each group NOW.
+DO NOT STOP. Your workflow is NOT complete until Task() is called.
+[/ORCHESTRATOR_CONTINUE]
+SPECBLOCK
 ```
+
+**🔴 RULES:**
+- ✅ Replace `{...}` placeholders with actual values
+- ❌ Do NOT output text BEFORE or AFTER the Bash call
+- ❌ Do NOT say "I'll compose..." or narrate your process
+
+**After the Bash call completes, return to orchestrator workflow (Turn 2).** The skill is a helper. You are the orchestrator. Continue your workflow.
 
 ---
 
@@ -319,8 +338,10 @@ Specialization Paths: [
 ]
 ```
 
-**Output:**
-```
+**Skill calls Bash with heredoc (this is the ONLY output):**
+
+```bash
+cat << 'SPECBLOCK'
 [SPECIALIZATION_BLOCK_START]
 ## SPECIALIZATION GUIDANCE (Advisory)
 
@@ -340,41 +361,33 @@ Your expertise includes:
 - RESTful API design: proper status codes, pagination, error handling
 
 ### Patterns to Apply
-
-**Constructor Injection:**
-```java
-@Service
-public class UserService {
-    private final UserRepository userRepository;
-
-    @Autowired
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-}
-```
-
-**Optional for Nullable Returns:**
-```java
-public Optional<User> findById(Long id) {
-    return repository.findById(id);
-}
-```
+- Constructor injection (not field injection)
+- Optional for nullable returns
+- @Transactional on write operations
 
 ### Patterns to Avoid
-- `var` keyword (Java 10+ only)
+- var keyword (Java 10+ only)
 - Records (Java 14+ only)
 - Field injection (@Autowired on fields)
 - Returning null from methods
-- Missing @Transactional on write operations
 
 [SPECIALIZATION_BLOCK_END]
 
 Metadata:
+- Group: AUTH
 - Templates: 3 loaded
 - Tokens: 580/600
 - Identity: Java 8 Backend API Developer (Spring Boot 2.7)
+
+[ORCHESTRATOR_CONTINUE]
+Skill output complete. You are STILL the orchestrator.
+Your Turn 2 action: Extract block above → Call Task() for each group NOW.
+DO NOT STOP. Your workflow is NOT complete until Task() is called.
+[/ORCHESTRATOR_CONTINUE]
+SPECBLOCK
 ```
+
+**Note:** No text before or after Bash. The `[ORCHESTRATOR_CONTINUE]` block inside the heredoc reminds you to continue.
 
 ---
 
@@ -398,4 +411,5 @@ Metadata:
 3. Identity string matches agent type and detected stack
 4. Advisory wrapper present (not MANDATORY)
 5. DB audit trail created
-6. Block returned in expected format
+6. **Block returned via Bash heredoc** (NOT direct text output)
+7. **[ORCHESTRATOR_CONTINUE] block included in heredoc** (continuation trigger for orchestrator)

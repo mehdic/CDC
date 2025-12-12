@@ -8,6 +8,33 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { fetchStatsAsync } from '../../store/deliverySlice';
 
+/**
+ * StatCard Component
+ */
+const StatCard: React.FC<{ title: string; data: any }> = ({ title, data }) => (
+  <View style={styles.card}>
+    <Text style={styles.cardTitle}>{title}</Text>
+    <View style={styles.statRow}>
+      <Text style={styles.statLabel}>Deliveries:</Text>
+      <Text style={styles.statValue}>{data.completed}</Text>
+    </View>
+    <View style={styles.statRow}>
+      <Text style={styles.statLabel}>Earnings:</Text>
+      <Text style={styles.statValue}>CHF {data.earnings.toFixed(2)}</Text>
+    </View>
+    <View style={styles.statRow}>
+      <Text style={styles.statLabel}>Distance:</Text>
+      <Text style={styles.statValue}>{data.distance.toFixed(1)} km</Text>
+    </View>
+    <View style={styles.statRow}>
+      <Text style={styles.statLabel}>On-Time Rate:</Text>
+      <Text style={[styles.statValue, styles.rateValue]}>
+        {(data.onTimeRate * 100).toFixed(0)}%
+      </Text>
+    </View>
+  </View>
+);
+
 export const EarningsScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const { stats } = useAppSelector((state) => state.delivery);
@@ -34,30 +61,6 @@ export const EarningsScreen: React.FC = () => {
       </View>
     );
   }
-
-  const StatCard = ({ title, data }: { title: string; data: any }) => (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <View style={styles.statRow}>
-        <Text style={styles.statLabel}>Deliveries:</Text>
-        <Text style={styles.statValue}>{data.completed}</Text>
-      </View>
-      <View style={styles.statRow}>
-        <Text style={styles.statLabel}>Earnings:</Text>
-        <Text style={styles.statValue}>CHF {data.earnings.toFixed(2)}</Text>
-      </View>
-      <View style={styles.statRow}>
-        <Text style={styles.statLabel}>Distance:</Text>
-        <Text style={styles.statValue}>{data.distance.toFixed(1)} km</Text>
-      </View>
-      <View style={styles.statRow}>
-        <Text style={styles.statLabel}>On-Time Rate:</Text>
-        <Text style={[styles.statValue, styles.rateValue]}>
-          {(data.onTimeRate * 100).toFixed(0)}%
-        </Text>
-      </View>
-    </View>
-  );
 
   return (
     <ScrollView

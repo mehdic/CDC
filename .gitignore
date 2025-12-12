@@ -167,3 +167,7 @@ bazinga/bazinga.db
 bazinga/bazinga.db-shm
 bazinga/bazinga.db-wal
 backend/bazinga/
+
+# BAZINGA - Auto-generated (do not edit this section)
+bazinga/*.db*
+bazinga/artifacts/
