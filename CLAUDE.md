@@ -346,6 +346,31 @@ curl -L -H "Authorization: Bearer $GITHUB_TOKEN" \
   -o logs.zip
 ```
 
-**Token capabilities:** workflow logs, workflow dispatch, repo read access.
+**Token capabilities:** workflow logs, workflow dispatch, repo read access, push access.
+
+### Git Push with Token (SSH Key Bypass)
+
+When SSH keys are not configured or permission is denied, use the GitHub token for push operations:
+
+```bash
+# Load token and push to origin
+GITHUB_TOKEN=$(grep GITHUB_TOKEN .env | cut -d'=' -f2)
+git push https://${GITHUB_TOKEN}@github.com/mehdic/CDC.git <branch>
+
+# Example: Push main branch
+GITHUB_TOKEN=$(grep GITHUB_TOKEN .env | cut -d'=' -f2)
+git push https://${GITHUB_TOKEN}@github.com/mehdic/CDC.git main
+
+# Example: Push current branch
+GITHUB_TOKEN=$(grep GITHUB_TOKEN .env | cut -d'=' -f2)
+git push https://${GITHUB_TOKEN}@github.com/mehdic/CDC.git HEAD
+```
+
+**IMPORTANT:** Always use the token from `.env` file. Never hardcode tokens in commands or commit them to the repository.
+
+**When to use token-based push:**
+- SSH key permission denied errors
+- `git@github.com: Permission denied (publickey)` errors
+- When working in environments without SSH key access
 
 ---
