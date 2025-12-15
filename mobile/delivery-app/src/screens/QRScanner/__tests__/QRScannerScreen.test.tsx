@@ -3,9 +3,9 @@
  * Covers scan workflow, verification, navigation
  */
 
-import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
 
 import { QRScannerScreen } from '../QRScannerScreen';
 

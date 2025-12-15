@@ -5,11 +5,14 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import Geolocation from 'react-native-geolocation-service';
 import { Platform, PermissionsAndroid, AppState, AppStateStatus } from 'react-native';
-import { Coordinates } from '../types/delivery';
-import { useAppDispatch, useAppSelector } from './useRedux';
+import Geolocation from 'react-native-geolocation-service';
+
 import { setCurrentLocation, updateLocationAsync } from '../store/deliverySlice';
+import { Coordinates } from '../types/delivery';
+
+import { useAppDispatch, useAppSelector } from './useRedux';
+
 
 /**
  * Location state with discriminated union

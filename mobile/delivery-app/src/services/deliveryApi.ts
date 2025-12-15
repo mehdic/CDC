@@ -3,8 +3,9 @@
  * Connects to backend delivery-service endpoints
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios, { AxiosInstance, AxiosError } from 'axios';
+
 import {
   DeliveryRequest,
   DeliveryRoute,

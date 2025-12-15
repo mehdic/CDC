@@ -3,9 +3,10 @@
  * Covers different permission states and user actions
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
 import { Linking } from 'react-native';
+
 import { PermissionDenied } from '../PermissionDenied';
 
 // Mock Linking only (avoid breaking TurboModuleRegistry)

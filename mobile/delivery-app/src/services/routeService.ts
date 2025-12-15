@@ -4,9 +4,11 @@
  * Provides route optimization, traffic-aware routing, and navigation
  */
 
-import deliveryApi from './deliveryApi';
-import { DeliveryRoute, Coordinates } from '../types/delivery';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { DeliveryRoute, Coordinates } from '../types/delivery';
+
+import deliveryApi from './deliveryApi';
 
 /**
  * Route state with discriminated union
@@ -97,7 +99,7 @@ class RouteService {
    */
   private getCachedRoute(cacheKey: string): DeliveryRoute | null {
     const cached = this.routeCache.get(cacheKey);
-    if (!cached) return null;
+    if (!cached) {return null;}
 
     const isExpired = Date.now() - cached.timestamp > this.config.cacheDurationMs;
     if (isExpired) {
@@ -244,7 +246,7 @@ class RouteService {
 
     // Check distance to current waypoint
     const currentWaypoint = route.waypoints[route.currentWaypointIndex];
-    if (!currentWaypoint) return false;
+    if (!currentWaypoint) {return false;}
 
     const distance = this.calculateDistance(currentLocation, currentWaypoint.coordinates);
     const distanceMeters = distance * 1000;

@@ -3,12 +3,12 @@
  * Covers success/failure states, package details display
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-
-import { PackageVerification } from '../PackageVerification';
+import React from 'react';
 
 import type { PackageVerificationState, ScanVerificationResult } from '../../types/scanner';
+import { PackageVerification } from '../PackageVerification';
+
 
 describe('PackageVerification Component', () => {
   const mockOnRescan = jest.fn();

@@ -49,16 +49,31 @@ export class QRParserService {
   private static readonly PACKAGE_QR_PATTERN = /^METAPHARM-PKG-([A-Z0-9]+)-([A-Z0-9]+)-([A-F0-9]{4})$/i;
 
   /**
+   * Relaxed pattern for type detection (allows empty fields)
+   */
+  private static readonly PACKAGE_QR_TYPE_PATTERN = /^METAPHARM-PKG-/i;
+
+  /**
    * Format: METAPHARM-PATIENT-{patientId}-{checksum}
    * Example: METAPHARM-PATIENT-PAT123456-B2E9
    */
   private static readonly PATIENT_QR_PATTERN = /^METAPHARM-PATIENT-([A-Z0-9]+)-([A-F0-9]{4})$/i;
 
   /**
+   * Relaxed pattern for type detection (allows empty fields)
+   */
+  private static readonly PATIENT_QR_TYPE_PATTERN = /^METAPHARM-PATIENT-/i;
+
+  /**
    * Format: METAPHARM-MANIFEST-{deliveryId}-{itemCount}-{checksum}
    * Example: METAPHARM-MANIFEST-DEL001-5-C4D1
    */
   private static readonly MANIFEST_QR_PATTERN = /^METAPHARM-MANIFEST-([A-Z0-9]+)-(\d+)-([A-F0-9]{4})$/i;
+
+  /**
+   * Relaxed pattern for type detection (allows empty fields)
+   */
+  private static readonly MANIFEST_QR_TYPE_PATTERN = /^METAPHARM-MANIFEST-/i;
 
   /**
    * Parse QR code data
@@ -78,22 +93,27 @@ export class QRParserService {
       };
     }
 
-    // Try to detect QR code type and parse
-    if (this.PACKAGE_QR_PATTERN.test(trimmedData)) {
+    // Try to detect QR code type using relaxed patterns (allows empty/invalid fields)
+    // Then parse with strict validation
+    if (this.PACKAGE_QR_TYPE_PATTERN.test(trimmedData)) {
       return this.parsePackageQR(trimmedData);
     }
 
-    if (this.PATIENT_QR_PATTERN.test(trimmedData)) {
+    if (this.PATIENT_QR_TYPE_PATTERN.test(trimmedData)) {
       return this.parsePatientQR(trimmedData);
     }
 
-    if (this.MANIFEST_QR_PATTERN.test(trimmedData)) {
+    if (this.MANIFEST_QR_TYPE_PATTERN.test(trimmedData)) {
       return this.parseManifestQR(trimmedData);
     }
 
     // Try JSON format (fallback)
     try {
-      return this.parseJsonQR(trimmedData);
+      const jsonResult = this.parseJsonQR(trimmedData);
+      // Only return JSON result if it was successfully parsed (not a generic parse error)
+      if (jsonResult.type !== QRCodeType.UNKNOWN || jsonResult.isValid) {
+        return jsonResult;
+      }
     } catch {
       // Continue to unknown format
     }
@@ -113,26 +133,34 @@ export class QRParserService {
    */
   private static parsePackageQR(qrData: string): ParsedQRCode {
     const match = qrData.match(this.PACKAGE_QR_PATTERN);
-    if (!match) {
-      return {
-        type: QRCodeType.PACKAGE,
-        isValid: false,
-        data: {},
-        errors: ['Invalid package QR code format'],
-        warnings: [],
-      };
-    }
-
-    const deliveryId = match[1];
-    const packageId = match[2];
-    const checksum = match[3];
 
     const errors: string[] = [];
     const warnings: string[] = [];
+    let deliveryId = '';
+    let packageId = '';
+    let checksum = '';
 
-    // Validate checksum
-    if (!this.validateChecksum(qrData, checksum)) {
-      errors.push('QR code checksum validation failed');
+    if (!match) {
+      // Pattern didn't match - likely has empty/invalid fields
+      // Try to extract what we can for better error messages
+      const parts = qrData.split('-');
+      if (parts.length >= 5) {
+        deliveryId = parts[2] || '';
+        packageId = parts[3] || '';
+        checksum = parts[4] || '';
+      }
+      errors.push('Invalid package QR code format');
+    } else {
+      deliveryId = match[1];
+      packageId = match[2];
+      checksum = match[3];
+    }
+
+    // Validate checksum (only if we have one)
+    if (checksum && checksum.length === 4) {
+      if (!this.validateChecksum(qrData, checksum)) {
+        errors.push('QR code checksum validation failed');
+      }
     }
 
     // Validate IDs
@@ -148,8 +176,8 @@ export class QRParserService {
       type: QRCodeType.PACKAGE,
       isValid: errors.length === 0,
       data: {
-        deliveryId,
-        packageId,
+        deliveryId: deliveryId || undefined,
+        packageId: packageId || undefined,
       },
       errors,
       warnings,
@@ -162,25 +190,30 @@ export class QRParserService {
    */
   private static parsePatientQR(qrData: string): ParsedQRCode {
     const match = qrData.match(this.PATIENT_QR_PATTERN);
-    if (!match) {
-      return {
-        type: QRCodeType.PATIENT_ID,
-        isValid: false,
-        data: {},
-        errors: ['Invalid patient QR code format'],
-        warnings: [],
-      };
-    }
-
-    const patientId = match[1];
-    const checksum = match[2];
 
     const errors: string[] = [];
     const warnings: string[] = [];
+    let patientId = '';
+    let checksum = '';
 
-    // Validate checksum
-    if (!this.validateChecksum(qrData, checksum)) {
-      errors.push('Patient ID QR code checksum validation failed');
+    if (!match) {
+      // Pattern didn't match - likely has empty/invalid fields
+      const parts = qrData.split('-');
+      if (parts.length >= 4) {
+        patientId = parts[2] || '';
+        checksum = parts[3] || '';
+      }
+      errors.push('Invalid patient QR code format');
+    } else {
+      patientId = match[1];
+      checksum = match[2];
+    }
+
+    // Validate checksum (only if we have one)
+    if (checksum && checksum.length === 4) {
+      if (!this.validateChecksum(qrData, checksum)) {
+        errors.push('Patient ID QR code checksum validation failed');
+      }
     }
 
     if (!patientId || patientId.length === 0) {
@@ -196,7 +229,7 @@ export class QRParserService {
       type: QRCodeType.PATIENT_ID,
       isValid: errors.length === 0,
       data: {
-        patientId,
+        patientId: patientId || undefined,
       },
       errors,
       warnings,
@@ -209,32 +242,29 @@ export class QRParserService {
    */
   private static parseManifestQR(qrData: string): ParsedQRCode {
     const match = qrData.match(this.MANIFEST_QR_PATTERN);
-    if (!match) {
-      return {
-        type: QRCodeType.DELIVERY_MANIFEST,
-        isValid: false,
-        data: {},
-        errors: ['Invalid manifest QR code format'],
-        warnings: [],
-      };
-    }
-
-    const deliveryId = match[1];
-    const itemCount = parseInt(match[2], 10);
-    const checksum = match[3];
 
     const errors: string[] = [];
     const warnings: string[] = [];
+    let deliveryId = '';
+    let itemCount = 0;
+    let checksum = '';
 
-    // Validate checksum
-    if (!this.validateChecksum(qrData, checksum)) {
-      errors.push('Manifest QR code checksum validation failed');
+    if (!match) {
+      // Pattern didn't match - likely has empty/invalid fields
+      const parts = qrData.split('-');
+      if (parts.length >= 5) {
+        deliveryId = parts[2] || '';
+        itemCount = parseInt(parts[3] || '0', 10);
+        checksum = parts[4] || '';
+      }
+      errors.push('Invalid manifest QR code format');
+    } else {
+      deliveryId = match[1];
+      itemCount = parseInt(match[2], 10);
+      checksum = match[3];
     }
 
-    if (!deliveryId || deliveryId.length === 0) {
-      errors.push('Delivery ID is missing or invalid');
-    }
-
+    // Validate item count FIRST (per QA requirement - FIX 5)
     if (itemCount <= 0) {
       errors.push('Item count must be greater than 0');
     }
@@ -243,11 +273,23 @@ export class QRParserService {
       warnings.push('Item count is unusually high');
     }
 
+    // Validate deliveryId
+    if (!deliveryId || deliveryId.length === 0) {
+      errors.push('Delivery ID is missing or invalid');
+    }
+
+    // Validate checksum (after item count check)
+    if (checksum && checksum.length === 4) {
+      if (!this.validateChecksum(qrData, checksum)) {
+        errors.push('Manifest QR code checksum validation failed');
+      }
+    }
+
     return {
       type: QRCodeType.DELIVERY_MANIFEST,
       isValid: errors.length === 0,
       data: {
-        deliveryId,
+        deliveryId: deliveryId || undefined,
       },
       errors,
       warnings,
@@ -288,12 +330,12 @@ export class QRParserService {
 
       // Validate required fields based on type
       if (qrType === QRCodeType.PACKAGE) {
-        if (!parsed.deliveryId) errors.push('deliveryId is required for package QR');
-        if (!parsed.packageId) errors.push('packageId is required for package QR');
+        if (!parsed.deliveryId) {errors.push('deliveryId is required for package QR');}
+        if (!parsed.packageId) {errors.push('packageId is required for package QR');}
       } else if (qrType === QRCodeType.PATIENT_ID) {
-        if (!parsed.patientId) errors.push('patientId is required for patient QR');
+        if (!parsed.patientId) {errors.push('patientId is required for patient QR');}
       } else if (qrType === QRCodeType.DELIVERY_MANIFEST) {
-        if (!parsed.deliveryId) errors.push('deliveryId is required for manifest QR');
+        if (!parsed.deliveryId) {errors.push('deliveryId is required for manifest QR');}
       }
 
       return {

@@ -3,8 +3,9 @@
  * Covers rendering, animations, and status feedback
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import React from 'react';
+
 import { ScanOverlay } from '../ScanOverlay';
 
 describe('ScanOverlay', () => {
@@ -15,55 +16,59 @@ describe('ScanOverlay', () => {
     });
 
     it('should render with default props', () => {
-      const { getByAccessibilityLabel } = render(<ScanOverlay />);
-      const overlay = getByAccessibilityLabel(/QR code scan overlay/);
+      const { getByTestId } = render(<ScanOverlay />);
+      const overlay = getByTestId('scan-overlay-container');
       expect(overlay).toBeTruthy();
     });
 
     it('should render center box by default', () => {
-      const { root } = render(<ScanOverlay showCenterBox={true} />);
-      expect(root.findByType('View')).toBeTruthy();
+      const { getByTestId } = render(<ScanOverlay showCenterBox={true} />);
+      expect(getByTestId('scan-overlay-center-box')).toBeTruthy();
     });
 
     it('should hide center box when showCenterBox is false', () => {
-      const { root } = render(<ScanOverlay showCenterBox={false} />);
-      expect(root).toBeTruthy();
+      const { queryByTestId } = render(<ScanOverlay showCenterBox={false} />);
+      expect(queryByTestId('scan-overlay-center-box')).toBeFalsy();
     });
 
     it('should render corners by default', () => {
-      const { root } = render(<ScanOverlay showCorners={true} />);
-      expect(root).toBeTruthy();
+      const { getByTestId } = render(<ScanOverlay showCorners={true} />);
+      expect(getByTestId('scan-overlay-corner-tl')).toBeTruthy();
     });
 
     it('should hide corners when showCorners is false', () => {
-      const { root } = render(<ScanOverlay showCorners={false} />);
-      expect(root).toBeTruthy();
+      const { queryByTestId } = render(<ScanOverlay showCorners={false} />);
+      expect(queryByTestId('scan-overlay-corner-tl')).toBeFalsy();
     });
   });
 
   describe('Status Feedback', () => {
     it('should render with idle status', () => {
-      const { getByAccessibilityLabel } = render(<ScanOverlay status="idle" />);
-      const overlay = getByAccessibilityLabel(/idle status/);
+      const { getByTestId } = render(<ScanOverlay status="idle" />);
+      const overlay = getByTestId('scan-overlay-container');
       expect(overlay).toBeTruthy();
+      expect(overlay.props.accessibilityLabel).toContain('idle status');
     });
 
     it('should render with scanning status', () => {
-      const { getByAccessibilityLabel } = render(<ScanOverlay status="scanning" />);
-      const overlay = getByAccessibilityLabel(/scanning status/);
+      const { getByTestId } = render(<ScanOverlay status="scanning" />);
+      const overlay = getByTestId('scan-overlay-container');
       expect(overlay).toBeTruthy();
+      expect(overlay.props.accessibilityLabel).toContain('scanning status');
     });
 
     it('should render with success status', () => {
-      const { getByAccessibilityLabel } = render(<ScanOverlay status="success" />);
-      const overlay = getByAccessibilityLabel(/success status/);
+      const { getByTestId } = render(<ScanOverlay status="success" />);
+      const overlay = getByTestId('scan-overlay-container');
       expect(overlay).toBeTruthy();
+      expect(overlay.props.accessibilityLabel).toContain('success status');
     });
 
     it('should render with error status', () => {
-      const { getByAccessibilityLabel } = render(<ScanOverlay status="error" />);
-      const overlay = getByAccessibilityLabel(/error status/);
+      const { getByTestId } = render(<ScanOverlay status="error" />);
+      const overlay = getByTestId('scan-overlay-container');
       expect(overlay).toBeTruthy();
+      expect(overlay.props.accessibilityLabel).toContain('error status');
     });
   });
 
@@ -83,36 +88,41 @@ describe('ScanOverlay', () => {
 
     it('should have correct accessibility label for message', () => {
       const message = 'Test message';
-      const { getByAccessibilityLabel } = render(<ScanOverlay message={message} />);
-      const messageElement = getByAccessibilityLabel(message);
+      const { getByTestId } = render(<ScanOverlay message={message} />);
+      const messageElement = getByTestId('scan-overlay-message-text');
       expect(messageElement).toBeTruthy();
+      expect(messageElement.props.accessibilityLabel).toBe(message);
     });
   });
 
   describe('Accessibility', () => {
     it('should have accessible container', () => {
-      const { getByAccessibilityLabel } = render(<ScanOverlay status="scanning" />);
-      const container = getByAccessibilityLabel(/QR code scan overlay/);
+      const { getByTestId } = render(<ScanOverlay status="scanning" />);
+      const container = getByTestId('scan-overlay-container');
       expect(container).toBeTruthy();
+      expect(container.props.accessible).toBe(true);
     });
 
     it('should have correct accessibility role', () => {
-      const { getByAccessibilityLabel } = render(<ScanOverlay />);
-      const overlay = getByAccessibilityLabel(/QR code scan overlay/);
+      const { getByTestId } = render(<ScanOverlay />);
+      const overlay = getByTestId('scan-overlay-container');
       expect(overlay).toBeTruthy();
+      expect(overlay.props.accessibilityRole).toBe('image');
     });
 
     it('should have helpful hint text', () => {
-      const { getByAccessibilityLabel } = render(<ScanOverlay />);
-      const overlay = getByAccessibilityLabel(/QR code scan overlay/);
+      const { getByTestId } = render(<ScanOverlay />);
+      const overlay = getByTestId('scan-overlay-container');
       expect(overlay).toBeTruthy();
+      expect(overlay.props.accessibilityHint).toContain('Position the QR code');
     });
 
     it('should have accessible message labels', () => {
       const message = 'Scanning in progress';
-      const { getByAccessibilityLabel } = render(<ScanOverlay message={message} />);
-      const messageElement = getByAccessibilityLabel(message);
+      const { getByTestId } = render(<ScanOverlay message={message} />);
+      const messageElement = getByTestId('scan-overlay-message-text');
       expect(messageElement).toBeTruthy();
+      expect(messageElement.props.accessibilityLabel).toBe(message);
     });
   });
 
@@ -139,10 +149,10 @@ describe('ScanOverlay', () => {
 
   describe('Props Combinations', () => {
     it('should render with all props provided', () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <ScanOverlay status="success" message="Success!" showCorners={true} showCenterBox={true} />
       );
-      expect(getByAccessibilityLabel(/QR code scan overlay/)).toBeTruthy();
+      expect(getByTestId('scan-overlay-container')).toBeTruthy();
     });
 
     it('should render with minimal props', () => {

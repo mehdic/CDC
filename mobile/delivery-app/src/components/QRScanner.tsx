@@ -17,9 +17,9 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Platform, Linking, TouchableOpacity, Alert, Vibration } from 'react-native';
-import QRCodeScanner from 'react-native-qrcode-scanner';
 import { RNCamera } from 'react-native-camera';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import QRCodeScanner from 'react-native-qrcode-scanner';
 
 import type { CameraPermissionStatus } from '../types/scanner';
 
@@ -161,7 +161,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
    */
   const handleScan = useCallback(
     (event: any): void => {
-      if (!state.isScanning || !event?.data) return;
+      if (!state.isScanning || !event?.data) {return;}
 
       setState(prev => ({ ...prev, isScanning: false }));
 

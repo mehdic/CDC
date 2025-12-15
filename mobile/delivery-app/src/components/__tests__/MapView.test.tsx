@@ -3,10 +3,11 @@
  * T8-021: GPS Tracking & Route Display
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { DeliveryMapView } from '../MapView';
+import React from 'react';
+
 import { Coordinates, DeliveryRoute, Waypoint } from '../../types/delivery';
+import { DeliveryMapView } from '../MapView';
 
 /**
  * Mock react-native-maps
@@ -73,53 +74,53 @@ describe('DeliveryMapView', () => {
 
   describe('Rendering', () => {
     it('should render map view', () => {
-      const { getByTestID } = render(
+      const { getByTestId } = render(
         <DeliveryMapView currentLocation={null} route={null} />
       );
 
-      expect(getByTestID('map-view')).toBeDefined();
+      expect(getByTestId('map-view')).toBeDefined();
     });
 
     it('should render without current location', () => {
-      const { getByTestID } = render(
+      const { getByTestId } = render(
         <DeliveryMapView currentLocation={null} route={null} />
       );
 
-      expect(getByTestID('map-view')).toBeDefined();
+      expect(getByTestId('map-view')).toBeDefined();
     });
 
     it('should render with current location', () => {
       const location = createMockCoordinates();
-      const { getByTestID, getAllByTestID } = render(
+      const { getByTestId, getAllByTestId } = render(
         <DeliveryMapView currentLocation={location} route={null} showUserLocation={true} />
       );
 
-      expect(getByTestID('map-view')).toBeDefined();
+      expect(getByTestId('map-view')).toBeDefined();
       // Current location marker should be rendered
-      const markers = getAllByTestID('marker');
+      const markers = getAllByTestId('marker');
       expect(markers.length).toBeGreaterThan(0);
     });
 
     it('should render route with waypoints', () => {
       const route = createMockRoute();
       const location = createMockCoordinates();
-      const { getAllByTestID } = render(
+      const { getAllByTestId } = render(
         <DeliveryMapView currentLocation={location} route={route} />
       );
 
       // Should have markers for current location + 3 waypoints
-      const markers = getAllByTestID('marker');
+      const markers = getAllByTestId('marker');
       expect(markers.length).toBeGreaterThanOrEqual(3);
     });
 
     it('should render polyline when route has multiple waypoints', () => {
       const route = createMockRoute();
       const location = createMockCoordinates();
-      const { getByTestID } = render(
+      const { getByTestId } = render(
         <DeliveryMapView currentLocation={location} route={route} />
       );
 
-      expect(getByTestID('polyline')).toBeDefined();
+      expect(getByTestId('polyline')).toBeDefined();
     });
   });
 
@@ -194,7 +195,7 @@ describe('DeliveryMapView', () => {
       const route = createMockRoute();
       const location = createMockCoordinates();
 
-      const { getAllByTestID } = render(
+      const { getAllByTestId } = render(
         <DeliveryMapView
           currentLocation={location}
           route={route}
@@ -203,7 +204,7 @@ describe('DeliveryMapView', () => {
       );
 
       // Find destination markers (exclude current location marker)
-      const markers = getAllByTestID('marker');
+      const markers = getAllByTestId('marker');
       // We can't directly press markers in test, but we verify the prop is passed
       expect(markers.length).toBeGreaterThan(0);
     });
@@ -221,11 +222,11 @@ describe('DeliveryMapView', () => {
 
   describe('Empty States', () => {
     it('should render when no route provided', () => {
-      const { getByTestID } = render(
+      const { getByTestId } = render(
         <DeliveryMapView currentLocation={null} route={null} />
       );
 
-      expect(getByTestID('map-view')).toBeDefined();
+      expect(getByTestId('map-view')).toBeDefined();
     });
 
     it('should render when route has no waypoints', () => {
@@ -239,11 +240,11 @@ describe('DeliveryMapView', () => {
         currentWaypointIndex: 0,
       };
 
-      const { getByTestID } = render(
+      const { getByTestId } = render(
         <DeliveryMapView currentLocation={null} route={emptyRoute} />
       );
 
-      expect(getByTestID('map-view')).toBeDefined();
+      expect(getByTestId('map-view')).toBeDefined();
     });
   });
 
@@ -272,11 +273,11 @@ describe('DeliveryMapView', () => {
   describe('Custom Styling', () => {
     it('should apply custom style prop', () => {
       const customStyle = { backgroundColor: 'red' };
-      const { getByTestID } = render(
+      const { getByTestId } = render(
         <DeliveryMapView currentLocation={null} route={null} style={customStyle} />
       );
 
-      const container = getByTestID('map-view').parent;
+      const container = getByTestId('map-view').parent;
       expect(container?.props.style).toContainEqual(customStyle);
     });
   });

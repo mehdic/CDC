@@ -11,12 +11,12 @@
  * - Error handling with retry capability
  */
 
+import { useRoute, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Alert, TouchableOpacity, Modal, ScrollView } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
 
-import { QRScanner } from '../../components/QRScanner';
 import { PackageVerification } from '../../components/PackageVerification';
+import { QRScanner } from '../../components/QRScanner';
 import { ScanHistory } from '../../components/ScanHistory';
 import { useScan } from '../../hooks/useScan';
 

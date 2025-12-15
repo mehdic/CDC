@@ -1,44 +1,148 @@
 /**
  * Earnings Screen
- * Shows delivery statistics and earnings breakdown
+ * Shows delivery statistics and earnings breakdown with period filtering
  */
 
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+import type { BonusItem } from '../../components/BonusProgressCard';
+import BonusProgressCard from '../../components/BonusProgressCard';
+import type { DeliveryStatistics } from '../../components/DeliveryStatsCard';
+import DeliveryStatsCard from '../../components/DeliveryStatsCard';
+import type { EarningsSummaryData } from '../../components/EarningsSummaryCard';
+import EarningsSummaryCard from '../../components/EarningsSummaryCard';
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { fetchStatsAsync } from '../../store/deliverySlice';
 
+type PeriodType = 'day' | 'week' | 'month' | 'custom';
+
 /**
- * StatCard Component
+ * PeriodFilter Component
  */
-const StatCard: React.FC<{ title: string; data: any }> = ({ title, data }) => (
-  <View style={styles.card}>
-    <Text style={styles.cardTitle}>{title}</Text>
-    <View style={styles.statRow}>
-      <Text style={styles.statLabel}>Deliveries:</Text>
-      <Text style={styles.statValue}>{data.completed}</Text>
+const PeriodFilter: React.FC<{
+  selectedPeriod: PeriodType;
+  onPeriodChange: (period: PeriodType) => void;
+  testID?: string;
+}> = ({ selectedPeriod, onPeriodChange, testID = 'period-filter' }) => {
+  const periods: { label: string; value: PeriodType }[] = [
+    { label: 'Day', value: 'day' },
+    { label: 'Week', value: 'week' },
+    { label: 'Month', value: 'month' },
+  ];
+
+  return (
+    <View style={styles.filterContainer} testID={testID}>
+      <FlatList
+        data={periods}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              selectedPeriod === item.value && styles.filterButtonActive,
+            ]}
+            onPress={() => onPeriodChange(item.value)}
+            testID={`${testID}-${item.value}`}
+          >
+            <Text
+              style={[
+                styles.filterButtonText,
+                selectedPeriod === item.value && styles.filterButtonTextActive,
+              ]}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        )}
+        keyExtractor={(item) => item.value}
+        horizontal
+        scrollEnabled={false}
+        contentContainerStyle={styles.filterContent}
+        testID={`${testID}-list`}
+      />
     </View>
-    <View style={styles.statRow}>
-      <Text style={styles.statLabel}>Earnings:</Text>
-      <Text style={styles.statValue}>CHF {data.earnings.toFixed(2)}</Text>
-    </View>
-    <View style={styles.statRow}>
-      <Text style={styles.statLabel}>Distance:</Text>
-      <Text style={styles.statValue}>{data.distance.toFixed(1)} km</Text>
-    </View>
-    <View style={styles.statRow}>
-      <Text style={styles.statLabel}>On-Time Rate:</Text>
-      <Text style={[styles.statValue, styles.rateValue]}>
-        {(data.onTimeRate * 100).toFixed(0)}%
-      </Text>
-    </View>
-  </View>
-);
+  );
+};
+
+/**
+ * Mock data generator for earnings
+ */
+const generateMockEarnings = (period: PeriodType) => {
+  const baseGross = period === 'day' ? 80 : period === 'week' ? 480 : 1920;
+  const gross = baseGross + Math.random() * 100;
+  const fees = gross * 0.15; // 15% platform fee
+  const net = gross - fees;
+
+  return {
+    gross,
+    fees,
+    net,
+    previousPeriod: {
+      gross: gross * 0.92,
+      net: net * 0.92,
+    },
+  };
+};
+
+const generateMockStats = (period: PeriodType): DeliveryStatistics => {
+  const count = period === 'day' ? 8 : period === 'week' ? 45 : 180;
+  const totalDistance = period === 'day' ? 42 : period === 'week' ? 250 : 1000;
+  const averageTime = period === 'day' ? 35 : period === 'week' ? 33 : 32;
+
+  return {
+    count,
+    totalDistance,
+    averageTime,
+    onTimeRate: 0.92,
+  };
+};
+
+const generateMockBonuses = (): BonusItem[] => [
+  {
+    id: 'bonus-1',
+    title: 'Delivery Sprint',
+    description: 'Complete 10 deliveries',
+    target: 10,
+    current: 7,
+    unit: 'deliveries',
+    reward: 25,
+    expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'bonus-2',
+    title: 'Distance Challenge',
+    description: 'Cover 50 km in a week',
+    target: 50,
+    current: 38,
+    unit: 'km',
+    reward: 15,
+    expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'bonus-3',
+    title: 'Perfect Rating',
+    description: 'Maintain 95% on-time rate',
+    target: 95,
+    current: 92,
+    unit: '%',
+    reward: 50,
+    expiresAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
 
 export const EarningsScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const { stats } = useAppSelector((state) => state.delivery);
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
 
   useEffect(() => {
     loadStats();
@@ -54,77 +158,159 @@ export const EarningsScreen: React.FC = () => {
     setRefreshing(false);
   };
 
+  // Get data for selected period
+  const getEarningsData = (): EarningsSummaryData => {
+    if (!stats) {
+      return { gross: 0, fees: 0, net: 0 };
+    }
+
+    const mockData = generateMockEarnings(selectedPeriod);
+    return mockData;
+  };
+
+  const getStatsData = (): DeliveryStatistics => {
+    if (!stats) {
+      return {
+        count: 0,
+        totalDistance: 0,
+        averageTime: 0,
+        onTimeRate: 0,
+      };
+    }
+
+    const mockData = generateMockStats(selectedPeriod);
+    return mockData;
+  };
+
+  const getBonusData = (): BonusItem[] => {
+    return generateMockBonuses();
+  };
+
   if (!stats) {
     return (
-      <View style={styles.container}>
-        <Text>Loading statistics...</Text>
+      <View style={styles.container} testID="earnings-screen-loading">
+        <Text testID="earnings-screen-loading-text">Loading statistics...</Text>
       </View>
     );
   }
+
+  const earningsData = getEarningsData();
+  const statsData = getStatsData();
+  const bonusData = getBonusData();
 
   return (
     <ScrollView
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      testID="earnings-screen"
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>Earnings & Statistics</Text>
+      <View style={styles.header} testID="earnings-screen-header">
+        <Text style={styles.title} testID="earnings-screen-title">
+          Earnings & Statistics
+        </Text>
       </View>
 
-      <StatCard title="Today" data={stats.today} />
-      <StatCard title="This Week" data={stats.week} />
-      <StatCard title="This Month" data={stats.month} />
+      {/* Period Filter */}
+      <PeriodFilter
+        selectedPeriod={selectedPeriod}
+        onPeriodChange={setSelectedPeriod}
+        testID="earnings-period-filter"
+      />
 
-      <View style={styles.summary}>
-        <Text style={styles.summaryTitle}>Monthly Summary</Text>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Average per Delivery:</Text>
-          <Text style={styles.summaryValue}>
-            CHF {(stats.month.earnings / stats.month.completed || 0).toFixed(2)}
-          </Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Average Distance:</Text>
-          <Text style={styles.summaryValue}>
-            {(stats.month.distance / stats.month.completed || 0).toFixed(1)} km
-          </Text>
-        </View>
+      {/* Earnings Summary */}
+      <EarningsSummaryCard
+        data={earningsData}
+        period={selectedPeriod}
+        testID="earnings-summary"
+      />
+
+      {/* Delivery Statistics */}
+      <DeliveryStatsCard
+        data={statsData}
+        period={selectedPeriod}
+        testID="delivery-stats"
+      />
+
+      {/* Active Bonuses */}
+      <BonusProgressCard
+        bonuses={bonusData}
+        testID="bonus-progress"
+      />
+
+      {/* Additional Info */}
+      <View style={styles.infoContainer} testID="earnings-info-container">
+        <Text style={styles.infoText} testID="earnings-info-text">
+          💡 Tip: Complete deliveries on time to unlock bonus rewards!
+        </Text>
       </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
-  header: { padding: 20, backgroundColor: '#007AFF' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#FFF' },
-  card: {
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  header: {
+    padding: 20,
+    backgroundColor: '#007AFF',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  filterContainer: {
     backgroundColor: '#FFF',
-    margin: 16,
-    marginTop: 8,
-    padding: 16,
-    borderRadius: 12,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 8,
+    paddingVertical: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
-  statRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
-  statLabel: { fontSize: 14, color: '#666' },
-  statValue: { fontSize: 14, fontWeight: '600', color: '#333' },
-  rateValue: { color: '#28A745' },
-  summary: {
+  filterContent: {
+    paddingHorizontal: 8,
+    gap: 8,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: '#F0F0F0',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  filterButtonActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  filterButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+  },
+  filterButtonTextActive: {
+    color: '#FFF',
+  },
+  infoContainer: {
     backgroundColor: '#FFF',
     margin: 16,
-    padding: 16,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+    marginBottom: 24,
   },
-  summaryTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
-  summaryLabel: { fontSize: 14, color: '#666' },
-  summaryValue: { fontSize: 14, fontWeight: '600', color: '#007AFF' },
+  infoText: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
+  },
 });
 
 export default EarningsScreen;

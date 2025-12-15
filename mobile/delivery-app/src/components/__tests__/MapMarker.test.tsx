@@ -3,10 +3,11 @@
  * T8-021: GPS Tracking & Route Display
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
-import { MapMarker } from '../MapMarker';
+import React from 'react';
+
 import { Coordinates } from '../../types/delivery';
+import { MapMarker } from '../MapMarker';
 
 /**
  * Mock react-native-maps

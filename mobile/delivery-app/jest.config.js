@@ -3,7 +3,7 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|@reduxjs/toolkit|@react-native-async-storage|immer|react-native-qrcode-scanner|react-native-camera|react-native-maps|react-native-geolocation-service|react-redux)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|@reduxjs/toolkit|@react-native-async-storage|immer|react-native-qrcode-scanner|react-native-camera|react-native-maps|react-native-geolocation-service|react-redux|react-native-signature-canvas)/)',
   ],
   // Temporarily disabled coverage collection due to babel-plugin-istanbul compatibility issues
   // collectCoverageFrom: [

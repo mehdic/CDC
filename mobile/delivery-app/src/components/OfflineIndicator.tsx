@@ -2,6 +2,8 @@
  * Offline Indicator Component
  * Shows network status, queues operations offline, and syncs when connection is restored
  * MetaPharm Connect - Delivery App
+ *
+ * Updated to use new offlineQueueService and networkMonitor
  */
 
 import React, { useEffect, useState } from 'react';
@@ -13,9 +15,9 @@ import {
   Animated,
   Alert,
 } from 'react-native';
-import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
-import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
-import { setOnlineStatus } from '../store/deliverySlice';
+
+import { useOfflineMode } from '../hooks/useOfflineMode';
+import { QueuedAction } from '../services/offlineQueueService';
 
 /**
  * Props for OfflineIndicator
@@ -35,8 +37,15 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
   onStatusChange,
   position = 'top',
 }) => {
-  const dispatch = useAppDispatch();
-  const { isOnline, syncQueue } = useAppSelector((state) => state.delivery);
+  const {
+    isOffline,
+    queuedCount,
+    isProcessing,
+    networkStatus,
+  } = useOfflineMode();
+
+  const isOnline = !isOffline;
+  const syncQueue = queuedCount;
   const [connectionType, setConnectionType] = useState<string>('unknown');
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const slideAnim = React.useRef(new Animated.Value(0)).current;
@@ -45,38 +54,19 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
    * Monitor network status changes
    */
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
-      const online = state.isConnected && state.isInternetReachable;
-      const type = state.type || 'unknown';
+    if (networkStatus) {
+      setConnectionType(networkStatus.type);
+    }
 
-      dispatch(setOnlineStatus(online ?? false));
-      setConnectionType(type);
+    if (onStatusChange) {
+      onStatusChange(isOnline);
+    }
 
-      if (onStatusChange) {
-        onStatusChange(online ?? false);
-      }
-
-      // Log network state change
-      console.log('[OfflineIndicator] Network state changed:', {
-        isConnected: state.isConnected,
-        isInternetReachable: state.isInternetReachable,
-        type: state.type,
-      });
-    });
-
-    // Check initial network status
-    NetInfo.fetch().then((state: NetInfoState) => {
-      const online = state.isConnected && state.isInternetReachable;
-      const type = state.type || 'unknown';
-
-      dispatch(setOnlineStatus(online ?? false));
-      setConnectionType(type);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [dispatch, onStatusChange]);
+    // Update last sync time when online and queue is empty
+    if (isOnline && queuedCount === 0 && !isProcessing) {
+      setLastSyncTime(new Date());
+    }
+  }, [isOnline, networkStatus, onStatusChange, queuedCount, isProcessing]);
 
   /**
    * Animate banner visibility
@@ -107,7 +97,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
     ],
   };
 
-  if (isOnline && syncQueue.length === 0) {
+  if (isOnline && syncQueue === 0) {
     return null;
   }
 
@@ -136,9 +126,9 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
               <Text style={styles.statusSubtitle}>
                 Operations will sync when connection returns
               </Text>
-            ) : syncQueue.length > 0 ? (
+            ) : syncQueue > 0 ? (
               <Text style={styles.statusSubtitle}>
-                Syncing {syncQueue.length} pending operation{syncQueue.length !== 1 ? 's' : ''}
+                {isProcessing ? 'Syncing' : 'Queued'} {syncQueue} pending operation{syncQueue !== 1 ? 's' : ''}
               </Text>
             ) : (
               <Text style={styles.statusSubtitle}>
@@ -151,18 +141,18 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
         {showDetails && (
           <View style={styles.details}>
             <Text style={styles.detailLabel}>Connection: {connectionType}</Text>
-            {syncQueue.length > 0 && (
-              <Text style={styles.detailLabel}>Pending: {syncQueue.length}</Text>
+            {syncQueue > 0 && (
+              <Text style={styles.detailLabel}>Pending: {syncQueue}</Text>
             )}
           </View>
         )}
       </View>
 
-      {!isOnline && syncQueue.length > 0 && (
+      {!isOnline && syncQueue > 0 && (
         <TouchableOpacity
           style={styles.retryButton}
           onPress={() => {
-            Alert.alert('Sync Queue', `${syncQueue.length} operations queued for sync`);
+            Alert.alert('Sync Queue', `${syncQueue} operations queued for sync`);
           }}
         >
           <Text style={styles.retryButtonText}>Details</Text>
@@ -176,17 +166,11 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({
  * Sync Status Component
  * Shows detailed sync queue information
  */
-export interface SyncQueueItem {
-  id: string;
-  type: string;
-  timestamp: string;
-  retryCount: number;
-}
-
 export const SyncQueueStatus: React.FC = () => {
-  const { syncQueue, isOnline } = useAppSelector((state) => state.delivery);
+  const { queue, isOffline, isProcessing } = useOfflineMode();
+  const isOnline = !isOffline;
 
-  if (syncQueue.length === 0) {
+  if (queue.length === 0) {
     return null;
   }
 
@@ -194,12 +178,14 @@ export const SyncQueueStatus: React.FC = () => {
     <View style={styles.queueContainer}>
       <View style={styles.queueHeader}>
         <Text style={styles.queueTitle}>
-          Sync Queue ({syncQueue.length} item{syncQueue.length !== 1 ? 's' : ''})
+          Sync Queue ({queue.length} item{queue.length !== 1 ? 's' : ''})
         </Text>
-        <Text style={styles.queueStatus}>{isOnline ? 'Syncing...' : 'Paused'}</Text>
+        <Text style={styles.queueStatus}>
+          {isProcessing ? 'Syncing...' : isOnline ? 'Ready' : 'Paused'}
+        </Text>
       </View>
 
-      {syncQueue.map((item: SyncQueueItem, index: number) => (
+      {queue.map((item: QueuedAction) => (
         <View key={item.id} style={styles.queueItem}>
           <View style={styles.queueItemHeader}>
             <Text style={styles.queueItemType}>{formatSyncType(item.type)}</Text>
@@ -269,11 +255,15 @@ export const PartialConnectivity: React.FC<PartialConnectivityProps> = ({
  * Shows tips and actions for regaining connection
  */
 export const ConnectionRecoveryHelper: React.FC = () => {
-  const { isOnline } = useAppSelector((state) => state.delivery);
+  const { isOffline, checkNetwork } = useOfflineMode();
 
-  if (isOnline) {
+  if (!isOffline) {
     return null;
   }
+
+  const handleCheckConnection = async () => {
+    await checkNetwork();
+  };
 
   return (
     <View style={styles.recoveryContainer}>
@@ -300,7 +290,10 @@ export const ConnectionRecoveryHelper: React.FC = () => {
         />
       </View>
 
-      <TouchableOpacity style={styles.checkConnectionButton}>
+      <TouchableOpacity
+        style={styles.checkConnectionButton}
+        onPress={handleCheckConnection}
+      >
         <Text style={styles.checkConnectionText}>Check Connection Status</Text>
       </TouchableOpacity>
     </View>
@@ -359,8 +352,9 @@ function formatSyncType(type: string): string {
   const typeMap: Record<string, string> = {
     status_update: 'Status Update',
     location_update: 'Location Update',
-    proof_of_delivery: 'Proof of Delivery',
-    acceptance: 'Delivery Acceptance',
+    proof_submit: 'Proof of Delivery',
+    accept_delivery: 'Delivery Acceptance',
+    reject_delivery: 'Delivery Rejection',
   };
   return typeMap[type] || type;
 }

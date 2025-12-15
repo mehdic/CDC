@@ -3,8 +3,9 @@
  * Tests skeleton loaders, shimmer effects, and progressive loading
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import React from 'react';
+
 import {
   DeliveryCardSkeleton,
   DeliveryListSkeleton,

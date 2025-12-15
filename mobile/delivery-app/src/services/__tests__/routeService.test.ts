@@ -3,9 +3,9 @@
  * T8-021: GPS Tracking & Route Display
  */
 
-import { routeService } from '../routeService';
-import deliveryApi from '../deliveryApi';
 import { DeliveryRoute, Coordinates } from '../../types/delivery';
+import deliveryApi from '../deliveryApi';
+import { routeService } from '../routeService';
 
 /**
  * Mock deliveryApi

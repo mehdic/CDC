@@ -7,6 +7,7 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { Marker } from 'react-native-maps';
+
 import { Coordinates } from '../types/delivery';
 
 /**
@@ -44,10 +45,10 @@ interface MapMarkerProps {
  * Calculate accuracy level
  */
 const getAccuracyLevel = (accuracyMeters?: number): AccuracyLevel => {
-  if (!accuracyMeters) return 'good';
-  if (accuracyMeters < 5) return 'excellent';
-  if (accuracyMeters < 10) return 'good';
-  if (accuracyMeters < 25) return 'moderate';
+  if (!accuracyMeters) {return 'good';}
+  if (accuracyMeters < 5) {return 'excellent';}
+  if (accuracyMeters < 10) {return 'good';}
+  if (accuracyMeters < 25) {return 'moderate';}
   return 'poor';
 };
 

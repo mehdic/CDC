@@ -19,6 +19,19 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
+// Mock NetInfo globally
+jest.mock('@react-native-community/netinfo', () => ({
+  addEventListener: jest.fn(() => jest.fn()),
+  fetch: jest.fn(() =>
+    Promise.resolve({
+      isConnected: true,
+      isInternetReachable: true,
+      type: 'wifi',
+      details: { effectiveType: '4g' },
+    })
+  ),
+}));
+
 // Add testing library matchers without importing from react-native first
 try {
   require('@testing-library/jest-native/extend-expect');

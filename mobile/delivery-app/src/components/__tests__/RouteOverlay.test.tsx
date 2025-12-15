@@ -3,10 +3,11 @@
  * T8-021: GPS Tracking & Route Display
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
-import { RouteOverlay } from '../RouteOverlay';
+import React from 'react';
+
 import { DeliveryRoute } from '../../types/delivery';
+import { RouteOverlay } from '../RouteOverlay';
 
 /**
  * Create Mock Route

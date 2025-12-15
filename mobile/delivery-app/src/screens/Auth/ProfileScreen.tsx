@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { logoutAsync } from '../../store/authSlice';
 
@@ -25,7 +26,7 @@ export const ProfileScreen: React.FC = () => {
     ]);
   };
 
-  if (!personnel) return null;
+  if (!personnel) {return null;}
 
   return (
     <ScrollView style={styles.container}>

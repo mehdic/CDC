@@ -15,8 +15,9 @@ import {
   Dimensions,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
+
 import { useGeolocation } from '../../hooks/useGeolocation';
+import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import {
   startTracking,
   stopTracking,
@@ -65,7 +66,7 @@ export const NavigationScreen: React.FC<NavigationScreenProps> = ({ navigation, 
 
   // Update current waypoint and navigation info
   useEffect(() => {
-    if (!optimizedRoute || optimizedRoute.waypoints.length === 0) return;
+    if (!optimizedRoute || optimizedRoute.waypoints.length === 0) {return;}
 
     const currentIndex = optimizedRoute.currentWaypointIndex;
     setWaypointIndex(currentIndex);
@@ -91,7 +92,7 @@ export const NavigationScreen: React.FC<NavigationScreenProps> = ({ navigation, 
 
   // Update location on server periodically
   useEffect(() => {
-    if (!currentLocation || !isTracking) return;
+    if (!currentLocation || !isTracking) {return;}
 
     const interval = setInterval(() => {
       dispatch(
@@ -109,7 +110,7 @@ export const NavigationScreen: React.FC<NavigationScreenProps> = ({ navigation, 
 
   // Animate map to show current location
   useEffect(() => {
-    if (!mapRef.current || !currentLocation) return;
+    if (!mapRef.current || !currentLocation) {return;}
     const mapRegion = {
       latitude: currentLocation.latitude,
       longitude: currentLocation.longitude,
@@ -120,7 +121,7 @@ export const NavigationScreen: React.FC<NavigationScreenProps> = ({ navigation, 
   }, [currentLocation]);
 
   const handleArrived = async () => {
-    if (!activeDelivery || !nextWaypoint) return;
+    if (!activeDelivery || !nextWaypoint) {return;}
 
     Alert.alert('Confirm Arrival', `Have you arrived at ${nextWaypoint.deliveryId}?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -147,7 +148,7 @@ export const NavigationScreen: React.FC<NavigationScreenProps> = ({ navigation, 
   };
 
   const handleRecalculateRoute = async () => {
-    if (!optimizedRoute || !currentLocation) return;
+    if (!optimizedRoute || !currentLocation) {return;}
 
     try {
       const remainingDeliveries = optimizedRoute.waypoints

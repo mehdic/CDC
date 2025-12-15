@@ -4,6 +4,8 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
+import { Animated } from 'react-native';
+
 import {
   useScaleAnimation,
   useFadeAnimation,
@@ -15,7 +17,6 @@ import {
   useSwipeAnimation,
   useBounceAnimation,
 } from '../useAnimations';
-import { Animated } from 'react-native';
 
 describe('useAnimations Hooks', () => {
   describe('useScaleAnimation', () => {

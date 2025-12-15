@@ -3,9 +3,10 @@
  * T8-021: GPS Tracking & Route Display
  */
 
-import { socketService, SocketEvent } from '../socketService';
-import { Coordinates } from '../../types/delivery';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { Coordinates } from '../../types/delivery';
+import { socketService, SocketEvent } from '../socketService';
 
 /**
  * Mock socket.io-client

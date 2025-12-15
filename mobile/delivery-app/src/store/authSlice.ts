@@ -4,8 +4,9 @@
  */
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState, DeliveryPersonnelProfile } from '../types/delivery';
+
 import deliveryApi from '../services/deliveryApi';
+import { AuthState, DeliveryPersonnelProfile } from '../types/delivery';
 
 /**
  * Initial State

@@ -3,8 +3,10 @@
  * Manages delivery requests, routes, and tracking state
  */
 
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import NetInfo from '@react-native-community/netinfo';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+
+import deliveryApi from '../services/deliveryApi';
 import {
   DeliveryState,
   DeliveryRequest,
@@ -15,7 +17,6 @@ import {
   DeliveryStatus,
   ProofOfDelivery,
 } from '../types/delivery';
-import deliveryApi from '../services/deliveryApi';
 
 /**
  * Initial State

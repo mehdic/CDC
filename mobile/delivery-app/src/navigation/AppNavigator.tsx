@@ -3,23 +3,24 @@
  * Manages navigation between auth and main app screens
  */
 
-import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React from 'react';
+
 import { useAppSelector } from '../hooks/useRedux';
 
 // Auth Screens
 import LoginScreen from '../screens/Auth/LoginScreen';
 
 // Main Screens
-import DeliveryListScreen from '../screens/DeliveryList/DeliveryListScreen';
-import DeliveryDetailScreen from '../screens/DeliveryDetail/DeliveryDetailScreen';
-import MapScreen from '../screens/Map/MapScreen';
-import QRScannerScreen from '../screens/QRScanner/QRScannerScreen';
-import ProofOfDeliveryScreen from '../screens/ProofOfDelivery/ProofOfDeliveryScreen';
-import EarningsScreen from '../screens/Earnings/EarningsScreen';
 import ProfileScreen from '../screens/Auth/ProfileScreen';
+import DeliveryDetailScreen from '../screens/DeliveryDetail/DeliveryDetailScreen';
+import DeliveryListScreen from '../screens/DeliveryList/DeliveryListScreen';
+import EarningsScreen from '../screens/Earnings/EarningsScreen';
+import MapScreen from '../screens/Map/MapScreen';
+import ProofOfDeliveryScreen from '../screens/ProofOfDelivery/ProofOfDeliveryScreen';
+import QRScannerScreen from '../screens/QRScanner/QRScannerScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();

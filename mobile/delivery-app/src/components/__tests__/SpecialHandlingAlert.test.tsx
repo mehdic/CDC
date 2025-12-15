@@ -3,8 +3,9 @@
  * Comprehensive tests for special handling alerts
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import React from 'react';
+
 import { SpecialHandlingAlert, AlertType } from '../SpecialHandlingAlert';
 
 describe('SpecialHandlingAlert Component', () => {

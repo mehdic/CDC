@@ -4,9 +4,10 @@
  */
 
 import { renderHook, act, waitFor } from '@testing-library/react-native';
-import { useLocation } from '../useLocation';
-import Geolocation from 'react-native-geolocation-service';
 import { Platform } from 'react-native';
+import Geolocation from 'react-native-geolocation-service';
+
+import { useLocation } from '../useLocation';
 import * as reduxHooks from '../useRedux';
 
 /**

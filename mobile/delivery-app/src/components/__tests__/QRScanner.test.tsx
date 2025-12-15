@@ -3,11 +3,11 @@
  * Covers camera permissions, scanning, torch control
  */
 
-import React from 'react';
 import { render, fireEvent, waitFor, screen } from '@testing-library/react-native';
+import * as Haptics from 'expo-haptics';
+import React from 'react';
 import { Platform, Alert } from 'react-native';
 import * as Permissions from 'react-native-permissions';
-import * as Haptics from 'expo-haptics';
 
 import { QRScanner } from '../QRScanner';
 

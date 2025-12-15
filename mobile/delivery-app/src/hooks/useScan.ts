@@ -14,10 +14,10 @@
  * - location-service for GPS
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import deliveryApi from '../services/deliveryApi';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
+import deliveryApi from '../services/deliveryApi';
 import type { ScanVerificationResult, ScanHistoryEntry, PackageVerificationState, UseScanReturn } from '../types/scanner';
 
 const SCAN_HISTORY_KEY = '@delivery_scan_history';

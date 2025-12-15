@@ -3,11 +3,14 @@
  * Manages sync queue when connection is restored
  */
 
-import { useEffect, useRef } from 'react';
 import NetInfo from '@react-native-community/netinfo';
-import { useAppDispatch, useAppSelector } from './useRedux';
-import { setOnlineStatus, removeFromSyncQueue } from '../store/deliverySlice';
+import { useEffect, useRef } from 'react';
+
 import deliveryApi from '../services/deliveryApi';
+import { setOnlineStatus, removeFromSyncQueue } from '../store/deliverySlice';
+
+import { useAppDispatch, useAppSelector } from './useRedux';
+
 
 /**
  * Offline Sync Hook

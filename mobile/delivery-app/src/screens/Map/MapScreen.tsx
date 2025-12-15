@@ -16,12 +16,13 @@ import {
   ScrollView,
 } from 'react-native';
 import MapView, { Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
-import { useLocation } from '../../hooks/useLocation';
-import { startTracking, stopTracking, updateDeliveryStatusAsync } from '../../store/deliverySlice';
+
 import { MapMarker } from '../../components/MapMarker';
 import { RouteOverlay } from '../../components/RouteOverlay';
+import { useLocation } from '../../hooks/useLocation';
+import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { routeService } from '../../services/routeService';
+import { startTracking, stopTracking, updateDeliveryStatusAsync } from '../../store/deliverySlice';
 
 /**
  * Error Message Component
@@ -49,10 +50,10 @@ const GPSStatusIndicator: React.FC<{
   }
 
   const getAccuracyColor = (acc: number | null): string => {
-    if (!acc) return '#999';
-    if (acc < 5) return '#34C759'; // Excellent
-    if (acc < 10) return '#007AFF'; // Good
-    if (acc < 25) return '#FF9500'; // Moderate
+    if (!acc) {return '#999';}
+    if (acc < 5) {return '#34C759';} // Excellent
+    if (acc < 10) {return '#007AFF';} // Good
+    if (acc < 25) {return '#FF9500';} // Moderate
     return '#FF3B30'; // Poor
   };
 
@@ -104,7 +105,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
    */
   useEffect(() => {
     const optimizeRoute = async () => {
-      if (!activeDelivery) return;
+      if (!activeDelivery) {return;}
 
       try {
         setIsOptimizingRoute(true);
@@ -155,7 +156,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
    * Handle Arrived Button Press
    */
   const handleArrived = () => {
-    if (!activeDelivery) return;
+    if (!activeDelivery) {return;}
 
     Alert.alert(
       'Confirm Arrival',

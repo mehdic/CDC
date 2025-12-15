@@ -5,6 +5,7 @@
 
 import React, { useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
 import { acceptDeliveryAsync, setActiveDelivery } from '../../store/deliverySlice';
 import { DeliveryRequest, SpecialHandling } from '../../types/delivery';

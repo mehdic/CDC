@@ -3,8 +3,9 @@
  * Tests error catching, recovery, and retry mechanisms
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import React from 'react';
+
 import { ErrorBoundary, useErrorHandler, withErrorBoundary } from '../ErrorBoundary';
 
 // Suppress console error output in tests

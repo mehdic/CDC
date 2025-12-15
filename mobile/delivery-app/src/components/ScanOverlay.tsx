@@ -130,6 +130,7 @@ export const ScanOverlay: React.FC<ScanOverlayProps> = ({
 
   return (
     <View
+      testID="scan-overlay-container"
       style={styles.container}
       accessible={true}
       accessibilityLabel={`QR code scan overlay - ${status} status`}
@@ -137,14 +138,15 @@ export const ScanOverlay: React.FC<ScanOverlayProps> = ({
       accessibilityRole="image"
     >
       {/* Semi-transparent dark areas */}
-      <View style={[styles.darkArea, styles.darkAreaTop]} />
-      <View style={[styles.darkArea, styles.darkAreaBottom]} />
-      <View style={[styles.darkArea, styles.darkAreaLeft]} />
-      <View style={[styles.darkArea, styles.darkAreaRight]} />
+      <View testID="scan-overlay-dark-top" style={[styles.darkArea, styles.darkAreaTop]} />
+      <View testID="scan-overlay-dark-bottom" style={[styles.darkArea, styles.darkAreaBottom]} />
+      <View testID="scan-overlay-dark-left" style={[styles.darkArea, styles.darkAreaLeft]} />
+      <View testID="scan-overlay-dark-right" style={[styles.darkArea, styles.darkAreaRight]} />
 
       {/* Center scanning box */}
       {showCenterBox && (
         <View
+          testID="scan-overlay-center-box"
           style={[
             styles.centerBox,
             {
@@ -156,6 +158,7 @@ export const ScanOverlay: React.FC<ScanOverlayProps> = ({
           {/* Animated scan line */}
           {status === 'scanning' && (
             <Animated.View
+              testID="scan-overlay-scan-line"
               style={[
                 styles.scanLine,
                 {
@@ -171,6 +174,7 @@ export const ScanOverlay: React.FC<ScanOverlayProps> = ({
             <>
               {/* Top-left corner */}
               <Animated.View
+                testID="scan-overlay-corner-tl"
                 style={[
                   styles.corner,
                   styles.topLeftCorner,
@@ -184,6 +188,7 @@ export const ScanOverlay: React.FC<ScanOverlayProps> = ({
 
               {/* Top-right corner */}
               <Animated.View
+                testID="scan-overlay-corner-tr"
                 style={[
                   styles.corner,
                   styles.topRightCorner,
@@ -197,6 +202,7 @@ export const ScanOverlay: React.FC<ScanOverlayProps> = ({
 
               {/* Bottom-left corner */}
               <Animated.View
+                testID="scan-overlay-corner-bl"
                 style={[
                   styles.corner,
                   styles.bottomLeftCorner,
@@ -210,6 +216,7 @@ export const ScanOverlay: React.FC<ScanOverlayProps> = ({
 
               {/* Bottom-right corner */}
               <Animated.View
+                testID="scan-overlay-corner-br"
                 style={[
                   styles.corner,
                   styles.bottomRightCorner,
@@ -227,8 +234,9 @@ export const ScanOverlay: React.FC<ScanOverlayProps> = ({
 
       {/* Status message */}
       {message && (
-        <View style={styles.messageContainer}>
+        <View testID="scan-overlay-message-container" style={styles.messageContainer}>
           <Text
+            testID="scan-overlay-message-text"
             style={[
               styles.messageText,
               {

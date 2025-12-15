@@ -1,12 +1,93 @@
 module.exports = {
   root: true,
-  extends: ['@react-native', 'prettier'],
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
-  rules: {
-    'react-native/no-inline-styles': 'off',
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-    'react-hooks/exhaustive-deps': 'warn',
-    'prettier/prettier': 'off',
+  parserOptions: {
+    ecmaVersion: 2022,
+    sourceType: 'module',
+    ecmaFeatures: {
+      jsx: true,
+    },
+    project: null,
   },
+  env: {
+    browser: true,
+    node: true,
+    es2022: true,
+    jest: true,
+  },
+  plugins: ['@typescript-eslint', 'import', 'react', 'react-native'],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
+  ],
+  rules: {
+    '@typescript-eslint/no-unused-vars': [
+      'warn',
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+      },
+    ],
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-non-null-assertion': 'warn',
+    'no-console': [
+      'warn',
+      {
+        allow: ['warn', 'error'],
+      },
+    ],
+    'import/order': [
+      'error',
+      {
+        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+        'newlines-between': 'always',
+        alphabetize: {
+          order: 'asc',
+          caseInsensitive: true,
+        },
+      },
+    ],
+    'import/no-unresolved': [
+      'error',
+      {
+        ignore: ['react-native', 'react-native-keychain', '../store', '@metapharm/api-types'],
+      },
+    ],
+    'import/namespace': 'off',
+    'import/default': 'warn',
+    'import/no-cycle': 'warn',
+    '@typescript-eslint/no-var-requires': 'warn',
+    'eqeqeq': ['error', 'always'],
+    'curly': ['error', 'all'],
+    'prefer-const': 'error',
+    'no-var': 'error',
+    'react-native/no-inline-styles': 'off',
+  },
+  settings: {
+    'import/resolver': {
+      node: {},
+    },
+  },
+  overrides: [
+    {
+      files: ['**/*.test.ts', '**/*.spec.ts', '**/__tests__/**'],
+      env: {
+        jest: true,
+      },
+      parserOptions: {
+        project: undefined,
+      },
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'off',
+        '@typescript-eslint/no-floating-promises': 'off',
+        '@typescript-eslint/require-await': 'off',
+        '@typescript-eslint/no-unsafe-argument': 'off',
+        '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unused-vars': 'warn',
+      },
+    },
+  ],
 };

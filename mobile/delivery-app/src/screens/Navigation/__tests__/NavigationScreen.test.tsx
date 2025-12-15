@@ -3,11 +3,12 @@
  * Tests for turn-by-turn navigation UI and interactions
  */
 
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { NavigationScreen } from '../NavigationScreen';
-import { useAppDispatch, useAppSelector } from '../../../hooks/useRedux';
+import React from 'react';
+
 import { useGeolocation } from '../../../hooks/useGeolocation';
+import { useAppDispatch, useAppSelector } from '../../../hooks/useRedux';
+import { NavigationScreen } from '../NavigationScreen';
 
 /**
  * Mock dependencies

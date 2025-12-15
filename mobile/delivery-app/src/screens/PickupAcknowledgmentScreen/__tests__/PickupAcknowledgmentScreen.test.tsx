@@ -3,13 +3,14 @@
  * Comprehensive tests for pickup acknowledgment workflow
  */
 
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import React from 'react';
+
+import { DeliveryRequest } from '../../../types/delivery';
 import {
   PickupAcknowledgmentScreen,
   AcknowledgmentRecord,
 } from '../PickupAcknowledgmentScreen';
-import { DeliveryRequest } from '../../../types/delivery';
 
 describe('PickupAcknowledgmentScreen', () => {
   const mockOnAcknowledgeComplete = jest.fn();

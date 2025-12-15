@@ -4,9 +4,10 @@
  * Provides real-time location broadcasting and delivery updates via Socket.IO
  */
 
-import { io, Socket } from 'socket.io-client';
-import { Coordinates, DeliveryRoute, DeliveryRequest } from '../types/delivery';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { io, Socket } from 'socket.io-client';
+
+import { Coordinates, DeliveryRoute, DeliveryRequest } from '../types/delivery';
 
 /**
  * Socket Events
@@ -90,8 +91,13 @@ class SocketService {
    * Initialize Socket Connection
    */
   async initialize(personnelId: string, token: string): Promise<void> {
-    if (this.isInitialized && this.socket?.connected) {
-      console.log('[SocketService] Already initialized and connected');
+    if (this.socket?.connected) {
+      console.log('[SocketService] Already connected');
+      return;
+    }
+
+    if (this.isInitialized) {
+      console.log('[SocketService] Already initialized');
       return;
     }
 
@@ -123,7 +129,7 @@ class SocketService {
    * Setup Socket Event Listeners
    */
   private setupSocketListeners(): void {
-    if (!this.socket) return;
+    if (!this.socket) {return;}
 
     // Connection events
     this.socket.on('connect', () => {
@@ -183,15 +189,6 @@ class SocketService {
       return;
     }
 
-    const now = Date.now();
-    const timeSinceLastBroadcast = now - this.lastBroadcastTime;
-
-    // Throttle: Only broadcast if enough time has passed
-    if (timeSinceLastBroadcast < this.config.throttleInterval) {
-      console.log('[SocketService] Location broadcast throttled');
-      return;
-    }
-
     const broadcast: LocationBroadcast = {
       personnelId: this.personnelId,
       deliveryId: deliveryId || this.currentDeliveryId,
@@ -199,8 +196,17 @@ class SocketService {
       timestamp: new Date().toISOString(),
     };
 
-    // If connected, emit immediately
+    // If connected, emit immediately (with throttling)
     if (this.socket?.connected) {
+      const now = Date.now();
+      const timeSinceLastBroadcast = now - this.lastBroadcastTime;
+
+      // Throttle: Only broadcast if enough time has passed
+      if (timeSinceLastBroadcast < this.config.throttleInterval) {
+        console.log('[SocketService] Location broadcast throttled');
+        return;
+      }
+
       try {
         this.socket.emit(SocketEvent.LOCATION_UPDATE, broadcast);
         this.lastBroadcastTime = now;
@@ -210,7 +216,7 @@ class SocketService {
         await this.queueBroadcast(broadcast);
       }
     } else {
-      // Queue for later
+      // Queue for later (no throttling when offline)
       await this.queueBroadcast(broadcast);
     }
   }
@@ -361,14 +367,14 @@ class SocketService {
    * Get Socket ID
    */
   getSocketId(): string | null {
-    return this.socket?.id ?? null;
+    return this.socket?.connected ? this.socket.id ?? null : null;
   }
 
   /**
    * Disconnect
    */
   async disconnect(): Promise<void> {
-    if (!this.socket) return;
+    if (!this.socket) {return;}
 
     // Emit personnel offline
     if (this.socket.connected) {

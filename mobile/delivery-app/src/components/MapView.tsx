@@ -7,6 +7,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+
 import { Coordinates, DeliveryRoute, Waypoint } from '../types/delivery';
 
 /**
@@ -36,7 +37,7 @@ const calculateRegion = (
 
   waypoints.forEach((wp) => coords.push(wp.coordinates));
 
-  if (coords.length === 0) return null;
+  if (coords.length === 0) {return null;}
 
   // Calculate bounding box
   const latitudes = coords.map((c) => c.latitude);
@@ -77,7 +78,7 @@ export const DeliveryMapView: React.FC<DeliveryMapViewProps> = ({
    * Auto-fit map to show all markers
    */
   useEffect(() => {
-    if (!mapReady || !mapRef.current) return;
+    if (!mapReady || !mapRef.current) {return;}
 
     const waypoints = route?.waypoints || [];
     const region = calculateRegion(currentLocation, waypoints);
@@ -91,7 +92,7 @@ export const DeliveryMapView: React.FC<DeliveryMapViewProps> = ({
    * Render Polyline for Route
    */
   const renderPolyline = () => {
-    if (!route || !route.waypoints || route.waypoints.length < 2) return null;
+    if (!route || !route.waypoints || route.waypoints.length < 2) {return null;}
 
     // Create coordinates array for polyline
     const coordinates = route.waypoints.map((wp) => ({
@@ -121,7 +122,7 @@ export const DeliveryMapView: React.FC<DeliveryMapViewProps> = ({
    * Render Current Location Marker
    */
   const renderCurrentLocationMarker = () => {
-    if (!currentLocation || !showUserLocation) return null;
+    if (!currentLocation || !showUserLocation) {return null;}
 
     return (
       <Marker
@@ -141,7 +142,7 @@ export const DeliveryMapView: React.FC<DeliveryMapViewProps> = ({
    * Render Destination Markers
    */
   const renderDestinationMarkers = () => {
-    if (!route || !route.waypoints) return null;
+    if (!route || !route.waypoints) {return null;}
 
     return route.waypoints.map((waypoint, index) => {
       const isCompleted = waypoint.completed;
@@ -168,8 +169,8 @@ export const DeliveryMapView: React.FC<DeliveryMapViewProps> = ({
    */
   const toggleMapType = () => {
     setMapType((current) => {
-      if (current === 'standard') return 'satellite';
-      if (current === 'satellite') return 'hybrid';
+      if (current === 'standard') {return 'satellite';}
+      if (current === 'satellite') {return 'hybrid';}
       return 'standard';
     });
   };
@@ -178,7 +179,7 @@ export const DeliveryMapView: React.FC<DeliveryMapViewProps> = ({
    * Center Map on Current Location
    */
   const centerOnCurrentLocation = () => {
-    if (!currentLocation || !mapRef.current) return;
+    if (!currentLocation || !mapRef.current) {return;}
 
     mapRef.current.animateToRegion(
       {
@@ -195,7 +196,7 @@ export const DeliveryMapView: React.FC<DeliveryMapViewProps> = ({
    * Fit All Markers
    */
   const fitAllMarkers = () => {
-    if (!mapRef.current || !route) return;
+    if (!mapRef.current || !route) {return;}
 
     const waypoints = route.waypoints || [];
     const region = calculateRegion(currentLocation, waypoints);

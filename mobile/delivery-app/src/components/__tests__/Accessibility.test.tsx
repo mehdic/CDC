@@ -3,8 +3,8 @@
  * Tests for accessibility labels, hints, and roles in delivery app components
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import React from 'react';
 import { Text, View, TouchableOpacity } from 'react-native';
 
 describe('Accessibility Features', () => {

@@ -3,8 +3,10 @@
  * MetaPharm Connect - Delivery App
  */
 
-import React from 'react';
 import { render } from '@testing-library/react-native';
+import React from 'react';
+import { Text, View } from 'react-native';
+
 import {
   FadeInScreen,
   SlideInScreen,
@@ -14,7 +16,7 @@ import {
   RotationAnimation,
   BounceAnimation,
 } from '../AnimatedTransitions';
-import { Text, View } from 'react-native';
+
 
 describe('AnimatedTransitions Component', () => {
   describe('FadeInScreen', () => {

@@ -3,15 +3,17 @@
  * MetaPharm Connect - Delivery App
  */
 
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import React from 'react';
+import { Text, View } from 'react-native';
+
 import {
   PressableFeedback,
   SuccessFeedback,
   ErrorFeedback,
   LoadingFeedback,
 } from '../PressableFeedback';
-import { Text, View } from 'react-native';
+
 
 describe('PressableFeedback Component', () => {
   describe('PressableFeedback', () => {

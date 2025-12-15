@@ -3,144 +3,194 @@
  * Captures signature, photo, and delivery confirmation
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Image } from 'react-native';
-// import { launchCamera } from 'react-native-image-picker'; // Package needs to be installed
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  TextInput,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
+
+import { PhotoCapture } from '../../components/PhotoCapture';
+import { SignatureCapture } from '../../components/SignatureCapture';
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
-import { submitProofOfDeliveryAsync, updateDeliveryStatusAsync } from '../../store/deliverySlice';
+import proofOfDeliveryService from '../../services/proofOfDeliveryService';
+import { updateDeliveryStatusAsync } from '../../store/deliverySlice';
 import { ProofOfDelivery } from '../../types/delivery';
 
-export const ProofOfDeliveryScreen: React.FC<{ navigation: any; route: any }> = ({
+export interface ProofOfDeliveryScreenProps {
+  navigation: any;
+  route: any;
+}
+
+export const ProofOfDeliveryScreen: React.FC<ProofOfDeliveryScreenProps> = ({
   navigation,
   route,
 }) => {
   const { deliveryId } = route.params;
   const dispatch = useAppDispatch();
-  const { currentLocation } = useAppSelector((state) => state.delivery);
+  const { currentLocation, isOnline } = useAppSelector((state) => state.delivery);
+
   const [signatureUri, setSignatureUri] = useState<string>('');
   const [photoUri, setPhotoUri] = useState<string>('');
   const [idPhotoUri, setIdPhotoUri] = useState<string>('');
   const [recipientName, setRecipientName] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [hasSignature, setHasSignature] = useState(false);
 
-  const takePhoto = async (type: 'delivery' | 'id') => {
-    // TODO: Install react-native-image-picker package
-    // const result = await launchCamera({
-    //   mediaType: 'photo',
-    //   cameraType: 'back',
-    //   quality: 0.8,
-    // });
+  useEffect(() => {
+    if (!currentLocation) {
+      Alert.alert(
+        'Location Required',
+        'GPS location is required for proof of delivery. Please enable location services.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [currentLocation]);
 
-    // Temporary stub for development
-    Alert.alert('Camera', 'Camera functionality requires react-native-image-picker package');
-
-    // if (result.assets && result.assets[0].uri) {
-    //   if (type === 'delivery') {
-    //     setPhotoUri(result.assets[0].uri);
-    //   } else {
-    //     setIdPhotoUri(result.assets[0].uri);
-    //   }
-    // }
+  const handleSignatureCapture = (signature: string) => {
+    setSignatureUri(signature);
+    setHasSignature(true);
   };
 
-  const handleSubmit = async () => {
+  const handleSignatureClear = () => {
+    setSignatureUri('');
+    setHasSignature(false);
+  };
+
+  const handlePhotoCapture = (photoUri: string) => {
+    setPhotoUri(photoUri);
+  };
+
+  const handleIdPhotoCapture = (idUri: string) => {
+    setIdPhotoUri(idUri);
+  };
+
+  const validateForm = (): boolean => {
     if (!photoUri) {
-      Alert.alert('Error', 'Please take a photo of the delivery');
-      return;
+      Alert.alert('Required Field', 'Please take a photo of the delivery');
+      return false;
     }
 
     if (!recipientName.trim()) {
-      Alert.alert('Error', 'Please enter recipient name');
+      Alert.alert('Required Field', 'Please enter recipient name');
+      return false;
+    }
+
+    if (!currentLocation) {
+      Alert.alert('Location Required', 'GPS location is required for proof of delivery');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
       return;
     }
 
     setSubmitting(true);
 
-    const proof: ProofOfDelivery = {
-      deliveryId,
-      photoImage: photoUri,
-      signatureImage: signatureUri || undefined,
-      idVerificationImage: idPhotoUri || undefined,
-      recipientName,
-      notes: notes || undefined,
-      timestamp: new Date().toISOString(),
-      location: currentLocation!,
-    };
-
     try {
-      await dispatch(submitProofOfDeliveryAsync({ deliveryId, proof })).unwrap();
-      await dispatch(
-        updateDeliveryStatusAsync({
-          id: deliveryId,
-          status: 'delivered',
-          location: currentLocation || undefined,
-        })
+      // Create proof with metadata
+      const proof: ProofOfDelivery = proofOfDeliveryService.createProof(
+        deliveryId,
+        currentLocation!,
+        {
+          signatureImage: signatureUri || undefined,
+          photoImage: photoUri,
+          idVerificationImage: idPhotoUri || undefined,
+          recipientName: recipientName.trim(),
+          notes: notes.trim() || undefined,
+        }
       );
 
-      Alert.alert('Success', 'Delivery completed!', [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate('DeliveryList'),
-        },
-      ]);
+      // Submit proof (will queue if offline)
+      const result = await proofOfDeliveryService.submitProof(deliveryId, proof, isOnline);
+
+      if (result.success) {
+        // Update delivery status
+        await dispatch(
+          updateDeliveryStatusAsync({
+            id: deliveryId,
+            status: 'delivered',
+            location: currentLocation || undefined,
+          })
+        ).unwrap();
+
+        // Show appropriate success message
+        const message = result.queued
+          ? 'Delivery marked as complete. Proof will be uploaded when online.'
+          : 'Delivery completed successfully!';
+
+        Alert.alert('Success', message, [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('DeliveryList'),
+          },
+        ]);
+      } else {
+        Alert.alert('Error', result.error || 'Failed to submit proof of delivery');
+      }
     } catch (error: any) {
-      Alert.alert('Error', error || 'Failed to submit proof of delivery');
+      console.error('Submit proof error:', error);
+      Alert.alert('Error', error.message || 'Failed to submit proof of delivery');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.title}>Proof of Delivery</Text>
 
+      {!isOnline && (
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineText}>
+            📡 You're offline. Proof will be queued for upload.
+          </Text>
+        </View>
+      )}
+
       <View style={styles.section}>
-        <Text style={styles.label}>Recipient Name *</Text>
+        <Text style={styles.label}>
+          Recipient Name <Text style={styles.required}>*</Text>
+        </Text>
         <TextInput
           style={styles.input}
           value={recipientName}
           onChangeText={setRecipientName}
           placeholder="Enter recipient name"
+          testID="recipient-name-input"
         />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.label}>Delivery Photo *</Text>
-        {photoUri ? (
-          <View>
-            <Image source={{ uri: photoUri }} style={styles.preview} />
-            <TouchableOpacity
-              style={styles.retakeButton}
-              onPress={() => takePhoto('delivery')}
-            >
-              <Text style={styles.retakeButtonText}>Retake Photo</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.cameraButton}
-            onPress={() => takePhoto('delivery')}
-          >
-            <Text style={styles.cameraButtonText}>📷 Take Photo</Text>
-          </TouchableOpacity>
-        )}
+        <PhotoCapture
+          onCapture={handlePhotoCapture}
+          label="Delivery Photo"
+          required={true}
+          capturedUri={photoUri}
+        />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.label}>ID Verification (if required)</Text>
-        {idPhotoUri ? (
-          <View>
-            <Image source={{ uri: idPhotoUri }} style={styles.preview} />
-            <TouchableOpacity style={styles.retakeButton} onPress={() => takePhoto('id')}>
-              <Text style={styles.retakeButtonText}>Retake Photo</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.cameraButton} onPress={() => takePhoto('id')}>
-            <Text style={styles.cameraButtonText}>📷 Take ID Photo</Text>
-          </TouchableOpacity>
-        )}
+        <SignatureCapture onCapture={handleSignatureCapture} onClear={handleSignatureClear} />
+      </View>
+
+      <View style={styles.section}>
+        <PhotoCapture
+          onCapture={handleIdPhotoCapture}
+          label="ID Verification (if required)"
+          required={false}
+          capturedUri={idPhotoUri}
+        />
       </View>
 
       <View style={styles.section}>
@@ -152,27 +202,70 @@ export const ProofOfDeliveryScreen: React.FC<{ navigation: any; route: any }> = 
           placeholder="Additional notes..."
           multiline
           numberOfLines={4}
+          testID="notes-input"
         />
+      </View>
+
+      <View style={styles.infoSection}>
+        <Text style={styles.infoText}>
+          📍 GPS: {currentLocation ? 'Enabled' : 'Waiting for location...'}
+        </Text>
+        <Text style={styles.infoText}>🕒 {new Date().toLocaleString()}</Text>
       </View>
 
       <TouchableOpacity
         style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
         onPress={handleSubmit}
         disabled={submitting}
+        testID="submit-button"
       >
-        <Text style={styles.submitButtonText}>
-          {submitting ? 'Submitting...' : 'Complete Delivery'}
-        </Text>
+        {submitting ? (
+          <ActivityIndicator size="small" color="#FFF" />
+        ) : (
+          <Text style={styles.submitButtonText}>Complete Delivery</Text>
+        )}
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5', padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 20 },
-  section: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+  },
+  offlineBanner: {
+    backgroundColor: '#FFF3CD',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  offlineText: {
+    fontSize: 14,
+    color: '#856404',
+    textAlign: 'center',
+  },
+  section: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  required: {
+    color: '#DC3545',
+  },
   input: {
     backgroundColor: '#FFF',
     borderWidth: 1,
@@ -181,31 +274,36 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
   },
-  textArea: { height: 100, textAlignVertical: 'top' },
-  cameraButton: {
-    backgroundColor: '#007AFF',
-    padding: 40,
-    borderRadius: 8,
-    alignItems: 'center',
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
   },
-  cameraButtonText: { color: '#FFF', fontSize: 18, fontWeight: '600' },
-  preview: { width: '100%', height: 200, borderRadius: 8, marginBottom: 12 },
-  retakeButton: {
-    backgroundColor: '#6C757D',
+  infoSection: {
+    backgroundColor: '#E9ECEF',
     padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    marginBottom: 20,
   },
-  retakeButtonText: { color: '#FFF', fontSize: 14, fontWeight: '600' },
+  infoText: {
+    fontSize: 12,
+    color: '#495057',
+    marginBottom: 4,
+  },
   submitButton: {
     backgroundColor: '#28A745',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+    marginBottom: 20,
   },
-  submitButtonDisabled: { backgroundColor: '#999' },
-  submitButtonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  submitButtonDisabled: {
+    backgroundColor: '#999',
+  },
+  submitButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });
 
 export default ProofOfDeliveryScreen;

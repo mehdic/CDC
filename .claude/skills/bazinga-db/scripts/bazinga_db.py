@@ -1381,27 +1381,135 @@ class BazingaDB:
 
     # ==================== SKILL OUTPUT OPERATIONS ====================
 
-    def save_skill_output(self, session_id: str, skill_name: str, output_data: Dict) -> None:
-        """Save skill output."""
-        conn = self._get_connection()
-        conn.execute("""
-            INSERT INTO skill_outputs (session_id, skill_name, output_data)
-            VALUES (?, ?, ?)
-        """, (session_id, skill_name, json.dumps(output_data)))
-        conn.commit()
-        conn.close()
-        self._print_success(f"✓ Saved {skill_name} output")
+    def save_skill_output(self, session_id: str, skill_name: str, output_data: Dict,
+                         agent_type: Optional[str] = None, group_id: Optional[str] = None) -> int:
+        """Save skill output with auto-computed iteration.
 
-    def get_skill_output(self, session_id: str, skill_name: str) -> Optional[Dict]:
-        """Get latest skill output."""
+        Iteration is computed atomically using INSERT...SELECT to prevent race conditions.
+        Uses UNIQUE constraint with retry on IntegrityError for concurrent safety.
+        Returns the iteration number assigned.
+        """
         conn = self._get_connection()
-        row = conn.execute("""
-            SELECT output_data FROM skill_outputs
-            WHERE session_id = ? AND skill_name = ?
-            ORDER BY timestamp DESC LIMIT 1
-        """, (session_id, skill_name)).fetchone()
+        max_retries = 3
+
+        for attempt in range(max_retries):
+            try:
+                # Use BEGIN IMMEDIATE to acquire exclusive lock upfront
+                conn.execute("BEGIN IMMEDIATE")
+
+                # Atomic INSERT with computed iteration using INSERT...SELECT
+                # Build WHERE clause properly for NULL handling
+                if agent_type is None and group_id is None:
+                    where_clause = "agent_type IS NULL AND group_id IS NULL"
+                    params = (session_id, skill_name, json.dumps(output_data), session_id, skill_name)
+                elif agent_type is None:
+                    where_clause = "agent_type IS NULL AND group_id = ?"
+                    params = (session_id, skill_name, json.dumps(output_data), group_id, session_id, skill_name, group_id)
+                elif group_id is None:
+                    where_clause = "agent_type = ? AND group_id IS NULL"
+                    params = (session_id, skill_name, json.dumps(output_data), agent_type, session_id, skill_name, agent_type)
+                else:
+                    where_clause = "agent_type = ? AND group_id = ?"
+                    params = (session_id, skill_name, json.dumps(output_data), agent_type, group_id, session_id, skill_name, agent_type, group_id)
+
+                cursor = conn.execute(f"""
+                    INSERT INTO skill_outputs (session_id, skill_name, output_data, agent_type, group_id, iteration)
+                    SELECT ?, ?, ?, {'NULL' if agent_type is None else '?'}, {'NULL' if group_id is None else '?'},
+                           COALESCE((SELECT MAX(iteration) FROM skill_outputs
+                                     WHERE session_id = ? AND skill_name = ? AND {where_clause}), 0) + 1
+                """, params)
+
+                # Get the iteration that was assigned
+                next_iteration = conn.execute(f"""
+                    SELECT iteration FROM skill_outputs
+                    WHERE rowid = ?
+                """, (cursor.lastrowid,)).fetchone()['iteration']
+
+                conn.commit()
+                conn.close()
+                break  # Success, exit retry loop
+
+            except sqlite3.IntegrityError as e:
+                conn.rollback()
+                if attempt < max_retries - 1:
+                    # Retry on UNIQUE constraint violation (concurrent insert)
+                    import time
+                    time.sleep(0.01 * (attempt + 1))  # Brief backoff
+                    continue
+                else:
+                    conn.close()
+                    raise
+            except Exception as e:
+                conn.rollback()
+                conn.close()
+                raise
+
+        if agent_type:
+            self._print_success(f"✓ Saved {skill_name} output for {agent_type} (iteration {next_iteration})")
+        else:
+            self._print_success(f"✓ Saved {skill_name} output (iteration {next_iteration})")
+        return next_iteration
+
+    def get_skill_output(self, session_id: str, skill_name: str,
+                        agent_type: Optional[str] = None) -> Optional[Dict]:
+        """Get latest skill output (backward compatible).
+
+        If agent_type is provided, returns latest for that agent.
+        Otherwise returns latest across all agents.
+        """
+        conn = self._get_connection()
+
+        if agent_type:
+            row = conn.execute("""
+                SELECT output_data FROM skill_outputs
+                WHERE session_id = ? AND skill_name = ? AND agent_type = ?
+                ORDER BY timestamp DESC LIMIT 1
+            """, (session_id, skill_name, agent_type)).fetchone()
+        else:
+            row = conn.execute("""
+                SELECT output_data FROM skill_outputs
+                WHERE session_id = ? AND skill_name = ?
+                ORDER BY timestamp DESC LIMIT 1
+            """, (session_id, skill_name)).fetchone()
+
         conn.close()
         return json.loads(row['output_data']) if row else None
+
+    def get_skill_output_all(self, session_id: str, skill_name: str,
+                            agent_type: Optional[str] = None) -> List[Dict]:
+        """Get all skill outputs for a skill (supports multi-invocation).
+
+        Returns array of objects with iteration, agent_type, group_id, timestamp, and output_data.
+        Ordered by timestamp DESC (most recent first) for consistent access patterns.
+        """
+        conn = self._get_connection()
+
+        if agent_type:
+            # Filter by agent type, order by timestamp DESC for consistent "latest first"
+            rows = conn.execute("""
+                SELECT iteration, agent_type, group_id, timestamp, output_data
+                FROM skill_outputs
+                WHERE session_id = ? AND skill_name = ? AND agent_type = ?
+                ORDER BY timestamp DESC
+            """, (session_id, skill_name, agent_type)).fetchall()
+        else:
+            # All outputs for skill, order by timestamp DESC
+            rows = conn.execute("""
+                SELECT iteration, agent_type, group_id, timestamp, output_data
+                FROM skill_outputs
+                WHERE session_id = ? AND skill_name = ?
+                ORDER BY timestamp DESC
+            """, (session_id, skill_name)).fetchall()
+
+        conn.close()
+
+        return [{
+            'iteration': row['iteration'],
+            'agent_type': row['agent_type'],
+            'group_id': row['group_id'],
+            'timestamp': row['timestamp'],
+            'output_data': json.loads(row['output_data'])
+        } for row in rows]
 
     # ==================== CONFIGURATION OPERATIONS ====================
     # REMOVED: Configuration table no longer exists (2025-11-21)
@@ -2205,6 +2313,609 @@ class BazingaDB:
             'agent_type': agent_type,
         }
 
+    # ==================== ERROR PATTERN OPERATIONS ====================
+    # Phase 5: User Story 3 - Error Pattern Capture (T024-T031)
+    # See: specs/1-context-engineering/data-model.md for schema
+
+    def _extract_error_signature(self, error_type: str, error_message: str,
+                                  context_hints: List[str] = None,
+                                  stack_pattern: List[str] = None) -> Dict[str, Any]:
+        """T024: Extract structured error signature from error details.
+
+        Creates a normalized signature that can be used for matching similar errors.
+
+        Args:
+            error_type: Error class/type (e.g., "ModuleNotFoundError", "TypeError")
+            error_message: Full error message text
+            context_hints: List of contextual hints (e.g., ["import statement", "tsconfig"])
+            stack_pattern: Simplified stack trace patterns (e.g., ["file.py:123"])
+
+        Returns:
+            Dict with structured signature fields
+        """
+        import re
+
+        # Normalize error message - remove variable parts (paths, line numbers, specific values)
+        message_pattern = error_message
+        # Remove absolute paths (Unix)
+        message_pattern = re.sub(r'/[^\s]+/', '.../', message_pattern)
+        # Remove absolute paths (Windows) - use raw string for replacement to avoid escape issues
+        message_pattern = re.sub(r'[A-Z]:\\[^\s]+\\', r'...\\', message_pattern)
+        # Remove line numbers
+        message_pattern = re.sub(r'line \d+', 'line N', message_pattern)
+        # Remove specific variable names/values but keep structure
+        message_pattern = re.sub(r"'[^']{1,50}'", "'...'", message_pattern)
+        message_pattern = re.sub(r'"[^"]{1,50}"', '"..."', message_pattern)
+
+        return {
+            "error_type": error_type.strip() if error_type else "Unknown",
+            "message_pattern": message_pattern.strip()[:500],  # Limit length
+            "context_hints": context_hints or [],
+            "stack_pattern": stack_pattern or []
+        }
+
+    def _generate_pattern_hash(self, signature: Dict[str, Any]) -> str:
+        """T026: Generate SHA256 hash of normalized error signature.
+
+        The hash uniquely identifies an error pattern for deduplication.
+        """
+        import hashlib
+
+        # Create deterministic string representation
+        # Sort keys and normalize for consistent hashing
+        hash_input = (
+            f"{signature.get('error_type', '')}:"
+            f"{signature.get('message_pattern', '')}:"
+            f"{','.join(sorted(signature.get('context_hints', [])))}"
+        )
+
+        return hashlib.sha256(hash_input.encode('utf-8')).hexdigest()
+
+    def save_error_pattern(self, project_id: str, error_type: str, error_message: str,
+                          solution: str, lang: str = None,
+                          context_hints: List[str] = None,
+                          stack_pattern: List[str] = None) -> Dict[str, Any]:
+        """T024-T027: Save an error pattern from a fail-then-succeed flow.
+
+        Captures error signature, redacts secrets, generates hash, and stores.
+        If pattern already exists, updates occurrences and last_seen.
+
+        Args:
+            project_id: Project identifier for isolation
+            error_type: Error class/type (e.g., "ModuleNotFoundError")
+            error_message: Full error message text
+            solution: How the error was resolved
+            lang: Programming language (optional)
+            context_hints: Contextual hints for matching
+            stack_pattern: Simplified stack trace patterns
+
+        Returns:
+            Dict with pattern_hash and operation result
+        """
+        # T024: Extract signature
+        signature = self._extract_error_signature(
+            error_type, error_message, context_hints, stack_pattern
+        )
+
+        # T025: Redact secrets from signature and solution
+        signature_json = json.dumps(signature)
+        signature_json, sig_redacted = scan_and_redact(signature_json)
+        solution, sol_redacted = scan_and_redact(solution)
+
+        # T026: Generate pattern hash
+        pattern_hash = self._generate_pattern_hash(json.loads(signature_json))
+
+        conn = self._get_connection()
+        try:
+            # Check if pattern already exists
+            existing = conn.execute("""
+                SELECT occurrences, confidence FROM error_patterns
+                WHERE pattern_hash = ? AND project_id = ?
+            """, (pattern_hash, project_id)).fetchone()
+
+            if existing:
+                # Update existing pattern
+                new_occurrences = existing['occurrences'] + 1
+                conn.execute("""
+                    UPDATE error_patterns
+                    SET occurrences = ?,
+                        last_seen = datetime('now'),
+                        solution = CASE WHEN COALESCE(length(?), 0) > COALESCE(length(solution), 0) THEN ? ELSE solution END
+                    WHERE pattern_hash = ? AND project_id = ?
+                """, (new_occurrences, solution, solution, pattern_hash, project_id))
+                conn.commit()
+
+                self._print_success(f"✓ Updated error pattern (occurrences: {new_occurrences})")
+                return {
+                    "success": True,
+                    "pattern_hash": pattern_hash,
+                    "operation": "updated",
+                    "occurrences": new_occurrences,
+                    "redacted": sig_redacted or sol_redacted
+                }
+            else:
+                # Insert new pattern with initial confidence 0.5
+                conn.execute("""
+                    INSERT INTO error_patterns
+                    (pattern_hash, project_id, signature_json, solution, confidence,
+                     occurrences, lang, last_seen, created_at, ttl_days)
+                    VALUES (?, ?, ?, ?, 0.5, 1, ?, datetime('now'), datetime('now'), 90)
+                """, (pattern_hash, project_id, signature_json, solution, lang))
+                conn.commit()
+
+                self._print_success(f"✓ Saved new error pattern: {pattern_hash[:16]}...")
+                return {
+                    "success": True,
+                    "pattern_hash": pattern_hash,
+                    "operation": "created",
+                    "occurrences": 1,
+                    "confidence": 0.5,
+                    "redacted": sig_redacted or sol_redacted
+                }
+        except Exception as e:
+            conn.rollback()
+            raise RuntimeError(f"Failed to save error pattern: {str(e)}")
+        finally:
+            conn.close()
+
+    def get_error_patterns(self, project_id: str, lang: str = None,
+                          min_confidence: float = 0.7,
+                          limit: int = 5) -> List[Dict[str, Any]]:
+        """T028: Query matching error patterns for context injection.
+
+        Returns patterns above confidence threshold for the given project.
+
+        Args:
+            project_id: Project identifier for isolation
+            lang: Filter by programming language (optional)
+            min_confidence: Minimum confidence threshold (default: 0.7)
+            limit: Maximum patterns to return (default: 5)
+
+        Returns:
+            List of error patterns with signature, solution, confidence
+        """
+        conn = self._get_connection()
+
+        if lang:
+            rows = conn.execute("""
+                SELECT pattern_hash, signature_json, solution, confidence,
+                       occurrences, lang, last_seen
+                FROM error_patterns
+                WHERE project_id = ? AND lang = ? AND confidence >= ?
+                ORDER BY confidence DESC, occurrences DESC
+                LIMIT ?
+            """, (project_id, lang, min_confidence, limit)).fetchall()
+        else:
+            rows = conn.execute("""
+                SELECT pattern_hash, signature_json, solution, confidence,
+                       occurrences, lang, last_seen
+                FROM error_patterns
+                WHERE project_id = ? AND confidence >= ?
+                ORDER BY confidence DESC, occurrences DESC
+                LIMIT ?
+            """, (project_id, min_confidence, limit)).fetchall()
+
+        conn.close()
+
+        result = []
+        for row in rows:
+            pattern = dict(row)
+            # Parse signature JSON
+            try:
+                pattern['signature'] = json.loads(pattern.pop('signature_json'))
+            except json.JSONDecodeError:
+                pattern['signature'] = {}
+            result.append(pattern)
+
+        return result
+
+    def update_error_pattern_confidence(self, pattern_hash: str, project_id: str,
+                                        success: bool) -> Dict[str, Any]:
+        """T030: Adjust confidence based on match outcome.
+
+        Rules:
+        - Successful match: +0.1 (max 1.0)
+        - False positive report: -0.2 (min 0.1)
+        - Below 0.3: Pattern still stored but not injected
+
+        Args:
+            pattern_hash: Hash of the pattern to update
+            project_id: Project identifier
+            success: True if solution helped, False if false positive
+
+        Returns:
+            Dict with updated confidence value
+        """
+        conn = self._get_connection()
+
+        try:
+            # Get current confidence
+            row = conn.execute("""
+                SELECT confidence FROM error_patterns
+                WHERE pattern_hash = ? AND project_id = ?
+            """, (pattern_hash, project_id)).fetchone()
+
+            if not row:
+                return {"success": False, "error": "Pattern not found"}
+
+            current = row['confidence']
+
+            # Apply adjustment rules
+            if success:
+                new_confidence = min(1.0, current + 0.1)
+            else:
+                new_confidence = max(0.1, current - 0.2)
+
+            conn.execute("""
+                UPDATE error_patterns
+                SET confidence = ?, last_seen = datetime('now')
+                WHERE pattern_hash = ? AND project_id = ?
+            """, (new_confidence, pattern_hash, project_id))
+            conn.commit()
+
+            self._print_success(f"✓ Updated confidence: {current:.2f} → {new_confidence:.2f}")
+            return {
+                "success": True,
+                "pattern_hash": pattern_hash,
+                "previous_confidence": current,
+                "new_confidence": new_confidence,
+                "injectable": new_confidence >= 0.3  # Below 0.3: observe only
+            }
+        except Exception as e:
+            conn.rollback()
+            raise RuntimeError(f"Failed to update confidence: {str(e)}")
+        finally:
+            conn.close()
+
+    def cleanup_expired_patterns(self, project_id: str = None) -> Dict[str, Any]:
+        """T031: Remove patterns that have exceeded their TTL.
+
+        Patterns are deleted when last_seen + ttl_days < current date.
+
+        Args:
+            project_id: Limit cleanup to specific project (optional)
+
+        Returns:
+            Dict with count of deleted patterns
+        """
+        conn = self._get_connection()
+
+        try:
+            if project_id is not None:
+                cursor = conn.execute("""
+                    DELETE FROM error_patterns
+                    WHERE project_id = ?
+                    AND date(last_seen, '+' || ttl_days || ' days') < date('now')
+                """, (project_id,))
+            else:
+                cursor = conn.execute("""
+                    DELETE FROM error_patterns
+                    WHERE date(last_seen, '+' || ttl_days || ' days') < date('now')
+                """)
+
+            deleted_count = cursor.rowcount
+            conn.commit()
+
+            self._print_success(f"✓ Cleaned up {deleted_count} expired error patterns")
+            return {
+                "success": True,
+                "deleted_count": deleted_count,
+                "project_id": project_id
+            }
+        except Exception as e:
+            conn.rollback()
+            raise RuntimeError(f"Failed to cleanup patterns: {str(e)}")
+        finally:
+            conn.close()
+
+    # ==================== CONSUMPTION SCOPE OPERATIONS ====================
+
+    def save_consumption(self, session_id: str, group_id: str, agent_type: str,
+                         iteration: int, package_id: int) -> Dict[str, Any]:
+        """Save consumption record to consumption_scope table (T037).
+
+        Args:
+            session_id: Session identifier
+            group_id: Task group identifier
+            agent_type: Type of agent consuming the package
+            iteration: Iteration number (0-based)
+            package_id: ID of the consumed context package
+
+        Returns:
+            Dict with scope_id and success status
+        """
+        import hashlib
+        # Deterministic scope_id for idempotency (same inputs = same ID)
+        composite = f"{session_id}:{group_id}:{agent_type}:{iteration}:{package_id}"
+        scope_id = hashlib.sha256(composite.encode()).hexdigest()[:32]
+
+        conn = self._get_connection()
+        try:
+            cursor = conn.execute("""
+                INSERT OR IGNORE INTO consumption_scope
+                (scope_id, session_id, group_id, agent_type, iteration, package_id, consumed_at)
+                VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+            """, (scope_id, session_id, group_id, agent_type, iteration, package_id))
+            conn.commit()
+
+            # Check if row was actually inserted (vs ignored as duplicate)
+            inserted = cursor.rowcount > 0
+
+            if inserted:
+                self._print_success(f"✓ Saved consumption: {agent_type} consumed package {package_id}")
+            else:
+                self._print_success(f"✓ Consumption exists: {agent_type} package {package_id} (idempotent)")
+
+            return {
+                "success": True,
+                "inserted": inserted,
+                "scope_id": scope_id,
+                "session_id": session_id,
+                "group_id": group_id,
+                "agent_type": agent_type,
+                "iteration": iteration,
+                "package_id": package_id
+            }
+        except Exception as e:
+            conn.rollback()
+            raise RuntimeError(f"Failed to save consumption: {str(e)}")
+        finally:
+            conn.close()
+
+    def get_consumption(self, session_id: str, group_id: Optional[str] = None,
+                        agent_type: Optional[str] = None, limit: int = 50) -> List[Dict]:
+        """Query consumption_scope records (T037).
+
+        Args:
+            session_id: Session identifier
+            group_id: Optional filter by group
+            agent_type: Optional filter by agent type
+            limit: Maximum records to return (default 50, clamped to 1-1000)
+
+        Returns:
+            List of consumption records
+        """
+        # Clamp limit to safe range (1-1000)
+        limit = max(1, min(limit, 1000))
+
+        conn = self._get_connection()
+        try:
+            sql = "SELECT * FROM consumption_scope WHERE session_id = ?"
+            params: List[Any] = [session_id]
+
+            if group_id:
+                sql += " AND group_id = ?"
+                params.append(group_id)
+            if agent_type:
+                sql += " AND agent_type = ?"
+                params.append(agent_type)
+
+            sql += " ORDER BY consumed_at DESC LIMIT ?"
+            params.append(limit)
+
+            rows = conn.execute(sql, params).fetchall()
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
+
+    # ==================== STRATEGIES OPERATIONS ====================
+
+    VALID_TOPICS = {'implementation', 'architecture', 'methodology', 'general'}
+
+    def save_strategy(self, project_id: str, topic: str, insight: str,
+                      lang: Optional[str] = None, framework: Optional[str] = None,
+                      strategy_id: Optional[str] = None) -> Dict[str, Any]:
+        """Save strategy to strategies table (T038).
+
+        Args:
+            project_id: Project identifier
+            topic: Category (implementation, architecture, methodology, general)
+            insight: The actual insight/approach (max 500 chars)
+            lang: Optional language context
+            framework: Optional framework context
+            strategy_id: Optional custom ID (auto-generated if not provided)
+
+        Returns:
+            Dict with strategy_id and success status
+        """
+        import hashlib
+
+        # Validate topic against allowed values
+        if topic not in self.VALID_TOPICS:
+            topic = 'general'  # Normalize invalid topics to 'general'
+
+        # Generate strategy_id from content hash if not provided
+        if not strategy_id:
+            content_hash = hashlib.sha256(insight.encode()).hexdigest()[:16]
+            strategy_id = f"{project_id}_{topic}_{content_hash}"
+
+        # Truncate insight to 500 chars
+        insight = insight[:500] if len(insight) > 500 else insight
+
+        conn = self._get_connection()
+        try:
+            conn.execute("""
+                INSERT INTO strategies (strategy_id, project_id, topic, insight, helpfulness, lang, framework, last_seen, created_at)
+                VALUES (?, ?, ?, ?, 1, ?, ?, datetime('now'), datetime('now'))
+                ON CONFLICT(strategy_id) DO UPDATE SET
+                    helpfulness = helpfulness + 1,
+                    last_seen = datetime('now')
+            """, (strategy_id, project_id, topic, insight, lang, framework))
+            conn.commit()
+
+            self._print_success(f"✓ Saved strategy: {topic} for {project_id}")
+            return {
+                "success": True,
+                "strategy_id": strategy_id,
+                "project_id": project_id,
+                "topic": topic
+            }
+        except Exception as e:
+            conn.rollback()
+            raise RuntimeError(f"Failed to save strategy: {str(e)}")
+        finally:
+            conn.close()
+
+    def get_strategies(self, project_id: str, lang: Optional[str] = None,
+                       framework: Optional[str] = None, topic: Optional[str] = None,
+                       limit: int = 5) -> List[Dict]:
+        """Query strategies table (T038).
+
+        Args:
+            project_id: Project identifier
+            lang: Optional filter by language
+            framework: Optional filter by framework
+            topic: Optional filter by topic
+            limit: Maximum strategies to return (default 5, clamped to 1-100)
+
+        Returns:
+            List of strategy records sorted by helpfulness
+        """
+        # Clamp limit to safe range (1-100)
+        limit = max(1, min(limit, 100))
+
+        # Validate topic if provided
+        if topic and topic not in self.VALID_TOPICS:
+            self._print_error(f"Invalid topic '{topic}'. Valid: {', '.join(self.VALID_TOPICS)}")
+            return []
+
+        conn = self._get_connection()
+        try:
+            sql = "SELECT * FROM strategies WHERE project_id = ?"
+            params: List[Any] = [project_id]
+
+            if lang:
+                sql += " AND (lang IS NULL OR lang = ?)"
+                params.append(lang)
+            if framework:
+                sql += " AND (framework IS NULL OR framework = ?)"
+                params.append(framework)
+            if topic:
+                sql += " AND topic = ?"
+                params.append(topic)
+
+            sql += " ORDER BY helpfulness DESC, last_seen DESC LIMIT ?"
+            params.append(limit)
+
+            rows = conn.execute(sql, params).fetchall()
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
+
+    def update_strategy_helpfulness(self, strategy_id: str, increment: int = 1) -> Dict[str, Any]:
+        """Increment strategy helpfulness counter (T038).
+
+        Args:
+            strategy_id: Strategy identifier
+            increment: Amount to increment (default 1, clamped to 0-100)
+
+        Returns:
+            Dict with updated helpfulness value
+        """
+        # Validate increment (guard against negative/huge values)
+        increment = max(0, min(increment, 100))
+
+        conn = self._get_connection()
+        try:
+            # Atomic update (no read-modify-write race condition)
+            cursor = conn.execute("""
+                UPDATE strategies
+                SET helpfulness = MAX(0, helpfulness + ?), last_seen = datetime('now')
+                WHERE strategy_id = ?
+            """, (increment, strategy_id))
+            conn.commit()
+
+            if cursor.rowcount == 0:
+                return {"success": False, "error": "Strategy not found"}
+
+            # Get the new value for reporting
+            row = conn.execute(
+                "SELECT helpfulness FROM strategies WHERE strategy_id = ?",
+                (strategy_id,)
+            ).fetchone()
+            new_helpfulness = row['helpfulness'] if row else 0
+            # Calculate previous from new (since we did atomic update)
+            previous_helpfulness = max(0, new_helpfulness - increment)
+
+            self._print_success(f"✓ Updated helpfulness: {previous_helpfulness} → {new_helpfulness}")
+            return {
+                "success": True,
+                "strategy_id": strategy_id,
+                "previous_helpfulness": previous_helpfulness,
+                "new_helpfulness": new_helpfulness
+            }
+        except Exception as e:
+            conn.rollback()
+            raise RuntimeError(f"Failed to update helpfulness: {str(e)}")
+        finally:
+            conn.close()
+
+    def extract_strategies(self, session_id: str, group_id: str, project_id: str,
+                           lang: Optional[str] = None, framework: Optional[str] = None) -> Dict[str, Any]:
+        """Extract strategies from agent_reasoning for successful task completion.
+
+        Queries completion/decisions/approach phases and saves as strategies.
+
+        Args:
+            session_id: Session identifier
+            group_id: Task group identifier
+            project_id: Project identifier for strategy scoping
+            lang: Optional language context
+            framework: Optional framework context
+
+        Returns:
+            Dict with count of extracted strategies
+        """
+        import hashlib
+
+        conn = self._get_connection()
+        try:
+            # Query reasoning for successful completion insights
+            rows = conn.execute("""
+                SELECT phase, content, agent_type FROM agent_reasoning
+                WHERE session_id = ? AND group_id = ? AND phase IN ('completion', 'decisions', 'approach')
+                ORDER BY created_at DESC LIMIT 5
+            """, (session_id, group_id)).fetchall()
+
+            extracted = 0
+            topic_map = {'completion': 'implementation', 'decisions': 'architecture', 'approach': 'methodology'}
+
+            for row in rows:
+                phase, content, agent_type = row['phase'], row['content'], row['agent_type']
+                topic = topic_map.get(phase, 'general')
+
+                # Generate strategy_id matching save_strategy format
+                content_hash = hashlib.sha256(content.encode()).hexdigest()[:16]
+                strategy_id = f"{project_id}_{topic}_{content_hash}"
+
+                # Truncate insight to 500 chars
+                insight = content[:500] if len(content) > 500 else content
+
+                # Upsert strategy (increment helpfulness if exists)
+                conn.execute("""
+                    INSERT INTO strategies (strategy_id, project_id, topic, insight, helpfulness, lang, framework, last_seen, created_at)
+                    VALUES (?, ?, ?, ?, 1, ?, ?, datetime('now'), datetime('now'))
+                    ON CONFLICT(strategy_id) DO UPDATE SET
+                        helpfulness = helpfulness + 1,
+                        last_seen = datetime('now')
+                """, (strategy_id, project_id, topic, insight, lang, framework))
+                extracted += 1
+
+            conn.commit()
+            self._print_success(f"✓ Extracted {extracted} strategies from group {group_id}")
+            return {
+                "success": True,
+                "extracted_count": extracted,
+                "session_id": session_id,
+                "group_id": group_id,
+                "project_id": project_id
+            }
+        except Exception as e:
+            conn.rollback()
+            raise RuntimeError(f"Failed to extract strategies: {str(e)}")
+        finally:
+            conn.close()
+
     # ==================== QUERY OPERATIONS ====================
 
     def query(self, sql: str, params: tuple = ()) -> List[Dict]:
@@ -2252,8 +2963,12 @@ TOKEN OPERATIONS:
   token-summary <session> [by]                Get token summary (default: by=agent_type)
 
 SKILL OUTPUT OPERATIONS:
-  save-skill-output <session> <skill> <json>  Save skill output
-  get-skill-output <session> <skill>          Get skill output
+  save-skill-output <session> <skill> <json> [--agent X] [--group Y]
+                                              Save skill output (iteration auto-computed)
+  get-skill-output <session> <skill> [--agent X]
+                                              Get latest skill output
+  get-skill-output-all <session> <skill> [--agent X]
+                                              Get all skill outputs (multi-invocation)
 
 DEVELOPMENT PLAN OPERATIONS:
   save-development-plan <session> <prompt> <plan> <phases_json> <current> <total> [metadata]
@@ -2291,6 +3006,34 @@ REASONING CAPTURE OPERATIONS:
   check-mandatory-phases <session> <group_id> <agent_type>
                                               Check if mandatory phases (understanding, completion) are documented
                                               Returns exit code 1 if phases are missing
+
+ERROR PATTERN OPERATIONS:
+  save-error-pattern <project_id> <error_type> <error_message> <solution> [options]
+                                              Capture error pattern from fail-then-succeed flow
+                                              Options: [--lang X] [--context_hints JSON] [--stack_pattern JSON]
+  get-error-patterns <project_id> [--lang X] [--min_confidence N] [--limit N]
+                                              Query matching error patterns (default: min_confidence=0.7, limit=5)
+  update-error-confidence <pattern_hash> <project_id> <success|failure>
+                                              Adjust pattern confidence (+0.1 on success, -0.2 on failure)
+  cleanup-error-patterns [project_id]         Remove patterns that have exceeded their TTL
+
+CONSUMPTION SCOPE OPERATIONS (Context Engineering):
+  save-consumption <session> <group_id> <agent_type> <iteration> <package_id>
+                                              Save consumption record (iteration-aware tracking)
+  get-consumption <session> [--group_id X] [--agent_type Y] [--limit N]
+                                              Get consumption records (default: limit=50)
+
+STRATEGIES OPERATIONS (Context Engineering):
+  save-strategy <project_id> <topic> <insight> [options]
+                                              Save strategy from successful task completion
+                                              Options: [--lang X] [--framework Y] [--strategy_id Z]
+                                              Topics: implementation, architecture, methodology, general
+  get-strategies <project_id> [--lang X] [--framework Y] [--topic Z] [--limit N]
+                                              Get strategies sorted by helpfulness (default: limit=5)
+  update-strategy-helpfulness <strategy_id> [increment]
+                                              Increment helpfulness counter (default: +1)
+  extract-strategies <session> <group_id> <project_id> [--lang X] [--framework Y]
+                                              Extract strategies from agent_reasoning after TL approval
 
 QUERY OPERATIONS:
   query <sql>                                 Execute custom SELECT query
@@ -2457,14 +3200,83 @@ def main():
             result = db.get_token_summary(cmd_args[0], by)
             print(json.dumps(result, indent=2))
         elif cmd == 'save-skill-output':
-            session_id = cmd_args[0]
-            skill_name = cmd_args[1]
-            output_data = json.loads(cmd_args[2])
-            db.save_skill_output(session_id, skill_name, output_data)
+            # Parse --agent and --group flags
+            agent_type = None
+            group_id = None
+            positional_args = []
+            i = 0
+            while i < len(cmd_args):
+                if cmd_args[i] == '--agent' and i + 1 < len(cmd_args):
+                    agent_type = cmd_args[i + 1]
+                    i += 2
+                elif cmd_args[i] == '--group' and i + 1 < len(cmd_args):
+                    group_id = cmd_args[i + 1]
+                    i += 2
+                else:
+                    positional_args.append(cmd_args[i])
+                    i += 1
+            # Validate required arguments
+            if len(positional_args) < 3:
+                print(json.dumps({
+                    "success": False,
+                    "error": "save-skill-output requires <session_id> <skill_name> <output_json> [--agent <type>] [--group <id>]"
+                }, indent=2), file=sys.stderr)
+                sys.exit(1)
+            session_id = positional_args[0]
+            skill_name = positional_args[1]
+            try:
+                output_data = json.loads(positional_args[2])
+            except json.JSONDecodeError as e:
+                print(json.dumps({"success": False, "error": f"Invalid JSON in output_data: {e}"}, indent=2), file=sys.stderr)
+                sys.exit(1)
+            iteration = db.save_skill_output(session_id, skill_name, output_data, agent_type, group_id)
+            if not quiet:
+                print(json.dumps({"iteration": iteration}))
         elif cmd == 'get-skill-output':
-            session_id = cmd_args[0]
-            skill_name = cmd_args[1]
-            result = db.get_skill_output(session_id, skill_name)
+            # Parse --agent flag
+            agent_type = None
+            positional_args = []
+            i = 0
+            while i < len(cmd_args):
+                if cmd_args[i] == '--agent' and i + 1 < len(cmd_args):
+                    agent_type = cmd_args[i + 1]
+                    i += 2
+                else:
+                    positional_args.append(cmd_args[i])
+                    i += 1
+            # Validate required arguments
+            if len(positional_args) < 2:
+                print(json.dumps({
+                    "success": False,
+                    "error": "get-skill-output requires <session_id> <skill_name> [--agent <type>]"
+                }, indent=2), file=sys.stderr)
+                sys.exit(1)
+            session_id = positional_args[0]
+            skill_name = positional_args[1]
+            result = db.get_skill_output(session_id, skill_name, agent_type)
+            print(json.dumps(result, indent=2))
+        elif cmd == 'get-skill-output-all':
+            # Parse --agent flag
+            agent_type = None
+            positional_args = []
+            i = 0
+            while i < len(cmd_args):
+                if cmd_args[i] == '--agent' and i + 1 < len(cmd_args):
+                    agent_type = cmd_args[i + 1]
+                    i += 2
+                else:
+                    positional_args.append(cmd_args[i])
+                    i += 1
+            # Validate required arguments
+            if len(positional_args) < 2:
+                print(json.dumps({
+                    "success": False,
+                    "error": "get-skill-output-all requires <session_id> <skill_name> [--agent <type>]"
+                }, indent=2), file=sys.stderr)
+                sys.exit(1)
+            session_id = positional_args[0]
+            skill_name = positional_args[1]
+            result = db.get_skill_output_all(session_id, skill_name, agent_type)
             print(json.dumps(result, indent=2))
         elif cmd == 'get-task-groups':
             session_id = cmd_args[0]
@@ -2844,6 +3656,244 @@ def main():
             # Exit with error code if mandatory phases are missing
             if not result['complete']:
                 sys.exit(1)
+        # ==================== ERROR PATTERN COMMANDS ====================
+        elif cmd == 'save-error-pattern':
+            # save-error-pattern <project_id> <error_type> <error_message> <solution> [--lang X] [--context_hints JSON] [--stack_pattern JSON]
+            if len(cmd_args) < 4:
+                print("Error: save-error-pattern requires 4 args: <project_id> <error_type> <error_message> <solution>", file=sys.stderr)
+                sys.exit(1)
+
+            project_id = cmd_args[0]
+            error_type = cmd_args[1]
+            error_message = cmd_args[2]
+            solution = cmd_args[3]
+
+            # Parse optional flags
+            lang = None
+            context_hints = None
+            stack_pattern = None
+            valid_flags = {'--lang', '--context_hints', '--stack_pattern'}
+            i = 4
+            while i < len(cmd_args):
+                arg = cmd_args[i]
+                if arg == '--lang' and i + 1 < len(cmd_args):
+                    lang = cmd_args[i + 1]
+                    i += 2
+                elif arg == '--context_hints' and i + 1 < len(cmd_args):
+                    try:
+                        context_hints = json.loads(cmd_args[i + 1])
+                        if not isinstance(context_hints, list):
+                            raise ValueError("context_hints must be a JSON array")
+                    except (json.JSONDecodeError, ValueError) as e:
+                        print(f"Error: Invalid JSON for --context_hints: {e}", file=sys.stderr)
+                        sys.exit(1)
+                    i += 2
+                elif arg == '--stack_pattern' and i + 1 < len(cmd_args):
+                    try:
+                        stack_pattern = json.loads(cmd_args[i + 1])
+                        if not isinstance(stack_pattern, list):
+                            raise ValueError("stack_pattern must be a JSON array")
+                    except (json.JSONDecodeError, ValueError) as e:
+                        print(f"Error: Invalid JSON for --stack_pattern: {e}", file=sys.stderr)
+                        sys.exit(1)
+                    i += 2
+                elif arg.startswith('--'):
+                    print(f"Error: Unknown flag '{arg}'. Valid flags: {sorted(valid_flags)}", file=sys.stderr)
+                    sys.exit(1)
+                else:
+                    print(f"Error: Unexpected argument '{arg}'", file=sys.stderr)
+                    sys.exit(1)
+
+            result = db.save_error_pattern(project_id, error_type, error_message, solution,
+                                          lang=lang, context_hints=context_hints,
+                                          stack_pattern=stack_pattern)
+            print(json.dumps(result, indent=2))
+        elif cmd == 'get-error-patterns':
+            # get-error-patterns <project_id> [--lang X] [--min_confidence N] [--limit N]
+            if len(cmd_args) < 1:
+                print("Error: get-error-patterns requires at least 1 arg: <project_id>", file=sys.stderr)
+                sys.exit(1)
+
+            project_id = cmd_args[0]
+            lang = None
+            min_confidence = 0.7
+            limit = 5
+            valid_flags = {'--lang', '--min_confidence', '--limit'}
+            i = 1
+            while i < len(cmd_args):
+                arg = cmd_args[i]
+                if arg == '--lang' and i + 1 < len(cmd_args):
+                    lang = cmd_args[i + 1]
+                    i += 2
+                elif arg == '--min_confidence' and i + 1 < len(cmd_args):
+                    try:
+                        min_confidence = float(cmd_args[i + 1])
+                    except ValueError:
+                        print(f"Error: --min_confidence must be a number", file=sys.stderr)
+                        sys.exit(1)
+                    i += 2
+                elif arg == '--limit' and i + 1 < len(cmd_args):
+                    try:
+                        limit = int(cmd_args[i + 1])
+                    except ValueError:
+                        print(f"Error: --limit must be an integer", file=sys.stderr)
+                        sys.exit(1)
+                    i += 2
+                elif arg.startswith('--'):
+                    print(f"Error: Unknown flag '{arg}'. Valid flags: {sorted(valid_flags)}", file=sys.stderr)
+                    sys.exit(1)
+                else:
+                    print(f"Error: Unexpected argument '{arg}'", file=sys.stderr)
+                    sys.exit(1)
+
+            result = db.get_error_patterns(project_id, lang=lang, min_confidence=min_confidence, limit=limit)
+            print(json.dumps(result, indent=2))
+        elif cmd == 'update-error-confidence':
+            # update-error-confidence <pattern_hash> <project_id> <success|failure>
+            if len(cmd_args) < 3:
+                print("Error: update-error-confidence requires 3 args: <pattern_hash> <project_id> <success|failure>", file=sys.stderr)
+                sys.exit(1)
+
+            pattern_hash = cmd_args[0]
+            project_id = cmd_args[1]
+            outcome = cmd_args[2].lower()
+            if outcome not in ('success', 'failure'):
+                print(f"Error: Outcome must be 'success' or 'failure', got '{outcome}'", file=sys.stderr)
+                sys.exit(1)
+
+            result = db.update_error_pattern_confidence(pattern_hash, project_id, success=(outcome == 'success'))
+            print(json.dumps(result, indent=2))
+        elif cmd == 'cleanup-error-patterns':
+            # cleanup-error-patterns [project_id]
+            project_id = cmd_args[0] if len(cmd_args) > 0 else None
+            result = db.cleanup_expired_patterns(project_id)
+            print(json.dumps(result, indent=2))
+
+        # ==================== CONSUMPTION SCOPE COMMANDS ====================
+        elif cmd == 'save-consumption':
+            # save-consumption <session> <group_id> <agent_type> <iteration> <package_id>
+            if len(cmd_args) < 5:
+                print("Error: save-consumption requires: <session> <group_id> <agent_type> <iteration> <package_id>", file=sys.stderr)
+                sys.exit(1)
+            session_id = cmd_args[0]
+            group_id = cmd_args[1]
+            agent_type = cmd_args[2]
+            iteration = int(cmd_args[3])
+            package_id = int(cmd_args[4])
+            result = db.save_consumption(session_id, group_id, agent_type, iteration, package_id)
+            print(json.dumps(result, indent=2))
+        elif cmd == 'get-consumption':
+            # get-consumption <session> [--group_id X] [--agent_type Y] [--limit N]
+            if len(cmd_args) < 1:
+                print("Error: get-consumption requires: <session>", file=sys.stderr)
+                sys.exit(1)
+            session_id = cmd_args[0]
+            group_id = None
+            agent_type = None
+            limit = 50
+            i = 1
+            while i < len(cmd_args):
+                if cmd_args[i] == '--group_id' and i + 1 < len(cmd_args):
+                    group_id = cmd_args[i + 1]
+                    i += 2
+                elif cmd_args[i] == '--agent_type' and i + 1 < len(cmd_args):
+                    agent_type = cmd_args[i + 1]
+                    i += 2
+                elif cmd_args[i] == '--limit' and i + 1 < len(cmd_args):
+                    limit = int(cmd_args[i + 1])
+                    i += 2
+                else:
+                    i += 1
+            result = db.get_consumption(session_id, group_id, agent_type, limit)
+            print(json.dumps(result, indent=2))
+
+        # ==================== STRATEGIES COMMANDS ====================
+        elif cmd == 'save-strategy':
+            # save-strategy <project_id> <topic> <insight> [--lang X] [--framework Y] [--strategy_id Z]
+            if len(cmd_args) < 3:
+                print("Error: save-strategy requires: <project_id> <topic> <insight>", file=sys.stderr)
+                sys.exit(1)
+            project_id = cmd_args[0]
+            topic = cmd_args[1]
+            insight = cmd_args[2]
+            lang = None
+            framework = None
+            strategy_id = None
+            i = 3
+            while i < len(cmd_args):
+                if cmd_args[i] == '--lang' and i + 1 < len(cmd_args):
+                    lang = cmd_args[i + 1]
+                    i += 2
+                elif cmd_args[i] == '--framework' and i + 1 < len(cmd_args):
+                    framework = cmd_args[i + 1]
+                    i += 2
+                elif cmd_args[i] == '--strategy_id' and i + 1 < len(cmd_args):
+                    strategy_id = cmd_args[i + 1]
+                    i += 2
+                else:
+                    i += 1
+            result = db.save_strategy(project_id, topic, insight, lang, framework, strategy_id)
+            print(json.dumps(result, indent=2))
+        elif cmd == 'get-strategies':
+            # get-strategies <project_id> [--lang X] [--framework Y] [--topic Z] [--limit N]
+            if len(cmd_args) < 1:
+                print("Error: get-strategies requires: <project_id>", file=sys.stderr)
+                sys.exit(1)
+            project_id = cmd_args[0]
+            lang = None
+            framework = None
+            topic = None
+            limit = 5
+            i = 1
+            while i < len(cmd_args):
+                if cmd_args[i] == '--lang' and i + 1 < len(cmd_args):
+                    lang = cmd_args[i + 1]
+                    i += 2
+                elif cmd_args[i] == '--framework' and i + 1 < len(cmd_args):
+                    framework = cmd_args[i + 1]
+                    i += 2
+                elif cmd_args[i] == '--topic' and i + 1 < len(cmd_args):
+                    topic = cmd_args[i + 1]
+                    i += 2
+                elif cmd_args[i] == '--limit' and i + 1 < len(cmd_args):
+                    limit = int(cmd_args[i + 1])
+                    i += 2
+                else:
+                    i += 1
+            result = db.get_strategies(project_id, lang, framework, topic, limit)
+            print(json.dumps(result, indent=2))
+        elif cmd == 'update-strategy-helpfulness':
+            # update-strategy-helpfulness <strategy_id> [increment]
+            if len(cmd_args) < 1:
+                print("Error: update-strategy-helpfulness requires: <strategy_id>", file=sys.stderr)
+                sys.exit(1)
+            strategy_id = cmd_args[0]
+            increment = int(cmd_args[1]) if len(cmd_args) > 1 else 1
+            result = db.update_strategy_helpfulness(strategy_id, increment)
+            print(json.dumps(result, indent=2))
+        elif cmd == 'extract-strategies':
+            # extract-strategies <session> <group_id> <project_id> [--lang X] [--framework Y]
+            if len(cmd_args) < 3:
+                print("Error: extract-strategies requires: <session> <group_id> <project_id>", file=sys.stderr)
+                sys.exit(1)
+            session_id = cmd_args[0]
+            group_id = cmd_args[1]
+            project_id = cmd_args[2]
+            lang = None
+            framework = None
+            i = 3
+            while i < len(cmd_args):
+                if cmd_args[i] == '--lang' and i + 1 < len(cmd_args):
+                    lang = cmd_args[i + 1]
+                    i += 2
+                elif cmd_args[i] == '--framework' and i + 1 < len(cmd_args):
+                    framework = cmd_args[i + 1]
+                    i += 2
+                else:
+                    i += 1
+            result = db.extract_strategies(session_id, group_id, project_id, lang, framework)
+            print(json.dumps(result, indent=2))
+
         elif cmd == 'query':
             if not cmd_args:
                 print("Error: query command requires SQL statement", file=sys.stderr)

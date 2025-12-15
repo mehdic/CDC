@@ -6,6 +6,7 @@
 
 import React, { useMemo } from 'react';
 import { View, StyleSheet, Text, ScrollView } from 'react-native';
+
 import { DeliveryRoute, Waypoint } from '../types/delivery';
 
 /**

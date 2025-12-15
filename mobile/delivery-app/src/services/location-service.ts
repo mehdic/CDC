@@ -4,10 +4,12 @@
  * Provides battery-efficient GPS tracking with adaptive modes, geofencing, and offline queueing
  */
 
-import Geolocation, { GeoPosition } from 'react-native-geolocation-service';
-import { Platform, PermissionsAndroid, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform, PermissionsAndroid, AppState } from 'react-native';
+import Geolocation, { GeoPosition } from 'react-native-geolocation-service';
+
 import { Coordinates } from '../types/delivery';
+
 import deliveryApi from './deliveryApi';
 
 /**
@@ -192,7 +194,7 @@ class LocationService {
    * Adjust Tracking Mode Based on Distance to Destination
    */
   private async adjustTrackingMode(destinationCoords: Coordinates): Promise<void> {
-    if (!this.isTracking) return;
+    if (!this.isTracking) {return;}
 
     // Get current location
     Geolocation.getCurrentPosition(
@@ -288,7 +290,7 @@ class LocationService {
    * Stop Location Tracking
    */
   stopTracking(): void {
-    if (!this.isTracking) return;
+    if (!this.isTracking) {return;}
 
     console.log('[LocationService] Stopping tracking');
 
@@ -412,10 +414,10 @@ class LocationService {
   async syncOfflineQueue(): Promise<void> {
     try {
       const queueData = await AsyncStorage.getItem(this.BATCH_QUEUE_KEY);
-      if (!queueData) return;
+      if (!queueData) {return;}
 
       const queue: LocationBatch[] = JSON.parse(queueData);
-      if (queue.length === 0) return;
+      if (queue.length === 0) {return;}
 
       console.log(`[LocationService] Syncing ${queue.length} offline batches`);
 
