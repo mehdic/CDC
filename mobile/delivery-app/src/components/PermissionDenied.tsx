@@ -92,9 +92,17 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      testID="permission-denied-container"
+    >
       {/* Icon */}
-      <Text style={styles.icon} accessibilityLabel={`${content.title} icon`}>
+      <Text
+        style={styles.icon}
+        accessibilityLabel={`${content.title} icon`}
+        testID="permission-denied-icon"
+      >
         {content.icon}
       </Text>
 
@@ -104,6 +112,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
         accessible={true}
         accessibilityLabel={content.title}
         accessibilityRole="header"
+        testID="permission-denied-title"
       >
         {content.title}
       </Text>
@@ -113,6 +122,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
         style={styles.message}
         accessible={true}
         accessibilityLabel={content.message}
+        testID="permission-denied-message"
       >
         {content.message}
       </Text>
@@ -123,6 +133,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
         accessible={true}
         accessibilityLabel={`Instructions: ${content.instructions.join(', ')}`}
         accessibilityRole="list"
+        testID="permission-denied-instructions"
       >
         <Text style={styles.instructionsLabel}>Steps to enable camera:</Text>
         {content.instructions.map((instruction, index) => (
@@ -134,7 +145,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
       </View>
 
       {/* Action buttons */}
-      <View style={styles.buttonsContainer}>
+      <View style={styles.buttonsContainer} testID="permission-denied-buttons">
         {content.showRetry && onRetry && (
           <TouchableOpacity
             style={[styles.button, styles.retryButton]}
@@ -143,6 +154,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
             accessibilityLabel="Try again"
             accessibilityRole="button"
             accessibilityHint="Attempt to request camera permission again"
+            testID="permission-denied-retry-button"
           >
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
@@ -156,6 +168,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
             accessibilityLabel="Open device settings"
             accessibilityRole="button"
             accessibilityHint="Navigate to device settings to enable camera permission"
+            testID="permission-denied-settings-button"
           >
             <Text style={styles.settingsButtonText}>Open Settings</Text>
           </TouchableOpacity>
@@ -169,6 +182,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
             accessibilityLabel="Enter code manually"
             accessibilityRole="button"
             accessibilityHint="Manually type or paste the QR code instead"
+            testID="permission-denied-manual-button"
           >
             <Text style={styles.manualButtonText}>Enter Code Manually</Text>
           </TouchableOpacity>
@@ -176,7 +190,7 @@ export const PermissionDenied: React.FC<PermissionDeniedProps> = ({
       </View>
 
       {/* Privacy note */}
-      <View style={styles.privacyNote}>
+      <View style={styles.privacyNote} testID="permission-denied-privacy">
         <Text style={styles.privacyText}>
           We use camera only to scan QR codes. No photos are stored or transmitted.
         </Text>

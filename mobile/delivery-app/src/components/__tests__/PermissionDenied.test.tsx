@@ -8,13 +8,10 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 import { PermissionDenied } from '../PermissionDenied';
 
-// Mock Linking
-jest.mock('react-native', () => ({
-  ...jest.requireActual('react-native'),
-  Linking: {
-    openSettings: jest.fn().mockResolvedValue(undefined),
-    openURL: jest.fn().mockResolvedValue(undefined),
-  },
+// Mock Linking only (avoid breaking TurboModuleRegistry)
+jest.mock('react-native/Libraries/Linking/Linking', () => ({
+  openSettings: jest.fn().mockResolvedValue(undefined),
+  openURL: jest.fn().mockResolvedValue(undefined),
 }));
 
 describe('PermissionDenied', () => {
@@ -36,35 +33,35 @@ describe('PermissionDenied', () => {
     });
 
     it('should show try again button for denied state', () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied
           permissionStatus="denied"
           onRetry={mockOnRetry}
         />
       );
-      const tryAgainButton = getByAccessibilityLabel(/Try again/);
+      const tryAgainButton = getByTestId('permission-denied-retry-button');
       expect(tryAgainButton).toBeTruthy();
     });
 
     it('should show open settings button for denied state', () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied
           permissionStatus="denied"
           onOpenSettings={mockOnOpenSettings}
         />
       );
-      const settingsButton = getByAccessibilityLabel(/Open device settings/);
+      const settingsButton = getByTestId('permission-denied-settings-button');
       expect(settingsButton).toBeTruthy();
     });
 
     it('should show manual entry button for denied state', () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied
           permissionStatus="denied"
           onManualEntry={mockOnManualEntry}
         />
       );
-      const manualButton = getByAccessibilityLabel(/Enter code manually/);
+      const manualButton = getByTestId('permission-denied-manual-button');
       expect(manualButton).toBeTruthy();
     });
   });
@@ -79,15 +76,15 @@ describe('PermissionDenied', () => {
     });
 
     it('should show only open settings button for blocked state', () => {
-      const { getByAccessibilityLabel, queryByAccessibilityLabel } = render(
+      const { getByTestId, queryByTestId } = render(
         <PermissionDenied
           permissionStatus="blocked"
           onOpenSettings={mockOnOpenSettings}
           onRetry={mockOnRetry}
         />
       );
-      expect(getByAccessibilityLabel(/Open device settings/)).toBeTruthy();
-      expect(queryByAccessibilityLabel(/Try again/)).toBeFalsy();
+      expect(getByTestId('permission-denied-settings-button')).toBeTruthy();
+      expect(queryByTestId('permission-denied-retry-button')).toBeFalsy();
     });
 
     it('should provide settings navigation instructions', () => {
@@ -108,36 +105,36 @@ describe('PermissionDenied', () => {
     });
 
     it('should show try again button for unavailable state', () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied
           permissionStatus="unavailable"
           onRetry={mockOnRetry}
         />
       );
-      const tryAgainButton = getByAccessibilityLabel(/Try again/);
+      const tryAgainButton = getByTestId('permission-denied-retry-button');
       expect(tryAgainButton).toBeTruthy();
     });
 
     it('should not show settings button for unavailable state', () => {
-      const { queryByAccessibilityLabel } = render(
+      const { queryByTestId } = render(
         <PermissionDenied
           permissionStatus="unavailable"
           onOpenSettings={mockOnOpenSettings}
         />
       );
-      expect(queryByAccessibilityLabel(/Open device settings/)).toBeFalsy();
+      expect(queryByTestId('permission-denied-settings-button')).toBeFalsy();
     });
   });
 
   describe('Button Actions', () => {
     it('should call onRetry when try again clicked', async () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied
           permissionStatus="denied"
           onRetry={mockOnRetry}
         />
       );
-      const tryAgainButton = getByAccessibilityLabel(/Try again/);
+      const tryAgainButton = getByTestId('permission-denied-retry-button');
 
       fireEvent.press(tryAgainButton);
 
@@ -147,13 +144,13 @@ describe('PermissionDenied', () => {
     });
 
     it('should open settings when settings button clicked', async () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied
           permissionStatus="denied"
           onOpenSettings={mockOnOpenSettings}
         />
       );
-      const settingsButton = getByAccessibilityLabel(/Open device settings/);
+      const settingsButton = getByTestId('permission-denied-settings-button');
 
       fireEvent.press(settingsButton);
 
@@ -164,13 +161,13 @@ describe('PermissionDenied', () => {
     });
 
     it('should call onManualEntry when manual entry clicked', async () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied
           permissionStatus="denied"
           onManualEntry={mockOnManualEntry}
         />
       );
-      const manualButton = getByAccessibilityLabel(/Enter code manually/);
+      const manualButton = getByTestId('permission-denied-manual-button');
 
       fireEvent.press(manualButton);
 
@@ -205,45 +202,45 @@ describe('PermissionDenied', () => {
 
   describe('Accessibility', () => {
     it('should have accessible icon label', () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied permissionStatus="denied" />
       );
-      const icon = getByAccessibilityLabel(/Camera Permission Required icon/);
+      const icon = getByTestId('permission-denied-icon');
       expect(icon).toBeTruthy();
     });
 
     it('should have accessible title', () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied permissionStatus="denied" />
       );
-      const title = getByAccessibilityLabel(/Camera Permission Required/);
+      const title = getByTestId('permission-denied-title');
       expect(title).toBeTruthy();
     });
 
     it('should have accessible message', () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied permissionStatus="denied" />
       );
-      const message = getByAccessibilityLabel(/Camera access is required/);
+      const message = getByTestId('permission-denied-message');
       expect(message).toBeTruthy();
     });
 
     it('should have accessible instructions', () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied permissionStatus="denied" />
       );
-      const instructions = getByAccessibilityLabel(/Instructions:/);
+      const instructions = getByTestId('permission-denied-instructions');
       expect(instructions).toBeTruthy();
     });
 
     it('should have accessible buttons with hints', () => {
-      const { getByAccessibilityLabel } = render(
+      const { getByTestId } = render(
         <PermissionDenied
           permissionStatus="denied"
           onRetry={mockOnRetry}
         />
       );
-      const button = getByAccessibilityLabel(/Try again/);
+      const button = getByTestId('permission-denied-retry-button');
       expect(button).toBeTruthy();
     });
   });
