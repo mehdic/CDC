@@ -14,9 +14,10 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { DeliveryRequest, SpecialHandling } from '../../types/delivery';
-import { SpecialHandlingAlert } from '../../components/SpecialHandlingAlert';
+
 import { AcknowledgmentCheckbox } from '../../components/AcknowledgmentCheckbox';
+import { SpecialHandlingAlert, AlertType } from '../../components/SpecialHandlingAlert';
+import { DeliveryRequest, SpecialHandling } from '../../types/delivery';
 
 export interface PickupAcknowledgmentScreenProps {
   delivery: DeliveryRequest;
@@ -106,6 +107,20 @@ const getHandlingDetails = (
 };
 
 /**
+ * Map SpecialHandling types to AlertType for the SpecialHandlingAlert component
+ */
+const mapSpecialHandlingToAlertType = (type: SpecialHandling): AlertType => {
+  const typeMap: Record<SpecialHandling, AlertType> = {
+    'narcotics': 'controlled_substance',
+    'cold_chain': 'cold_chain',
+    'signature_required': 'signature_required',
+    'id_verification': 'id_required',
+    'time_sensitive': 'fragile', // Time-sensitive mapped to fragile as closest match
+  };
+  return typeMap[type];
+};
+
+/**
  * PickupAcknowledgmentScreen Component
  * Displays all special handling requirements and collects acknowledgments
  */
@@ -135,7 +150,7 @@ export const PickupAcknowledgmentScreen: React.FC<
         ...acc,
         [type]: { acknowledged: false, timestamp: '' },
       }),
-      {}
+      {} as Record<SpecialHandling, { acknowledged: boolean; timestamp: string }>
     )
   );
 
@@ -238,14 +253,9 @@ export const PickupAcknowledgmentScreen: React.FC<
               return (
                 <View key={type} testID={`${testID}-alert-${type}`}>
                   <SpecialHandlingAlert
-                    type={
-                      type === 'narcotics'
-                        ? 'controlled_substance'
-                        : (type as any)
-                    }
+                    type={mapSpecialHandlingToAlertType(type)}
                     details={details.description}
                     acknowledged={ackStatus.acknowledged}
-                    onAcknowledge={() => {}}
                     testID={`${testID}-alert-component-${type}`}
                   />
 

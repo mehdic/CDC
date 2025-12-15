@@ -18,7 +18,7 @@ export interface SpecialHandlingAlertProps {
   type: AlertType;
   details: string;
   acknowledged: boolean;
-  onAcknowledge: () => void;
+  onAcknowledge?: () => void;
   testID?: string;
 }
 

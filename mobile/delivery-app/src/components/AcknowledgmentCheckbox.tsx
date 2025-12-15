@@ -57,7 +57,7 @@ export const AcknowledgmentCheckbox: React.FC<AcknowledgmentCheckboxProps> = ({
   const [checkTime, setCheckTime] = useState<string | null>(null);
 
   const handlePress = () => {
-    if (disabled) return;
+    if (disabled) {return;}
 
     if (!checked) {
       // When checking, record the current timestamp
@@ -95,7 +95,7 @@ export const AcknowledgmentCheckbox: React.FC<AcknowledgmentCheckboxProps> = ({
       accessibilityState={{ checked, disabled }}
       accessibilityLabel={
         accessibilityLabel ||
-        `${label}. ${checked ? 'Checked' : 'Unchecked'}. ${description || ''}`
+        `${label}. ${checked ? 'Checked' : 'Unchecked'}${description ? '. ' + description : ''}`
       }
       activeOpacity={disabled ? 1 : 0.7}
     >
