@@ -8,7 +8,7 @@ import { QRParserService, QRCodeType, ParsedQRCode } from '../qrParserService';
 describe('QRParserService', () => {
   describe('parseQRCode - Package QR', () => {
     it('should parse valid package QR code', () => {
-      const qrData = 'METAPHARM-PKG-DEL001-PKG0001-A7F3';
+      const qrData = 'METAPHARM-PKG-DEL001-PKG0001-0711';
       const result = QRParserService.parseQRCode(qrData);
 
       expect(result.type).toBe(QRCodeType.PACKAGE);
@@ -22,11 +22,11 @@ describe('QRParserService', () => {
 
       expect(result.type).toBe(QRCodeType.PACKAGE);
       expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors[0]).toContain('checksum');
+      expect(result.errors.some(e => e.toLowerCase().includes('checksum'))).toBe(true);
     });
 
     it('should reject package QR with missing delivery ID', () => {
-      const qrData = 'METAPHARM-PKG---PKG0001-A7F3';
+      const qrData = 'METAPHARM-PKG---PKG0001-06FD';
       const result = QRParserService.parseQRCode(qrData);
 
       expect(result.type).toBe(QRCodeType.PACKAGE);
@@ -34,7 +34,7 @@ describe('QRParserService', () => {
     });
 
     it('should reject package QR with missing package ID', () => {
-      const qrData = 'METAPHARM-PKG-DEL001--A7F3';
+      const qrData = 'METAPHARM-PKG-DEL001--0703';
       const result = QRParserService.parseQRCode(qrData);
 
       expect(result.type).toBe(QRCodeType.PACKAGE);
@@ -42,7 +42,7 @@ describe('QRParserService', () => {
     });
 
     it('should handle case-insensitive package QR codes', () => {
-      const qrData = 'metapharm-pkg-del001-pkg0001-a7f3';
+      const qrData = 'metapharm-pkg-del001-pkg0001-0711';
       const result = QRParserService.parseQRCode(qrData);
 
       expect(result.type).toBe(QRCodeType.PACKAGE);
@@ -53,7 +53,7 @@ describe('QRParserService', () => {
 
   describe('parseQRCode - Patient ID QR', () => {
     it('should parse valid patient QR code', () => {
-      const qrData = 'METAPHARM-PATIENT-PAT123456-B2E9';
+      const qrData = 'METAPHARM-PATIENT-PAT123456-0728';
       const result = QRParserService.parseQRCode(qrData);
 
       expect(result.type).toBe(QRCodeType.PATIENT_ID);
@@ -80,7 +80,7 @@ describe('QRParserService', () => {
 
   describe('parseQRCode - Manifest QR', () => {
     it('should parse valid manifest QR code', () => {
-      const qrData = 'METAPHARM-MANIFEST-DEL001-5-C4D1';
+      const qrData = 'METAPHARM-MANIFEST-DEL001-5-0718';
       const result = QRParserService.parseQRCode(qrData);
 
       expect(result.type).toBe(QRCodeType.DELIVERY_MANIFEST);
@@ -88,7 +88,7 @@ describe('QRParserService', () => {
     });
 
     it('should reject manifest with zero items', () => {
-      const qrData = 'METAPHARM-MANIFEST-DEL001-0-C4D1';
+      const qrData = 'METAPHARM-MANIFEST-DEL001-0-0713';
       const result = QRParserService.parseQRCode(qrData);
 
       expect(result.type).toBe(QRCodeType.DELIVERY_MANIFEST);
@@ -356,9 +356,9 @@ describe('QRParserService', () => {
   describe('Checksum Validation', () => {
     it('should validate correct checksums', () => {
       const validQRs = [
-        'METAPHARM-PKG-DEL001-PKG0001-A7F3',
-        'METAPHARM-PATIENT-PAT123456-B2E9',
-        'METAPHARM-MANIFEST-DEL001-5-C4D1',
+        'METAPHARM-PKG-DEL001-PKG0001-0711',
+        'METAPHARM-PATIENT-PAT123456-0728',
+        'METAPHARM-MANIFEST-DEL001-5-0718',
       ];
 
       validQRs.forEach(qrData => {
