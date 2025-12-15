@@ -8,6 +8,7 @@ import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import authReducer from './authSlice';
 import deliveryReducer from './deliverySlice';
+import earningsReducer from './earningsSlice';
 
 /**
  * Persist Configuration
@@ -16,7 +17,7 @@ const persistConfig = {
   key: 'root',
   version: 1,
   storage: AsyncStorage,
-  whitelist: ['auth', 'delivery'], // Persist both slices
+  whitelist: ['auth', 'delivery', 'earnings'], // Persist all slices
 };
 
 /**
@@ -25,6 +26,7 @@ const persistConfig = {
 const rootReducer = combineReducers({
   auth: authReducer,
   delivery: deliveryReducer,
+  earnings: earningsReducer,
 });
 
 /**
