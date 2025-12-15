@@ -10,9 +10,17 @@ import proofOfDeliveryService from '../../../services/proofOfDeliveryService';
 import { Coordinates } from '../../../types/delivery';
 import { ProofOfDeliveryScreen } from '../ProofOfDeliveryScreen';
 
+// Create mock dispatch that returns thunk with unwrap
+const mockDispatch = jest.fn((action: any) => {
+  // Redux Toolkit thunks return an object with unwrap method
+  return {
+    unwrap: jest.fn().mockResolvedValue({}),
+  };
+});
+
 // Mock dependencies
 jest.mock('../../../hooks/useRedux', () => ({
-  useAppDispatch: () => jest.fn(),
+  useAppDispatch: () => mockDispatch,
   useAppSelector: jest.fn((selector) =>
     selector({
       delivery: {
@@ -91,7 +99,7 @@ describe('ProofOfDeliveryScreen', () => {
       );
 
       expect(getByText('Proof of Delivery')).toBeTruthy();
-      expect(getByText('Recipient Name')).toBeTruthy();
+      expect(getByText(/Recipient Name/)).toBeTruthy();
       expect(getByTestId('recipient-name-input')).toBeTruthy();
       expect(getByTestId('notes-input')).toBeTruthy();
       expect(getByTestId('submit-button')).toBeTruthy();
@@ -116,6 +124,7 @@ describe('ProofOfDeliveryScreen', () => {
 
     it('should show offline banner when offline', () => {
       const { useAppSelector } = require('../../../hooks/useRedux');
+      useAppSelector.mockClear();
       useAppSelector.mockImplementation((selector: any) =>
         selector({
           delivery: {
@@ -133,11 +142,22 @@ describe('ProofOfDeliveryScreen', () => {
     });
 
     it('should not show offline banner when online', () => {
+      const { useAppSelector } = require('../../../hooks/useRedux');
+      useAppSelector.mockClear();
+      useAppSelector.mockImplementation((selector: any) =>
+        selector({
+          delivery: {
+            currentLocation: mockLocation,
+            isOnline: true,
+          },
+        })
+      );
+
       const { queryByText } = render(
         <ProofOfDeliveryScreen navigation={mockNavigation} route={mockRoute} />
       );
 
-      expect(queryByText(/You're offline/)).toBeNull();
+      expect(queryByText(/You're offline/i)).toBeNull();
     });
   });
 

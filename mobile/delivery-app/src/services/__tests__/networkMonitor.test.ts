@@ -164,21 +164,33 @@ describe('NetworkMonitor', () => {
     });
 
     it('should trigger sync on reconnection', async () => {
-      jest.useFakeTimers();
+      // Reset any previous state
+      networkMonitor.shutdown();
 
-      // Start offline
-      (NetInfo.fetch as jest.Mock).mockResolvedValue({
+      // First, initialize while online (default state)
+      await networkMonitor.initialize({
+        syncOnReconnect: true,
+        checkInterval: 0,
+      });
+
+      // Get the callback
+      const netInfoCallback = (NetInfo.addEventListener as jest.Mock).mock.calls[0][0];
+
+      // Now simulate going offline
+      netInfoCallback({
         isConnected: false,
         isInternetReachable: false,
         type: 'none',
       });
 
-      await networkMonitor.initialize({
-        syncOnReconnect: true,
-      });
+      // Verify we're offline
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(networkMonitor.isCurrentlyOnline()).toBe(false);
 
-      // Simulate reconnection
-      const netInfoCallback = (NetInfo.addEventListener as jest.Mock).mock.calls[0][0];
+      // Clear the mock calls
+      (offlineQueueService.processQueue as jest.Mock).mockClear();
+
+      // Now simulate reconnection
       netInfoCallback({
         isConnected: true,
         isInternetReachable: true,
@@ -186,11 +198,9 @@ describe('NetworkMonitor', () => {
       });
 
       // Wait for async processing
-      await jest.runAllTimersAsync();
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       expect(offlineQueueService.processQueue).toHaveBeenCalled();
-
-      jest.useRealTimers();
     });
 
     it('should not sync on reconnection if disabled', async () => {
@@ -203,6 +213,7 @@ describe('NetworkMonitor', () => {
 
       await networkMonitor.initialize({
         syncOnReconnect: false,
+        checkInterval: 0, // Disable periodic checks to avoid timer issues
       });
 
       // Simulate reconnection
@@ -213,7 +224,7 @@ describe('NetworkMonitor', () => {
         type: 'wifi',
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       expect(offlineQueueService.processQueue).not.toHaveBeenCalled();
     });

@@ -29,7 +29,12 @@ describe('ProofOfDeliveryService', () => {
     location: mockLocation,
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+    (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
+    // Clear the queue by calling clearAll - then reset mocks after
+    await proofOfDeliveryService.clearAll();
     jest.clearAllMocks();
     (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
     (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
@@ -233,9 +238,10 @@ describe('ProofOfDeliveryService', () => {
 
       await proofOfDeliveryService.clearFailed();
 
-      const savedQueue = JSON.parse(
-        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
-      ) as QueuedProof[];
+      // Get the last call to setItem (most recent save)
+      const setItemCalls = (AsyncStorage.setItem as jest.Mock).mock.calls;
+      const lastCall = setItemCalls[setItemCalls.length - 1];
+      const savedQueue = JSON.parse(lastCall[1]) as QueuedProof[];
       expect(savedQueue).toHaveLength(1);
       expect(savedQueue[0].status).toBe('pending');
     });
@@ -259,9 +265,10 @@ describe('ProofOfDeliveryService', () => {
 
       await proofOfDeliveryService.retryFailed('queue-1');
 
-      const savedQueue = JSON.parse(
-        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
-      ) as QueuedProof[];
+      // Get the last call to setItem (most recent save)
+      const setItemCalls = (AsyncStorage.setItem as jest.Mock).mock.calls;
+      const lastCall = setItemCalls[setItemCalls.length - 1];
+      const savedQueue = JSON.parse(lastCall[1]) as QueuedProof[];
       expect(savedQueue[0].status).toBe('pending');
       expect(savedQueue[0].retryCount).toBe(0);
     });
@@ -281,13 +288,12 @@ describe('ProofOfDeliveryService', () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(queue));
       await (proofOfDeliveryService as any).loadQueue();
 
+      const initialSetItemCalls = (AsyncStorage.setItem as jest.Mock).mock.calls.length;
+
       await proofOfDeliveryService.retryFailed('queue-1');
 
-      const savedQueue = JSON.parse(
-        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
-      ) as QueuedProof[];
-      expect(savedQueue[0].status).toBe('pending');
-      expect(savedQueue[0].retryCount).toBe(0);
+      // retryFailed should not call setItem for non-failed items
+      expect((AsyncStorage.setItem as jest.Mock).mock.calls.length).toBe(initialSetItemCalls);
     });
   });
 
