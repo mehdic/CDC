@@ -5,6 +5,7 @@
 
 import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+// @ts-ignore - No type definitions available for react-native-signature-canvas
 import SignatureCanvas from 'react-native-signature-canvas';
 
 export interface SignatureCaptureProps {

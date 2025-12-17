@@ -99,7 +99,7 @@ class NetworkMonitor {
       isConnected: state.isConnected ?? false,
       isInternetReachable: state.isInternetReachable,
       type: state.type,
-      effectiveType: state.details?.effectiveType,
+      effectiveType: (state.details as any)?.effectiveType,
     };
 
     console.log(`[NetworkMonitor] Status changed: ${wasOnline ? 'online' : 'offline'} → ${isNowOnline ? 'online' : 'offline'}`);
@@ -165,7 +165,7 @@ class NetworkMonitor {
       isConnected: state.isConnected ?? false,
       isInternetReachable: state.isInternetReachable,
       type: state.type,
-      effectiveType: state.details?.effectiveType,
+      effectiveType: (state.details as any)?.effectiveType,
     };
   }
 

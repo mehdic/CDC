@@ -13,7 +13,7 @@
 
 import { useRoute, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity, Modal, TextInput, ScrollView } from 'react-native';
 
 import { PackageVerification } from '../../components/PackageVerification';
 import { QRScanner } from '../../components/QRScanner';
@@ -24,12 +24,15 @@ interface QRScannerScreenParams {
   readonly deliveryId: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const QRScannerScreen: React.FC = () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const route = useRoute<any>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const { deliveryId } = route.params as QRScannerScreenParams;
 
-  const { scannedCode, verificationState, history, handleScan, handleRescan, clearHistory } =
+  const { verificationState, history, handleScan, handleRescan, clearHistory } =
     useScan(deliveryId);
 
   const [showHistory, setShowHistory] = useState(false);
@@ -94,26 +97,6 @@ export const QRScannerScreen: React.FC = () => {
     setManualCode('');
     await handleQRScan(manualCode.trim());
   }, [manualCode, handleQRScan]);
-
-  /**
-   * Handle scanner error fall back to manual entry
-   */
-  const handleCameraError = useCallback((): void => {
-    Alert.alert(
-      'Camera Unavailable',
-      'Camera is not available. Would you like to enter the code manually?',
-      [
-        {
-          text: 'Yes',
-          onPress: () => setShowManualEntry(true),
-        },
-        {
-          text: 'No',
-          style: 'cancel',
-        },
-      ]
-    );
-  }, []);
 
   // Show scanner or verification result
   const isShowingScanner = verificationState.status === 'idle' || verificationState.status === 'scanning';
