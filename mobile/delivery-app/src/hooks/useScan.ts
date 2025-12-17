@@ -18,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import deliveryApi from '../services/deliveryApi';
+import ScanEventService from '../services/scanEventService';
 import type { ScanVerificationResult, ScanHistoryEntry, PackageVerificationState, UseScanReturn } from '../types/scanner';
 
 const SCAN_HISTORY_KEY = '@delivery_scan_history';

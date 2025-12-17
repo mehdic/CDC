@@ -2,10 +2,11 @@
  * Nurse API Client Tests
  */
 
-import nurseApiClient from '../../src/services/nurseApiClient';
-
-// Mock axios
+// Mock axios first
 jest.mock('axios');
+jest.mock('react-native-encrypted-storage');
+
+import nurseApiClient from '../../src/services/nurseApiClient';
 
 describe('NurseApiClient', () => {
   beforeEach(() => {
