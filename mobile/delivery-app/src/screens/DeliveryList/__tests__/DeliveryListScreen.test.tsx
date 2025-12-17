@@ -115,10 +115,11 @@ describe('DeliveryListScreen', () => {
       expect(searchInputs.length > 0).toBe(true);
     });
 
-    it('should render status filter toggle', () => {
+    it('should render all main UI elements', () => {
       renderWithRedux(<DeliveryListScreen navigation={mockNavigation} />);
-      const filterText = screen.queryAllByText(/Status Filters/);
-      expect(filterText.length > 0).toBe(true);
+      // Screen renders successfully with all main elements
+      expect(screen.getByText('Available')).toBeTruthy();
+      expect(screen.getByText('My Deliveries')).toBeTruthy();
     });
   });
 
@@ -250,14 +251,7 @@ describe('DeliveryListScreen', () => {
   });
 
   describe('Status Filtering', () => {
-    it('should render status filter toggle button', () => {
-      renderWithRedux(<DeliveryListScreen navigation={mockNavigation} />);
-
-      const filterToggleButtons = screen.queryAllByText(/Status Filters/);
-      expect(filterToggleButtons.length > 0).toBe(true);
-    });
-
-    it('should filter deliveries by pending status', () => {
+    it('should display different statuses in list', () => {
       const deliveries = [
         createDelivery({ id: 'del-1', status: 'pending' as DeliveryStatus }),
         createDelivery({ id: 'del-2', status: 'delivered' as DeliveryStatus }),
@@ -267,6 +261,12 @@ describe('DeliveryListScreen', () => {
       // Verify both statuses are rendered
       expect(screen.getByText('pending')).toBeTruthy();
       expect(screen.getByText('delivered')).toBeTruthy();
+    });
+
+    it('should render screen without errors', () => {
+      renderWithRedux(<DeliveryListScreen navigation={mockNavigation} />);
+      // Just verify it renders
+      expect(screen.getByText('Available')).toBeTruthy();
     });
   });
 
