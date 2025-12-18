@@ -1,11 +1,10 @@
 // Jest setup file - comprehensive React Native mocking
 // Establishes proper native module mocks before any component/hook imports
-// Note: react-native jest preset already provides mocks for PixelRatio, Dimensions, etc.
-// We only add what's missing or needs special handling
 
 /**
  * Mock NativeEventEmitter FIRST (before React Native tries to use it)
  * This fixes errors like "new NativeEventEmitter() requires a non-null argument"
+ * which occurs when react-native-geolocation-service tries to instantiate it
  */
 jest.mock('react-native/Libraries/EventEmitter/NativeEventEmitter', () => {
   const EventEmitter = require('events').EventEmitter;
@@ -39,6 +38,7 @@ jest.mock('react-native/Libraries/EventEmitter/NativeEventEmitter', () => {
 
 /**
  * Mock TurboModuleRegistry to prevent "SettingsManager not found" errors
+ * which occurs when react-native tries to access SettingsManager via getEnforcing()
  */
 jest.mock('react-native/Libraries/TurboModule/TurboModuleRegistry', () => ({
   getEnforcing: jest.fn((moduleName) => {
@@ -67,7 +67,6 @@ jest.mock('react-native/Libraries/TurboModule/TurboModuleRegistry', () => ({
     return null; // Non-strict get returns null
   }),
 }));
-
 
 /**
  * Mock RCTNativeAppEventEmitter for event handling
@@ -137,29 +136,6 @@ jest.mock('react-native-geolocation-service', () => ({
   startObserving: jest.fn(),
   stopObserving: jest.fn(),
   requestAuthorization: jest.fn(() => Promise.resolve('granted')),
-  default: {
-    getCurrentPosition: jest.fn((success) => {
-      setTimeout(() => {
-        success({
-          coords: {
-            latitude: 47.3769,
-            longitude: 8.5417,
-            accuracy: 10,
-            altitude: 100,
-            altitudeAccuracy: 5,
-            heading: 0,
-            speed: 0,
-          },
-          timestamp: Date.now(),
-        });
-      }, 0);
-    }),
-    watchPosition: jest.fn(() => 1),
-    clearWatch: jest.fn(),
-    startObserving: jest.fn(),
-    stopObserving: jest.fn(),
-    requestAuthorization: jest.fn(() => Promise.resolve('granted')),
-  },
 }));
 
 /**
@@ -181,8 +157,20 @@ jest.mock('react-native-maps', () => ({
  * Mock react-native-camera
  */
 jest.mock('react-native-camera', () => ({
-  RNCamera: 'RNCamera',
-  default: 'RNCamera',
+  RNCamera: {
+    Constants: {
+      Type: {
+        back: 'back',
+        front: 'front',
+      },
+      FlashMode: {
+        auto: 'auto',
+        on: 'on',
+        off: 'off',
+        torch: 'torch',
+      },
+    },
+  },
 }));
 
 /**
