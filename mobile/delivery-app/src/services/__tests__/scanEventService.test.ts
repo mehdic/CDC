@@ -4,8 +4,9 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ScanEventService } from '../scanEventService';
+
 import type { ScanEvent } from '../../types/scanner';
+import { ScanEventService } from '../scanEventService';
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({

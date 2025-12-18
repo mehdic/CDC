@@ -1,13 +1,17 @@
 /**
  * Earnings Screen
- * Shows delivery statistics and earnings breakdown with period filtering
+ * Shows delivery statistics and earnings breakdown with period filtering and export functionality
+ * Displays daily/weekly/monthly earnings, delivery counts, bonus progress, and export options
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -21,22 +25,32 @@ import DeliveryStatsCard from '../../components/DeliveryStatsCard';
 import type { EarningsSummaryData } from '../../components/EarningsSummaryCard';
 import EarningsSummaryCard from '../../components/EarningsSummaryCard';
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux';
+import earningsService from '../../services/earningsService';
 import { fetchStatsAsync } from '../../store/deliverySlice';
+import {
+  fetchEarningsSummary,
+  fetchEarningsTransactions,
+  fetchBonusOpportunities,
+  setSelectedPeriod,
+  type TimePeriod,
+} from '../../store/earningsSlice';
 
-type PeriodType = 'day' | 'week' | 'month' | 'custom';
+type PeriodType = TimePeriod;
 
 /**
  * PeriodFilter Component
+ * Allows selection between different time periods for earnings display
  */
 const PeriodFilter: React.FC<{
   selectedPeriod: PeriodType;
   onPeriodChange: (period: PeriodType) => void;
   testID?: string;
 }> = ({ selectedPeriod, onPeriodChange, testID = 'period-filter' }) => {
-  const periods: { label: string; value: PeriodType }[] = [
-    { label: 'Day', value: 'day' },
+  const periods: Array<{ label: string; value: PeriodType }> = [
+    { label: 'Today', value: 'today' },
     { label: 'Week', value: 'week' },
     { label: 'Month', value: 'month' },
+    { label: 'Year', value: 'year' },
   ];
 
   return (
@@ -51,6 +65,9 @@ const PeriodFilter: React.FC<{
             ]}
             onPress={() => onPeriodChange(item.value)}
             testID={`${testID}-${item.value}`}
+            accessible
+            accessibilityLabel={`Filter by ${item.label}`}
+            accessibilityRole="button"
           >
             <Text
               style={[
@@ -73,18 +90,66 @@ const PeriodFilter: React.FC<{
 };
 
 /**
+ * Export Button Component
+ */
+const ExportButton: React.FC<{
+  period: PeriodType;
+  onExportCSV: () => void;
+  onExportPDF: () => void;
+  isLoading?: boolean;
+  testID?: string;
+}> = ({ period, onExportCSV, onExportPDF, isLoading = false, testID = 'export-button' }) => {
+  return (
+    <View style={styles.exportContainer} testID={testID}>
+      <TouchableOpacity
+        style={[styles.exportButton, isLoading && styles.exportButtonDisabled]}
+        onPress={onExportCSV}
+        disabled={isLoading}
+        testID={`${testID}-csv`}
+        accessible
+        accessibilityLabel="Export earnings as CSV"
+        accessibilityRole="button"
+      >
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#FFF" />
+        ) : (
+          <Text style={styles.exportButtonText}>CSV</Text>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.exportButton, styles.exportButtonPDF, isLoading && styles.exportButtonDisabled]}
+        onPress={onExportPDF}
+        disabled={isLoading}
+        testID={`${testID}-pdf`}
+        accessible
+        accessibilityLabel="Export earnings as PDF"
+        accessibilityRole="button"
+      >
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#FFF" />
+        ) : (
+          <Text style={styles.exportButtonText}>PDF</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+/**
  * Mock data generator for earnings
  */
-const generateMockEarnings = (period: PeriodType) => {
-  const baseGross = period === 'day' ? 80 : period === 'week' ? 480 : 1920;
-  const gross = baseGross + Math.random() * 100;
+const generateMockEarnings = (period: PeriodType): EarningsSummaryData => {
+  const baseGross =
+    period === 'today' ? 85.5 : period === 'week' ? 487.25 : period === 'month' ? 1950 : 24000;
+  const gross = baseGross + (Math.random() * 10 - 5); // Add some variance
   const fees = gross * 0.15; // 15% platform fee
   const net = gross - fees;
 
   return {
-    gross,
+    gross: Math.max(0, gross), // Ensure non-negative
     fees,
-    net,
+    net: Math.max(0, net),
     previousPeriod: {
       gross: gross * 0.92,
       net: net * 0.92,
@@ -93,14 +158,19 @@ const generateMockEarnings = (period: PeriodType) => {
 };
 
 const generateMockStats = (period: PeriodType): DeliveryStatistics => {
-  const count = period === 'day' ? 8 : period === 'week' ? 45 : 180;
-  const totalDistance = period === 'day' ? 42 : period === 'week' ? 250 : 1000;
-  const averageTime = period === 'day' ? 35 : period === 'week' ? 33 : 32;
+  const stats: Record<PeriodType, { count: number; distance: number; time: number }> = {
+    today: { count: 8, distance: 42, time: 35 },
+    week: { count: 45, distance: 250, time: 33 },
+    month: { count: 180, distance: 1000, time: 32 },
+    year: { count: 2000, distance: 12000, time: 31 },
+  };
+
+  const { count, distance, time } = stats[period];
 
   return {
     count,
-    totalDistance,
-    averageTime,
+    totalDistance: distance,
+    averageTime: time,
     onTimeRate: 0.92,
   };
 };
@@ -141,43 +211,96 @@ const generateMockBonuses = (): BonusItem[] => [
 export const EarningsScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const { stats } = useAppSelector((state) => state.delivery);
+  const earningsState = useAppSelector((state) => state.earnings);
+
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('month');
+  const [selectedPeriod, setLocalPeriod] = useState<PeriodType>('week');
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    loadStats();
-  }, []);
+    loadData();
+  }, [selectedPeriod]);
 
-  const loadStats = async () => {
-    await dispatch(fetchStatsAsync());
-  };
+  const loadData = useCallback(async () => {
+    try {
+      await Promise.all([
+        dispatch(fetchStatsAsync()),
+        dispatch(fetchEarningsSummary(selectedPeriod)),
+        dispatch(fetchEarningsTransactions(selectedPeriod)),
+        dispatch(fetchBonusOpportunities()),
+      ]);
+    } catch (error) {
+      console.error('Failed to load earnings data:', error);
+      Alert.alert(
+        'Error',
+        'Failed to load earnings data. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [dispatch, selectedPeriod]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadStats();
-    setRefreshing(false);
-  };
+    try {
+      await loadData();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadData]);
+
+  const handlePeriodChange = useCallback((period: PeriodType) => {
+    setLocalPeriod(period);
+    dispatch(setSelectedPeriod(period));
+  }, [dispatch]);
+
+  const handleExportCSV = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const csvContent = await earningsService.exportReport(selectedPeriod, 'csv');
+      await Share.share({
+        message: csvContent,
+        title: `Earnings Report - ${selectedPeriod}`,
+        url: `data:text/csv;base64,${btoa(csvContent)}`,
+      });
+    } catch (error) {
+      Alert.alert(
+        'Export Failed',
+        `Failed to export CSV: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  }, [selectedPeriod]);
+
+  const handleExportPDF = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const pdfContent = await earningsService.exportReport(selectedPeriod, 'pdf');
+      await Share.share({
+        message: 'Earnings Report PDF',
+        title: `Earnings Report - ${selectedPeriod}`,
+        url: `data:application/pdf;base64,${pdfContent}`,
+      });
+    } catch (error) {
+      Alert.alert(
+        'Export Failed',
+        `Failed to export PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  }, [selectedPeriod]);
 
   // Get data for selected period
   const getEarningsData = (): EarningsSummaryData => {
-    if (!stats) {
-      return { gross: 0, fees: 0, net: 0 };
-    }
-
     const mockData = generateMockEarnings(selectedPeriod);
-    return mockData;
+    // Handle zero earnings edge case - should display $0.00, not error state
+    return mockData.gross === 0 ? { gross: 0, fees: 0, net: 0 } : mockData;
   };
 
   const getStatsData = (): DeliveryStatistics => {
-    if (!stats) {
-      return {
-        count: 0,
-        totalDistance: 0,
-        averageTime: 0,
-        onTimeRate: 0,
-      };
-    }
-
     const mockData = generateMockStats(selectedPeriod);
     return mockData;
   };
@@ -186,10 +309,14 @@ export const EarningsScreen: React.FC = () => {
     return generateMockBonuses();
   };
 
-  if (!stats) {
+  // Show loading state
+  if (!stats && earningsState.loading) {
     return (
-      <View style={styles.container} testID="earnings-screen-loading">
-        <Text testID="earnings-screen-loading-text">Loading statistics...</Text>
+      <View style={[styles.container, styles.centerContent]} testID="earnings-screen-loading">
+        <ActivityIndicator size="large" color="#007AFF" testID="earnings-loading-spinner" />
+        <Text style={styles.loadingText} testID="earnings-screen-loading-text">
+          Loading earnings data...
+        </Text>
       </View>
     );
   }
@@ -208,26 +335,29 @@ export const EarningsScreen: React.FC = () => {
         <Text style={styles.title} testID="earnings-screen-title">
           Earnings & Statistics
         </Text>
+        <Text style={styles.subtitle} testID="earnings-screen-subtitle">
+          Track your deliveries and bonuses
+        </Text>
       </View>
 
       {/* Period Filter */}
       <PeriodFilter
         selectedPeriod={selectedPeriod}
-        onPeriodChange={setSelectedPeriod}
+        onPeriodChange={handlePeriodChange}
         testID="earnings-period-filter"
       />
 
       {/* Earnings Summary */}
       <EarningsSummaryCard
         data={earningsData}
-        period={selectedPeriod}
+        period={(selectedPeriod === 'today' ? 'day' : selectedPeriod) as 'day' | 'week' | 'month' | 'custom'}
         testID="earnings-summary"
       />
 
       {/* Delivery Statistics */}
       <DeliveryStatsCard
         data={statsData}
-        period={selectedPeriod}
+        period={(selectedPeriod === 'today' ? 'day' : selectedPeriod) as 'day' | 'week' | 'month' | 'custom'}
         testID="delivery-stats"
       />
 
@@ -237,10 +367,19 @@ export const EarningsScreen: React.FC = () => {
         testID="bonus-progress"
       />
 
+      {/* Export Buttons */}
+      <ExportButton
+        period={selectedPeriod}
+        onExportCSV={handleExportCSV}
+        onExportPDF={handleExportPDF}
+        isLoading={isExporting}
+        testID="earnings-export"
+      />
+
       {/* Additional Info */}
       <View style={styles.infoContainer} testID="earnings-info-container">
         <Text style={styles.infoText} testID="earnings-info-text">
-          💡 Tip: Complete deliveries on time to unlock bonus rewards!
+          Tip: Complete deliveries on time to unlock bonus rewards!
         </Text>
       </View>
     </ScrollView>
@@ -252,6 +391,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   header: {
     padding: 20,
     backgroundColor: '#007AFF',
@@ -260,6 +403,17 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FFF',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#FFF',
+    opacity: 0.9,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
   },
   filterContainer: {
     backgroundColor: '#FFF',
@@ -295,6 +449,38 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   filterButtonTextActive: {
+    color: '#FFF',
+  },
+  exportContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  exportButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#28A745',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  exportButtonPDF: {
+    backgroundColor: '#DC3545',
+  },
+  exportButtonDisabled: {
+    opacity: 0.6,
+  },
+  exportButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#FFF',
   },
   infoContainer: {

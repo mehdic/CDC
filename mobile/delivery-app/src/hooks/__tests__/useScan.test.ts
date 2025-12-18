@@ -3,8 +3,9 @@
  * Covers QR scanning, verification, history management, and event recording
  */
 
-import { renderHook, act } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { renderHook, act } from '@testing-library/react-native';
+
 import ScanEventService from '../../services/scanEventService';
 import { useScan } from '../useScan';
 

@@ -4,14 +4,15 @@
  * Tests focus on state management and filtering logic
  */
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { Provider } from 'react-redux';
 import { configureStore, PreloadedState } from '@reduxjs/toolkit';
-import DeliveryListScreen from '../DeliveryListScreen';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
+import { Provider } from 'react-redux';
+
+import { RootState } from '../../../store';
 import deliveryReducer from '../../../store/deliverySlice';
 import { DeliveryRequest, DeliveryStatus } from '../../../types/delivery';
-import { RootState } from '../../../store';
+import DeliveryListScreen from '../DeliveryListScreen';
 
 const mockNavigation = {
   navigate: jest.fn(),

@@ -3,13 +3,14 @@
  * Tests delivery detail display, acceptance, and special handling indicators
  */
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
-import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import DeliveryDetailScreen from '../DeliveryDetailScreen';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import React from 'react';
+import { Provider } from 'react-redux';
+
 import deliveryReducer from '../../../store/deliverySlice';
 import { DeliveryRequest, DeliveryStatus } from '../../../types/delivery';
+import DeliveryDetailScreen from '../DeliveryDetailScreen';
 
 // Mock navigation
 const mockNavigation = {
