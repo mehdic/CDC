@@ -279,7 +279,12 @@ describe('SocketService', () => {
       expect(socketId).toBe('mock-socket-id');
     });
 
-    it('should return null when disconnected', () => {
+    it('should return null when disconnected', async () => {
+      const { io } = require('socket.io-client');
+      // Ensure socket is disconnected
+      const mockSocket = io();
+      mockSocket.connected = false;
+
       const socketId = socketService.getSocketId();
       expect(socketId).toBeNull();
     });

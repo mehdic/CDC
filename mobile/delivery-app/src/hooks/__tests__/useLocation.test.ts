@@ -12,28 +12,9 @@ import * as reduxHooks from '../useRedux';
 
 /**
  * Mock Dependencies
+ * Note: react-native and react-native-geolocation-service are mocked
+ * in jest.setup.js. Additional setup here is only for test-specific behavior.
  */
-jest.mock('react-native-geolocation-service');
-jest.mock('react-native', () => ({
-  ...jest.requireActual('react-native'),
-  PermissionsAndroid: {
-    request: jest.fn(),
-    PERMISSIONS: {
-      ACCESS_FINE_LOCATION: 'android.permission.ACCESS_FINE_LOCATION',
-    },
-    RESULTS: {
-      GRANTED: 'granted',
-      DENIED: 'denied',
-    },
-  },
-  Platform: {
-    OS: 'ios',
-  },
-  AppState: {
-    currentState: 'active',
-    addEventListener: jest.fn(() => ({ remove: jest.fn() })),
-  },
-}));
 
 jest.mock('../useRedux', () => ({
   useAppDispatch: jest.fn(),

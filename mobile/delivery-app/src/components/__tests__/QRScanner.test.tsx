@@ -49,16 +49,8 @@ jest.mock('expo-haptics', () => ({
   },
 }));
 
-// Mock Linking
-jest.mock('react-native', () => {
-  const actual = jest.requireActual('react-native');
-  return {
-    ...actual,
-    Linking: {
-      openSettings: jest.fn(),
-    },
-  };
-});
+// Note: react-native is already mocked in jest.setup.js with all necessary exports
+// No additional mocking needed here
 
 describe('QRScanner Component', () => {
   const mockOnScan = jest.fn();

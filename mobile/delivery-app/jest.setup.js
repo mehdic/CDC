@@ -1,7 +1,94 @@
-// Jest setup file - minimal configuration to avoid circular dependencies
-// Tests should handle their own mocks for react-native modules
+// Jest setup file - comprehensive React Native mocking
+// Establishes proper native module mocks before any component/hook imports
 
-// Mock AsyncStorage globally
+/**
+ * Mock NativeEventEmitter FIRST (before React Native tries to use it)
+ * This fixes errors like "new NativeEventEmitter() requires a non-null argument"
+ */
+jest.mock('react-native/Libraries/EventEmitter/NativeEventEmitter', () => {
+  const EventEmitter = require('events').EventEmitter;
+  return class extends EventEmitter {
+    constructor(nativeModule) {
+      super();
+      this.nativeModule = nativeModule;
+    }
+
+    addListener(eventType, listener, context) {
+      return super.on(eventType, listener);
+    }
+
+    removeListener(eventType, listener) {
+      return super.off(eventType, listener);
+    }
+
+    removeAllListeners(eventType) {
+      if (eventType) {
+        super.removeAllListeners(eventType);
+      } else {
+        super.removeAllListeners();
+      }
+    }
+
+    emit(eventType, ...args) {
+      return super.emit(eventType, ...args);
+    }
+  };
+});
+
+/**
+ * Mock TurboModuleRegistry to prevent "SettingsManager not found" errors
+ */
+jest.mock('react-native/Libraries/TurboModule/TurboModuleRegistry', () => ({
+  getEnforcing: jest.fn((moduleName) => {
+    // Return mock implementations for required modules
+    const mocks = {
+      SettingsManager: {
+        getConstants: jest.fn(() => ({})),
+      },
+      SoundManager: {
+        playSound: jest.fn(),
+      },
+      ModalManager: {
+        showModal: jest.fn(),
+      },
+      Appearance: {
+        getColorScheme: jest.fn(() => 'light'),
+      },
+      ActionSheetManager: {
+        showActionSheetWithOptions: jest.fn(),
+      },
+    };
+
+    return mocks[moduleName] || {};
+  }),
+  get: jest.fn((moduleName) => {
+    return null; // Non-strict get returns null
+  }),
+}));
+
+/**
+ * Mock NativeDeviceInfo to prevent StyleSheet.create from crashing
+ */
+jest.mock('react-native/Libraries/Utilities/NativeDeviceInfo', () => ({
+  getConstants: jest.fn(() => ({
+    fontScale: 1,
+    pixelRatio: 1,
+    screenHeight: 812,
+    screenWidth: 375,
+  })),
+}));
+
+/**
+ * Mock RCTNativeAppEventEmitter for event handling
+ */
+jest.mock('react-native/Libraries/EventEmitter/RCTNativeAppEventEmitter', () => ({
+  addListener: jest.fn(() => ({ remove: jest.fn() })),
+  removeListener: jest.fn(),
+}));
+
+/**
+ * Mock AsyncStorage globally
+ */
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn().mockResolvedValue(undefined),
   getItem: jest.fn().mockResolvedValue(null),
@@ -19,7 +106,9 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 
-// Mock NetInfo globally
+/**
+ * Mock NetInfo globally
+ */
 jest.mock('@react-native-community/netinfo', () => ({
   addEventListener: jest.fn(() => jest.fn()),
   fetch: jest.fn(() =>
@@ -32,10 +121,98 @@ jest.mock('@react-native-community/netinfo', () => ({
   ),
 }));
 
-// Add testing library matchers without importing from react-native first
+/**
+ * Mock react-native-geolocation-service
+ */
+jest.mock('react-native-geolocation-service', () => ({
+  getCurrentPosition: jest.fn((success) => {
+    setTimeout(() => {
+      success({
+        coords: {
+          latitude: 47.3769,
+          longitude: 8.5417,
+          accuracy: 10,
+          altitude: 100,
+          altitudeAccuracy: 5,
+          heading: 0,
+          speed: 0,
+        },
+        timestamp: Date.now(),
+      });
+    }, 0);
+  }),
+  watchPosition: jest.fn(() => 1),
+  clearWatch: jest.fn(),
+  startObserving: jest.fn(),
+  stopObserving: jest.fn(),
+  requestAuthorization: jest.fn(() => Promise.resolve('granted')),
+  default: {
+    getCurrentPosition: jest.fn((success) => {
+      setTimeout(() => {
+        success({
+          coords: {
+            latitude: 47.3769,
+            longitude: 8.5417,
+            accuracy: 10,
+            altitude: 100,
+            altitudeAccuracy: 5,
+            heading: 0,
+            speed: 0,
+          },
+          timestamp: Date.now(),
+        });
+      }, 0);
+    }),
+    watchPosition: jest.fn(() => 1),
+    clearWatch: jest.fn(),
+    startObserving: jest.fn(),
+    stopObserving: jest.fn(),
+    requestAuthorization: jest.fn(() => Promise.resolve('granted')),
+  },
+}));
+
+/**
+ * Mock react-native-maps
+ */
+jest.mock('react-native-maps', () => ({
+  default: {
+    __esModule: true,
+    Marker: 'Marker',
+    Polyline: 'Polyline',
+    Callout: 'Callout',
+  },
+  Marker: 'Marker',
+  Polyline: 'Polyline',
+  Callout: 'Callout',
+}));
+
+/**
+ * Mock react-native-camera
+ */
+jest.mock('react-native-camera', () => ({
+  RNCamera: 'RNCamera',
+  default: 'RNCamera',
+}));
+
+/**
+ * Mock react-native-signature-canvas via __mocks__
+ */
+jest.mock('react-native-signature-canvas');
+
+/**
+ * Mock react-native-qrcode-scanner
+ */
+jest.mock('react-native-qrcode-scanner', () => ({
+  default: 'QRCodeScanner',
+  RNQRGenerator: 'RNQRGenerator',
+}));
+
+/**
+ * Setup testing library matchers
+ */
 try {
   require('@testing-library/jest-native/extend-expect');
 } catch (e) {
-  // If it fails due to react-native dependencies, continue
-  // Tests will provide their own mocks
+  // Extend-expect may fail with certain react-native versions
+  // Tests will still work without it
 }
