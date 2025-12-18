@@ -115,7 +115,7 @@ const mapSpecialHandlingToAlertType = (type: SpecialHandling): AlertType => {
     'cold_chain': 'cold_chain',
     'signature_required': 'signature_required',
     'id_verification': 'id_required',
-    'time_sensitive': 'fragile', // Time-sensitive mapped to fragile as closest match
+    'time_sensitive': 'time_sensitive',
   };
   return typeMap[type];
 };

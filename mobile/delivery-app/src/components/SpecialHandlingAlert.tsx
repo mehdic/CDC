@@ -12,7 +12,8 @@ export type AlertType =
   | 'cold_chain'
   | 'fragile'
   | 'signature_required'
-  | 'id_required';
+  | 'id_required'
+  | 'time_sensitive';
 
 export interface SpecialHandlingAlertProps {
   type: AlertType;
@@ -72,6 +73,14 @@ const getAlertConfig = (type: AlertType) => {
       textColor: '#AD1457',
       icon: '🆔',
       label: 'ID Verification Required',
+      severity: 'high',
+    },
+    time_sensitive: {
+      backgroundColor: '#FFF8E1',
+      borderColor: '#F57F17',
+      textColor: '#F57F17',
+      icon: '⏱️',
+      label: 'Time-Sensitive Delivery',
       severity: 'high',
     },
   };

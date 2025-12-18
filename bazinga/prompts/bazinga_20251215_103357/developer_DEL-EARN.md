@@ -1792,40 +1792,55 @@ Let's build something great! 🚀
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** T8-025: Earnings Dashboard
+**TASK:** T8-025: Implement Earnings Dashboard
 
 **REQUIREMENTS:**
-## Task: Earnings Dashboard
+TASK: Implement Earnings Dashboard for delivery-app
 
-**Priority:** P2
-**Complexity:** Medium
-**Estimated:** 8-10 hours
+REQUIREMENTS:
+1. Earnings summary display
+   - Today's earnings
+   - Weekly earnings
+   - Monthly earnings
+   - Total earnings to date
 
-## Functional Requirements
-- Display daily/weekly/monthly earnings
-- Show delivery count statistics
-- Display bonus information
-- Export earnings report
+2. Earnings breakdown
+   - Base delivery fees
+   - Tips
+   - Bonuses (completion, performance)
+   - Deductions if any
 
-## Implementation Location
-- mobile/delivery-app/src/screens/Earnings/
-- mobile/delivery-app/src/store/earningsSlice.ts
-- mobile/delivery-app/src/services/earningsService.ts
+3. Delivery history with earnings
+   - List of completed deliveries
+   - Earnings per delivery
+   - Filter by date range
 
-## Acceptance Criteria
-- [ ] Earnings summary displayed (gross, fees, net)
-- [ ] Period filtering working (day/week/month/custom)
-- [ ] Statistics accurate (delivery count, distance, avg time)
-- [ ] Bonus progress displayed
-- [ ] Export functionality (PDF or CSV)
-- [ ] NEGATIVE: No earnings shows $0.00 (not error state)
+4. Visual analytics
+   - Earnings trend chart
+   - Comparison with previous periods
+   - Goal tracking (if applicable)
 
-## UI Requirements
-- Summary card with gross/fees/net breakdown
-- Period selector (tabs or dropdown)
-- Statistics grid (deliveries, distance, time)
-- Bonus progress bar
-- Export button
+5. Export functionality
+   - Export earnings report
+   - PDF or CSV format
+
+FILES LOCATION:
+- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/screens/Earnings/
+- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/store/earningsSlice.ts
+
+CHECK EXISTING:
+- Review EarningsScreen if exists
+- Check earningsSlice for state structure
+
+SUCCESS CRITERIA:
+- Dashboard displaying all earnings metrics
+- Breakdown view working
+- History list with filters
+- Charts/visualizations
+- Unit tests for components
+- All tests passing
+
+BRANCH: main
 
 **TESTING MODE:** full
 **COMMIT TO:** main

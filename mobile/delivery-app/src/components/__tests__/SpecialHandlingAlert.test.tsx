@@ -47,6 +47,12 @@ describe('SpecialHandlingAlert Component', () => {
       expectedLabel: 'ID Verification Required',
       expectedIcon: '🆔',
     },
+    {
+      type: 'time_sensitive',
+      details: 'Must be delivered within time window',
+      expectedLabel: 'Time-Sensitive Delivery',
+      expectedIcon: '⏱️',
+    },
   ];
 
   beforeEach(() => {

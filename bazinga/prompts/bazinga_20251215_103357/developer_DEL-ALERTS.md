@@ -1792,38 +1792,49 @@ Let's build something great! 🚀
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** T8-024: Special Handling Alerts
+**TASK:** T8-024: Implement Special Handling Alerts
 
 **REQUIREMENTS:**
-## Task: Special Handling Alerts
+TASK: Implement Special Handling Alerts for delivery-app
 
-**Priority:** P1
-**Complexity:** Low
-**Estimated:** 4-6 hours
+REQUIREMENTS:
+1. Alert display for special handling requirements
+   - Cold chain medications (temperature-sensitive)
+   - Controlled substances (requires ID verification)
+   - Fragile items
+   - Time-sensitive deliveries
 
-## Functional Requirements
-- Display alerts for controlled substances
-- Display alerts for cold chain items (temperature requirements)
-- Display patient-specific instructions
-- Require acknowledgment before pickup
+2. Visual indicators
+   - Color-coded badges/icons for each alert type
+   - Priority levels (critical, high, normal)
+   - Clear instructions for drivers
 
-## Implementation Location
-- mobile/delivery-app/src/components/SpecialHandlingAlert.tsx
-- mobile/delivery-app/src/screens/PickupAcknowledgment/
+3. Acknowledgment workflow
+   - Driver must acknowledge special handling before pickup
+   - Checkbox confirmation for each requirement
+   - Timestamp of acknowledgment
 
-## Acceptance Criteria
-- [ ] Controlled substance alerts displayed prominently (red badge)
-- [ ] Cold chain alerts displayed (temperature requirements shown)
-- [ ] Patient-specific instructions visible
-- [ ] Acknowledgment required (checkbox + timestamp)
-- [ ] NEGATIVE: Proceeding without acknowledgment MUST be blocked
+4. Integration points
+   - Display on delivery list cards
+   - Prominent display on delivery detail screen
+   - Include in pickup acknowledgment flow
 
-## UI Requirements
-- Red badge for controlled substances
-- Blue badge for cold chain
-- Yellow badge for special instructions
-- Checkbox with "I acknowledge" text
-- Cannot proceed until acknowledgment checkbox is checked
+FILES LOCATION:
+- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/components/SpecialHandlingAlert/
+- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/screens/
+
+CHECK EXISTING:
+- Review if SpecialHandlingAlert component already exists
+- Check DeliveryCard for existing alert integration
+
+SUCCESS CRITERIA:
+- Alert component with all handling types
+- Visual indicators working
+- Acknowledgment flow integrated
+- Unit tests for new/modified components
+- All tests passing
+
+BRANCH: main
 
 **TESTING MODE:** full
 **COMMIT TO:** main

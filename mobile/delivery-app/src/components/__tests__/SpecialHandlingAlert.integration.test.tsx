@@ -142,6 +142,11 @@ describe('SpecialHandlingAlert Integration Tests', () => {
         expectedLabel: 'Fragile Item',
         hasCriticalBadge: false,
       },
+      {
+        type: 'time_sensitive' as AlertType,
+        expectedLabel: 'Time-Sensitive Delivery',
+        hasCriticalBadge: false,
+      },
     ];
 
     alertScenarios.forEach(({ type, expectedLabel, hasCriticalBadge }) => {
