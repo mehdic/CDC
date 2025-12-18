@@ -30,15 +30,15 @@ describe('MapMarker Component', () => {
 
   describe('Rendering', () => {
     it('should render current location marker', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={mockCoordinate} type="current_location" title="Your Location" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should render destination marker', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker
           coordinate={mockCoordinate}
           type="destination"
@@ -47,37 +47,37 @@ describe('MapMarker Component', () => {
         />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should render waypoint marker', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={mockCoordinate} type="waypoint" title="Waypoint 1" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should render pharmacy marker', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={mockCoordinate} type="pharmacy" title="Pharmacy" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should render warning marker', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={mockCoordinate} type="warning" title="Warning" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 
   describe('Accuracy Indicator', () => {
     it('should display accuracy indicator for current location with accuracy', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker
           coordinate={mockCoordinate}
           type="current_location"
@@ -86,7 +86,7 @@ describe('MapMarker Component', () => {
         />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should not display accuracy indicator without accuracy', () => {
@@ -95,15 +95,15 @@ describe('MapMarker Component', () => {
         accuracy: undefined,
       };
 
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={coord} type="current_location" title="Your Location" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should not display accuracy indicator for non-current locations', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker
           coordinate={mockCoordinate}
           type="destination"
@@ -112,13 +112,13 @@ describe('MapMarker Component', () => {
         />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 
   describe('Marker Properties', () => {
     it('should pass title to marker', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker
           coordinate={mockCoordinate}
           type="current_location"
@@ -126,11 +126,11 @@ describe('MapMarker Component', () => {
         />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should pass description to marker', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker
           coordinate={mockCoordinate}
           type="destination"
@@ -139,13 +139,13 @@ describe('MapMarker Component', () => {
         />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should handle onPress callback', () => {
       const onPress = jest.fn();
 
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker
           coordinate={mockCoordinate}
           type="waypoint"
@@ -154,55 +154,55 @@ describe('MapMarker Component', () => {
         />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 
   describe('Color Selection', () => {
     it('should use blue color for current location', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={mockCoordinate} type="current_location" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should use red color for destination', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={mockCoordinate} type="destination" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should use green color for waypoint', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={mockCoordinate} type="waypoint" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should use orange color for pharmacy', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={mockCoordinate} type="pharmacy" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should use yellow color for warning', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={mockCoordinate} type="warning" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 
   describe('Accuracy Levels', () => {
     it('should show excellent accuracy (< 5m)', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker
           coordinate={mockCoordinate}
           type="current_location"
@@ -210,11 +210,11 @@ describe('MapMarker Component', () => {
         />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should show good accuracy (5-10m)', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker
           coordinate={mockCoordinate}
           type="current_location"
@@ -222,11 +222,11 @@ describe('MapMarker Component', () => {
         />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should show moderate accuracy (10-25m)', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker
           coordinate={mockCoordinate}
           type="current_location"
@@ -234,11 +234,11 @@ describe('MapMarker Component', () => {
         />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should show poor accuracy (> 25m)', () => {
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker
           coordinate={mockCoordinate}
           type="current_location"
@@ -246,7 +246,7 @@ describe('MapMarker Component', () => {
         />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 
@@ -261,11 +261,11 @@ describe('MapMarker Component', () => {
         heading: 90,
       };
 
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={fullCoord} type="current_location" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should accept coordinates with minimal properties', () => {
@@ -275,11 +275,11 @@ describe('MapMarker Component', () => {
         timestamp: new Date().toISOString(),
       };
 
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker coordinate={minimalCoord} type="destination" />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 
@@ -292,11 +292,11 @@ describe('MapMarker Component', () => {
       };
 
       // This test verifies TypeScript compilation
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <MapMarker {...props} />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 });

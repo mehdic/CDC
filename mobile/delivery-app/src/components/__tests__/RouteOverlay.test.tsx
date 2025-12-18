@@ -82,11 +82,11 @@ describe('RouteOverlay Component', () => {
   describe('Rendering', () => {
     it('should render route with waypoints', () => {
       const mockRoute = createMockRoute();
-      const { container, getByText } = render(
+      const { UNSAFE_root, getByText } = render(
         <RouteOverlay route={mockRoute} />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
       expect(getByText('All Deliveries (3)')).toBeTruthy();
     });
 
@@ -213,30 +213,30 @@ describe('RouteOverlay Component', () => {
       const mockRoute = createMockRoute();
       mockRoute.waypoints[0].completed = true;
 
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <RouteOverlay route={mockRoute} currentWaypointIndex={1} />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should highlight active waypoint', () => {
       const mockRoute = createMockRoute();
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <RouteOverlay route={mockRoute} currentWaypointIndex={1} />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should display waypoint numbering', () => {
       const mockRoute = createMockRoute();
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <RouteOverlay route={mockRoute} />
       );
 
       // Waypoint badges should show numbers 1, 2, 3
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 
@@ -292,20 +292,20 @@ describe('RouteOverlay Component', () => {
   describe('ETA Display', () => {
     it('should display estimated arrival time', () => {
       const mockRoute = createMockRoute();
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <RouteOverlay route={mockRoute} currentWaypointIndex={0} />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
       // ETA should be displayed from waypoint data
     });
   });
 
   describe('Props Handling', () => {
     it('should accept null route', () => {
-      const { container } = render(<RouteOverlay route={null} />);
+      const { UNSAFE_root } = render(<RouteOverlay route={null} />);
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should use default currentWaypointIndex', () => {
@@ -318,11 +318,11 @@ describe('RouteOverlay Component', () => {
 
     it('should handle out-of-range currentWaypointIndex', () => {
       const mockRoute = createMockRoute();
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <RouteOverlay route={mockRoute} currentWaypointIndex={999} />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 
@@ -338,11 +338,11 @@ describe('RouteOverlay Component', () => {
         });
       }
 
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <RouteOverlay route={mockRoute} />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 
@@ -354,11 +354,11 @@ describe('RouteOverlay Component', () => {
         currentWaypointIndex: 0,
       } as const;
 
-      const { container } = render(
+      const { UNSAFE_root } = render(
         <RouteOverlay {...props} />
       );
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
   });
 });
