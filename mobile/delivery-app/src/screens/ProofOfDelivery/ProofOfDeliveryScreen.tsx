@@ -41,7 +41,6 @@ export const ProofOfDeliveryScreen: React.FC<ProofOfDeliveryScreenProps> = ({
   const [recipientName, setRecipientName] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [hasSignature, setHasSignature] = useState(false);
 
   useEffect(() => {
     if (!currentLocation) {
@@ -55,12 +54,10 @@ export const ProofOfDeliveryScreen: React.FC<ProofOfDeliveryScreenProps> = ({
 
   const handleSignatureCapture = (signature: string) => {
     setSignatureUri(signature);
-    setHasSignature(true);
   };
 
   const handleSignatureClear = () => {
     setSignatureUri('');
-    setHasSignature(false);
   };
 
   const handlePhotoCapture = (photoUri: string) => {

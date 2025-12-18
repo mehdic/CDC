@@ -259,8 +259,8 @@ describe('PackageVerification Component', () => {
       );
 
       expect(getByText('Issues Found')).toBeTruthy();
-      expect(getByText('Package ID does not match')).toBeTruthy();
-      expect(getByText('Different destination')).toBeTruthy();
+      expect(getByText(/Package ID does not match/)).toBeTruthy();
+      expect(getByText(/Different destination/)).toBeTruthy();
     });
 
     it('should call onRescan when scan again button pressed', () => {

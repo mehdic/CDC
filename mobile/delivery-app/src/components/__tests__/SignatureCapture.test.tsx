@@ -180,7 +180,8 @@ describe('SignatureCapture', () => {
         />
       );
 
-      expect(getByText('Patient Signature')).toBeTruthy();
+      // Text is split by the asterisk, so use partial text match
+      expect(getByText(/Patient Signature/)).toBeTruthy();
       expect(getByText('*')).toBeTruthy();
     });
   });

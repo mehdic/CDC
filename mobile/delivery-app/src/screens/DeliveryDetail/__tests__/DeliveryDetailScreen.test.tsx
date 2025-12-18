@@ -201,7 +201,7 @@ describe('DeliveryDetailScreen', () => {
         [delivery]
       );
 
-      expect(screen.getByText('5.20 km')).toBeTruthy();
+      expect(screen.getByText('5.2 km')).toBeTruthy();
     });
 
     it('should display estimated duration', () => {

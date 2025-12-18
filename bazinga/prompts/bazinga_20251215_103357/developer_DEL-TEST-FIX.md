@@ -1788,53 +1788,40 @@ Let's build something great! 🚀
 ## Current Task Assignment
 
 **SESSION:** bazinga_20251215_103357
-**GROUP:** DEL-POD
+**GROUP:** DEL-TEST-FIX
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** T8-023: Implement Proof of Delivery Capture
+**TASK:** Fix 19 failing tests in delivery-app
 
 **REQUIREMENTS:**
-TASK: Implement Proof of Delivery (POD) capture for delivery-app
+CRITICAL: Fix all failing tests in mobile/delivery-app
 
-REQUIREMENTS:
-1. Signature capture component
-   - Canvas-based signature pad
-   - Clear/reset functionality
-   - Save signature as base64 image
+CURRENT TEST STATUS: 19 failing / 1092 passing
 
-2. Photo capture for proof of delivery
-   - Take photo of delivered package
-   - Optional: Take photo of delivery location
-   - Compress and encode for upload
+FAILING TEST FILES:
+1. src/components/__tests__/PhotoCapture.test.tsx - Camera interaction tests failing
+2. src/components/__tests__/QRScanner.test.tsx - Permission handling tests
 
-3. Delivery confirmation workflow
-   - Confirm delivery button with required fields
-   - Capture timestamp automatically
-   - Capture GPS coordinates at delivery
-   - Notes field for delivery instructions/issues
+ROOT CAUSES IDENTIFIED:
+1. PhotoCapture: Element type is invalid error after camera actions
+   - Check component render method for proper Camera component handling
+   - Mock for react-native-vision-camera may need updating
 
-4. Integration with existing screens
-   - Add POD to delivery detail flow
-   - Store POD data locally (offline support)
-   - Sync to backend when online
+2. QRScanner: Platform detection returning iOS permission constant when Android expected
+   - Fix mock in jest.setup.js or __mocks__ to return platform-appropriate values
+   - react-native-permissions mock configuration issue
 
-FILES LOCATION:
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/screens/ProofOfDelivery/
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/components/
+STEPS:
+1. Run tests first to see current failures: cd mobile/delivery-app && npm test
+2. Examine the failing test files and their mocks
+3. Fix the mock configurations in jest.setup.js or __mocks__/ directory
+4. Ensure PhotoCapture component handles camera state changes properly
+5. Re-run tests to verify all pass
 
-EXISTING CODE TO REFERENCE:
-- Check existing signature/photo components if any
-- Review delivery detail screen for integration points
+SUCCESS CRITERIA: 0 failing tests in delivery-app
 
-SUCCESS CRITERIA:
-- POD screen with signature capture
-- Photo capture integrated
-- Timestamp and GPS capture on confirmation
-- Unit tests for new components
-- All tests passing
-
-BRANCH: main
+BRANCH: main (commit directly, no feature branch needed for test fixes)
 
 **TESTING MODE:** full
 **COMMIT TO:** main
