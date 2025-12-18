@@ -27,9 +27,19 @@ jest.mock('react-native-permissions', () => ({
   },
 }));
 
-// Mock QRCodeScanner
+// Mock QRCodeScanner - properly render all content props
 jest.mock('react-native-qrcode-scanner', () => {
-  return jest.fn(() => <></>);
+  const React = require('react');
+  const { View } = require('react-native');
+
+  return jest.fn((props: any) => {
+    return (
+      <View {...props}>
+        {props.topContent}
+        {props.bottomContent}
+      </View>
+    );
+  });
 });
 
 // Mock react-native-camera
@@ -125,11 +135,9 @@ describe('QRScanner Component', () => {
     });
 
     it('should handle platform-specific permissions', async () => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'android',
-        writable: true,
-        configurable: true,
-      });
+      // Mock Platform.select to return Android permission
+      const originalSelect = Platform.select;
+      Platform.select = jest.fn((obj: any) => obj.android);
 
       render(<QRScanner onScan={mockOnScan} />);
 
@@ -137,11 +145,8 @@ describe('QRScanner Component', () => {
         expect(Permissions.check).toHaveBeenCalledWith(Permissions.PERMISSIONS.ANDROID.CAMERA);
       });
 
-      Object.defineProperty(Platform, 'OS', {
-        value: 'ios',
-        writable: true,
-        configurable: true,
-      });
+      // Restore Platform.select
+      Platform.select = originalSelect;
     });
   });
 
@@ -151,11 +156,11 @@ describe('QRScanner Component', () => {
     });
 
     it('should call onScan with QR code data', async () => {
-      const { getByTestId } = render(<QRScanner onScan={mockOnScan} testID="qr-scanner" />);
+      const { getByText } = render(<QRScanner onScan={mockOnScan} />);
 
       await waitFor(() => {
-        // Verify component renders with permission granted
-        expect(getByTestId('qr-scanner')).toBeTruthy();
+        // Verify component renders with permission granted by checking for torch button
+        expect(getByText('🔦 Light Off')).toBeTruthy();
       });
     });
 

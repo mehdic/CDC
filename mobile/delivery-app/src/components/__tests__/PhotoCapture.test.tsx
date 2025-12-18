@@ -9,22 +9,33 @@ import { RESULTS } from 'react-native-permissions';
 
 import { PhotoCapture } from '../PhotoCapture';
 
-// Mock RNCamera
-jest.mock('react-native-camera', () => ({
-  RNCamera: {
-    Constants: {
-      Type: {
-        back: 'back',
-        front: 'front',
-      },
-      FlashMode: {
-        auto: 'auto',
-        on: 'on',
-        off: 'off',
-      },
+// Mock RNCamera as a proper React component
+jest.mock('react-native-camera', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  // Create a mock component with forwardRef to handle ref prop
+  const MockRNCamera = React.forwardRef((props: any, ref: any) => {
+    return <View testID="camera" {...props} />;
+  });
+
+  // Attach Constants to the component
+  MockRNCamera.Constants = {
+    Type: {
+      back: 'back',
+      front: 'front',
     },
-  },
-}));
+    FlashMode: {
+      auto: 'auto',
+      on: 'on',
+      off: 'off',
+    },
+  };
+
+  return {
+    RNCamera: MockRNCamera,
+  };
+});
 
 // Mock permissions
 jest.mock('react-native-permissions', () => ({
