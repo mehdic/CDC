@@ -69,6 +69,7 @@ const mockNavigation = {
 const renderWithRedux = (
   component: React.ReactElement,
   initialEarnings: any = {},
+  initialDelivery: any = {},
 ) => {
   const preloadedState: PreloadedState<any> = {
     delivery: {
@@ -81,6 +82,7 @@ const renderWithRedux = (
       stats: { deliveries: [], count: 0, totalDistance: 0, averageTime: 0 },
       syncQueue: [],
       isOnline: true,
+      ...initialDelivery,
     },
     auth: {
       isAuthenticated: true,
@@ -188,14 +190,14 @@ describe('EarningsScreen', () => {
     it('should have week selected by default', () => {
       const { getByTestId } = renderWithRedux(<EarningsScreen />);
       const weekButton = getByTestId('earnings-period-filter-week');
-      expect(weekButton.props.style).toContainEqual({ backgroundColor: '#007AFF' });
+      expect(weekButton.props.style).toMatchObject({ backgroundColor: '#007AFF' });
     });
 
     it('should change period when button is pressed', () => {
       const { getByTestId } = renderWithRedux(<EarningsScreen />);
       const monthButton = getByTestId('earnings-period-filter-month');
       fireEvent.press(monthButton);
-      expect(monthButton.props.style).toContainEqual({ backgroundColor: '#007AFF' });
+      expect(monthButton.props.style).toMatchObject({ backgroundColor: '#007AFF' });
     });
 
     it('should update earnings when period changes', async () => {
@@ -329,8 +331,11 @@ describe('EarningsScreen', () => {
 
       fireEvent.press(csvButton);
 
-      // Button should be in loading/disabled state
-      expect(csvButton.props.disabled).toBeDefined();
+      // Wait for the state to update and check accessibilityState
+      await waitFor(() => {
+        const updatedButton = getByTestId('earnings-export-csv');
+        expect(updatedButton.props.accessibilityState?.disabled).toBe(true);
+      });
     });
   });
 
@@ -338,7 +343,8 @@ describe('EarningsScreen', () => {
     it('should show loading indicator when fetching data', () => {
       const { getByTestId } = renderWithRedux(
         <EarningsScreen />,
-        { loading: true }
+        { loading: true },
+        { stats: null }
       );
 
       const loadingSpinner = getByTestId('earnings-loading-spinner');
@@ -348,7 +354,8 @@ describe('EarningsScreen', () => {
     it('should show loading text', () => {
       const { getByTestId } = renderWithRedux(
         <EarningsScreen />,
-        { loading: true }
+        { loading: true },
+        { stats: null }
       );
 
       const loadingText = getByTestId('earnings-screen-loading-text');

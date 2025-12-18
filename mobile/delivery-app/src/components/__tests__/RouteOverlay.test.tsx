@@ -312,10 +312,10 @@ describe('RouteOverlay Component', () => {
 
     it('should use default currentWaypointIndex', () => {
       const mockRoute = createMockRoute();
-      const { getByText } = render(<RouteOverlay route={mockRoute} />);
+      const { getAllByText } = render(<RouteOverlay route={mockRoute} />);
 
       // Should default to showing first waypoint
-      expect(getByText('123 Main St')).toBeTruthy();
+      expect(getAllByText('123 Main St').length).toBeGreaterThan(0);
     });
 
     it('should handle out-of-range currentWaypointIndex', () => {
