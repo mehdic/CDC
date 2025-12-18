@@ -9,7 +9,6 @@ import {
   View,
   Text,
   TextInput,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
@@ -28,19 +27,16 @@ import {
 import {
   searchPatients,
   getActiveMedicationsCount,
-  formatDOB,
   getLastVisitDate,
-  getUnitFromRoom,
 } from '../../utils/patientSearchUtils';
+import { Patient } from '../../types/nurse';
 
 const PatientSearchScreen: React.FC = () => {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
   const {
-    searchResults,
     searchQuery,
     recentPatients,
-    searchFilters,
     allPatients,
     isSearching,
   } = useAppSelector((state) => state.patient);
@@ -55,7 +51,7 @@ const PatientSearchScreen: React.FC = () => {
   // Mock data for demonstration - in real app, fetch from API
   useEffect(() => {
     if (allPatients.length === 0) {
-      const mockPatients: any[] = [
+      const mockPatients: Patient[] = [
         {
           id: 'P001',
           firstName: 'John',
@@ -197,7 +193,7 @@ const PatientSearchScreen: React.FC = () => {
     return sectionData;
   }, [searchQuery, recentPatients, filteredResults]);
 
-  const handlePatientSelect = (patient: any) => {
+  const handlePatientSelect = (patient: Patient) => {
     dispatch(setSelectedPatient(patient));
     navigation.navigate('PatientDetail' as never);
   };
@@ -231,7 +227,7 @@ const PatientSearchScreen: React.FC = () => {
     );
   };
 
-  const PatientItem = ({ item }: { item: any }) => {
+  const PatientItem = ({ item }: { item: Patient }) => {
     const activeMeds = getActiveMedicationsCount(item);
     const lastVisit = getLastVisitDate(item);
 
