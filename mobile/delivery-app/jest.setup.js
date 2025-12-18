@@ -1,5 +1,7 @@
 // Jest setup file - comprehensive React Native mocking
 // Establishes proper native module mocks before any component/hook imports
+// Note: react-native jest preset already provides mocks for PixelRatio, Dimensions, etc.
+// We only add what's missing or needs special handling
 
 /**
  * Mock NativeEventEmitter FIRST (before React Native tries to use it)
@@ -66,17 +68,6 @@ jest.mock('react-native/Libraries/TurboModule/TurboModuleRegistry', () => ({
   }),
 }));
 
-/**
- * Mock NativeDeviceInfo to prevent StyleSheet.create from crashing
- */
-jest.mock('react-native/Libraries/Utilities/NativeDeviceInfo', () => ({
-  getConstants: jest.fn(() => ({
-    fontScale: 1,
-    pixelRatio: 1,
-    screenHeight: 812,
-    screenWidth: 375,
-  })),
-}));
 
 /**
  * Mock RCTNativeAppEventEmitter for event handling
