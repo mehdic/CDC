@@ -1,0 +1,90 @@
+# Maestro E2E Test: Complete Delivery Workflow
+# Run with: maestro test e2e/.maestro/01-complete-delivery.yaml
+
+appId: com.metapharm.deliveryapp
+---
+
+# Test: Complete delivery from assignment to confirmation
+- launchApp
+- clearState
+
+# Step 1: Login
+- assertVisible: "Login"
+- tapOn: "Email"
+- inputText: "delivery@test.com"
+- tapOn: "Password"
+- inputText: "Test123!"
+- tapOn: "Sign In"
+
+# Step 2: Wait for delivery list
+- assertVisible:
+    text: "Deliveries"
+    timeout: 5000
+
+# Step 3: Select first delivery
+- tapOn:
+    id: "delivery-card-0"
+
+# Step 4: Accept delivery
+- assertVisible: "Accept Delivery"
+- tapOn: "Accept Delivery"
+
+# Step 5: Verify status changed
+- assertVisible: "Accepted"
+
+# Step 6: Navigate to pharmacy
+- tapOn: "Navigate"
+- assertVisible: "Navigation"
+
+# Step 7: Simulate arrival at pharmacy
+- setLocation:
+    latitude: 46.2044
+    longitude: 6.1432
+
+# Step 8: Pick up package
+- tapOn: "Scan QR Code"
+- assertVisible: "QR Scanner"
+# Simulate scan
+- tapOn: "Manual Entry"
+- inputText: "QR-STD-001"
+- tapOn: "Confirm"
+
+# Step 9: Acknowledge pickup
+- assertVisible: "Pickup Acknowledgment"
+- tapOn: "Confirm Pickup"
+
+# Step 10: Navigate to patient
+- assertVisible: "In Transit"
+- setLocation:
+    latitude: 46.2097
+    longitude: 6.1432
+
+# Step 11: Arrive at destination
+- tapOn: "Arrived"
+- assertVisible: "Proof of Delivery"
+
+# Step 12: Fill proof of delivery
+- tapOn: "Recipient Name"
+- inputText: "Jean Dupont"
+
+# Step 13: Capture signature
+- tapOn: "Signature"
+- swipe:
+    start: "50%,50%"
+    end: "80%,60%"
+
+# Step 14: Submit proof
+- tapOn: "Submit"
+
+# Step 15: Verify completion
+- assertVisible:
+    text: "Delivery Completed"
+    timeout: 5000
+
+# Step 16: Return to list
+- tapOn: "Back to Deliveries"
+
+# Step 17: Verify delivery is in completed tab
+- tapOn: "Completed"
+- assertVisible: "DEL-STD-001"
+- assertVisible: "Delivered"

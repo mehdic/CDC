@@ -1,0 +1,101 @@
+# Maestro E2E Test: GPS Tracking Verification
+# Run with: maestro test e2e/.maestro/03-gps-tracking.yaml
+
+appId: com.metapharm.deliveryapp
+---
+
+# Test: GPS tracking during delivery
+- launchApp
+- clearState
+
+# Login
+- tapOn: "Email"
+- inputText: "delivery@test.com"
+- tapOn: "Password"
+- inputText: "Test123!"
+- tapOn: "Sign In"
+
+# Start delivery
+- assertVisible: "Deliveries"
+- tapOn:
+    id: "delivery-card-0"
+- tapOn: "Accept Delivery"
+
+# Start navigation
+- tapOn: "Navigate"
+- assertVisible: "GPS Tracking Active"
+- assertVisible: "High Accuracy"
+
+# Simulate route movement
+- setLocation:
+    latitude: 46.2044
+    longitude: 6.1432
+- assertVisible: "Location Updated"
+
+# Move to pharmacy
+- setLocation:
+    latitude: 46.2050
+    longitude: 6.1440
+
+# Verify ETA updates
+- assertVisible: "ETA"
+- assertVisible: "Distance Remaining"
+
+# View map
+- tapOn: "View Map"
+- assertVisible: "Delivery Map"
+- assertVisible: "Route"
+- tapOn: "Close Map"
+
+# Continue to pharmacy
+- setLocation:
+    latitude: 46.2044
+    longitude: 6.1432
+
+# Pickup package
+- tapOn: "Scan QR Code"
+- tapOn: "Manual Entry"
+- inputText: "QR-STD-001"
+- tapOn: "Confirm"
+- tapOn: "Confirm Pickup"
+
+# Navigate to patient with tracking
+- assertVisible: "GPS Tracking Active"
+
+# Simulate movement
+- setLocation:
+    latitude: 46.2060
+    longitude: 6.1440
+
+- setLocation:
+    latitude: 46.2080
+    longitude: 6.1435
+
+- setLocation:
+    latitude: 46.2097
+    longitude: 6.1432
+
+# Arrive at destination
+- tapOn: "Arrived"
+
+# Complete delivery
+- tapOn: "Recipient Name"
+- inputText: "Jean Dupont"
+- tapOn: "Signature"
+- swipe:
+    start: "50%,50%"
+    end: "80%,60%"
+- tapOn: "Submit"
+
+# View completed delivery route
+- tapOn: "Back to Deliveries"
+- tapOn: "Completed"
+- tapOn:
+    id: "delivery-card-0"
+
+- tapOn: "View Delivery Route"
+- assertVisible: "Delivery Route Map"
+- assertVisible: "Pickup Location"
+- assertVisible: "Delivery Location"
+- assertVisible: "Total Distance Traveled"
+- assertVisible: "Total Travel Time"

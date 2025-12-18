@@ -1,0 +1,80 @@
+# Maestro E2E Test: Cold Chain Delivery
+# Run with: maestro test e2e/.maestro/02-cold-chain.yaml
+
+appId: com.metapharm.deliveryapp
+---
+
+# Test: Temperature-sensitive medication delivery
+- launchApp
+- clearState
+
+# Login
+- tapOn: "Email"
+- inputText: "delivery@test.com"
+- tapOn: "Password"
+- inputText: "Test123!"
+- tapOn: "Sign In"
+
+# Select cold chain delivery
+- assertVisible: "Deliveries"
+- tapOn:
+    text: "Cold Chain"
+
+# Verify cold chain indicators
+- assertVisible: "Temperature Sensitive"
+- assertVisible: "Keep refrigerated: 2-8°C"
+
+# Accept delivery
+- tapOn: "Accept Delivery"
+
+# Navigate to pharmacy
+- tapOn: "Navigate"
+- setLocation:
+    latitude: 46.2044
+    longitude: 6.1432
+
+# Pickup with temperature check
+- tapOn: "Scan QR Code"
+- tapOn: "Manual Entry"
+- inputText: "QR-CC-001"
+- tapOn: "Confirm"
+
+# Verify temperature display
+- assertVisible: "4.5°C"
+- assertVisible: "Within Range"
+
+# View temperature log
+- tapOn: "View Temperature Log"
+- assertVisible: "Temperature Readings"
+- assertVisible: "4.5°C - Within Range"
+- tapOn: "Close"
+
+# Confirm pickup
+- tapOn: "Confirm Pickup"
+
+# Navigate to patient
+- assertVisible: "In Transit"
+- assertVisible: "Temperature Monitor Active"
+
+# Simulate route with temperature monitoring
+- setLocation:
+    latitude: 46.2097
+    longitude: 6.1432
+
+# Arrive and deliver
+- tapOn: "Arrived"
+- assertVisible: "Temperature Log Summary"
+- assertVisible: "All readings within range"
+
+# Submit proof with temperature compliance
+- tapOn: "Recipient Name"
+- inputText: "Marie Martin"
+- tapOn: "Signature"
+- swipe:
+    start: "50%,50%"
+    end: "80%,60%"
+- tapOn: "Submit"
+
+# Verify completion with temperature compliance
+- assertVisible: "Cold Chain Delivery Completed"
+- assertVisible: "Temperature maintained throughout delivery"
