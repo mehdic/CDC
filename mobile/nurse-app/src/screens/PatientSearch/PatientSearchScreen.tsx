@@ -1,98 +1,55 @@
 /**
- * Patient Search Screen - Search patients by name, ID, room number
+ * Patient Search Screen
+ * Search for patients by name, ID, or room number
  */
 
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { searchPatients, selectPatient } from '../../store/slices/patientSlice';
-import { AppDispatch, RootState } from '../../store';
-import { Patient } from '../../types';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-const PatientSearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const [query, setQuery] = useState('');
-  const dispatch = useDispatch<AppDispatch>();
-  const { patients, loading } = useSelector((state: RootState) => state.patients);
+import { useAppSelector, useAppDispatch } from '../../hooks/useRedux';
+import { setSelectedPatient } from '../../store/patientSlice';
 
-  const handleSearch = () => {
-    if (query.trim().length >= 2) {
-      dispatch(searchPatients(query));
-    }
+const PatientSearchScreen: React.FC = () => {
+  const navigation = useNavigation();
+  const dispatch = useAppDispatch();
+  const { searchResults } = useAppSelector((state) => state.patient);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handlePatientSelect = (patient: any) => {
+    dispatch(setSelectedPatient(patient));
+    navigation.navigate('PatientDetail' as never);
   };
-
-  const handleSelectPatient = (patient: Patient) => {
-    dispatch(selectPatient(patient));
-    navigation.navigate('PatientMedications', { patientId: patient.id });
-  };
-
-  const renderPatient = ({ item }: { item: Patient }) => (
-    <TouchableOpacity
-      style={styles.patientCard}
-      onPress={() => handleSelectPatient(item)}
-    >
-      <View style={styles.patientInfo}>
-        <Text style={styles.patientName}>
-          {item.firstName} {item.lastName}
-        </Text>
-        <Text style={styles.patientMrn}>MRN: {item.mrn}</Text>
-        {item.roomNumber && (
-          <Text style={styles.patientRoom}>Room: {item.roomNumber}</Text>
-        )}
-      </View>
-      {item.status === 'active' && (
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>Active</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchBar}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by name, MRN, or room number..."
-          value={query}
-          onChangeText={setQuery}
-          onSubmitEditing={handleSearch}
-          autoCapitalize="none"
-        />
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={handleSearch}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFF" size="small" />
-          ) : (
-            <Text style={styles.searchButtonText}>Search</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <Text style={styles.title}>Patient Search</Text>
+      
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search by name, ID, or room number"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
 
-      {patients.length > 0 ? (
-        <FlatList
-          data={patients}
-          renderItem={renderPatient}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-        />
-      ) : (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>
-            {query ? 'No patients found' : 'Search for a patient to view their medications'}
-          </Text>
-        </View>
-      )}
+      <FlatList
+        data={searchResults}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.patientItem}
+            onPress={() => handlePatientSelect(item)}
+          >
+            <Text style={styles.patientName}>
+              {item.firstName} {item.lastName}
+            </Text>
+            <Text style={styles.patientInfo}>ID: {item.id}</Text>
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No patients found</Text>
+        }
+      />
     </View>
   );
 };
@@ -100,91 +57,38 @@ const PatientSearchScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    padding: 20,
+    backgroundColor: '#fff',
   },
-  searchBar: {
-    flexDirection: 'row',
-    padding: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E1E8ED',
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
   searchInput: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
     padding: 12,
-    marginRight: 12,
-    fontSize: 16,
-  },
-  searchButton: {
-    backgroundColor: '#3498DB',
     borderRadius: 8,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-    minWidth: 80,
+    marginBottom: 15,
   },
-  searchButtonText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  list: {
-    padding: 16,
-  },
-  patientCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  patientInfo: {
-    flex: 1,
+  patientItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   patientName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#2C3E50',
     marginBottom: 4,
   },
-  patientMrn: {
+  patientInfo: {
     fontSize: 14,
-    color: '#7F8C8D',
-    marginBottom: 2,
-  },
-  patientRoom: {
-    fontSize: 14,
-    color: '#95A5A6',
-  },
-  statusBadge: {
-    backgroundColor: '#27AE60',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
+    color: '#666',
   },
   emptyText: {
-    fontSize: 16,
-    color: '#95A5A6',
     textAlign: 'center',
+    marginTop: 40,
+    color: '#999',
   },
 });
 

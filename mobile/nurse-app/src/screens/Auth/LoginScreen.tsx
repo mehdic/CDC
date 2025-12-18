@@ -1,198 +1,125 @@
 /**
- * Login Screen - HIN e-ID Authentication for Nurses
+ * Login Screen
+ * Healthcare credential authentication for nurses
  */
 
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-} from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { login } from '../../store/slices/authSlice';
-import { AppDispatch, RootState } from '../../store';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 
-const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const [hinId, setHinId] = useState('');
+import { useAppDispatch } from '../../hooks/useRedux';
+import { loginAsync } from '../../store/authSlice';
+
+const LoginScreen: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const dispatch = useDispatch<AppDispatch>();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!hinId || !password) {
-      Alert.alert('Error', 'Please enter your HIN ID and password');
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
+    setIsLoading(true);
     try {
-      const result = await dispatch(login({ hinId, password })).unwrap();
-      if (result.mfaRequired) {
-        navigation.navigate('MfaVerification');
-      }
-    } catch (err: any) {
-      Alert.alert('Login Failed', err || 'Please check your credentials');
+      await dispatch(loginAsync({ email, password })).unwrap();
+    } catch (error: any) {
+      Alert.alert('Login Failed', error || 'Invalid credentials');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.content}>
-        <Text style={styles.title}>MetaPharm Nurse</Text>
-        <Text style={styles.subtitle}>Secure Healthcare Access</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>MetaPharm Nurse</Text>
+      <Text style={styles.subtitle}>Healthcare Credential Login</Text>
 
-        <View style={styles.form}>
-          <Text style={styles.label}>HIN e-ID</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your HIN ID"
-            value={hinId}
-            onChangeText={setHinId}
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!loading}
-          />
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        editable={!isLoading}
+      />
 
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            editable={!loading}
-          />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        editable={!isLoading}
+      />
 
-          {error && <Text style={styles.error}>{error}</Text>}
+      <TouchableOpacity
+        style={[styles.button, isLoading && styles.buttonDisabled]}
+        onPress={handleLogin}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Login</Text>
+        )}
+      </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text style={styles.buttonText}>Login</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => Alert.alert('Info', 'Contact your administrator for password reset')}
-          >
-            <Text style={styles.linkText}>Forgot Password?</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Secured by HIN e-ID</Text>
-          <Text style={styles.footerSubtext}>Swiss Healthcare Information Network</Text>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+      <Text style={styles.hinNote}>HIN e-ID integration ready (placeholder)</Text>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
-  },
-  content: {
-    flex: 1,
-    padding: 24,
     justifyContent: 'center',
+    padding: 20,
+    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#2C3E50',
     textAlign: 'center',
     marginBottom: 8,
+    color: '#333',
   },
   subtitle: {
     fontSize: 16,
-    color: '#7F8C8D',
     textAlign: 'center',
     marginBottom: 40,
-  },
-  form: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2C3E50',
-    marginBottom: 8,
-    marginTop: 16,
+    color: '#666',
   },
   input: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#fff',
+    padding: 15,
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#E1E8ED',
-  },
-  error: {
-    color: '#E74C3C',
-    fontSize: 14,
-    marginTop: 12,
-    textAlign: 'center',
+    borderColor: '#ddd',
   },
   button: {
-    backgroundColor: '#3498DB',
+    backgroundColor: '#007AFF',
+    padding: 15,
     borderRadius: 8,
-    padding: 16,
-    marginTop: 24,
     alignItems: 'center',
+    marginTop: 10,
   },
   buttonDisabled: {
-    backgroundColor: '#95A5A6',
+    backgroundColor: '#ccc',
   },
   buttonText: {
-    color: '#FFF',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
-  linkButton: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#3498DB',
-    fontSize: 14,
-  },
-  footer: {
-    marginTop: 40,
-    alignItems: 'center',
-  },
-  footerText: {
+  hinNote: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: '#999',
     fontSize: 12,
-    color: '#95A5A6',
-    fontWeight: '600',
-  },
-  footerSubtext: {
-    fontSize: 10,
-    color: '#BDC3C7',
-    marginTop: 4,
   },
 });
 

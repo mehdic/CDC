@@ -1,127 +1,112 @@
 /**
- * App Navigator - Main navigation structure for Nurse App
+ * App Navigator
+ * Manages navigation between auth and main app screens
  */
 
-import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
-import { PatientsStackParamList } from './types';
+import React from 'react';
+
+import { useAppSelector } from '../hooks/useRedux';
 
 // Auth Screens
 import LoginScreen from '../screens/Auth/LoginScreen';
-import MfaVerificationScreen from '../screens/Auth/MfaVerificationScreen';
 
-// Patient Screens
+// Main Screens
 import PatientSearchScreen from '../screens/PatientSearch/PatientSearchScreen';
-import PatientMedicationsScreen from '../screens/PatientMedications/PatientMedicationsScreen';
-
-// Medication Screens
+import PatientDetailScreen from '../screens/PatientDetail/PatientDetailScreen';
 import MedicationOrderScreen from '../screens/MedicationOrder/MedicationOrderScreen';
-import AdministrationRecordingScreen from '../screens/Administration/AdministrationRecordingScreen';
-import BarcodeScannerScreen from '../screens/BarcodeScanner/BarcodeScannerScreen';
-
-// Records & Safety Screens
-import PatientRecordsScreen from '../screens/PatientRecords/PatientRecordsScreen';
-import AdverseReactionsScreen from '../screens/Reactions/AdverseReactionsScreen';
-
-// Delivery & Communication Screens
+import PharmacyRecordsScreen from '../screens/PharmacyRecords/PharmacyRecordsScreen';
 import DeliveryTrackingScreen from '../screens/DeliveryTracking/DeliveryTrackingScreen';
-import MessagingScreen from '../screens/Messaging/MessagingScreen';
-import ShiftHandoverScreen from '../screens/Handover/ShiftHandoverScreen';
+import AdministrationLogScreen from '../screens/AdministrationLog/AdministrationLogScreen';
+import ShiftHandoverScreen from '../screens/ShiftHandover/ShiftHandoverScreen';
 
-// Profile Screen
-import ProfileScreen from '../screens/Profile/ProfileScreen';
-
-const Stack = createStackNavigator<PatientsStackParamList>();
-const AuthNavigator = createStackNavigator();
+const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const AuthStack = () => (
-  <AuthNavigator.Navigator screenOptions={{ headerShown: false }}>
-    <AuthNavigator.Screen name="Login" component={LoginScreen} />
-    <AuthNavigator.Screen name="MfaVerification" component={MfaVerificationScreen} />
-  </AuthNavigator.Navigator>
-);
+/**
+ * Main Tab Navigator
+ */
+const MainTabs = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#007AFF',
+        tabBarInactiveTintColor: '#8E8E93',
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen
+        name="PatientSearch"
+        component={PatientSearchScreen}
+        options={{ tabBarLabel: 'Patients' }}
+      />
+      <Tab.Screen
+        name="MedicationOrder"
+        component={MedicationOrderScreen}
+        options={{ tabBarLabel: 'Orders' }}
+      />
+      <Tab.Screen
+        name="AdministrationLog"
+        component={AdministrationLogScreen}
+        options={{ tabBarLabel: 'Logs' }}
+      />
+      <Tab.Screen
+        name="ShiftHandover"
+        component={ShiftHandoverScreen}
+        options={{ tabBarLabel: 'Handover' }}
+      />
+    </Tab.Navigator>
+  );
+};
 
-const PatientsStack = () => (
-  <Stack.Navigator>
-    <Stack.Screen
-      name="PatientSearch"
-      component={PatientSearchScreen}
-      options={{ title: 'Patient Search' }}
-    />
-    <Stack.Screen
-      name="PatientMedications"
-      component={PatientMedicationsScreen}
-      options={{ title: 'Patient Medications' }}
-    />
-    <Stack.Screen
-      name="MedicationOrder"
-      component={MedicationOrderScreen}
-      options={{ title: 'Order Medication' }}
-    />
-    <Stack.Screen
-      name="Administration"
-      component={AdministrationRecordingScreen}
-      options={{ title: 'Record Administration' }}
-    />
-    <Stack.Screen
-      name="BarcodeScanner"
-      component={BarcodeScannerScreen}
-      options={{ title: 'Scan Barcode', headerShown: false }}
-    />
-    <Stack.Screen
-      name="PatientRecords"
-      component={PatientRecordsScreen}
-      options={{ title: 'Patient Records' }}
-    />
-    <Stack.Screen
-      name="Reactions"
-      component={AdverseReactionsScreen}
-      options={{ title: 'Report Reaction' }}
-    />
-  </Stack.Navigator>
-);
+/**
+ * Auth Stack Navigator
+ */
+const AuthStack = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+    </Stack.Navigator>
+  );
+};
 
-const MainTabs = () => (
-  <Tab.Navigator screenOptions={{ headerShown: false }}>
-    <Tab.Screen
-      name="PatientsTab"
-      component={PatientsStack}
-      options={{ title: 'Patients' }}
-    />
-    <Tab.Screen
-      name="DeliveryTab"
-      component={DeliveryTrackingScreen}
-      options={{ title: 'Deliveries' }}
-    />
-    <Tab.Screen
-      name="MessagesTab"
-      component={MessagingScreen}
-      options={{ title: 'Messages' }}
-    />
-    <Tab.Screen
-      name="HandoverTab"
-      component={ShiftHandoverScreen}
-      options={{ title: 'Handover' }}
-    />
-    <Tab.Screen
-      name="ProfileTab"
-      component={ProfileScreen}
-      options={{ title: 'Profile' }}
-    />
-  </Tab.Navigator>
-);
+/**
+ * Main Stack Navigator
+ */
+const MainStack = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="PatientDetail"
+        component={PatientDetailScreen}
+        options={{ title: 'Patient Details' }}
+      />
+      <Stack.Screen
+        name="PharmacyRecords"
+        component={PharmacyRecordsScreen}
+        options={{ title: 'Pharmacy Records' }}
+      />
+      <Stack.Screen
+        name="DeliveryTracking"
+        component={DeliveryTrackingScreen}
+        options={{ title: 'Track Delivery' }}
+      />
+    </Stack.Navigator>
+  );
+};
 
+/**
+ * Root App Navigator
+ */
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   return (
     <NavigationContainer>
-      {isAuthenticated ? <MainTabs /> : <AuthStack />}
+      {isAuthenticated ? <MainStack /> : <AuthStack />}
     </NavigationContainer>
   );
 };

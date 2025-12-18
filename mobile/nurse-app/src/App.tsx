@@ -1,44 +1,36 @@
 /**
- * Nurse App - Main Entry Point
- * MetaPharm Connect - Nurse Mobile Application
- *
- * Features:
- * - HIN e-ID authentication with MFA
- * - Patient search and medication management
- * - Medication administration recording
- * - Barcode scanning for verification
- * - Delivery tracking
- * - Secure messaging with pharmacists
- * - Shift handover notes
- * - Adverse reaction reporting
+ * Nurse App Root Component
+ * Initializes Redux store and navigation
  */
 
 import React from 'react';
-import { StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StyleSheet } from 'react-native';
+
 import { store, persistor } from './store';
 import AppNavigator from './navigation/AppNavigator';
 
-/**
- * App Component
- * Root component of the Nurse App
- */
 const App: React.FC = () => {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <SafeAreaProvider>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+    <GestureHandlerRootView style={styles.container}>
+      <SafeAreaProvider>
+        <Provider store={store}>
+          <PersistGate loading={null} persistor={persistor}>
             <AppNavigator />
-          </SafeAreaProvider>
-        </PersistGate>
-      </Provider>
+          </PersistGate>
+        </Provider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
 
 export default App;

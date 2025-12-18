@@ -1,27 +1,22 @@
 module.exports = {
   preset: 'react-native',
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  setupFiles: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|@reduxjs/toolkit|@react-native-async-storage|immer|react-native-qrcode-scanner|react-native-camera|react-native-vector-icons|react-redux|redux-persist)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|@reduxjs/toolkit|redux-persist)/)',
   ],
-  testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/'],
-  // Temporarily disabled coverage collection due to babel-plugin-istanbul compatibility issues
-  // collectCoverageFrom: [
-  //   'src/**/*.{ts,tsx}',
-  //   '!src/**/*.d.ts',
-  //   '!src/**/*.test.{ts,tsx}',
-  //   '!src/**/__tests__/**',
-  // ],
-  // coverageThreshold: {
-  //   global: {
-  //     branches: 10,
-  //     functions: 15,
-  //     lines: 22,
-  //     statements: 21,
-  //   },
-  // },
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.test.{ts,tsx}',
+    '!src/**/__tests__/**',
+  ],
   moduleNameMapper: {
-    '^@metapharm/shared$': '<rootDir>/__mocks__/@metapharm/shared.ts',
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@shared/(.*)$': '<rootDir>/../shared/$1',
+  },
+  testEnvironment: 'node',
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
 };

@@ -9,23 +9,16 @@
     "isolatedModules": true,
     "strict": true,
     "moduleResolution": "node",
+    "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@screens/*": ["src/screens/*"],
-      "@navigation/*": ["src/navigation/*"],
-      "@store/*": ["src/store/*"],
-      "@services/*": ["src/services/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "@utils/*": ["src/utils/*"],
-      "@types/*": ["src/types/*"]
+      "@shared/*": ["../shared/*"]
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "__tests__", "**/*.spec.ts", "**/*.test.ts"]
+  "exclude": ["node_modules", "__tests__", "**/*.test.ts", "**/*.test.tsx"]
 }
