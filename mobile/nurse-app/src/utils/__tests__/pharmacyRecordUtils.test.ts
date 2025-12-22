@@ -282,8 +282,36 @@ describe('pharmacyRecordUtils', () => {
 
   describe('getMedicationDispensingSummary', () => {
     it('should calculate correct summary', () => {
-      const result = getMedicationDispensingSummary(mockRecords);
-      expect(result.totalMedicationsDispensed).toBe(3);
+      // Create records with recent dates
+      const today = new Date();
+      const tenDaysAgo = new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000);
+      const recentRecords = [
+        {
+          ...mockRecords[0],
+          medicationHistory: [
+            {
+              medicationId: 'M1',
+              name: 'Lisinopril',
+              dispensedDate: tenDaysAgo.toISOString().split('T')[0],
+              quantity: 30,
+            },
+          ],
+        },
+        {
+          ...mockRecords[1],
+          medicationHistory: [
+            {
+              medicationId: 'M3',
+              name: 'Atorvastatin',
+              dispensedDate: tenDaysAgo.toISOString().split('T')[0],
+              quantity: 30,
+            },
+          ],
+        },
+      ];
+
+      const result = getMedicationDispensingSummary(recentRecords);
+      expect(result.totalMedicationsDispensed).toBe(2);
       expect(result.pharmacies).toBe(2);
       expect(result.recentMedications).toBeGreaterThan(0);
     });
