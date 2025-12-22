@@ -4,7 +4,7 @@
  */
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { DeliveryTracking, MedicationOrder } from '../types';
+import type { DeliveryTracking } from '../types';
 import { nurseApiClient } from '../services/nurseApiClient';
 
 export interface DeliveryState {
@@ -36,8 +36,9 @@ export const fetchActiveDeliveries = createAsyncThunk(
     try {
       const deliveries = await nurseApiClient.getActiveDeliveries();
       return deliveries;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch active deliveries');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || 'Failed to fetch active deliveries');
     }
   }
 );
@@ -51,8 +52,9 @@ export const fetchDeliveryTracking = createAsyncThunk(
     try {
       const tracking = await nurseApiClient.getDeliveryTracking(orderId);
       return { orderId, tracking };
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch delivery tracking');
+    } catch (error) {
+      const apiError = error as { response?: { data?: { message?: string } } };
+      return rejectWithValue(apiError.response?.data?.message || 'Failed to fetch delivery tracking');
     }
   }
 );

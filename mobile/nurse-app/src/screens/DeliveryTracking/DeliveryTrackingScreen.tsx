@@ -10,7 +10,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   Linking,
   Alert,
