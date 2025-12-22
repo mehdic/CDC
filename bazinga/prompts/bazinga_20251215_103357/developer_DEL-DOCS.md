@@ -264,137 +264,6 @@ React Native specialist building cross-platform mobile apps. Expert in New Archi
 
 
 
-> This guidance is supplementary. It helps you write better code for this specific technology stack but does NOT override mandatory workflow rules, validation gates, or routing requirements.
-
-# Testing Patterns Engineering Expertise
-
-## Specialist Profile
-Testing specialist implementing comprehensive test strategies. Expert in unit, integration, and E2E testing patterns.
-
----
-
-## Patterns to Follow
-
-### Unit Testing
-- **Arrange-Act-Assert (AAA)**: Clear test structure
-- **Test behavior, not implementation**: Public API focus
-- **One assertion per test (ideally)**: Clear failure reason
-- **Fast execution**: Mock external dependencies
-- **Descriptive names**: `should_return_error_when_email_invalid`
-
-### Integration Testing
-- **Real database (containerized)**: Docker, Testcontainers
-- **API contract testing**: HTTP layer
-- **Transaction rollback**: Clean state per test
-- **Minimal mocking**: Only external services
-- **Realistic scenarios**: Happy path + error paths
-- **Reusable containers**: Singleton pattern for fast tests
-- **Module system**: Compose-based multi-container setups
-
-### Test-Driven Development (TDD)
-- **Red-Green-Refactor**: Write failing test first
-- **Outer/Inner loop**: Acceptance test → unit tests
-- **Small increments**: One test at a time
-- **Refactor with confidence**: Tests are safety net
-
-### Test Data
-- **Factory pattern**: `buildUser({ email: 'test@example.com' })`
-- **Faker for realistic data**: Random but valid
-- **Fixtures for complex scenarios**: Reusable setups
-- **Database seeding**: Consistent baseline
-
-### Mocking Strategy
-- **Mock at boundaries**: External services, time, randomness
-- **Don't mock what you own**: Test real interactions
-- **Verify mock calls**: Ensure correct usage
-- **Reset between tests**: Clean state
-
----
-
-## Patterns to Avoid
-
-### Unit Test Anti-Patterns
-- ❌ **Testing private methods**: Test public behavior
-- ❌ **Shared mutable state**: Isolation required
-- ❌ **Over-mocking**: Loses confidence
-- ❌ **Brittle assertions**: Test essence, not details
-- ❌ **Slow tests**: Should run in milliseconds
-
-### Integration Anti-Patterns
-- ❌ **Mocking everything**: Defeats purpose
-- ❌ **Shared database state**: Tests affect each other
-- ❌ **No cleanup**: Data accumulates
-- ❌ **Flaky async handling**: Use proper waiting
-
-### General Anti-Patterns
-- ❌ **Chasing 100% coverage**: Coverage ≠ quality
-- ❌ **No mutation testing**: Tests may be weak
-- ❌ **Ignoring flaky tests**: Technical debt
-- ❌ **Comments in tests**: Test names should be clear
-
-### Structure Anti-Patterns
-- ❌ **Logic in tests**: Keep tests simple
-- ❌ **Multiple assertions (unrelated)**: Split tests
-- ❌ **Copy-paste test code**: Use factories/helpers
-- ❌ **Tests without assertions**: False confidence
-
----
-
-## Verification Checklist
-
-### Unit Tests
-- [ ] AAA pattern followed
-- [ ] Tests are isolated
-- [ ] Fast execution (<100ms each)
-- [ ] Meaningful names
-
-### Integration Tests
-- [ ] Real database used
-- [ ] Proper cleanup/rollback
-- [ ] Contract verification
-- [ ] Timeout handling
-
-### Coverage
-- [ ] Critical paths covered
-- [ ] Edge cases included
-- [ ] Error handling tested
-- [ ] Mutation testing considered
-
-### Maintenance
-- [ ] Factory patterns for data
-- [ ] Helper functions for common assertions
-- [ ] Clear folder structure
-- [ ] CI integration
-
----
-
-## Code Patterns (Reference)
-
-### Unit Test (Jest)
-- **Structure**: `describe('UserService', () => { describe('create', () => { it('should...', () => {}); }); });`
-- **Mock**: `const mockRepo = { create: jest.fn().mockResolvedValue(user) };`
-- **Assert**: `expect(result).toMatchObject({ email: 'test@example.com' });`
-- **Sharding**: `--shard=1/3` for parallel CI
-- **Fake timers**: `jest.useFakeTimers({ advanceTimers: true })`
-- **ESM support**: Native ES modules without transform
-- **Browser mode**: Real browser testing
-- **Type checking**: `--typecheck` flag
-- **Benchmark API**: `bench()` for performance tests
-- **Workspace support**: Monorepo configurations
-
-### Integration Test
-- **Setup**: `beforeAll(async () => { db = await createTestDatabase(); });`
-- **Request**: `const response = await request(app).post('/users').send(userData).expect(201);`
-- **Cleanup**: `afterEach(async () => { await db.truncate(['users']); });`
-
-### Factory Pattern
-- **Builder**: `function buildUser(overrides = {}) { return { id: faker.string.uuid(), email: faker.internet.email(), ...overrides }; }`
-
-### Helper
-- **Custom assertion**: `function expectValidationError(response, field) { expect(response.status).toBe(400); expect(response.body.details).toHaveProperty(field); }`
-
-
-
 ---
 name: developer
 description: Implementation specialist that writes code, runs tests, and delivers working features
@@ -1788,57 +1657,51 @@ Let's build something great! 🚀
 ## Current Task Assignment
 
 **SESSION:** bazinga_20251215_103357
-**GROUP:** DEL-OFFLINE
+**GROUP:** DEL-DOCS
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** T8-026: Implement Offline Mode and Sync Queue
+**TASK:** T8-068: Create Delivery App User Documentation
 
 **REQUIREMENTS:**
-TASK: Implement Offline Mode and Sync Queue for delivery-app
+TASK: Create user documentation for Delivery App
 
-REQUIREMENTS:
-1. Offline detection
-   - Network state monitoring
-   - Visual indicator when offline
-   - Graceful degradation of features
+DOCUMENTATION TO CREATE:
+1. Getting Started Guide
+   - App installation
+   - Login and authentication
+   - First delivery walkthrough
 
-2. Local data persistence
-   - Cache delivery assignments
-   - Store proof of delivery data locally
-   - Queue status updates for sync
+2. Feature Guides
+   - Delivery list and filtering
+   - GPS navigation and tracking
+   - QR code scanning for package verification
+   - Proof of delivery capture (signature, photo)
+   - Special handling alerts (cold chain, controlled substances)
+   - Earnings dashboard
+   - Offline mode operation
 
-3. Sync queue management
-   - Queue all write operations when offline
-   - Priority-based sync (POD first, status updates second)
-   - Retry logic with exponential backoff
-   - Conflict resolution strategy
+3. Troubleshooting
+   - Common issues and solutions
+   - GPS not working
+   - Camera permissions
+   - Sync failures
 
-4. Sync indicators
-   - Show pending sync count
-   - Visual feedback during sync
-   - Error handling and user notification
+4. FAQ
+   - Common questions about deliveries
+   - Payment and earnings questions
+   - App usage questions
 
-5. Data integrity
-   - Prevent duplicate submissions
-   - Validate data before sync
-   - Handle partial sync failures
+FORMAT: Markdown files in docs/delivery-app/
 
-FILES LOCATION:
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/services/
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/store/
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/hooks/
-
-CHECK EXISTING:
-- Review if offline mode already exists
-- Check for existing sync services
-- Look at networkMonitor service
+REFERENCE:
+- Review implemented features in mobile/delivery-app/
+- Check existing component documentation
 
 SUCCESS CRITERIA:
-- Offline detection working
-- Data cached locally when offline
-- Sync queue processing when back online
-- All tests passing
+- Complete user guide covering all features
+- Clear step-by-step instructions with screenshots placeholders
+- Troubleshooting section for common issues
 
 BRANCH: main
 

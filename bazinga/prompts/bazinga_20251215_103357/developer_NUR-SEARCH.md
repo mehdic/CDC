@@ -1788,56 +1788,49 @@ Let's build something great! 🚀
 ## Current Task Assignment
 
 **SESSION:** bazinga_20251215_103357
-**GROUP:** DEL-OFFLINE
+**GROUP:** NUR-SEARCH
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** T8-026: Implement Offline Mode and Sync Queue
+**TASK:** T8-028: Implement Patient Search and Selection
 
 **REQUIREMENTS:**
-TASK: Implement Offline Mode and Sync Queue for delivery-app
+TASK: Implement patient search and selection for Nurse App
 
 REQUIREMENTS:
-1. Offline detection
-   - Network state monitoring
-   - Visual indicator when offline
-   - Graceful degradation of features
+1. Search functionality
+   - Search by patient name
+   - Search by patient ID
+   - Search by date of birth
+   - Search by room/bed number
 
-2. Local data persistence
-   - Cache delivery assignments
-   - Store proof of delivery data locally
-   - Queue status updates for sync
+2. Search results display
+   - Patient name and photo placeholder
+   - Patient ID
+   - Room/bed assignment
+   - Active medications count
+   - Last visit date
 
-3. Sync queue management
-   - Queue all write operations when offline
-   - Priority-based sync (POD first, status updates second)
-   - Retry logic with exponential backoff
-   - Conflict resolution strategy
+3. Patient selection
+   - Tap to select patient
+   - Navigate to patient detail screen
+   - Recent patients list (quick access)
 
-4. Sync indicators
-   - Show pending sync count
-   - Visual feedback during sync
-   - Error handling and user notification
-
-5. Data integrity
-   - Prevent duplicate submissions
-   - Validate data before sync
-   - Handle partial sync failures
+4. Filters
+   - Filter by unit/ward
+   - Filter by medication status
+   - Sort options (name, room, recent)
 
 FILES LOCATION:
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/services/
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/store/
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/hooks/
-
-CHECK EXISTING:
-- Review if offline mode already exists
-- Check for existing sync services
-- Look at networkMonitor service
+- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/nurse-app/src/screens/PatientSearch/
+- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/nurse-app/src/store/patientSlice.ts
 
 SUCCESS CRITERIA:
-- Offline detection working
-- Data cached locally when offline
-- Sync queue processing when back online
+- Search by multiple criteria working
+- Results display with patient info
+- Patient selection navigates to detail
+- Recent patients list implemented
+- Unit tests for search functionality
 - All tests passing
 
 BRANCH: main

@@ -71,6 +71,13 @@ Example: `bazinga/prompts/bazinga_20251217_120000/params_developer_CALC.json`
 }
 ```
 
+**Additional fields for CRP (Compact Return Protocol):**
+```json
+{
+  "prior_handoff_file": "bazinga/artifacts/bazinga_20251217_120000/CALC/handoff_developer.json"
+}
+```
+
 **Additional fields for PM spawns:**
 ```json
 {
@@ -128,6 +135,34 @@ The script outputs JSON to stdout:
 2. Read prompt from `prompt_file` for the Task spawn
 3. Check `markers_ok` is `true`
 
+### Step 4: IMMEDIATELY Spawn Agent (CRITICAL - SAME TURN)
+
+**🔴 DO NOT STOP after receiving JSON. IMMEDIATELY call Task() to spawn the agent.**
+
+After verifying `success: true`, spawn the agent in the SAME assistant turn:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "{haiku|sonnet|opus}",
+  description: "{agent_type} working on {group_id}",
+  prompt: "FIRST: Read {prompt_file} which contains your complete instructions.
+THEN: Execute ALL instructions in that file.
+Do NOT proceed without reading the file first."
+)
+```
+
+**🚫 ANTI-PATTERN:**
+```
+❌ WRONG: "Prompt built successfully. JSON result: {...}" [STOPS - turn ends]
+   → Agent never spawns. Workflow hangs until user says "continue".
+
+✅ CORRECT: "Prompt built successfully." [IMMEDIATELY calls Task() with prompt_file]
+   → Agent spawns automatically. Workflow continues.
+```
+
+**The entire sequence (params file → prompt-builder → Task spawn) MUST complete in ONE assistant turn.**
+
 ## Params File Reference
 
 | Field | Required | Example | Description |
@@ -146,6 +181,13 @@ The script outputs JSON to stdout:
 | `tl_feedback` | No | `Needs refactoring` | For developer retry after TL review |
 | `pm_state` | No | `{...json...}` | PM state for resume spawns |
 | `resume_context` | No | `Resuming after...` | Context for PM resume |
+| `prior_handoff_file` | No | `bazinga/artifacts/.../handoff_developer.json` | CRP: Prior agent's handoff file (see behavior below) |
+
+**`prior_handoff_file` Behavior:**
+- If path is valid and file exists: Handoff section added with instruction to read file
+- If path is invalid (traversal attempt, wrong pattern): Warning logged, section omitted
+- If path is valid but file doesn't exist: Warning logged, section omitted (agent proceeds without prior context)
+- Path validation: Must start with `bazinga/artifacts/`, match `handoff_*.json` pattern, no path traversal (`../`)
 
 ## What the Script Does Internally
 

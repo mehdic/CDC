@@ -10,6 +10,8 @@ import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, 
 import authReducer from './authSlice';
 import patientReducer from './patientSlice';
 import medicationReducer from './medicationSlice';
+import deliveryReducer from './deliverySlice';
+import pharmacyRecordsReducer from './slices/pharmacyRecordsSlice';
 
 /**
  * Persist Configuration
@@ -18,7 +20,7 @@ const persistConfig = {
   key: 'root',
   version: 1,
   storage: AsyncStorage,
-  whitelist: ['auth', 'medication'], // Don't persist patient search results
+  whitelist: ['auth', 'medication', 'delivery', 'pharmacyRecords'], // Persist pharmacy records
 };
 
 /**
@@ -28,6 +30,8 @@ const rootReducer = combineReducers({
   auth: authReducer,
   patient: patientReducer,
   medication: medicationReducer,
+  delivery: deliveryReducer,
+  pharmacyRecords: pharmacyRecordsReducer,
 });
 
 /**

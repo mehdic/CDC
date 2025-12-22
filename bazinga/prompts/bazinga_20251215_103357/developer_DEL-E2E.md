@@ -137,261 +137,258 @@ TypeScript specialist building type-safe applications. Expert in advanced types,
 
 > This guidance is supplementary. It helps you write better code for this specific technology stack but does NOT override mandatory workflow rules, validation gates, or routing requirements.
 
-# React Native Engineering Expertise
+# Playwright/Cypress E2E Expertise
 
 ## Specialist Profile
-React Native specialist building cross-platform mobile apps. Expert in New Architecture, Expo, and performance optimization.
+E2E testing specialist building browser automation. Expert in page objects, visual testing, and test reliability.
 
 ---
 
 ## Patterns to Follow
 
-### New Architecture (RN 0.82+)
-- **Fabric Renderer**: Smoother animations, better native interop
-- **TurboModules**: Faster startup, efficient JS-native communication
-- **Hermes Engine**: Reduced memory, faster startup times
-- **Bridgeless mode**: Direct native calls without bridge overhead
+### Test Structure
+- **Page Object Model**: Encapsulate page interactions
+- **data-testid selectors**: Stable, decoupled from styling
+- **Descriptive test names**: `should create user with valid data`
+- **Arrange-Act-Assert**: Clear test phases
+- **Single responsibility**: One behavior per test
 
-### Component Patterns
-- **Functional components with hooks**: Prefer over class components
-- **React.memo for expensive components**: Prevent unnecessary re-renders
-- **Custom hooks for reusable logic**: `useUsers`, `useAuth`, `useForm`
-- **Feature-based folder structure**: Group by feature not file type
-- **Atomic design**: Atoms → Molecules → Organisms → Templates
+### Playwright Patterns (2025)
+- **Auto-waiting built-in**: No manual waits needed
+- **Parallel execution**: Native, fast
+- **Multiple browsers**: Chrome, Firefox, WebKit
+- **Trace Viewer**: Deep debugging on failure
+- **API mocking**: `page.route()` for isolation
+- **UI mode**: Interactive test runner with watch mode
+- **Component testing**: Native React/Vue/Svelte support
+- **Annotations API**: `test.step()`, `test.slow()`, `test.fixme()`
+- **Clock API**: Mock Date, setTimeout, setInterval
 
-### State Management
-- **React Query/TanStack Query**: Server state management
-- **Zustand or Jotai**: Simple client state
-- **Context for low-frequency updates**: Theme, locale
-- **Local state for UI-only**: Form inputs, toggles
+### Cypress Patterns
+- **cy.intercept()**: Network stubbing
+- **Auto-retry assertions**: Handles async naturally
+- **Time-travel debugging**: Inspect each step
+- **Component testing**: Native support
+- **Real-time reloading**: Fast feedback
+- **Test isolation default**: Each test starts fresh
+- **Improved component testing**: Better framework support
+- **Session API improvements**: Persistent auth across tests
+- **Legacy cy.route()**: Use cy.intercept() instead (deprecated)
 
-### List Optimization
-- **FlatList with keyExtractor**: Never use index as key
-- **removeClippedSubviews**: Unmount off-screen items
-- **maxToRenderPerBatch**: Control batch size (default 10)
-- **windowSize**: Render window (default 21)
-- **getItemLayout for fixed heights**: Skip measurement
+### Reliability Patterns
+- **API shortcuts for setup**: Seed data via API, not UI
+- **Isolated test data**: Each test creates its own
+- **Retry flaky tests**: `retries: 2` in config
+- **Visual regression**: Percy, Applitools, or built-in
+- **Cross-browser testing**: CI matrix
 
-### Navigation
-- **React Navigation v6+**: Type-safe with TypeScript
-- **Native Stack Navigator**: Native performance
-- **Deep linking configuration**: Universal links support
-- **Expo Router**: File-based routing for Expo projects
-
-### Expo Best Practices
-- **Expo SDK 53+**: New Architecture support
-- **EAS Build**: Cloud builds with native modules
-- **Expo Router**: Next.js-like file routing
-- **Config plugins**: Extend native configuration
+### CI/CD Integration
+- **Headless by default**: Faster in CI
+- **Artifacts on failure**: Screenshots, videos, traces
+- **Parallel sharding**: Split across workers
+- **Flaky test detection**: Track over time
 
 ---
 
 ## Patterns to Avoid
 
-### Performance Anti-Patterns
-- ❌ **Anonymous functions in renderItem**: Creates new function each render
-- ❌ **Inline styles everywhere**: Use StyleSheet for optimization
-- ❌ **Missing keyExtractor**: Causes list re-render issues
-- ❌ **Large images without resizing**: Memory bloat
-- ❌ **Synchronous storage operations**: Block JS thread
+### Selector Anti-Patterns
+- ❌ **CSS classes for selectors**: Fragile, change often
+- ❌ **XPath for simple elements**: Use semantic selectors
+- ❌ **Auto-generated IDs**: Unstable between builds
+- ❌ **Text-based only**: May change with i18n
 
-### Component Anti-Patterns
-- ❌ **Business logic in components**: Use hooks/services
-- ❌ **Prop drilling deeply**: Use context or state library
-- ❌ **Missing memo for expensive renders**: Profile with Flipper
-- ❌ **Using index as key in lists**: Breaks reconciliation
+### Test Anti-Patterns
+- ❌ **Hard-coded waits (sleep)**: Flaky, slow
+- ❌ **Testing via UI what's faster via API**: Slow, brittle
+- ❌ **Shared mutable state**: Tests affect each other
+- ❌ **Sequential dependencies**: Tests should be independent
+- ❌ **Giant test files**: Hard to maintain
 
-### Navigation Anti-Patterns
-- ❌ **Untyped navigation params**: Type with RootStackParamList
-- ❌ **Heavy computation during navigation**: Defer with InteractionManager
-- ❌ **Missing back handler on Android**: Handle hardware back button
-- ❌ **Nested navigators without care**: Complex state management
-
-### State Anti-Patterns
-- ❌ **Storing derived state**: Compute from source
-- ❌ **Global state for local concerns**: Keep UI state local
-- ❌ **Missing error boundaries**: App crashes on error
-- ❌ **Not handling loading states**: Poor UX
+### Maintenance Anti-Patterns
+- ❌ **Duplicated selectors**: Use page objects
+- ❌ **No retry strategy**: Flaky test fatigue
+- ❌ **Missing CI artifacts**: Can't debug failures
+- ❌ **Ignoring flaky tests**: Tech debt builds up
 
 ---
 
 ## Verification Checklist
 
-### Architecture
-- [ ] New Architecture enabled (SDK 53+)
-- [ ] Feature-based folder structure
-- [ ] TypeScript throughout
-- [ ] Custom hooks for shared logic
+### Structure
+- [ ] Page Object Pattern used
+- [ ] data-testid for key elements
+- [ ] Tests are independent
+- [ ] Single assertion focus
 
-### Performance
-- [ ] FlatList optimized (keyExtractor, getItemLayout)
-- [ ] React.memo on expensive components
-- [ ] Images optimized and cached
-- [ ] Hermes engine enabled
+### Reliability
+- [ ] No hard-coded waits
+- [ ] Network mocking where needed
+- [ ] Retry configuration
+- [ ] Test isolation (data, state)
 
-### Navigation
-- [ ] Type-safe navigation params
-- [ ] Deep linking configured
-- [ ] Android back handler
-- [ ] Screen options optimized
+### CI/CD
+- [ ] Headless mode configured
+- [ ] Artifacts on failure
+- [ ] Parallel execution
+- [ ] Cross-browser matrix
 
-### Testing
-- [ ] Jest for unit tests
-- [ ] React Native Testing Library for components
-- [ ] Detox for E2E (native) or Maestro
-- [ ] Test on both platforms
+### Reporting
+- [ ] HTML report generation
+- [ ] Video/screenshot on failure
+- [ ] Trace files (Playwright)
+- [ ] Coverage integration
 
 ---
 
 ## Code Patterns (Reference)
 
-### Components
-- **Screen**: `export function UserListScreen() { const { data, isLoading } = useUsers(); ... }`
-- **FlatList**: `<FlatList data={users} keyExtractor={u => u.id} renderItem={UserCard} getItemLayout={...} />`
-- **Memoized**: `export const UserCard = React.memo(({ user }: Props) => ...)`
+### Playwright
+- **Page Object**: `class UsersPage { constructor(page: Page) { this.usersList = page.getByTestId('users-list'); } }`
+- **Test**: `test('should display users', async ({ page }) => { await expect(page.getByTestId('user-card')).toHaveCount(3); });`
+- **API mock**: `await page.route('/api/users', route => route.fulfill({ json: users }));`
+- **Wait for network**: `await page.waitForResponse('/api/users');`
 
-### Hooks
-- **Query hook**: `export function useUsers() { return useQuery({ queryKey: ['users'], queryFn: api.getUsers }); }`
-- **Mutation hook**: `export function useCreateUser() { return useMutation({ mutationFn: api.createUser, onSuccess: ... }); }`
+### Cypress
+- **Intercept**: `cy.intercept('GET', '/api/users').as('getUsers'); cy.wait('@getUsers');`
+- **Custom command**: `Cypress.Commands.add('login', (email) => { cy.request('POST', '/api/login', { email }); });`
+- **Assertion**: `cy.getByTestId('user-card').should('have.length.greaterThan', 0);`
 
-### Navigation
-- **Type-safe params**: `export type RootStackParamList = { Home: undefined; User: { id: string } };`
-- **Navigator**: `const Stack = createNativeStackNavigator<RootStackParamList>();`
-
-### Platform-Specific
-- **Platform.select**: `Platform.select({ ios: styles.iosShadow, android: styles.elevation })`
-- **File extension**: `Button.ios.tsx`, `Button.android.tsx`
+### Both
+- **data-testid**: `<button data-testid="submit-btn">Submit</button>`
+- **Page Object method**: `async fillForm(data) { await this.emailInput.fill(data.email); }`
 
 
 
 > This guidance is supplementary. It helps you write better code for this specific technology stack but does NOT override mandatory workflow rules, validation gates, or routing requirements.
 
-# Testing Patterns Engineering Expertise
+# QA Strategies & Test Planning Expertise
 
 ## Specialist Profile
-Testing specialist implementing comprehensive test strategies. Expert in unit, integration, and E2E testing patterns.
+QA specialist designing comprehensive test strategies. Expert in test planning, risk-based testing, and quality metrics.
 
 ---
 
 ## Patterns to Follow
 
-### Unit Testing
-- **Arrange-Act-Assert (AAA)**: Clear test structure
-- **Test behavior, not implementation**: Public API focus
-- **One assertion per test (ideally)**: Clear failure reason
-- **Fast execution**: Mock external dependencies
-- **Descriptive names**: `should_return_error_when_email_invalid`
+### Test Planning
+- **Risk-based prioritization**: High impact first
+- **Entry/exit criteria**: Clear gates
+- **Test levels defined**: Unit → Integration → E2E
+- **Coverage targets**: Realistic, not 100%
+- **Traceability matrix**: Requirements → tests
 
-### Integration Testing
-- **Real database (containerized)**: Docker, Testcontainers
-- **API contract testing**: HTTP layer
-- **Transaction rollback**: Clean state per test
-- **Minimal mocking**: Only external services
-- **Realistic scenarios**: Happy path + error paths
-- **Reusable containers**: Singleton pattern for fast tests
-- **Module system**: Compose-based multi-container setups
+### Test Design Techniques
+- **Boundary Value Analysis**: Min, max, and edges
+- **Equivalence Partitioning**: Group similar inputs
+- **Decision Tables**: Complex logic coverage
+- **State Transition**: Workflow testing
+- **Pairwise Testing**: Combinatorial efficiency
 
-### Test-Driven Development (TDD)
-- **Red-Green-Refactor**: Write failing test first
-- **Outer/Inner loop**: Acceptance test → unit tests
-- **Small increments**: One test at a time
-- **Refactor with confidence**: Tests are safety net
+### Quality Metrics
+- **Defect density**: Defects per KLOC
+- **Test coverage**: Lines, branches, paths
+- **Escaped defects**: Bugs found in production
+- **Mean time to detect (MTTD)**: How fast bugs found
+- **Defect removal efficiency**: Testing vs. production
 
-### Test Data
-- **Factory pattern**: `buildUser({ email: 'test@example.com' })`
-- **Faker for realistic data**: Random but valid
-- **Fixtures for complex scenarios**: Reusable setups
-- **Database seeding**: Consistent baseline
+### Test Pyramid
+- **Unit tests (70%)**: Fast, many, isolated
+- **Integration tests (20%)**: API, database contracts
+- **E2E tests (10%)**: Critical user journeys
+- **Shift left**: More testing earlier
 
-### Mocking Strategy
-- **Mock at boundaries**: External services, time, randomness
-- **Don't mock what you own**: Test real interactions
-- **Verify mock calls**: Ensure correct usage
-- **Reset between tests**: Clean state
+### Defect Management
+- **Severity levels**: Critical, High, Medium, Low
+- **SLAs per severity**: Time to fix
+- **Root cause analysis**: Prevent recurrence
+- **Regression suite**: Prevent regressions
 
 ---
 
 ## Patterns to Avoid
 
-### Unit Test Anti-Patterns
-- ❌ **Testing private methods**: Test public behavior
-- ❌ **Shared mutable state**: Isolation required
-- ❌ **Over-mocking**: Loses confidence
-- ❌ **Brittle assertions**: Test essence, not details
-- ❌ **Slow tests**: Should run in milliseconds
+### Planning Anti-Patterns
+- ❌ **No test plan**: Ad-hoc testing
+- ❌ **Testing everything equally**: Waste of resources
+- ❌ **Skipping risk assessment**: Surprises in prod
+- ❌ **No exit criteria**: Never-ending testing
 
-### Integration Anti-Patterns
-- ❌ **Mocking everything**: Defeats purpose
-- ❌ **Shared database state**: Tests affect each other
-- ❌ **No cleanup**: Data accumulates
-- ❌ **Flaky async handling**: Use proper waiting
+### Execution Anti-Patterns
+- ❌ **Manual-only regression**: Slow, error-prone
+- ❌ **No environment parity**: "Works on my machine"
+- ❌ **Skipping negative tests**: Only happy paths
+- ❌ **Ignoring non-functional**: Performance, security
 
-### General Anti-Patterns
-- ❌ **Chasing 100% coverage**: Coverage ≠ quality
-- ❌ **No mutation testing**: Tests may be weak
-- ❌ **Ignoring flaky tests**: Technical debt
-- ❌ **Comments in tests**: Test names should be clear
+### Metrics Anti-Patterns
+- ❌ **Test count as quality**: Quantity ≠ quality
+- ❌ **100% coverage goal**: False confidence
+- ❌ **Hiding defects**: Gaming metrics
+- ❌ **No tracking over time**: No trends
 
-### Structure Anti-Patterns
-- ❌ **Logic in tests**: Keep tests simple
-- ❌ **Multiple assertions (unrelated)**: Split tests
-- ❌ **Copy-paste test code**: Use factories/helpers
-- ❌ **Tests without assertions**: False confidence
+### Process Anti-Patterns
+- ❌ **QA at the end**: Shift left instead
+- ❌ **No automation strategy**: Manual bottleneck
+- ❌ **Siloed QA**: Should be team responsibility
+- ❌ **No exploratory testing**: Scripted misses edge cases
 
 ---
 
 ## Verification Checklist
 
-### Unit Tests
-- [ ] AAA pattern followed
-- [ ] Tests are isolated
-- [ ] Fast execution (<100ms each)
-- [ ] Meaningful names
+### Planning
+- [ ] Test plan documented
+- [ ] Risk assessment completed
+- [ ] Entry/exit criteria defined
+- [ ] Coverage targets set
 
-### Integration Tests
-- [ ] Real database used
-- [ ] Proper cleanup/rollback
-- [ ] Contract verification
-- [ ] Timeout handling
+### Design
+- [ ] Boundary values covered
+- [ ] Equivalence classes identified
+- [ ] Negative scenarios included
+- [ ] Non-functional requirements addressed
 
-### Coverage
-- [ ] Critical paths covered
-- [ ] Edge cases included
-- [ ] Error handling tested
-- [ ] Mutation testing considered
+### Execution
+- [ ] Automated regression suite
+- [ ] Environment parity ensured
+- [ ] Exploratory testing scheduled
+- [ ] Cross-browser/device testing
 
-### Maintenance
-- [ ] Factory patterns for data
-- [ ] Helper functions for common assertions
-- [ ] Clear folder structure
-- [ ] CI integration
+### Metrics
+- [ ] Defect metrics tracked
+- [ ] Coverage measured
+- [ ] Trends analyzed
+- [ ] Escaped defects monitored
 
 ---
 
 ## Code Patterns (Reference)
 
-### Unit Test (Jest)
-- **Structure**: `describe('UserService', () => { describe('create', () => { it('should...', () => {}); }); });`
-- **Mock**: `const mockRepo = { create: jest.fn().mockResolvedValue(user) };`
-- **Assert**: `expect(result).toMatchObject({ email: 'test@example.com' });`
-- **Sharding**: `--shard=1/3` for parallel CI
-- **Fake timers**: `jest.useFakeTimers({ advanceTimers: true })`
-- **ESM support**: Native ES modules without transform
-- **Browser mode**: Real browser testing
-- **Type checking**: `--typecheck` flag
-- **Benchmark API**: `bench()` for performance tests
-- **Workspace support**: Monorepo configurations
+### Test Plan Structure
+- **Scope**: In-scope features, out-of-scope items
+- **Approach**: Test levels, types, tools
+- **Criteria**: Entry (code complete), Exit (no P1/P2 open)
+- **Risks**: Probability, impact, mitigation
 
-### Integration Test
-- **Setup**: `beforeAll(async () => { db = await createTestDatabase(); });`
-- **Request**: `const response = await request(app).post('/users').send(userData).expect(201);`
-- **Cleanup**: `afterEach(async () => { await db.truncate(['users']); });`
+### Boundary Testing
+- **Pattern**: `@pytest.mark.parametrize("length,valid", [(1, False), (2, True), (100, True), (101, False)])`
+- **Parallel**: `pytest-xdist` with `--dist worksteal` for optimal load balancing
+- **Improved markers**: Better marker inheritance and collection
+- **Type hints**: Full type annotation support
 
-### Factory Pattern
-- **Builder**: `function buildUser(overrides = {}) { return { id: faker.string.uuid(), email: faker.internet.email(), ...overrides }; }`
+### Equivalence Partitioning
+- **Classes**: Valid standard, valid edge, invalid format, invalid empty
 
-### Helper
-- **Custom assertion**: `function expectValidationError(response, field) { expect(response.status).toBe(400); expect(response.body.details).toHaveProperty(field); }`
+### Test Case Format
+- **ID**: TC-FEAT-001
+- **Preconditions**: User logged in as admin
+- **Steps**: 1. Navigate, 2. Click, 3. Enter, 4. Submit
+- **Expected**: Success message, record created
+
+### Quality Dashboard
+- **Metrics**: Coverage %, defect density, MTTD, escaped defects
+- **Trends**: Week-over-week comparison
+- **Alerts**: Thresholds for action
 
 
 
@@ -1788,57 +1785,42 @@ Let's build something great! 🚀
 ## Current Task Assignment
 
 **SESSION:** bazinga_20251215_103357
-**GROUP:** DEL-OFFLINE
+**GROUP:** DEL-E2E
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** T8-026: Implement Offline Mode and Sync Queue
+**TASK:** T8-047: Implement Delivery Workflow E2E Tests
 
 **REQUIREMENTS:**
-TASK: Implement Offline Mode and Sync Queue for delivery-app
+TASK: Implement E2E tests for Delivery App workflows
 
-REQUIREMENTS:
-1. Offline detection
-   - Network state monitoring
-   - Visual indicator when offline
-   - Graceful degradation of features
+TEST SCENARIOS TO IMPLEMENT:
+1. Complete delivery workflow: Order created -> Assigned -> Picked up -> Delivered -> Confirmed
+2. Cold chain handling: Temperature-sensitive medication delivery
+3. Controlled substance workflow: ID verification, signature required
+4. Failed delivery scenario: Patient absent, return to pharmacy
+5. GPS tracking verification: Location updates during delivery
 
-2. Local data persistence
-   - Cache delivery assignments
-   - Store proof of delivery data locally
-   - Queue status updates for sync
-
-3. Sync queue management
-   - Queue all write operations when offline
-   - Priority-based sync (POD first, status updates second)
-   - Retry logic with exponential backoff
-   - Conflict resolution strategy
-
-4. Sync indicators
-   - Show pending sync count
-   - Visual feedback during sync
-   - Error handling and user notification
-
-5. Data integrity
-   - Prevent duplicate submissions
-   - Validate data before sync
-   - Handle partial sync failures
+TECH STACK:
+- Use Detox or Maestro for React Native E2E testing
+- Mock backend APIs where needed
+- Mock GPS locations for tracking tests
 
 FILES LOCATION:
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/services/
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/store/
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/hooks/
+- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/e2e/
+- Test config in package.json or detox.config.js
 
 CHECK EXISTING:
-- Review if offline mode already exists
-- Check for existing sync services
-- Look at networkMonitor service
+- See if e2e/ directory exists
+- Check for existing E2E test setup
+- Review delivery-app test infrastructure
 
 SUCCESS CRITERIA:
-- Offline detection working
-- Data cached locally when offline
-- Sync queue processing when back online
-- All tests passing
+- 5 E2E test scenarios implemented
+- All scenarios passing
+- GPS tracking verified with mocked locations
+- QR scanning tested
+- Negative case: delivery to wrong address blocked
 
 BRANCH: main
 

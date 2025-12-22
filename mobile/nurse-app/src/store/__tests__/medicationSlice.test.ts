@@ -1,6 +1,6 @@
 /**
  * Medication Slice Tests
- * Unit tests for medication state management
+ * Unit tests for medication state management and order form
  */
 
 import medicationReducer, {
@@ -10,6 +10,13 @@ import medicationReducer, {
   setAdministrationHistory,
   addAdministrationLog,
   setLoadingOrders,
+  initializeOrderForm,
+  updateOrderFormMedications,
+  updateOrderFormUrgency,
+  updateOrderFormNotes,
+  setOrderFormErrors,
+  setSubmittingOrder,
+  clearOrderForm,
 } from '../medicationSlice';
 import { MedicationOrder, AdministrationLog } from '../../types/nurse';
 
@@ -18,6 +25,9 @@ describe('medicationSlice', () => {
     activeOrders: [],
     administrationHistory: [],
     isLoadingOrders: false,
+    currentOrderForm: null,
+    orderFormErrors: {},
+    isSubmittingOrder: false,
   };
 
   const mockOrder: MedicationOrder = {
@@ -120,5 +130,107 @@ describe('medicationSlice', () => {
   it('should handle setLoadingOrders', () => {
     const actual = medicationReducer(initialState, setLoadingOrders(true));
     expect(actual.isLoadingOrders).toBe(true);
+  });
+
+  describe('order form management', () => {
+    it('should initialize order form with patient ID', () => {
+      const actual = medicationReducer(initialState, initializeOrderForm('patient-001'));
+
+      expect(actual.currentOrderForm).not.toBeNull();
+      expect(actual.currentOrderForm?.patientId).toBe('patient-001');
+      expect(actual.currentOrderForm?.medications).toEqual([]);
+      expect(actual.currentOrderForm?.urgency).toBe('routine');
+      expect(actual.currentOrderForm?.notes).toBe('');
+      expect(actual.orderFormErrors).toEqual({});
+    });
+
+    it('should update medications in order form', () => {
+      let state = medicationReducer(initialState, initializeOrderForm('patient-001'));
+
+      const medications = [
+        { medicationId: 'med-001', name: 'Aspirin', quantity: 2, dosage: '500mg' },
+        { medicationId: 'med-002', name: 'Ibuprofen', quantity: 3, dosage: '400mg' },
+      ];
+
+      state = medicationReducer(state, updateOrderFormMedications(medications));
+
+      expect(state.currentOrderForm?.medications).toEqual(medications);
+      expect(state.currentOrderForm?.medications.length).toBe(2);
+    });
+
+    it('should update urgency level', () => {
+      let state = medicationReducer(initialState, initializeOrderForm('patient-001'));
+      state = medicationReducer(state, updateOrderFormUrgency('urgent'));
+
+      expect(state.currentOrderForm?.urgency).toBe('urgent');
+    });
+
+    it('should update notes', () => {
+      let state = medicationReducer(initialState, initializeOrderForm('patient-001'));
+      state = medicationReducer(state, updateOrderFormNotes('Test notes'));
+
+      expect(state.currentOrderForm?.notes).toBe('Test notes');
+    });
+
+    it('should set form errors', () => {
+      const errors = {
+        medications: 'At least one medication is required',
+      };
+
+      const actual = medicationReducer(initialState, setOrderFormErrors(errors));
+
+      expect(actual.orderFormErrors).toEqual(errors);
+    });
+
+    it('should set submitting state', () => {
+      const actual = medicationReducer(initialState, setSubmittingOrder(true));
+
+      expect(actual.isSubmittingOrder).toBe(true);
+    });
+
+    it('should clear order form', () => {
+      let state = medicationReducer(initialState, initializeOrderForm('patient-001'));
+      state = medicationReducer(
+        state,
+        updateOrderFormMedications([
+          { medicationId: 'med-001', name: 'Aspirin', quantity: 2, dosage: '500mg' },
+        ])
+      );
+      state = medicationReducer(state, setOrderFormErrors({ medications: 'Error' }));
+      state = medicationReducer(state, setSubmittingOrder(true));
+
+      state = medicationReducer(state, clearOrderForm());
+
+      expect(state.currentOrderForm).toBeNull();
+      expect(state.orderFormErrors).toEqual({});
+      expect(state.isSubmittingOrder).toBe(false);
+    });
+
+    it('should handle complete order form workflow', () => {
+      let state = medicationReducer(initialState, initializeOrderForm('patient-001'));
+
+      state = medicationReducer(
+        state,
+        updateOrderFormMedications([
+          { medicationId: 'med-001', name: 'Aspirin', quantity: 2, dosage: '500mg' },
+        ])
+      );
+
+      state = medicationReducer(state, updateOrderFormUrgency('urgent'));
+      state = medicationReducer(state, updateOrderFormNotes('Rush delivery'));
+
+      expect(state.currentOrderForm).toMatchObject({
+        patientId: 'patient-001',
+        medications: [
+          { medicationId: 'med-001', name: 'Aspirin', quantity: 2, dosage: '500mg' },
+        ],
+        urgency: 'urgent',
+        notes: 'Rush delivery',
+      });
+
+      state = medicationReducer(state, clearOrderForm());
+
+      expect(state.currentOrderForm).toBeNull();
+    });
   });
 });

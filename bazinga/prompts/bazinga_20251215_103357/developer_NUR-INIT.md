@@ -1788,56 +1788,52 @@ Let's build something great! 🚀
 ## Current Task Assignment
 
 **SESSION:** bazinga_20251215_103357
-**GROUP:** DEL-OFFLINE
+**GROUP:** NUR-INIT
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** T8-026: Implement Offline Mode and Sync Queue
+**TASK:** T8-027: Initialize Nurse App Structure
 
 **REQUIREMENTS:**
-TASK: Implement Offline Mode and Sync Queue for delivery-app
+TASK: Initialize React Native Nurse App structure
 
 REQUIREMENTS:
-1. Offline detection
-   - Network state monitoring
-   - Visual indicator when offline
-   - Graceful degradation of features
+1. Create app structure at mobile/nurse-app/
+   - Use React Native with TypeScript
+   - Configure React Navigation 6+
+   - Set up Redux Toolkit for state management
 
-2. Local data persistence
-   - Cache delivery assignments
-   - Store proof of delivery data locally
-   - Queue status updates for sync
+2. Configure authentication
+   - Healthcare credential authentication
+   - HIN e-ID integration ready (placeholder)
+   - Secure token storage
 
-3. Sync queue management
-   - Queue all write operations when offline
-   - Priority-based sync (POD first, status updates second)
-   - Retry logic with exponential backoff
-   - Conflict resolution strategy
+3. Scaffold screens:
+   - LoginScreen.tsx
+   - PatientSearchScreen.tsx
+   - PatientDetailScreen.tsx
+   - MedicationOrderScreen.tsx
+   - PharmacyRecordsScreen.tsx
+   - DeliveryTrackingScreen.tsx
+   - AdministrationLogScreen.tsx
+   - ShiftHandoverScreen.tsx
 
-4. Sync indicators
-   - Show pending sync count
-   - Visual feedback during sync
-   - Error handling and user notification
+4. API client setup
+   - Configure axios with interceptors
+   - Auth token injection
+   - Error handling
 
-5. Data integrity
-   - Prevent duplicate submissions
-   - Validate data before sync
-   - Handle partial sync failures
-
-FILES LOCATION:
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/services/
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/store/
-- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/src/hooks/
-
-CHECK EXISTING:
-- Review if offline mode already exists
-- Check for existing sync services
-- Look at networkMonitor service
+REFERENCE:
+- Use delivery-app structure as template
+- /Users/chaouachimehdi/IdeaProjects/CDC/mobile/delivery-app/
 
 SUCCESS CRITERIA:
-- Offline detection working
-- Data cached locally when offline
-- Sync queue processing when back online
+- Nurse app directory created with TypeScript
+- Navigation configured and working
+- Redux store set up
+- All screens scaffolded (can be placeholder implementations)
+- Basic auth flow working
+- Unit tests for core components
 - All tests passing
 
 BRANCH: main
