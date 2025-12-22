@@ -11,7 +11,10 @@ import authReducer from './authSlice';
 import patientReducer from './patientSlice';
 import medicationReducer from './medicationSlice';
 import deliveryReducer from './deliverySlice';
+import adrReducer from './adrSlice';
 import pharmacyRecordsReducer from './slices/pharmacyRecordsSlice';
+import handoverReducer from './handoverSlice';
+import administrationReducer from './administrationSlice';
 
 /**
  * Persist Configuration
@@ -20,7 +23,7 @@ const persistConfig = {
   key: 'root',
   version: 1,
   storage: AsyncStorage,
-  whitelist: ['auth', 'medication', 'delivery', 'pharmacyRecords'], // Persist pharmacy records
+  whitelist: ['auth', 'medication', 'delivery', 'pharmacyRecords', 'handover', 'adr', 'administration'],
 };
 
 /**
@@ -31,7 +34,10 @@ const rootReducer = combineReducers({
   patient: patientReducer,
   medication: medicationReducer,
   delivery: deliveryReducer,
+  adr: adrReducer,
   pharmacyRecords: pharmacyRecordsReducer,
+  handover: handoverReducer,
+  administration: administrationReducer,
 });
 
 /**
