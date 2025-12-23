@@ -3,7 +3,7 @@
  * Handles HIN e-ID OAuth 2.0 flow and credential verification
  *
  * Features:
- * - OAuth 2.0 Authorization Code Flow
+ * - OAuth 2.0 Authorization Code Flow with CSRF protection (state validation)
  * - GLN (Global Location Number) extraction and validation
  * - Healthcare professional credential verification
  * - User account linking and creation
@@ -73,6 +73,16 @@ export interface GLNVerification {
 }
 
 /**
+ * OAuth State Storage Entry
+ * Stores state parameter with TTL for CSRF protection
+ */
+interface StateStorageEntry {
+  state: string;
+  createdAt: number;
+  expiresAt: number;
+}
+
+/**
  * HIN Authentication Service
  */
 export class HINAuthService {
@@ -84,6 +94,8 @@ export class HINAuthService {
   private userInfoEndpoint: string;
   private userRepository: Repository<any>;
   private auditRepository: Repository<any>;
+  private stateStore: Map<string, StateStorageEntry> = new Map(); // In-memory state storage
+  private readonly STATE_EXPIRY_SECONDS = 600; // 10 minutes
 
   constructor(
     dataSource: DataSource,
@@ -112,6 +124,7 @@ export class HINAuthService {
   /**
    * Initiate HIN OAuth flow
    * Returns authorization URL to redirect user to HIN
+   * Stores state parameter in memory for CSRF validation in callback
    */
   public initiateHINAuth(): { url: string; state: string } {
     if (!this.clientId || !this.clientSecret) {
@@ -126,6 +139,16 @@ export class HINAuthService {
       })
     ).toString('base64');
 
+    // Store state with expiry time for validation on callback
+    const now = Date.now();
+    this.stateStore.set(state, {
+      state,
+      createdAt: now,
+      expiresAt: now + this.STATE_EXPIRY_SECONDS * 1000,
+    });
+
+    console.log('Generated authorization URL for HIN with state parameter');
+
     // Build authorization URL
     const authUrl = new URL(this.authorizationEndpoint);
     authUrl.searchParams.append('client_id', this.clientId);
@@ -134,8 +157,6 @@ export class HINAuthService {
     authUrl.searchParams.append('scope', 'openid profile gln');
     authUrl.searchParams.append('state', state);
 
-    console.log('Generated authorization URL for HIN');
-
     return {
       url: authUrl.toString(),
       state,
@@ -143,11 +164,41 @@ export class HINAuthService {
   }
 
   /**
+   * Validate state parameter for CSRF protection
+   * @throws Error if state is missing, invalid, or expired
+   */
+  public validateStateParameter(state: string | undefined): void {
+    if (!state) {
+      throw new Error('State parameter missing from callback - possible CSRF attack');
+    }
+
+    const storedState = this.stateStore.get(state);
+
+    if (!storedState) {
+      throw new Error('Invalid state parameter - state not found or tampered with');
+    }
+
+    const now = Date.now();
+    if (now > storedState.expiresAt) {
+      // Clean up expired state
+      this.stateStore.delete(state);
+      throw new Error('State parameter expired - request took too long to complete');
+    }
+
+    // State is valid - remove it from store (one-time use)
+    this.stateStore.delete(state);
+
+    console.log('State parameter validated successfully');
+  }
+
+  /**
    * Handle OAuth callback from HIN
    * Exchanges authorization code for token and retrieves user profile
+   * Validates state parameter for CSRF protection
    */
   public async handleCallback(
     authorizationCode: string,
+    state: string | undefined,
     ipAddress: string,
     userAgent: string
   ): Promise<{
@@ -160,6 +211,9 @@ export class HINAuthService {
     if (!authorizationCode) {
       throw new Error('Authorization code not received from HIN');
     }
+
+    // Step 0: Validate state parameter for CSRF protection
+    this.validateStateParameter(state);
 
     // Step 1: Exchange authorization code for access token
     const tokenResponse = await this.exchangeCodeForToken(authorizationCode);

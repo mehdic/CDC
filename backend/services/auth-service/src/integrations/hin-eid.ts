@@ -103,7 +103,16 @@ router.get('/callback', async (req: Request, res: Response) => {
       });
     }
 
-    console.log('Received authorization code from HIN');
+    // Validate state parameter (CSRF protection)
+    if (!state || typeof state !== 'string') {
+      console.error('State parameter missing or invalid from HIN callback');
+      return res.status(400).json({
+        success: false,
+        error: 'State parameter missing from callback - possible CSRF attack',
+      });
+    }
+
+    console.log('Received authorization code and state from HIN');
 
     // Get IP and User-Agent for audit logging
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
@@ -115,6 +124,7 @@ router.get('/callback', async (req: Request, res: Response) => {
 
     const result = await hinAuthService.handleCallback(
       code as string,
+      state as string,
       ipAddress,
       userAgent
     );
