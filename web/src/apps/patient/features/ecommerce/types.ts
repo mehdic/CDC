@@ -81,3 +81,73 @@ export interface CartItem {
 
 export type SortField = 'created_at' | 'name' | 'price' | 'rating';
 export type SortOrder = 'ASC' | 'DESC';
+
+/**
+ * Order History Types
+ * Task: T8-040 - Patient E-Commerce Order History
+ */
+
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+
+export interface DeliveryAddress {
+  street: string;
+  city: string;
+  postalCode: string;
+  country?: string;
+}
+
+export interface OrderItem {
+  id: string;
+  product_id: string;
+  product_name: string;
+  product_image_url: string | null;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  sku: string;
+}
+
+export interface Order {
+  id: string;
+  order_number: string;
+  patient_id: string;
+  status: OrderStatus;
+  items: OrderItem[];
+  subtotal: number;
+  tax: number;
+  shipping: number;
+  total: number;
+  delivery_address: DeliveryAddress;
+  delivery_date: string | null;
+  estimated_delivery: string | null;
+  tracking_number: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderListResponse {
+  data: Order[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export interface OrderFilters {
+  page?: number;
+  limit?: number;
+  status?: OrderStatus;
+  start_date?: string;
+  end_date?: string;
+  search?: string;
+  sort_by?: 'created_at' | 'total' | 'status';
+  sort_order?: 'ASC' | 'DESC';
+}
+
+export interface InvoiceDownloadResponse {
+  data: Blob;
+  filename: string;
+}

@@ -8,9 +8,9 @@ import { mockApiResponse } from '../utils/api-mock';
  * Tests order history page functionality including viewing past orders,
  * filtering, tracking, and reordering capabilities.
  *
- * SKIPPED: E-commerce frontend UI not implemented yet
+ * Task: T8-040 - Patient E-Commerce Order History
  */
-test.describe.skip('E2E-009: Order History Viewing', () => {
+test.describe('E2E-009: Order History Viewing', () => {
   const mockOrders = [
     {
       id: 'order_001',
