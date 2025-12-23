@@ -227,7 +227,7 @@ export class ESanteController {
         formatCode,
         contentType: req.body.contentType || 'application/pdf',
         data: documentData,
-        createdBy: req.user.hinId,
+        createdBy: req.user.hinId || 'unknown',
         createdByOrganization: req.body.createdByOrganization || 'Unknown Organization',
       };
 
