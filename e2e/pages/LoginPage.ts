@@ -84,11 +84,11 @@ export class LoginPage {
    */
   async isLoggedIn(): Promise<boolean> {
     return (
-      await Promise.race([
+      (await Promise.race([
         this.page.waitForSelector('[data-testid="user-menu"]', { timeout: 5000 }),
         this.page.waitForSelector('.user-profile', { timeout: 5000 }),
         Promise.reject(new Error('Not logged in')),
-      ]).catch(() => false)
+      ]).catch(() => false)) !== null
     );
   }
 

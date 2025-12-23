@@ -1,0 +1,242 @@
+/**
+ * ProductCard Styles
+ */
+
+.product-card {
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-card:hover:not(.product-card--out-of-stock) {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.product-card--out-of-stock {
+  opacity: 0.7;
+}
+
+.product-card__image-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.product-card__image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-card__image-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.product-card__image-placeholder-icon {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.product-card__image-placeholder-text {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.product-card__out-of-stock-badge,
+.product-card__discount-badge,
+.product-card__low-stock-badge,
+.product-card__featured-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.product-card__out-of-stock-badge {
+  background: #ef4444;
+  color: white;
+}
+
+.product-card__discount-badge {
+  background: #10b981;
+  color: white;
+}
+
+.product-card__low-stock-badge {
+  background: #f59e0b;
+  color: white;
+}
+
+.product-card__featured-badge {
+  background: #8b5cf6;
+  color: white;
+}
+
+.product-card__content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.75rem;
+}
+
+.product-card__category {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.product-card__name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-card__manufacturer {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.product-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.product-card__rating-stars {
+  font-size: 0.75rem;
+  letter-spacing: -2px;
+}
+
+.product-card__rating-value {
+  font-weight: 600;
+  color: #374151;
+}
+
+.product-card__rating-count {
+  color: #9ca3af;
+}
+
+.product-card__rating-no-reviews {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.product-card__pricing {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.product-card__price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.product-card__original-price {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.product-card__prescription-badge {
+  padding: 0.375rem 0.75rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.product-card__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.product-card__button {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.product-card__button--details {
+  background: white;
+  color: #3b82f6;
+  border: 1px solid #3b82f6;
+}
+
+.product-card__button--details:hover {
+  background: #eff6ff;
+}
+
+.product-card__button--add-to-cart {
+  background: #3b82f6;
+  color: white;
+}
+
+.product-card__button--add-to-cart:hover {
+  background: #2563eb;
+}
+
+@media (max-width: 480px) {
+  .product-card__name {
+    font-size: 0.95rem;
+  }
+
+  .product-card__pricing {
+    font-size: 1rem;
+  }
+
+  .product-card__price {
+    font-size: 1.125rem;
+  }
+}

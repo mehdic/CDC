@@ -10,6 +10,8 @@ import { EmailConfig } from '../channels/emailChannel';
 import { FaxConfig } from '../channels/faxChannel';
 import { ChannelConfig } from '../channels/ChannelInterface';
 import { RouterConfig } from '../services/routerService';
+import { EmailPollingConfig } from '../services/emailPollingService';
+import { TranscriptionConfig } from '../services/voiceTranscriptionService';
 
 dotenv.config();
 
@@ -137,4 +139,36 @@ export const config = {
       },
     },
   } as RouterConfig,
+
+  // Email polling config
+  emailPolling: {
+    enabled: process.env.EMAIL_POLLING_ENABLED === 'true',
+    accounts: [
+      {
+        accountId: process.env.EMAIL_ACCOUNT_ID || 'default',
+        email: process.env.EMAIL_INBOX || 'inbox@metapharm.ch',
+        host: process.env.IMAP_HOST || 'imap.gmail.com',
+        port: parseInt(process.env.IMAP_PORT || '993', 10),
+        secure: process.env.IMAP_SECURE !== 'false',
+        username: process.env.IMAP_USERNAME || '',
+        password: process.env.IMAP_PASSWORD || '',
+        pollingIntervalMs: parseInt(process.env.EMAIL_POLLING_INTERVAL || '300000', 10), // 5 minutes
+        enabled: process.env.EMAIL_POLLING_ENABLED === 'true',
+      },
+    ],
+    checkIntervalMs: parseInt(process.env.EMAIL_CHECK_INTERVAL || '60000', 10), // 1 minute
+    maxRetries: 3,
+    retryDelayMs: 5000,
+  } as EmailPollingConfig,
+
+  // Voice transcription config
+  voiceTranscription: {
+    enabled: process.env.VOICE_TRANSCRIPTION_ENABLED === 'true',
+    provider: (process.env.TRANSCRIPTION_PROVIDER || 'aws') as 'aws' | 'google' | 'azure',
+    language: process.env.TRANSCRIPTION_LANGUAGE || 'fr-CH',
+    apiKey: process.env.TRANSCRIPTION_API_KEY || '',
+    region: process.env.TRANSCRIPTION_REGION || 'us-east-1',
+    projectId: process.env.GOOGLE_PROJECT_ID,
+    resourceKey: process.env.AZURE_SPEECH_KEY,
+  } as TranscriptionConfig,
 };

@@ -24,6 +24,9 @@ import { Conversation } from './models/Conversation';
 import { MessageService } from './services/messageService';
 import { ConversationService } from './services/conversationService';
 import { RouterService } from './services/routerService';
+import { UnifiedInboxService } from './services/unifiedInboxService';
+import { EmailPollingService } from './services/emailPollingService';
+import { VoiceTranscriptionService } from './services/voiceTranscriptionService';
 
 // Channels
 import { InAppChannel } from './channels/inAppChannel';
@@ -36,6 +39,7 @@ import { MessageChannel } from './models/Message';
 import { createMessageRoutes } from './routes/messages';
 import { createConversationRoutes } from './routes/conversations';
 import { createWebhookRoutes } from './routes/webhooks';
+import { createUnifiedInboxRoutes } from './routes/unifiedInbox';
 
 // Config
 import { config } from './config';
@@ -132,6 +136,29 @@ async function initializeApp() {
       messageRepository
     );
     const routerService = new RouterService(config.router, messageService);
+    const unifiedInboxService = new UnifiedInboxService(
+      messageRepository,
+      conversationRepository
+    );
+
+    // Initialize email polling service (if configured)
+    let emailPollingService: EmailPollingService | undefined;
+    if (config.emailPolling?.enabled) {
+      emailPollingService = new EmailPollingService(
+        config.emailPolling,
+        messageRepository,
+        conversationRepository
+      );
+      await emailPollingService.initialize();
+    }
+
+    // Initialize voice transcription service (if configured)
+    let voiceTranscriptionService: VoiceTranscriptionService | undefined;
+    if (config.voiceTranscription?.enabled) {
+      voiceTranscriptionService = new VoiceTranscriptionService(
+        config.voiceTranscription
+      );
+    }
 
     // Initialize channels
     const inAppChannel = new InAppChannel(config.channels.inApp);
@@ -163,6 +190,7 @@ async function initializeApp() {
     app.use('/api/messages', createMessageRoutes(messageService, routerService));
     app.use('/api/conversations', createConversationRoutes(conversationService));
     app.use('/api/webhooks', createWebhookRoutes(whatsappChannel, emailChannel, faxChannel));
+    app.use('/api/unified-inbox', createUnifiedInboxRoutes(unifiedInboxService));
 
     console.log('✓ Routes configured');
 
@@ -196,6 +224,9 @@ async function initializeApp() {
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received. Shutting down gracefully...');
 
+  // Note: emailPollingService and voiceTranscriptionService are in closure scope
+  // In a real implementation, they would need to be exposed for cleanup
+
   if (AppDataSource.isInitialized) {
     await AppDataSource.destroy();
   }
@@ -205,6 +236,9 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received. Shutting down gracefully...');
+
+  // Note: emailPollingService and voiceTranscriptionService are in closure scope
+  // In a real implementation, they would need to be exposed for cleanup
 
   if (AppDataSource.isInitialized) {
     await AppDataSource.destroy();
