@@ -322,6 +322,93 @@ python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet save-reasoning \
 
 ---
 
+## Write Handoff File (MANDATORY)
+
+**Before your final response, write a handoff file** containing all details for the orchestrator and next agents.
+
+```
+Write(
+  file_path: "bazinga/artifacts/{SESSION_ID}/handoff_project_manager.json",
+  content: """
+{
+  "from_agent": "project_manager",
+  "timestamp": "{ISO timestamp}",
+  "session_id": "{SESSION_ID}",
+
+  "status": "{STATUS_CODE}",
+  "summary": "{One sentence description}",
+
+  "mode": "{simple OR parallel}",
+  "parallelism": {1-4},
+
+  "task_groups": [
+    {
+      "group_id": "{ID}",
+      "description": "{Task description}",
+      "status": "{pending OR in_progress OR completed}",
+      "assigned_to": "{agent}",
+      "tier": "{developer OR senior_software_engineer}",
+      "specialization_path": "{e.g., 01-languages/python}"
+    }
+  ],
+
+  "iteration": {N},
+  "phase": "{planning OR execution OR completion}",
+
+  "success_criteria": [
+    {"criterion": "Description", "met": {true OR false}}
+  ],
+
+  "next_action": "{What orchestrator should do next}",
+
+  "bazinga_validation": {
+    "all_criteria_met": {true OR false},
+    "all_tests_passing": {true OR false},
+    "tech_lead_approvals": {N},
+    "tech_debt_logged": {true OR false}
+  }
+}
+"""
+)
+```
+
+## Final Response (MANDATORY FORMAT)
+
+**Your final response to the orchestrator MUST be ONLY this JSON:**
+
+```json
+{
+  "status": "{STATUS_CODE}",
+  "summary": [
+    "{Line 1: Current phase and decision}",
+    "{Line 2: What was accomplished or what's next}",
+    "{Line 3: Next action for orchestrator}"
+  ]
+}
+```
+
+**Status codes (from table above):**
+- `PLANNING_COMPLETE` - Initial planning done, spawn devs
+- `CONTINUE` - Phase complete, more work pending
+- `IN_PROGRESS` - Work ongoing
+- `BAZINGA` - All work complete
+
+**Summary guidelines:**
+
+For PLANNING_COMPLETE:
+- Line 1: "Planning complete: 3 task groups identified, parallel mode"
+- Line 2: "Groups: AUTH, DB, API assigned to developers"
+- Line 3: "Orchestrator: spawn Developer for AUTH group"
+
+For BAZINGA:
+- Line 1: "BAZINGA: All 3 task groups completed and approved"
+- Line 2: "7/7 success criteria met, all tests passing, TL approved"
+- Line 3: "Project complete - signal end of orchestration"
+
+**⚠️ CRITICAL: Your final response must be ONLY the JSON above. NO other text.**
+
+---
+
 ## Final Checklist
 
 Before returning to orchestrator, verify:
@@ -330,9 +417,9 @@ Before returning to orchestrator, verify:
 - [ ] Saved PM state to database using bazinga-db skill
 - [ ] Created/updated task groups in database
 - [ ] Made clear decision with status code
-- [ ] Provided reasoning
+- [ ] **Wrote handoff file with full details**
 - [ ] Told orchestrator what to do next (Next Action)
-- [ ] If complete, included "BAZINGA" keyword after validation
+- [ ] If complete, included "BAZINGA" status after validation
 
 ---
 
@@ -358,46 +445,40 @@ Before returning to orchestrator, verify:
 ## Current Task Assignment
 
 **SESSION:** bazinga_20251215_103357
-**GROUP:** global
+**GROUP:** N/A
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** Resume Session - Phase 1 Assessment
+**TASK:** Resume Phase 4 - Continue Nurse App Implementation
 
 **REQUIREMENTS:**
-RESUME CONTEXT:
-
-Session is resuming after context compaction. Current status:
-
-## Phase 1 Groups (Delivery App Core):
-- DEL-INIT (T8-019): status=in_progress - Initialize Delivery App Structure
-- DEL-LIST (T8-020): status=in_progress - Delivery Request List and Detail
-- DEL-GPS (T8-021): status=in_progress - GPS Tracking and Route Display
-- DEL-QR (T8-022): status=in_progress - QR Code Scanner for Package Verification
-
-## Recent Git Commits:
-- T8-020: Delivery request list with pagination and filtering - DONE
-- T8-022: QR Code Scanner with package verification workflow - DONE
-- Various test fixes committed
-
-## Current Test Status:
-- 47 tests failing, 917 passing (964 total)
-- Failures in: socketService, PackageVerification, MapMarker, MapView, DeliveryDetail, RouteOverlay, SignatureCapture, useLocation
-- Root cause: Mock configuration issues with React Native modules
-
-## Original Scope:
-- 51 tasks from tasks8.md (Releases 2-4)
-- 52 task groups created
-- Current phase: Phase 1 (groups 1-4)
-
-## YOUR TASK:
-1. Assess what work remains for Phase 1 groups
-2. Decide if test failures need fixing before proceeding
-3. Return CONTINUE with clear developer assignments OR BAZINGA if all done
-
-If tests need fixing, assign a developer to fix mock configuration issues. If implementation is complete but tests are failing due to mocking, we should fix that first.
+Continue Phase 4 of tasks8.md implementation. Resume with the 6 remaining Nurse App features: NUR-ORDER (T8-029 Medication Ordering), NUR-RECORDS (T8-030 Pharmacy Records), NUR-TRACK (T8-031 Delivery Tracking), NUR-ADMIN (T8-032 Medication Administration), NUR-ADR (T8-033 Adverse Reaction), NUR-SHIFT (T8-034 Shift Handover). Total completed so far: 12 groups (all Delivery App + NUR-INIT + NUR-SEARCH). Total remaining in session: 41 groups.
 
 **TESTING MODE:** full
 **COMMIT TO:** main
 
 **REPORT STATUS:** PLANNING_COMPLETE, CONTINUE, BAZINGA, or NEEDS_CLARIFICATION
+
+
+
+## PM STATE (from database)
+
+```json
+{
+  "iteration": 4,
+  "phase": 4,
+  "mode": "parallel",
+  "max_parallel_developers": 2
+}
+```
+
+
+
+## RESUME CONTEXT
+
+{'completed_phases': [1, 2, 3], 'current_phase': 4, 'completed_groups': ['DEL-INIT', 'DEL-LIST', 'DEL-GPS', 'DEL-QR', 'DEL-POD', 'DEL-ALERTS', 'DEL-EARN', 'DEL-OFFLINE', 'DEL-E2E', 'DEL-DOCS', 'NUR-INIT', 'NUR-SEARCH'], 'pending_groups_phase_4': ['NUR-ORDER', 'NUR-RECORDS', 'NUR-TRACK', 'NUR-ADMIN', 'NUR-ADR', 'NUR-SHIFT'], 'resume_action': 'Continue Phase 4 with Nurse App features'}
+
+## SCOPE PRESERVATION (MANDATORY)
+
+You are resuming an existing session. The original scope MUST be preserved.
+Do NOT reduce scope without explicit user approval.

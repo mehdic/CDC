@@ -51,6 +51,11 @@
       "src/**/*.ts",
       "!src/**/*.test.ts",
       "!src/__tests__/**"
-    ]
+    ],
+    "moduleNameMapper": {
+      "^@utils/(.*)$": "<rootDir>/../../shared/utils/$1",
+      "^@models/(.*)$": "<rootDir>/../../shared/models/$1",
+      "^@services/(.*)$": "<rootDir>/src/services/$1"
+    }
   }
 }
