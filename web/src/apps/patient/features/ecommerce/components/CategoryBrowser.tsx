@@ -19,6 +19,7 @@ interface CategoryNodeProps {
   category: Category;
   isSelected: boolean;
   depth: number;
+  selectedCategoryId?: string;
   onSelectCategory: (categoryId: string) => void;
   onSelectSubcategory?: (categoryId: string) => void;
 }
@@ -27,6 +28,7 @@ const CategoryNode: React.FC<CategoryNodeProps> = ({
   category,
   isSelected,
   depth,
+  selectedCategoryId,
   onSelectCategory,
   onSelectSubcategory,
 }) => {
@@ -66,6 +68,7 @@ const CategoryNode: React.FC<CategoryNodeProps> = ({
               key={child.id}
               category={child}
               isSelected={isSelected && child.id === selectedCategoryId}
+              selectedCategoryId={selectedCategoryId}
               depth={depth + 1}
               onSelectCategory={onSelectCategory}
               onSelectSubcategory={onSelectSubcategory}
@@ -108,6 +111,7 @@ export const CategoryBrowser: React.FC<CategoryBrowserProps> = ({
             key={category.id}
             category={category}
             isSelected={category.id === selectedCategoryId}
+            selectedCategoryId={selectedCategoryId}
             depth={0}
             onSelectCategory={onSelectCategory}
             onSelectSubcategory={onSelectSubcategory}

@@ -96,9 +96,9 @@ describe('Channel Contract Tests', () => {
       const invalidMessage = createTestMessage(MessageChannel.WHATSAPP);
       invalidMessage.content = '';
 
-      await expect(channel.sendMessage(invalidMessage)).rejects.toThrow(
-        'Message content cannot be empty'
-      );
+      const result = await channel.sendMessage(invalidMessage);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Message content cannot be empty');
     });
 
     it('should handle webhook signature verification', () => {
@@ -192,9 +192,9 @@ describe('Channel Contract Tests', () => {
       const message = createTestMessage(MessageChannel.FAX);
       message.attachments = undefined;
 
-      await expect(channel.sendMessage(message)).rejects.toThrow(
-        'Fax requires a PDF attachment'
-      );
+      const result = await channel.sendMessage(message);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Fax requires a PDF attachment');
     });
 
     it('should support webhook handling', () => {
