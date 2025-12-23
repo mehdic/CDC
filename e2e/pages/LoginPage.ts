@@ -42,7 +42,7 @@ export class LoginPage {
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
     await this.loginButton.click();
-    await this.page.waitForNavigation({ waitUntil: 'networkidle' });
+    await this.page.waitForURL(/\/(nurse|doctor|pharmacist|patient|delivery)\/.*/);
   }
 
   /**
@@ -61,7 +61,7 @@ export class LoginPage {
   async logout() {
     if (await this.logoutButton.isVisible()) {
       await this.logoutButton.click();
-      await this.page.waitForNavigation({ waitUntil: 'networkidle' });
+      await this.page.waitForURL(/\/login/);
     }
   }
 
@@ -109,6 +109,6 @@ export class LoginPage {
    */
   async goToForgotPassword() {
     await this.forgotPasswordLink.click();
-    await this.page.waitForNavigation({ waitUntil: 'networkidle' });
+    await this.page.waitForURL(/\/forgot-password/);
   }
 }
