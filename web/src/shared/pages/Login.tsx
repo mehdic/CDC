@@ -229,7 +229,17 @@ export const LoginPage: React.FC = () => {
 
             {/* API Error Alert */}
             {apiError && (
-              <Alert severity="error" sx={{ mb: 3 }}>
+              <Alert
+                severity="error"
+                sx={{ mb: 3 }}
+                data-testid={
+                  apiError.toLowerCase().includes('verrouillé') || apiError.toLowerCase().includes('locked')
+                    ? 'account-locked-error'
+                    : apiError.toLowerCase().includes('trop') || apiError.toLowerCase().includes('too many') || apiError.toLowerCase().includes('rate')
+                    ? 'rate-limit-error'
+                    : 'login-error'
+                }
+              >
                 {apiError}
               </Alert>
             )}

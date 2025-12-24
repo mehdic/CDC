@@ -5,49 +5,28 @@
 **[developer] completion:** ## Completion Summary
 
 ### What Was Done
-1. Fixed storage state key mismatch in global-setup.ts (line 62: 'user' → 'user_data')
-2. Fixed nursePage fixture auth method in auth.fixture.ts (lines 143-161)
-   - Changed from mockLoginSuccess() to loginWithStoredAuth()
-   - Added proper user object with a
+- Created comprehensive E2E test suite for e-commerce workflow
+- Implemented 26 test scenarios covering complete user journey
+- Tests cover: product browsing, cart management, checkout, payment, and order history
+- Used existing patterns: auth fixtures, API m
 
-**[developer] decisions:** ## Decisions
+**[developer] approach:** ## Approach
 
-### Fix 1: Storage State Key Mismatch
-Changed global-setup.ts line 62 from 'user' to 'user_data' to match authService.ts expectations.
+### Chosen Approach
+Create comprehensive E2E tests for e-commerce workflow in new directory structure following existing patterns.
 
-**Why:**
-- authService.ts consistently uses 'user_data' key (lines 97, 113, 135)
-- loginWithStoredAuth() helper also uses 'user_data' (line 92)
-- glob
+### Why This Approach
+1. Follow existing test structure patterns (page objects, fixtures, API mocking)
+2. Cover complete user journey from product browsing
 
 **[developer] understanding:** ## Understanding
 
 ### Task Interpretation
-Fix two cascading infrastructure issues in NUR-E2E tests:
-1. Storage state key mismatch between global-setup.ts and authService.ts
-2. Fixture using wrong authentication method
+Implement comprehensive E2E tests for e-commerce workflow using Playwright. Tests should cover the complete user journey from browsing products to completing orders.
 
 ### Key Requirements
-1. Change global-setup.ts localStorage key from 'user' to 'u
-
-**[developer] completion:** ## Completion Summary
-
-### What Was Done
-
-#### 1. Playwright Configuration (✅ COMPLETE)
-- Added `testMatch: '**/nurse*.spec.ts'` to nurse project in playwright.config.ts
-- This filters tests to run only nurse-related specs on nurse project
-- Prevents tests from running on all 10 projects
-
-#### 2. Nu
-
-**[developer] decisions:** ## Decisions Made
-
-### Fix 1: Playwright Project Configuration
-**Decision:** Added `testMatch: '**/nurse*.spec.ts'` to nurse project in playwright.config.ts
-**Rationale:** This ensures only nurse-related test files run on the nurse project, preventing tests from running on all 10 projects
-
-### Fix 2
+1. Product catalog browsing - User can view and search products
+2. Add
 
 
 
@@ -2008,22 +1987,23 @@ You are NOT a code reviewer (that's Tech Lead's job). Focus on automated testing
 ## Current Task Assignment
 
 **SESSION:** bazinga_20251215_103357
-**GROUP:** NUR-E2E
+**GROUP:** E2E-ECOM
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** Test NUR-E2E after auth fixes
+**TASK:** T8-049: E-Commerce E2E Tests
 
 **REQUIREMENTS:**
-Developer fixed NUR-E2E auth infrastructure:
-1. Fixed storage key mismatch (user→user_data in global-setup.ts)
-2. Updated fixture to use loginWithStoredAuth method
+Validate E2E tests for e-commerce workflow:
+- Product catalog browsing
+- Add to cart functionality
+- Checkout process
+- Order history
+- Payment simulation
 
-Developer reports 6/11 tests passing, auth working correctly, remaining failures are UI-related.
+Developer implemented 26 test scenarios (22/26 passing - 85%) in web/e2e/tests/ecommerce/
 
-Run full test suite: MOCK_AUTH=true npm run test:e2e -- --project=nurse nurse-login-dashboard.spec.ts
-
-Evaluate if the remaining failures are acceptable (UI gaps) or need Developer fixes.
+Run the tests using Playwright. Investigate the 4 failing tests.
 
 **TESTING MODE:** full
 **COMMIT TO:** main

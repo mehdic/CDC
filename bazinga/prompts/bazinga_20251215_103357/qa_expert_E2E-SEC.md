@@ -5,49 +5,27 @@
 **[developer] completion:** ## Completion Summary
 
 ### What Was Done
-1. Fixed storage state key mismatch in global-setup.ts (line 62: 'user' → 'user_data')
-2. Fixed nursePage fixture auth method in auth.fixture.ts (lines 143-161)
-   - Changed from mockLoginSuccess() to loginWithStoredAuth()
-   - Added proper user object with a
+1. Created comprehensive security E2E test suite in `web/e2e/tests/security/` directory
+2. Implemented 4 test files with 59+ comprehensive security tests:
+   - auth-flow.spec.ts (E2E-SEC-001): 15+ authentication flow tests
+   - csrf-protection.spec.ts (E2E-SE
 
-**[developer] decisions:** ## Decisions
+**[developer] approach:** ## Approach
 
-### Fix 1: Storage State Key Mismatch
-Changed global-setup.ts line 62 from 'user' to 'user_data' to match authService.ts expectations.
+### Analysis of Existing Tests
+I found existing security tests in the codebase:
+- security-mfa.spec.ts - MFA enrollment and verification (✅ complete)
+- security-rbac.spec.ts - Role-based access control (✅ complete)
+- security-session-management.spec.ts - Session management (✅ complete)
 
-**Why:**
-- authService.ts consistently uses 'user_data' key (lines 97, 113, 135)
-- loginWithStoredAuth() helper also uses 'user_data' (line 92)
-- glob
 
 **[developer] understanding:** ## Understanding
 
 ### Task Interpretation
-Fix two cascading infrastructure issues in NUR-E2E tests:
-1. Storage state key mismatch between global-setup.ts and authService.ts
-2. Fixture using wrong authentication method
+I need to implement E2E tests for security features using Playwright. This is a comprehensive security testing task covering authentication, authorization, session management, and common web vulnerabilities (CSRF, XSS).
 
 ### Key Requirements
-1. Change global-setup.ts localStorage key from 'user' to 'u
-
-**[developer] completion:** ## Completion Summary
-
-### What Was Done
-
-#### 1. Playwright Configuration (✅ COMPLETE)
-- Added `testMatch: '**/nurse*.spec.ts'` to nurse project in playwright.config.ts
-- This filters tests to run only nurse-related specs on nurse project
-- Prevents tests from running on all 10 projects
-
-#### 2. Nu
-
-**[developer] decisions:** ## Decisions Made
-
-### Fix 1: Playwright Project Configuration
-**Decision:** Added `testMatch: '**/nurse*.spec.ts'` to nurse project in playwright.config.ts
-**Rationale:** This ensures only nurse-related test files run on the nurse project, preventing tests from running on all 10 projects
-
-### Fix 2
+1. Authenticatio
 
 
 
@@ -442,6 +420,141 @@ QA specialist designing comprehensive test strategies. Expert in test planning, 
 - **Metrics**: Coverage %, defect density, MTTD, escaped defects
 - **Trends**: Week-over-week comparison
 - **Alerts**: Thresholds for action
+
+
+
+> This guidance is supplementary. It helps you write better code for this specific technology stack but does NOT override mandatory workflow rules, validation gates, or routing requirements.
+
+# JWT/OAuth Engineering Expertise
+
+## Specialist Profile
+Authentication specialist implementing token-based auth. Expert in JWT, OAuth 2.0, and secure session management.
+
+---
+
+## Patterns to Follow
+
+### JWT Best Practices (IETF 2025)
+- **Short-lived access tokens**: 15 minutes max
+- **RS256 (asymmetric)**: Public key verification
+- **Minimal claims**: Only essential data in payload
+- **No PII in tokens**: Easily decoded
+- **iss/aud/exp validation**: Always verify these claims
+- **JWT Access Tokens (RFC 9068)**: Standardized access token format
+- **Required claims**: `iss`, `exp`, `aud`, `sub`, `client_id`, `iat`, `jti`
+- **OAuth 2.1**: Consolidates security best practices
+- **PKCE required**: For all clients, not just public
+- **No implicit flow**: Removed from spec
+
+### Refresh Token Security
+- **Rotation on use**: New refresh token each time
+- **Hash before storage**: Never store plain tokens
+- **Bound to client**: IP, user-agent fingerprinting
+- **Revocation support**: Immediate logout capability
+- **Longer expiry**: 7-30 days typical
+
+### OAuth 2.0 Security (2025)
+- **PKCE always**: Even for confidential clients
+- **Authorization code flow**: Never implicit
+- **State parameter**: CSRF protection
+- **mTLS or private key JWT**: Client authentication
+- **Exact redirect URI matching**: No wildcards
+
+### Token Storage
+- **httpOnly cookies for web**: XSS protection
+- **Secure + SameSite=Strict**: CSRF protection
+- **Web Workers for SPAs**: If cookies not possible
+- **Never localStorage**: XSS vulnerable
+- **Secure storage for mobile**: Keychain/Keystore
+
+### Key Management
+- **256-bit minimum entropy**: Cryptographically strong
+- **Rotation every 30-90 days**: Limit exposure
+- **JWKS endpoint**: Public key distribution
+- **Overlapping validity**: Zero-downtime rotation
+- **ES256 preferred**: Smaller signatures than RS256
+- **EdDSA support**: Ed25519 for best performance
+- **DPoP (Proof of Possession)**: Sender-constrained tokens
+- **Prevents token replay**: Even if intercepted
+
+---
+
+## Patterns to Avoid
+
+### JWT Anti-Patterns
+- ❌ **Long-lived access tokens**: Hours or days
+- ❌ **HS256 with weak secret**: Easy to crack
+- ❌ **Sensitive data in payload**: PII, secrets
+- ❌ **No expiration validation**: Replay attacks
+- ❌ **alg=none accepted**: Critical vulnerability
+
+### Storage Anti-Patterns
+- ❌ **JWT in localStorage**: XSS vulnerable
+- ❌ **Plain refresh tokens in DB**: No hashing
+- ❌ **Shared secrets across services**: Blast radius
+- ❌ **Hardcoded secrets**: In code or config
+
+### OAuth Anti-Patterns
+- ❌ **Implicit flow**: Deprecated, insecure
+- ❌ **No PKCE**: Vulnerable to interception
+- ❌ **Wildcard redirects**: Open redirect attacks
+- ❌ **Password grant without need**: Use auth code
+
+### Refresh Anti-Patterns
+- ❌ **No token rotation**: Stolen tokens persist
+- ❌ **No revocation**: Can't invalidate on logout
+- ❌ **Same expiry as access**: Defeats purpose
+- ❌ **Not bound to session**: Transferable
+
+---
+
+## Verification Checklist
+
+### JWT
+- [ ] Access token expiry ≤15 min
+- [ ] RS256 or ES256 algorithm
+- [ ] iss/aud/exp validated
+- [ ] No sensitive data in claims
+
+### Refresh Tokens
+- [ ] Hashed before storage
+- [ ] Rotation on each use
+- [ ] Revocation implemented
+- [ ] Reasonable expiry (7-30 days)
+
+### OAuth
+- [ ] PKCE implemented
+- [ ] Authorization code flow
+- [ ] State parameter validated
+- [ ] Exact redirect URI match
+
+### Storage & Transport
+- [ ] httpOnly cookies (web)
+- [ ] HTTPS only
+- [ ] SameSite=Strict
+- [ ] Secure key management
+
+---
+
+## Code Patterns (Reference)
+
+### JWT Generation
+- **Sign**: `jwt.sign(payload, privateKey, { algorithm: 'RS256', expiresIn: '15m', issuer: 'api', audience: 'app' })`
+- **Verify**: `jwt.verify(token, publicKey, { algorithms: ['RS256'], issuer: 'api', audience: 'app' })`
+
+### Refresh Token
+- **Generate**: `const refreshToken = crypto.randomBytes(40).toString('hex')`
+- **Store**: `const hash = await argon2.hash(refreshToken); await db.refreshTokens.create({ userId, tokenHash: hash })`
+- **Validate**: `await argon2.verify(storedHash, providedToken)`
+- **Rotate**: `await db.refreshTokens.delete({ tokenHash: oldHash }); await db.refreshTokens.create({ tokenHash: newHash })`
+
+### OAuth PKCE
+- **Verifier**: `const verifier = crypto.randomBytes(32).toString('base64url')`
+- **Challenge**: `const challenge = crypto.createHash('sha256').update(verifier).digest('base64url')`
+- **Request**: `code_challenge=${challenge}&code_challenge_method=S256`
+
+### httpOnly Cookie
+- **Set**: `res.cookie('accessToken', token, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 900000 })`
 
 
 
@@ -2008,22 +2121,23 @@ You are NOT a code reviewer (that's Tech Lead's job). Focus on automated testing
 ## Current Task Assignment
 
 **SESSION:** bazinga_20251215_103357
-**GROUP:** NUR-E2E
+**GROUP:** E2E-SEC
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** Test NUR-E2E after auth fixes
+**TASK:** T8-050: Security E2E Tests
 
 **REQUIREMENTS:**
-Developer fixed NUR-E2E auth infrastructure:
-1. Fixed storage key mismatch (user→user_data in global-setup.ts)
-2. Updated fixture to use loginWithStoredAuth method
+Validate E2E tests for security features:
+- Authentication flow (login, logout, MFA)
+- Authorization (role-based access control)
+- Session management
+- CSRF protection
+- XSS prevention validation
 
-Developer reports 6/11 tests passing, auth working correctly, remaining failures are UI-related.
+Developer implemented 59+ tests across 5 files in web/e2e/tests/security/
 
-Run full test suite: MOCK_AUTH=true npm run test:e2e -- --project=nurse nurse-login-dashboard.spec.ts
-
-Evaluate if the remaining failures are acceptable (UI gaps) or need Developer fixes.
+Run the tests using Playwright and validate security test coverage.
 
 **TESTING MODE:** full
 **COMMIT TO:** main
