@@ -1,0 +1,71 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-12-24T00:00:00.000Z",
+  "git_commit": "initial",
+  "environment": "test",
+  "results": {
+    "api-load-test": {
+      "http_req_duration": {
+        "avg": 150,
+        "p95": 200,
+        "p99": 500,
+        "max": 1000
+      },
+      "http_reqs": {
+        "count": 10000,
+        "rate": 500
+      },
+      "errors": {
+        "rate": 0.005
+      },
+      "http_req_failed": {
+        "rate": 0.01
+      },
+      "vus": {
+        "max": 100
+      }
+    },
+    "user-journey": {
+      "http_req_duration": {
+        "avg": 180,
+        "p95": 250,
+        "p99": 600,
+        "max": 1200
+      },
+      "http_reqs": {
+        "count": 5000,
+        "rate": 300
+      },
+      "errors": {
+        "rate": 0.01
+      },
+      "http_req_failed": {
+        "rate": 0.015
+      },
+      "vus": {
+        "max": 100
+      }
+    },
+    "spike-test": {
+      "http_req_duration": {
+        "avg": 300,
+        "p95": 800,
+        "p99": 1500,
+        "max": 3000
+      },
+      "http_reqs": {
+        "count": 15000,
+        "rate": 600
+      },
+      "errors": {
+        "rate": 0.03
+      },
+      "http_req_failed": {
+        "rate": 0.04
+      },
+      "vus": {
+        "max": 1000
+      }
+    }
+  }
+}
