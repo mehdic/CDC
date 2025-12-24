@@ -4,7 +4,7 @@
  * Tests WCAG 2.1 AA compliance for nurse-specific workflows
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/nurse-api.fixture';
 import {
   runAccessibilityScan,
   checkKeyboardNavigation,

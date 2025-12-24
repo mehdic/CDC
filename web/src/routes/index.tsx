@@ -213,6 +213,52 @@ export const AppRoutes: React.FC = () => {
           }
         />
 
+        {/* Role-specific dashboard routes - all route to same Dashboard component */}
+        {/* Dashboard handles role-based rendering internally */}
+        <Route
+          path="/pharmacist/dashboard"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/patient/dashboard"
+          element={
+            <ProtectedRoute requiredRoles={['patient', 'admin']}>
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/doctor/dashboard"
+          element={
+            <ProtectedRoute requiredRoles={['doctor', 'admin']}>
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/delivery/dashboard"
+          element={
+            <ProtectedRoute requiredRoles={['delivery_person', 'admin']}>
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
         {/* Prescription routes - Pharmacist only */}
         <Route
           path="/prescriptions"
