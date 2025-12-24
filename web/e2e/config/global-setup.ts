@@ -59,7 +59,7 @@ async function globalSetup(config: FullConfig) {
                 value: `mock_refresh_token_${role}`,
               },
               {
-                name: 'user',
+                name: 'user_data',
                 value: JSON.stringify({
                   id: user.email,
                   email: user.email,

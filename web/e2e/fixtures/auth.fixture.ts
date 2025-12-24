@@ -141,16 +141,18 @@ export const test = base.extend<AuthFixtures>({
    * Uses storageState if available, otherwise falls back to manual login
    */
   nursePage: async ({ page }, use) => {
-    // Mock successful login BEFORE navigating
-    await mockLoginSuccess(page, {
-      email: testUsers.nurse.email,
-      role: testUsers.nurse.role,
-      firstName: testUsers.nurse.firstName,
-      lastName: testUsers.nurse.lastName,
+    // Set authentication tokens directly in localStorage
+    await loginWithStoredAuth(page, {
+      accessToken: 'mock_access_token_nurse',
+      refreshToken: 'mock_refresh_token_nurse',
+      user: {
+        id: testUsers.nurse.email,
+        email: testUsers.nurse.email,
+        role: testUsers.nurse.role,
+        firstName: testUsers.nurse.firstName,
+        lastName: testUsers.nurse.lastName,
+      },
     });
-
-    // Navigate to app
-    await page.goto('/');
 
     await use(page);
 
