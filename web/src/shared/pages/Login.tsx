@@ -235,7 +235,7 @@ export const LoginPage: React.FC = () => {
             )}
 
             {/* Login Form */}
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} data-testid="login-form">
               <TextField
                 name="email"
                 label="Adresse email"

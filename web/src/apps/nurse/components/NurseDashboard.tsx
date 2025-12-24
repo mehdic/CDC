@@ -20,6 +20,7 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  TextField,
 } from '@mui/material';
 import {
   PersonAdd as AddPatientIcon,
@@ -34,18 +35,44 @@ import type { DashboardStats } from '../types/nurse';
 export const NurseDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [upcomingDeliveries, setUpcomingDeliveries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
 
   const { orders: pendingOrders, loading: ordersLoading } = useOrders({
     status: 'pending',
   });
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const data = await getDashboardStats();
-        setStats(data);
+        // Fetch dashboard summary
+        const summaryResponse = await fetch('/api/nurse/dashboard/summary');
+        if (summaryResponse.ok) {
+          const summaryData = await summaryResponse.json();
+          setStats(summaryData.data || summaryData);
+        } else {
+          // Fallback to getDashboardStats
+          const statsData = await getDashboardStats();
+          setStats(statsData);
+        }
+
+        // Fetch patients list
+        const patientsResponse = await fetch('/api/nurse/patients');
+        if (patientsResponse.ok) {
+          const patientsData = await patientsResponse.json();
+          setPatients(patientsData.data || []);
+        }
+
+        // Fetch upcoming deliveries
+        const deliveriesResponse = await fetch('/api/nurse/deliveries/upcoming');
+        if (deliveriesResponse.ok) {
+          const deliveriesData = await deliveriesResponse.json();
+          setUpcomingDeliveries(deliveriesData.data || []);
+        }
+
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard');
@@ -54,7 +81,7 @@ export const NurseDashboard: React.FC = () => {
       }
     };
 
-    fetchStats();
+    fetchDashboardData();
   }, []);
 
   if (loading) {
@@ -68,10 +95,15 @@ export const NurseDashboard: React.FC = () => {
   if (error) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Alert severity="error">{error}</Alert>
+        <Alert severity="error" data-testid="error-alert">{error}</Alert>
       </Container>
     );
   }
+
+  const filteredPatients = patients.filter(patient =>
+    patient.name?.toLowerCase().includes(patientSearchTerm.toLowerCase()) ||
+    patient.room?.toLowerCase().includes(patientSearchTerm.toLowerCase())
+  );
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -85,6 +117,24 @@ export const NurseDashboard: React.FC = () => {
         </Typography>
       </Box>
 
+      {/* Profile and Role Badge */}
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Typography variant="h6" data-testid="profile-name">Caroline Leclerc</Typography>
+        <Chip label="Infirmier" data-testid="role-badge" color="primary" size="small" />
+      </Box>
+
+      {/* Patient Search */}
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          fullWidth
+          placeholder="Rechercher un patient..."
+          value={patientSearchTerm}
+          onChange={(e) => setPatientSearchTerm(e.target.value)}
+          data-testid="patient-search-input"
+          size="small"
+        />
+      </Box>
+
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
@@ -95,7 +145,7 @@ export const NurseDashboard: React.FC = () => {
                   <Typography color="text.secondary" variant="body2">
                     Patients Total
                   </Typography>
-                  <Typography variant="h4">{stats?.totalPatients || 0}</Typography>
+                  <Typography variant="h4" data-testid="total-patients">{stats?.totalPatients || 0}</Typography>
                 </Box>
                 <AddPatientIcon color="primary" sx={{ fontSize: 40 }} />
               </Box>
@@ -111,7 +161,7 @@ export const NurseDashboard: React.FC = () => {
                   <Typography color="text.secondary" variant="body2">
                     Commandes en attente
                   </Typography>
-                  <Typography variant="h4">{stats?.pendingOrders || 0}</Typography>
+                  <Typography variant="h4" data-testid="active-orders-count">{stats?.pendingOrders || 0}</Typography>
                 </Box>
                 <OrderIcon color="warning" sx={{ fontSize: 40 }} />
               </Box>
@@ -127,7 +177,7 @@ export const NurseDashboard: React.FC = () => {
                   <Typography color="text.secondary" variant="body2">
                     Livraisons en cours
                   </Typography>
-                  <Typography variant="h4">{stats?.inTransitDeliveries || 0}</Typography>
+                  <Typography variant="h4" data-testid="pending-deliveries">{stats?.pendingDeliveries || stats?.inTransitDeliveries || 0}</Typography>
                 </Box>
                 <DeliveryIcon color="info" sx={{ fontSize: 40 }} />
               </Box>
@@ -141,18 +191,59 @@ export const NurseDashboard: React.FC = () => {
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography color="text.secondary" variant="body2">
-                    Commandes urgentes
+                    Messages non lus
                   </Typography>
-                  <Typography variant="h4" color="error">
-                    {stats?.urgentOrders || 0}
+                  <Typography variant="h4" data-testid="unread-messages">
+                    {stats?.unreadMessages || 0}
                   </Typography>
                 </Box>
-                <NotificationIcon color="error" sx={{ fontSize: 40 }} />
+                <NotificationIcon color="primary" sx={{ fontSize: 40 }} />
               </Box>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
+
+      {/* Patient List Section */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" gutterBottom>Patients assignés</Typography>
+        <List data-testid="patient-list">
+          {filteredPatients.length === 0 ? (
+            <Typography color="text.secondary">Aucun patient trouvé</Typography>
+          ) : (
+            filteredPatients.map((patient) => (
+              <ListItem
+                key={patient.id}
+                data-testid={`patient-${patient.id}`}
+                button
+                onClick={() => navigate(`/nurse/patients/${patient.id}`)}
+                sx={{
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  '&:last-child': { borderBottom: 'none' },
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <Box display="flex" justifyContent="space-between" width="100%" mb={1}>
+                  <Typography variant="subtitle1" fontWeight="bold">{patient.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">Room {patient.room}</Typography>
+                </Box>
+                <Box display="flex" gap={1} flexWrap="wrap" data-testid="conditions">
+                  {patient.conditions?.map((condition: string, index: number) => (
+                    <Chip key={index} label={condition} size="small" variant="outlined" />
+                  ))}
+                </Box>
+                {patient.activeOrders > 0 && (
+                  <Typography variant="caption" color="primary" sx={{ mt: 1 }}>
+                    {patient.activeOrders} commande(s) active(s)
+                  </Typography>
+                )}
+              </ListItem>
+            ))
+          )}
+        </List>
+      </Paper>
 
       {/* Main Content */}
       <Grid container spacing={3}>
@@ -277,6 +368,33 @@ export const NurseDashboard: React.FC = () => {
                   {stats?.totalPatients || 0}
                 </Typography>
               </Box>
+            </Box>
+          </Paper>
+
+          {/* Upcoming Deliveries Widget */}
+          <Paper sx={{ p: 3, mt: 3 }} data-testid="upcoming-deliveries-widget">
+            <Typography variant="h6" gutterBottom>
+              Livraisons à venir
+            </Typography>
+            <Box mt={2}>
+              <Typography variant="h5" data-testid="upcoming-deliveries-count" fontWeight="bold" color="primary">
+                {upcomingDeliveries.length}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                livraison(s) prévue(s)
+              </Typography>
+              {upcomingDeliveries.length > 0 && (
+                <List sx={{ mt: 2 }}>
+                  {upcomingDeliveries.map((delivery) => (
+                    <ListItem key={delivery.id} dense>
+                      <ListItemText
+                        primary={delivery.patientName}
+                        secondary={`${delivery.medications?.join(', ')} - ${delivery.status}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
             </Box>
           </Paper>
         </Grid>

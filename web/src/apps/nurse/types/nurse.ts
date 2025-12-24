@@ -88,9 +88,13 @@ export interface Notification {
 export interface DashboardStats {
   totalPatients: number;
   pendingOrders: number;
+  activeOrders?: number;
   inTransitDeliveries: number;
+  pendingDeliveries?: number;
   todayDeliveries: number;
   urgentOrders: number;
+  unreadMessages?: number;
+  newAlerts?: number;
 }
 
 export interface OrderHistory {

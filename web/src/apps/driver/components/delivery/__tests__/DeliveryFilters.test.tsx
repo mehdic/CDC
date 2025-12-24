@@ -153,7 +153,7 @@ describe('DeliveryFilters Component', () => {
 
     let select = screen.getByTestId('status-filter-select');
     await user.click(select);
-    let assignedOption = screen.getByText('Assigned to Me');
+    const assignedOption = screen.getByText('Assigned to Me');
     await user.click(assignedOption);
 
     expect(mockOnFilterChange).toHaveBeenCalledWith(DeliveryStatus.ASSIGNED);

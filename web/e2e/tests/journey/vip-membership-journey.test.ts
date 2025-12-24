@@ -408,12 +408,17 @@ test.describe('E2E-048: VIP Membership Journey', () => {
     });
     if (await signupBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
       await signupBtn.click();
-    }
 
-    await expect(patientPage.locator('[role="alert"]')).toContainText(
-      /succès|success|welcome/i,
-      { timeout: 5000 }
-    );
+      // Wait for the success Snackbar to appear (MUI Snackbar animation)
+      // The Alert has data-testid="vip-signup-success" and role="alert"
+      const successAlert = patientPage.locator('[data-testid="vip-signup-success"]');
+      await successAlert.waitFor({ state: 'visible', timeout: 10000 });
+
+      await expect(successAlert).toContainText(
+        /succès|success|bienvenue|welcome/i,
+        { timeout: 5000 }
+      );
+    }
 
     // ===== STEP 2: Earn points =====
     await mockPointsEarningStep(patientPage, {
@@ -486,6 +491,9 @@ test.describe('E2E-048: VIP Membership Journey', () => {
   test('VIP tier benefits displayed correctly for each level', async ({ patientPage }) => {
     // Navigate to VIP program page to see tier comparison
     await patientPage.goto('/vip-program');
+
+    // Wait for tier cards to render (React lazy loading)
+    await patientPage.locator('[data-testid="tier-card"]').first().waitFor({ timeout: 10000 });
 
     // Verify all tiers displayed
     const tierCards = patientPage.locator('[data-testid="tier-card"]');

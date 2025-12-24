@@ -2,11 +2,57 @@
 
 ### Relevant Context
 
+**[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter3.md
+> 2 E2E test failures (iteration 3): data-testid attributes not rendering, success alert not showing
+
 **[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter2.md
 > 2 E2E test failures: missing generic tier-card test ID, signup success alert not appearing
 
 **[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter1.md
 > 3 E2E test failures: missing data-testid attributes on page title, success alert, and tier cards
+
+
+### Prior Agent Reasoning
+
+**[senior_software_engineer] completion:** ## Completion Summary
+
+### What Was Done
+
+**Fixed 2 E2E test timing issues in vip-membership-journey.test.ts:**
+
+1. **"VIP tier benefits displayed correctly for each level" test (line 491)**
+   - **Root Cause:** Test called `count()` immediately after `goto()` without waiting for React to render Tie
+
+**[senior_software_engineer] decisions:** ## Root Cause Analysis Complete
+
+### Issue 1: Tier Cards (0 count)
+
+**NOT A CODE BUG - TIMING ISSUE IN TEST**
+
+Evidence:
+1. My debug test with `waitForTimeout(2000)` found 4 tier-card elements
+2. The actual E2E test has NO wait between `goto('/vip-program')` and `locator().count()`
+3. The components
+
+**[senior_software_engineer] approach:** ## Approach
+
+### Root Cause Analysis
+
+After reviewing the error context from Playwright, I found the REAL issue:
+
+**The accessibility tree/DOM snapshot shows NO data-testid attributes!**
+
+Looking at the snapshot:
+- The tier cards render as `generic [ref=e116]` - no data-testid
+- The page-title works
+
+**[senior_software_engineer] understanding:** ## Understanding
+
+### Task Interpretation
+This is an escalated E2E test failure that has persisted through 3 iterations of developer fixes. The root cause needs deep analysis - the developer's code changes "look correct" but don't actually work at runtime.
+
+### Key Requirements
+1. Fix tier card data
 
 
 
@@ -1966,26 +2012,14 @@ You are NOT a code reviewer (that's Tech Lead's job). Focus on automated testing
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** QA Test: VIP Portal E2E Verification
+**TASK:** Test PAT-VIP E2E after timing fixes
 
 **REQUIREMENTS:**
-DEVELOPER COMPLETED:
+SSE fixed E2E test timing issues with proper waitFor() calls in vip-membership-journey.test.ts. Developer claims all 9 VIP E2E tests now pass.
 
-- Fixed missing data-testid attributes for VIP tier cards
-- Added testIdGeneric='tier-card' and testIdTier props to TierBenefitsCard
-- Added data-testid='vip-signup-success' to success Alert
-- 20/20 unit tests passing
-- Build: PASS
+Run full E2E test suite: npm run test:e2e -- vip-membership-journey.test.ts
 
-Run VIP membership E2E tests:
-
-Location: web/e2e/tests/journey/vip-membership-journey.test.ts
-
-Key tests to verify:
-1. VIP tier benefits - should display tier cards with correct data-testid
-2. VIP signup success - should show success alert with data-testid
-
-Note: Developer observed 2 E2E test failures despite correct code. Investigate if this is a test environment issue.
+Expected: All 9 VIP tests should pass (tier card display, signup flow, success alert).
 
 **TESTING MODE:** full
 **COMMIT TO:** main

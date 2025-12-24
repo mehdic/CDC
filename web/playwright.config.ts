@@ -81,6 +81,7 @@ export default defineConfig({
 
     {
       name: 'nurse',
+      testMatch: '**/nurse*.spec.ts',
       use: {
         ...devices['Desktop Chrome'],
         headless: true,
