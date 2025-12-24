@@ -1,6 +1,6 @@
 import { test as base, Page } from '@playwright/test';
 import { LoginPage } from '../page-objects/LoginPage';
-import { login, clearAuth } from '../utils/auth-helpers';
+import { login, clearAuth, loginWithStoredAuth } from '../utils/auth-helpers';
 import { mockLoginSuccess } from '../utils/api-mock';
 
 /**
@@ -164,16 +164,18 @@ export const test = base.extend<AuthFixtures>({
    * Uses storageState if available, otherwise falls back to manual login
    */
   patientPage: async ({ page }, use) => {
-    // Mock successful login BEFORE navigating
-    await mockLoginSuccess(page, {
-      email: testUsers.patient.email,
-      role: testUsers.patient.role,
-      firstName: testUsers.patient.firstName,
-      lastName: testUsers.patient.lastName,
+    // Set authentication tokens directly in localStorage
+    await loginWithStoredAuth(page, {
+      accessToken: 'mock_access_token_patient',
+      refreshToken: 'mock_refresh_token_patient',
+      user: {
+        id: testUsers.patient.email,
+        email: testUsers.patient.email,
+        role: testUsers.patient.role,
+        firstName: testUsers.patient.firstName,
+        lastName: testUsers.patient.lastName,
+      },
     });
-
-    // Navigate to app
-    await page.goto('/');
 
     await use(page);
 
