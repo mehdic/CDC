@@ -105,7 +105,7 @@ export const CategoryBrowser: React.FC<CategoryBrowserProps> = ({
         )}
       </div>
 
-      <nav className="category-browser__list">
+      <nav className="category-browser__list" data-testid="category-filter">
         {categories.map((category) => (
           <CategoryNode
             key={category.id}

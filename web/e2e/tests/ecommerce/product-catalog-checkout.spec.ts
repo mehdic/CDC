@@ -80,7 +80,7 @@ test.describe('E2E-ECOM: Product Catalog & Checkout Workflow', () => {
     itemCount: 0,
   };
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ patientPage }) => {
     // Reset mock cart
     mockCart = {
       id: 'cart_001',
@@ -92,20 +92,37 @@ test.describe('E2E-ECOM: Product Catalog & Checkout Workflow', () => {
       itemCount: 0,
     };
 
-    // Mock product catalog API
-    await mockApiResponse(page, '**/products**', {
+    // Mock product catalog API - use absolute pattern with query params
+    await mockApiResponse(patientPage, /.*\/api\/products(\?.*)?$/, {
       status: 200,
       body: {
-        success: true,
-        products: mockProducts,
-        total: mockProducts.length,
-        page: 1,
-        pageSize: 20,
+        data: mockProducts.map((p) => ({
+          ...p,
+          sku: `SKU-${p.id}`,
+          manufacturer: 'Test Pharma',
+          category_id: p.category.toLowerCase(),
+          original_price: null,
+          low_stock_threshold: 10,
+          image_url: p.image,
+          expiry_date: null,
+          rating: 4.5,
+          review_count: 25,
+          is_active: true,
+          is_featured: false,
+          created_at: '2025-01-01T00:00:00Z',
+          updated_at: '2025-01-01T00:00:00Z',
+        })),
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: mockProducts.length,
+          total_pages: 1,
+        },
       },
     });
 
     // Mock empty cart initially
-    await mockApiResponse(page, '**/cart**', {
+    await mockApiResponse(patientPage, /.*\/api\/cart/, {
       status: 200,
       body: {
         success: true,
@@ -113,12 +130,64 @@ test.describe('E2E-ECOM: Product Catalog & Checkout Workflow', () => {
       },
     });
 
-    // Mock categories API
-    await mockApiResponse(page, '**/products/categories**', {
+    // Mock categories API - matches /api/categories endpoint
+    await mockApiResponse(patientPage, /.*\/api\/categories/, {
       status: 200,
       body: {
-        success: true,
-        categories: ['OTC', 'Parapharmacie', 'Compléments', 'Prescription'],
+        data: [
+          {
+            id: 'otc',
+            name: 'OTC',
+            slug: 'otc',
+            description: 'Over the counter medications',
+            icon_url: null,
+            display_order: 1,
+            children: [],
+            parent_id: null,
+            is_active: true,
+            created_at: '2025-01-01T00:00:00Z',
+            updated_at: '2025-01-01T00:00:00Z',
+          },
+          {
+            id: 'parapharmacie',
+            name: 'Parapharmacie',
+            slug: 'parapharmacie',
+            description: 'Parapharmacy items',
+            icon_url: null,
+            display_order: 2,
+            children: [],
+            parent_id: null,
+            is_active: true,
+            created_at: '2025-01-01T00:00:00Z',
+            updated_at: '2025-01-01T00:00:00Z',
+          },
+          {
+            id: 'complements',
+            name: 'Compléments',
+            slug: 'complements',
+            description: 'Supplements',
+            icon_url: null,
+            display_order: 3,
+            children: [],
+            parent_id: null,
+            is_active: true,
+            created_at: '2025-01-01T00:00:00Z',
+            updated_at: '2025-01-01T00:00:00Z',
+          },
+          {
+            id: 'prescription',
+            name: 'Prescription',
+            slug: 'prescription',
+            description: 'Prescription medications',
+            icon_url: null,
+            display_order: 4,
+            children: [],
+            parent_id: null,
+            is_active: true,
+            created_at: '2025-01-01T00:00:00Z',
+            updated_at: '2025-01-01T00:00:00Z',
+          },
+        ],
       },
     });
   });
@@ -147,13 +216,34 @@ test.describe('E2E-ECOM: Product Catalog & Checkout Workflow', () => {
     });
 
     test('should filter products by category', async ({ patientPage }) => {
-      // Mock filtered products
-      await mockApiResponse(patientPage, '**/products?category=OTC**', {
+      // Mock filtered products - matches /api/products?category_id=otc
+      await mockApiResponse(patientPage, /.*\/api\/products\?.*category_id=otc.*/, {
         status: 200,
         body: {
-          success: true,
-          products: mockProducts.filter((p) => p.category === 'OTC'),
-          total: 1,
+          data: mockProducts
+            .filter((p) => p.category === 'OTC')
+            .map((p) => ({
+              ...p,
+              sku: `SKU-${p.id}`,
+              manufacturer: 'Test Pharma',
+              category_id: p.category.toLowerCase(),
+              original_price: null,
+              low_stock_threshold: 10,
+              image_url: p.image,
+              expiry_date: null,
+              rating: 4.5,
+              review_count: 25,
+              is_active: true,
+              is_featured: false,
+              created_at: '2025-01-01T00:00:00Z',
+              updated_at: '2025-01-01T00:00:00Z',
+            })),
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: 1,
+            total_pages: 1,
+          },
         },
       });
 
@@ -174,13 +264,30 @@ test.describe('E2E-ECOM: Product Catalog & Checkout Workflow', () => {
     });
 
     test('should search products by name', async ({ patientPage }) => {
-      // Mock search results
-      await mockApiResponse(patientPage, '**/products?search=creme**', {
+      // Mock search results - matches /api/products/search?q=creme
+      await mockApiResponse(patientPage, /.*\/api\/products\/search\?.*/, {
         status: 200,
         body: {
-          success: true,
-          products: [mockProducts[1]], // Crème hydratante
-          total: 1,
+          data: [
+            {
+              ...mockProducts[1],
+              sku: `SKU-${mockProducts[1].id}`,
+              manufacturer: 'Test Pharma',
+              category_id: mockProducts[1].category.toLowerCase(),
+              original_price: null,
+              low_stock_threshold: 10,
+              image_url: mockProducts[1].image,
+              expiry_date: null,
+              rating: 4.5,
+              review_count: 25,
+              is_active: true,
+              is_featured: false,
+              created_at: '2025-01-01T00:00:00Z',
+              updated_at: '2025-01-01T00:00:00Z',
+            },
+          ],
+          query: 'creme',
+          count: 1,
         },
       });
 
