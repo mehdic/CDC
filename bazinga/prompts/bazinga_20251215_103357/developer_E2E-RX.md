@@ -1649,24 +1649,24 @@ Let's build something great! 🚀
 ## Current Task Assignment
 
 **SESSION:** bazinga_20251215_103357
-**GROUP:** NUR-E2E
+**GROUP:** E2E-RX
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** T8-048: Nurse Workflow E2E Tests
+**TASK:** T8-045: Prescription Workflow E2E Tests
 
 **REQUIREMENTS:**
-Implement Nurse Workflow E2E Tests using Playwright.
+Implement Prescription Workflow E2E Tests using Playwright.
 
 Requirements:
-- Patient search and selection E2E tests
-- Medication ordering workflow tests
-- Delivery tracking verification tests
-- Shift handover workflow tests
+- Prescription creation flow tests
+- Prescription renewal workflow tests
+- Prescription validation tests
+- Multi-role prescription handling tests (pharmacist, doctor, patient)
 
-Location: e2e/tests/nurse/
+Location: e2e/tests/prescription/
 
-Create comprehensive E2E test suite covering critical nurse app workflows.
+Create comprehensive E2E test suite covering prescription workflows.
 
 **TESTING MODE:** full
 **COMMIT TO:** main
