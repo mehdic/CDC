@@ -106,6 +106,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               onClick={() => onAddToCart(product.id)}
               disabled={isOutOfStock}
               fullWidth
+              data-testid={`add-to-cart-${product.id}`}
             >
               Ajouter au panier
             </Button>
