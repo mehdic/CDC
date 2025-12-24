@@ -1,0 +1,241 @@
+name: Kubernetes Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+    secrets:
+      KUBE_CONFIG:
+        required: true
+      SLACK_WEBHOOK_URL:
+        required: false
+
+concurrency:
+  group: k8s-deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  validate:
+    name: Validate Deployment
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Kubernetes manifests
+        run: |
+          # Install kubeval for validation
+          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar xf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin
+
+          # Validate all manifests
+          find kubernetes/deployments -name "*.yaml" -exec kubeval --strict {} \;
+          find kubernetes/services -name "*.yaml" -exec kubeval --strict {} \;
+
+      - name: Check image exists
+        run: |
+          echo "Verifying image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/web:${{ inputs.image_tag }}"
+          docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/web:${{ inputs.image_tag }}
+
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    needs: validate
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.28.0'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl apply -f kubernetes/namespaces/metapharm.yaml
+
+      - name: Apply ConfigMaps
+        run: |
+          kubectl apply -f kubernetes/configmaps/ -n metapharm
+
+      - name: Update image tags in deployments
+        run: |
+          # Update image tags for all services
+          for deployment in kubernetes/deployments/*.yaml; do
+            service_name=$(basename "$deployment" .yaml | sed 's/-deployment//')
+            sed -i "s|image: .*$service_name:.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/$service_name:${{ inputs.image_tag }}|g" "$deployment"
+          done
+
+      - name: Deploy services (Blue-Green strategy)
+        run: |
+          # Apply all service definitions first
+          kubectl apply -f kubernetes/services/ -n metapharm
+
+          # Deploy new version (green)
+          for deployment in kubernetes/deployments/*.yaml; do
+            kubectl apply -f "$deployment" -n metapharm
+          done
+
+      - name: Wait for rollout to complete
+        run: |
+          # Wait for all deployments to be ready
+          for deployment in $(kubectl get deployments -n metapharm -o name); do
+            echo "Waiting for $deployment to be ready..."
+            kubectl rollout status "$deployment" -n metapharm --timeout=10m
+          done
+
+      - name: Health check
+        run: |
+          # Check all pods are running
+          kubectl get pods -n metapharm
+
+          # Verify critical services are healthy
+          UNHEALTHY=$(kubectl get pods -n metapharm --field-selector=status.phase!=Running -o name | wc -l)
+          if [ "$UNHEALTHY" -gt 0 ]; then
+            echo "ERROR: $UNHEALTHY pods are not running"
+            kubectl get pods -n metapharm --field-selector=status.phase!=Running
+            exit 1
+          fi
+
+      - name: Run smoke tests
+        run: |
+          # Get API Gateway service endpoint
+          API_ENDPOINT=$(kubectl get svc api-gateway-svc -n metapharm -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+          # Run basic health check
+          curl -f http://${API_ENDPOINT}/health || exit 1
+
+          echo "✅ Smoke tests passed"
+
+      - name: Tag deployment
+        run: |
+          kubectl annotate deployment -n metapharm --all \
+            "deployment.kubernetes.io/revision=$(date +%Y%m%d%H%M%S)" \
+            "deployment.kubernetes.io/environment=${{ inputs.environment }}" \
+            "deployment.kubernetes.io/image-tag=${{ inputs.image_tag }}" \
+            --overwrite
+
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.28.0'
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Rollback all deployments
+        run: |
+          for deployment in $(kubectl get deployments -n metapharm -o name); do
+            echo "Rolling back $deployment..."
+            kubectl rollout undo "$deployment" -n metapharm
+          done
+
+      - name: Wait for rollback
+        run: |
+          for deployment in $(kubectl get deployments -n metapharm -o name); do
+            kubectl rollout status "$deployment" -n metapharm --timeout=5m
+          done
+
+      - name: Notify rollback
+        run: |
+          echo "⚠️ Deployment to ${{ inputs.environment }} failed and was rolled back" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
+
+    steps:
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "Deployment to ${{ inputs.environment }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ needs.deploy.result == 'success' && '✅' || '❌' }} *Deployment to ${{ inputs.environment }}*"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ needs.deploy.result }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Image Tag:*\n${{ inputs.image_tag }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\n${{ inputs.environment }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Triggered By:*\n${{ github.actor }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>"
+                  }
+                }
+              ]
+            }
+        if: secrets.SLACK_WEBHOOK_URL != ''
+        continue-on-error: true

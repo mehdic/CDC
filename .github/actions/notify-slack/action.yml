@@ -1,0 +1,75 @@
+name: 'Notify Slack'
+description: 'Send notifications to Slack about CI/CD pipeline status'
+
+inputs:
+  webhook-url:
+    description: 'Slack webhook URL'
+    required: true
+  workflow-name:
+    description: 'Name of the workflow'
+    required: true
+  status:
+    description: 'Status of the workflow (success, failure, cancelled)'
+    required: true
+  environment:
+    description: 'Target environment (optional)'
+    required: false
+    default: 'N/A'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Send Slack notification
+      uses: slackapi/slack-github-action@v1
+      with:
+        webhook-url: ${{ inputs.webhook-url }}
+        payload: |
+          {
+            "text": "${{ inputs.workflow-name }} - ${{ inputs.status }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "${{ inputs.status == 'success' && '✅' || inputs.status == 'failure' && '❌' || '⚠️' }} *${{ inputs.workflow-name }}*"
+                }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Repository:*\n${{ github.repository }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Branch:*\n${{ github.ref_name }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Status:*\n${{ inputs.status }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Environment:*\n${{ inputs.environment }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Triggered By:*\n${{ github.actor }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Commit:*\n${{ github.sha }}"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run> | <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"
+                }
+              }
+            ]
+          }
+      shell: bash
