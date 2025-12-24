@@ -31,7 +31,7 @@ import {
 } from '@mui/material';
 import {
   Close as CloseIcon,
-  Medicine as MedicineIcon,
+  Medication as MedicationIcon,
   Schedule as ScheduleIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
@@ -46,7 +46,7 @@ interface MedicationRemindersProps {
  */
 interface ReminderSettingsDialogProps {
   open: boolean;
-  _reminderId: string;
+  reminderId: string;
   medicationName: string;
   currentEnabled: boolean;
   currentTimes: string[];
@@ -218,7 +218,7 @@ export const MedicationReminders: React.FC<MedicationRemindersProps> = ({ patien
                 >
                   <ListItemAvatar>
                     <Avatar sx={{ bgcolor: 'primary.main' }}>
-                      <MedicineIcon />
+                      <MedicationIcon />
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
