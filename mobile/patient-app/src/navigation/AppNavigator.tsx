@@ -7,6 +7,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
+import { Text, View } from 'react-native';
 
 import PrescriptionDetailScreen from '../screens/PrescriptionDetailScreen';
 import PrescriptionListScreen from '../screens/PrescriptionListScreen';
@@ -76,7 +77,7 @@ const HomeTabNavigator: React.FC = () => {
  * Tab Icon Component
  */
 const TabIcon: React.FC<{ icon: string; color: string }> = ({ icon }) => {
-  return <span style={{ fontSize: 24 }}>{icon}</span>;
+  return <Text style={{ fontSize: 24 }}>{icon}</Text>;
 };
 
 /**
@@ -88,10 +89,10 @@ const TabIconWithBadge: React.FC<{
   badgeCount: number;
 }> = ({ icon, badgeCount }) => {
   return (
-    <div style={{ position: 'relative' }}>
-      <span style={{ fontSize: 24 }}>{icon}</span>
+    <View style={{ position: 'relative' }}>
+      <Text style={{ fontSize: 24 }}>{icon}</Text>
       {badgeCount > 0 && (
-        <div
+        <View
           style={{
             position: 'absolute',
             top: -4,
@@ -106,7 +107,7 @@ const TabIconWithBadge: React.FC<{
             paddingHorizontal: 4,
           }}
         >
-          <span
+          <Text
             style={{
               color: '#fff',
               fontSize: 12,
@@ -114,10 +115,10 @@ const TabIconWithBadge: React.FC<{
             }}
           >
             {badgeCount > 99 ? '99+' : badgeCount}
-          </span>
-        </div>
+          </Text>
+        </View>
       )}
-    </div>
+    </View>
   );
 };
 
