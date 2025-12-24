@@ -31,6 +31,11 @@ const statusConfig: Record<
     color: 'text-purple-800',
     bgColor: 'bg-purple-100',
   },
+  in_transit: {
+    label: 'En transit',
+    color: 'text-orange-800',
+    bgColor: 'bg-orange-100',
+  },
   delivered: {
     label: 'Livré',
     color: 'text-green-800',

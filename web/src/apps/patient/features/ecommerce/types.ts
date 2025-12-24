@@ -87,7 +87,7 @@ export type SortOrder = 'ASC' | 'DESC';
  * Task: T8-040 - Patient E-Commerce Order History
  */
 
-export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'in_transit' | 'delivered' | 'cancelled';
 
 export interface DeliveryAddress {
   street: string;
