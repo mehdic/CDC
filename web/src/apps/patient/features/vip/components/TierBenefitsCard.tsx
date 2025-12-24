@@ -58,14 +58,20 @@ export const TierBenefitsCard: React.FC<TierBenefitsCardProps> = ({
     ? Math.min(100, ((membership.totalPoints - tierInfo.minPoints) / (nextTierInfo.minPoints - tierInfo.minPoints)) * 100)
     : 100;
 
+  const tierName = membership.currentTier.toLowerCase();
+
   return (
-    <Card
-      sx={{
-        background: `linear-gradient(135deg, ${tierColor}33 0%, ${tierColor}11 100%)`,
-        border: `2px solid ${tierColor}`,
-        mb: 3,
-      }}
+    <Box
+      data-testid="tier-card"
+      sx={{ width: '100%' }}
     >
+      <Card
+        sx={{
+          background: `linear-gradient(135deg, ${tierColor}33 0%, ${tierColor}11 100%)`,
+          border: `2px solid ${tierColor}`,
+          mb: 3,
+        }}
+      >
       <CardHeader
         avatar={
           <Box
@@ -199,6 +205,7 @@ export const TierBenefitsCard: React.FC<TierBenefitsCardProps> = ({
         )}
       </CardContent>
     </Card>
+    </Box>
   );
 };
 

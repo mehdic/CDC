@@ -10,12 +10,12 @@ import { logout, getUserData } from '@shared/services/authService';
  * Role-based route access configuration
  */
 export const ROLE_PERMISSIONS = {
-  pharmacist: ['dashboard', 'prescriptions', 'inventory', 'teleconsultation', 'analytics', 'marketing', 'delivery', 'settings', 'ecommerce', 'orders'],
+  pharmacist: ['dashboard', 'prescriptions', 'inventory', 'teleconsultation', 'analytics', 'marketing', 'delivery', 'settings', 'ecommerce', 'orders', 'vip'],
   doctor: ['dashboard', 'teleconsultation', 'messages'],
   nurse: ['dashboard', 'inventory', 'deliveries', 'teleconsultation', 'messages'],
-  patient: ['dashboard', 'teleconsultation', 'ecommerce', 'orders', 'messages'],
+  patient: ['dashboard', 'teleconsultation', 'ecommerce', 'orders', 'messages', 'vip'],
   delivery_person: ['deliveries', 'messages'],
-  admin: ['dashboard', 'prescriptions', 'inventory', 'teleconsultation', 'analytics', 'marketing', 'delivery', 'settings', 'ecommerce', 'orders', 'messages'],
+  admin: ['dashboard', 'prescriptions', 'inventory', 'teleconsultation', 'analytics', 'marketing', 'delivery', 'settings', 'ecommerce', 'orders', 'messages', 'vip'],
 } as const;
 
 export type UserRole = keyof typeof ROLE_PERMISSIONS;
@@ -37,6 +37,7 @@ const OrderManagement = lazy(() => import('@apps/pharmacist/pages/OrderManagemen
 const DeliveryManagement = lazy(() => import('@apps/pharmacist/pages/DeliveryManagement'));
 const Checkout = lazy(() => import('@apps/patient/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@apps/patient/pages/checkout/OrderConfirmation'));
+const VIPPortal = lazy(() => import('@apps/patient/features/vip/pages/VIPPortal'));
 
 /**
  * Protected route component
@@ -363,6 +364,18 @@ export const AppRoutes: React.FC = () => {
             <ProtectedRoute requiredRoles={['patient', 'pharmacist', 'admin']}>
               <AppLayout>
                 <OrderConfirmation />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* VIP Program - Patient */}
+        <Route
+          path="/vip-program"
+          element={
+            <ProtectedRoute requiredRoles={['patient', 'pharmacist', 'admin']}>
+              <AppLayout>
+                <VIPPortal />
               </AppLayout>
             </ProtectedRoute>
           }

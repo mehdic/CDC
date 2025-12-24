@@ -129,12 +129,20 @@ export const PointsHistorySection: React.FC<PointsHistorySectionProps> = ({
                   }}
                 >
                   <TableCell>
-                    <Chip
-                      label={POINTS_TYPE_LABELS[item.type as PointsType]}
-                      color={POINTS_TYPE_COLORS[item.type as PointsType]}
-                      size="small"
-                      icon={POINTS_TYPE_ICONS[item.type as PointsType]}
-                    />
+                    {POINTS_TYPE_ICONS[item.type as PointsType] ? (
+                      <Chip
+                        label={POINTS_TYPE_LABELS[item.type as PointsType]}
+                        color={POINTS_TYPE_COLORS[item.type as PointsType]}
+                        size="small"
+                        icon={POINTS_TYPE_ICONS[item.type as PointsType] as any}
+                      />
+                    ) : (
+                      <Chip
+                        label={POINTS_TYPE_LABELS[item.type as PointsType]}
+                        color={POINTS_TYPE_COLORS[item.type as PointsType]}
+                        size="small"
+                      />
+                    )}
                   </TableCell>
 
                   <TableCell>
