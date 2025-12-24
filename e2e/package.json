@@ -17,6 +17,7 @@
     "test:doctor": "playwright test tests/doctor",
     "test:nurse": "playwright test tests/nurse",
     "test:delivery": "playwright test tests/delivery",
+    "test:prescription": "playwright test tests/prescription",
     "report": "playwright show-report"
   },
   "devDependencies": {
