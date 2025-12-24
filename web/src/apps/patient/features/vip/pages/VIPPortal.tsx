@@ -179,22 +179,28 @@ export const VIPPortal: React.FC<VIPPortalProps> = ({
 
   const handleSignup = async () => {
     try {
+      console.log('[VIPPortal] Starting signup...');
       setIsSigningUp(true);
       setSignupError(null);
 
       // Use provided onSignup prop if available (for testing), otherwise use vipSignup service
       if (onSignup) {
+        console.log('[VIPPortal] Using onSignup prop');
         await onSignup();
       } else {
+        console.log('[VIPPortal] Using vipSignup service');
         await vipSignup();
       }
 
+      console.log('[VIPPortal] Signup successful, showing alert');
       setSignupSuccess(true);
       setShowSuccessAlert(true);
     } catch (error) {
+      console.error('[VIPPortal] Signup error:', error);
       setSignupError(error instanceof Error ? error : new Error('Signup failed'));
     } finally {
       setIsSigningUp(false);
+      console.log('[VIPPortal] Signup process complete');
     }
   };
 

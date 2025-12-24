@@ -5,6 +5,33 @@
 **[developer] completion:** ## Completion Summary
 
 ### What Was Done
+1. Added MOCK_AUTH environment variable support to global-setup.ts
+2. When MOCK_AUTH=true, system now:
+   - Skips backend API Gateway startup
+   - Skips real authentication via browser
+   - Generates mock authentication states for all user roles
+3. Mock auth 
+
+**[developer] decisions:** ## Decisions
+
+### Chosen Approach
+Add MOCK_AUTH environment variable to bypass backend authentication in global-setup.ts. When enabled, skip real backend startup and authentication, allowing tests to use mock fixtures exclusively.
+
+### Why This Approach
+1. **Minimal invasive change** - Only modify g
+
+**[developer] understanding:** ## Understanding
+
+### Task Interpretation
+Implement mock-only mode for E2E tests to eliminate backend API dependency. This allows E2E tests to run independently without requiring live backend services.
+
+### Key Requirements
+1. Add MOCK_AUTH=true environment variable support in global-setup.ts
+2. Whe
+
+**[developer] completion:** ## Completion Summary
+
+### What Was Done
 1. Added lazy imports for all nurse components (NurseLayout, NurseDashboard, PatientList, PatientDetail, MedicationOrderForm, OrderDetail, OrderTracking, NotificationPanel)
 2. Implemented /nurse parent route with NurseLayout and ProtectedRoute (requiredRoles=
 
@@ -15,34 +42,6 @@ Implement /nurse/* routes in web/src/routes/index.tsx to support the nurse role'
 
 ### Key Requirements
 1. Add lazy imports for NurseLayout and all nurse components (NurseDashboard, PatientList, MedicationOrderForm, OrderTracking, e
-
-**[developer] completion:** ## Completion Summary
-
-### What Was Done
-- Created 4 comprehensive E2E test suites for nurse workflows
-- Implemented 425 tests total (75 per primary test, 5 browsers + mobile)
-- Followed Playwright Page Object Model pattern
-- Used data-testid selectors for stability
-- Comprehensive API mocking for a
-
-**[developer] understanding:** ## Understanding
-
-### Task Interpretation
-Implement comprehensive E2E test suite for Nurse Workflow using Playwright. The tests should cover:
-1. Patient search and selection workflows
-2. Medication ordering workflows  
-3. Delivery tracking verification
-4. Shift handover workflows
-
-Tests should be co
-
-**[developer] completion:** ## Completion Summary - T8-048 Nurse E2E Environment Fix
-
-### What Was Done
-1. **Root Cause Analysis**: Identified npm workspace hoisting bug in Vite 7.2.6 setup
-   - Vite requires esbuild and rollup as dependencies
-   - These were not explicitly listed in web/package.json
-   - Lock file corruption 
 
 
 
@@ -2007,27 +2006,12 @@ You are NOT a code reviewer (that's Tech Lead's job). Focus on automated testing
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** QA Test: Nurse Routes E2E Verification
+**TASK:** Test NUR-E2E mock auth implementation
 
 **REQUIREMENTS:**
-DEVELOPER COMPLETED:
+Developer implemented MOCK_AUTH mode in global-setup.ts eliminating backend API dependency for E2E tests. 7/7 unit tests passing. Now verify the nurse workflow E2E tests work with mock authentication.
 
-- Implemented /nurse/* routes in web/src/routes/index.tsx
-- Added 9 nested routes (dashboard, patients, orders, tracking, notifications)
-- Uses NurseLayout with Outlet pattern
-- ProtectedRoute with requiredRoles=['nurse', 'admin']
-- Lint: PASS, Build: PASS
-
-Run nurse E2E tests to verify routes work correctly:
-
-Location: web/e2e/tests/nurse-login-dashboard.spec.ts
-
-Verify:
-1. Nurse can navigate to /nurse/dashboard
-2. Routes render correct components
-3. Role-based protection works
-
-Note: These tests may require API mocking (already added by previous developer iteration).
+Test to run: MOCK_AUTH=true npm run test:e2e -- nurse-login-dashboard.spec.ts
 
 **TESTING MODE:** full
 **COMMIT TO:** main

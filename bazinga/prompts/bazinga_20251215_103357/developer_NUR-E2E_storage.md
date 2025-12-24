@@ -1,18 +1,3 @@
-## Context from Prior Work
-
-### Relevant Context
-
-**[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter3.md
-> 2 E2E test failures (iteration 3): data-testid attributes not rendering, success alert not showing
-
-**[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter2.md
-> 2 E2E test failures: missing generic tier-card test ID, signup success alert not appearing
-
-**[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter1.md
-> 3 E2E test failures: missing data-testid attributes on page title, success alert, and tier cards
-
-
-
 ## SPECIALIZATION GUIDANCE (Advisory)
 
 > This guidance is supplementary. It does NOT override:
@@ -152,253 +137,258 @@ TypeScript specialist building type-safe applications. Expert in advanced types,
 
 > This guidance is supplementary. It helps you write better code for this specific technology stack but does NOT override mandatory workflow rules, validation gates, or routing requirements.
 
-# React Engineering Expertise
+# Playwright/Cypress E2E Expertise
 
 ## Specialist Profile
-React specialist building performant, accessible UIs. Expert in hooks, Server Components, and modern React patterns.
+E2E testing specialist building browser automation. Expert in page objects, visual testing, and test reliability.
 
 ---
 
 ## Patterns to Follow
 
-### Component Architecture
-- **Server Components by default**: Only use `'use client'` when needed (Next.js App Router)
-- **Client-side rendering**: No Server Components; use data fetching libraries
-- **Functional components**: No class components for new code
-- **Single responsibility**: One purpose per component
-- **Composition over props**: Use children and render props
-- **Colocation**: Keep related code together
+### Test Structure
+- **Page Object Model**: Encapsulate page interactions
+- **data-testid selectors**: Stable, decoupled from styling
+- **Descriptive test names**: `should create user with valid data`
+- **Arrange-Act-Assert**: Clear test phases
+- **Single responsibility**: One behavior per test
 
-### React 19 Patterns
-- **useActionState for forms**: Replaces useFormState with clearer semantics
-- **useOptimistic for UI**: Optimistic updates built-in
-- **use() for promises**: Cleaner async data handling
-- **React Compiler**: Auto-memoization reduces useMemo/useCallback need
+### Playwright Patterns (2025)
+- **Auto-waiting built-in**: No manual waits needed
+- **Parallel execution**: Native, fast
+- **Multiple browsers**: Chrome, Firefox, WebKit
+- **Trace Viewer**: Deep debugging on failure
+- **API mocking**: `page.route()` for isolation
+- **UI mode**: Interactive test runner with watch mode
+- **Component testing**: Native React/Vue/Svelte support
+- **Annotations API**: `test.step()`, `test.slow()`, `test.fixme()`
+- **Clock API**: Mock Date, setTimeout, setInterval
 
-### Hooks Best Practices
-- **Custom hooks for reuse**: Extract logic into `use*` functions
-- **Dependency arrays**: Include all reactive values
-- **Cleanup functions**: Return cleanup from useEffect
-- **useReducer for complex state**: When state has multiple sub-values
-- **useMemo/useCallback rarely**: React Compiler auto-memoizes; use for ref stability only
-- **useMemo/useCallback sparingly**: Only for measured performance issues
+### Cypress Patterns
+- **cy.intercept()**: Network stubbing
+- **Auto-retry assertions**: Handles async naturally
+- **Time-travel debugging**: Inspect each step
+- **Component testing**: Native support
+- **Real-time reloading**: Fast feedback
+- **Test isolation default**: Each test starts fresh
+- **Improved component testing**: Better framework support
+- **Session API improvements**: Persistent auth across tests
+- **Legacy cy.route()**: Use cy.intercept() instead (deprecated)
 
-### State Management
-- **Lift state minimally**: Only as high as needed
-- **Context for global state**: Theme, auth, locale
-- **Server state libraries**: TanStack Query, SWR for async
-- **URL state**: searchParams for shareable state
+### Reliability Patterns
+- **API shortcuts for setup**: Seed data via API, not UI
+- **Isolated test data**: Each test creates its own
+- **Retry flaky tests**: `retries: 2` in config
+- **Visual regression**: Percy, Applitools, or built-in
+- **Cross-browser testing**: CI matrix
 
-### Performance
-- **Code splitting**: Dynamic imports for large components
-- **Suspense boundaries**: Wrap async components
-- **Error boundaries**: Catch rendering errors gracefully
-- **Key props**: Stable, unique keys for lists
+### CI/CD Integration
+- **Headless by default**: Faster in CI
+- **Artifacts on failure**: Screenshots, videos, traces
+- **Parallel sharding**: Split across workers
+- **Flaky test detection**: Track over time
 
 ---
 
 ## Patterns to Avoid
 
-### Component Anti-Patterns
-- ❌ **`'use client'` everywhere**: Ship unnecessary JS; default to server
-- ❌ **Props drilling >3 levels**: Use context or composition
-- ❌ **Inline object/array literals in JSX**: Creates new reference each render
-- ❌ **Missing key props**: Causes reconciliation bugs
-- ❌ **Index as key**: Breaks state on reorder; use stable IDs
+### Selector Anti-Patterns
+- ❌ **CSS classes for selectors**: Fragile, change often
+- ❌ **XPath for simple elements**: Use semantic selectors
+- ❌ **Auto-generated IDs**: Unstable between builds
+- ❌ **Text-based only**: May change with i18n
 
-### Hook Anti-Patterns
-- ❌ **useEffect for derived state**: Use useMemo or compute in render
-- ❌ **useEffect for data fetching** (React 19+): Use Server Components or use()
-- ❌ **Missing dependencies**: Stale closures cause bugs
-- ❌ **State for props transformation**: Just compute it
-- ❌ **useEffect as "Swiss Army knife"**: Use proper patterns instead
+### Test Anti-Patterns
+- ❌ **Hard-coded waits (sleep)**: Flaky, slow
+- ❌ **Testing via UI what's faster via API**: Slow, brittle
+- ❌ **Shared mutable state**: Tests affect each other
+- ❌ **Sequential dependencies**: Tests should be independent
+- ❌ **Giant test files**: Hard to maintain
 
-### State Anti-Patterns
-- ❌ **Storing derived values**: Compute from source of truth
-- ❌ **Redundant state**: One source per piece of data
-- ❌ **State updates in render**: Causes infinite loops
-- ❌ **Global state for local needs**: Keep state close to usage
-
-### Performance Anti-Patterns
-- ❌ **Premature optimization**: Measure before memoizing
-- ❌ **Over-memoizing**: React Compiler handles most cases
-- ❌ **Large component trees**: Split and lazy load
-- ❌ **Direct DOM manipulation**: Use refs and React patterns
+### Maintenance Anti-Patterns
+- ❌ **Duplicated selectors**: Use page objects
+- ❌ **No retry strategy**: Flaky test fatigue
+- ❌ **Missing CI artifacts**: Can't debug failures
+- ❌ **Ignoring flaky tests**: Tech debt builds up
 
 ---
 
 ## Verification Checklist
 
-### Architecture
-- [ ] Server Components for non-interactive UI
-- [ ] Client Components only for hooks/events
-- [ ] Proper component composition
-- [ ] Code splitting for large bundles
+### Structure
+- [ ] Page Object Pattern used
+- [ ] data-testid for key elements
+- [ ] Tests are independent
+- [ ] Single assertion focus
 
-### Hooks
-- [ ] Custom hooks for reusable logic
-- [ ] Complete dependency arrays
-- [ ] Cleanup functions where needed
-- [ ] No useEffect abuse
+### Reliability
+- [ ] No hard-coded waits
+- [ ] Network mocking where needed
+- [ ] Retry configuration
+- [ ] Test isolation (data, state)
 
-### Performance
-- [ ] Suspense boundaries for async
-- [ ] Error boundaries for fault tolerance
-- [ ] Stable key props on lists
-- [ ] Bundle size monitored
+### CI/CD
+- [ ] Headless mode configured
+- [ ] Artifacts on failure
+- [ ] Parallel execution
+- [ ] Cross-browser matrix
 
-### Accessibility
-- [ ] Semantic HTML elements
-- [ ] ARIA attributes for custom widgets
-- [ ] Keyboard navigation
-- [ ] Focus management
+### Reporting
+- [ ] HTML report generation
+- [ ] Video/screenshot on failure
+- [ ] Trace files (Playwright)
+- [ ] Coverage integration
 
 ---
 
 ## Code Patterns (Reference)
 
-### Recommended Constructs
-- **Functional component**: `function UserCard({ user }: Props) { return <div>{user.name}</div>; }`
-- **Custom hook**: `function useUser(id: string) { /* fetch logic */ return { user, loading }; }`
-- **Error boundary**: Wrap fallible subtrees with error UI fallback
-- **Suspense for data**: `<Suspense fallback={<Spinner />}><AsyncComponent /></Suspense>`
-- **useTransition**: `const [isPending, startTransition] = useTransition()` for non-urgent updates
-- **useDeferredValue**: `const deferred = useDeferredValue(value)` for expensive computations
-- **Suspense for lazy**: `<Suspense fallback={<Spinner />}><LazyComponent /></Suspense>` (code-splitting only)
-- **useActionState**: `const [state, action, pending] = useActionState(serverAction, initial)`
-- **useOptimistic**: `const [optimistic, setOptimistic] = useOptimistic(state)`
-- **use()**: `const data = use(promise)` inside component
+### Playwright
+- **Page Object**: `class UsersPage { constructor(page: Page) { this.usersList = page.getByTestId('users-list'); } }`
+- **Test**: `test('should display users', async ({ page }) => { await expect(page.getByTestId('user-card')).toHaveCount(3); });`
+- **API mock**: `await page.route('/api/users', route => route.fulfill({ json: users }));`
+- **Wait for network**: `await page.waitForResponse('/api/users');`
+
+### Cypress
+- **Intercept**: `cy.intercept('GET', '/api/users').as('getUsers'); cy.wait('@getUsers');`
+- **Custom command**: `Cypress.Commands.add('login', (email) => { cy.request('POST', '/api/login', { email }); });`
+- **Assertion**: `cy.getByTestId('user-card').should('have.length.greaterThan', 0);`
+
+### Both
+- **data-testid**: `<button data-testid="submit-btn">Submit</button>`
+- **Page Object method**: `async fillForm(data) { await this.emailInput.fill(data.email); }`
 
 
 
 > This guidance is supplementary. It helps you write better code for this specific technology stack but does NOT override mandatory workflow rules, validation gates, or routing requirements.
 
-# Testing Patterns Engineering Expertise
+# QA Strategies & Test Planning Expertise
 
 ## Specialist Profile
-Testing specialist implementing comprehensive test strategies. Expert in unit, integration, and E2E testing patterns.
+QA specialist designing comprehensive test strategies. Expert in test planning, risk-based testing, and quality metrics.
 
 ---
 
 ## Patterns to Follow
 
-### Unit Testing
-- **Arrange-Act-Assert (AAA)**: Clear test structure
-- **Test behavior, not implementation**: Public API focus
-- **One assertion per test (ideally)**: Clear failure reason
-- **Fast execution**: Mock external dependencies
-- **Descriptive names**: `should_return_error_when_email_invalid`
+### Test Planning
+- **Risk-based prioritization**: High impact first
+- **Entry/exit criteria**: Clear gates
+- **Test levels defined**: Unit → Integration → E2E
+- **Coverage targets**: Realistic, not 100%
+- **Traceability matrix**: Requirements → tests
 
-### Integration Testing
-- **Real database (containerized)**: Docker, Testcontainers
-- **API contract testing**: HTTP layer
-- **Transaction rollback**: Clean state per test
-- **Minimal mocking**: Only external services
-- **Realistic scenarios**: Happy path + error paths
-- **Reusable containers**: Singleton pattern for fast tests
-- **Module system**: Compose-based multi-container setups
+### Test Design Techniques
+- **Boundary Value Analysis**: Min, max, and edges
+- **Equivalence Partitioning**: Group similar inputs
+- **Decision Tables**: Complex logic coverage
+- **State Transition**: Workflow testing
+- **Pairwise Testing**: Combinatorial efficiency
 
-### Test-Driven Development (TDD)
-- **Red-Green-Refactor**: Write failing test first
-- **Outer/Inner loop**: Acceptance test → unit tests
-- **Small increments**: One test at a time
-- **Refactor with confidence**: Tests are safety net
+### Quality Metrics
+- **Defect density**: Defects per KLOC
+- **Test coverage**: Lines, branches, paths
+- **Escaped defects**: Bugs found in production
+- **Mean time to detect (MTTD)**: How fast bugs found
+- **Defect removal efficiency**: Testing vs. production
 
-### Test Data
-- **Factory pattern**: `buildUser({ email: 'test@example.com' })`
-- **Faker for realistic data**: Random but valid
-- **Fixtures for complex scenarios**: Reusable setups
-- **Database seeding**: Consistent baseline
+### Test Pyramid
+- **Unit tests (70%)**: Fast, many, isolated
+- **Integration tests (20%)**: API, database contracts
+- **E2E tests (10%)**: Critical user journeys
+- **Shift left**: More testing earlier
 
-### Mocking Strategy
-- **Mock at boundaries**: External services, time, randomness
-- **Don't mock what you own**: Test real interactions
-- **Verify mock calls**: Ensure correct usage
-- **Reset between tests**: Clean state
+### Defect Management
+- **Severity levels**: Critical, High, Medium, Low
+- **SLAs per severity**: Time to fix
+- **Root cause analysis**: Prevent recurrence
+- **Regression suite**: Prevent regressions
 
 ---
 
 ## Patterns to Avoid
 
-### Unit Test Anti-Patterns
-- ❌ **Testing private methods**: Test public behavior
-- ❌ **Shared mutable state**: Isolation required
-- ❌ **Over-mocking**: Loses confidence
-- ❌ **Brittle assertions**: Test essence, not details
-- ❌ **Slow tests**: Should run in milliseconds
+### Planning Anti-Patterns
+- ❌ **No test plan**: Ad-hoc testing
+- ❌ **Testing everything equally**: Waste of resources
+- ❌ **Skipping risk assessment**: Surprises in prod
+- ❌ **No exit criteria**: Never-ending testing
 
-### Integration Anti-Patterns
-- ❌ **Mocking everything**: Defeats purpose
-- ❌ **Shared database state**: Tests affect each other
-- ❌ **No cleanup**: Data accumulates
-- ❌ **Flaky async handling**: Use proper waiting
+### Execution Anti-Patterns
+- ❌ **Manual-only regression**: Slow, error-prone
+- ❌ **No environment parity**: "Works on my machine"
+- ❌ **Skipping negative tests**: Only happy paths
+- ❌ **Ignoring non-functional**: Performance, security
 
-### General Anti-Patterns
-- ❌ **Chasing 100% coverage**: Coverage ≠ quality
-- ❌ **No mutation testing**: Tests may be weak
-- ❌ **Ignoring flaky tests**: Technical debt
-- ❌ **Comments in tests**: Test names should be clear
+### Metrics Anti-Patterns
+- ❌ **Test count as quality**: Quantity ≠ quality
+- ❌ **100% coverage goal**: False confidence
+- ❌ **Hiding defects**: Gaming metrics
+- ❌ **No tracking over time**: No trends
 
-### Structure Anti-Patterns
-- ❌ **Logic in tests**: Keep tests simple
-- ❌ **Multiple assertions (unrelated)**: Split tests
-- ❌ **Copy-paste test code**: Use factories/helpers
-- ❌ **Tests without assertions**: False confidence
+### Process Anti-Patterns
+- ❌ **QA at the end**: Shift left instead
+- ❌ **No automation strategy**: Manual bottleneck
+- ❌ **Siloed QA**: Should be team responsibility
+- ❌ **No exploratory testing**: Scripted misses edge cases
 
 ---
 
 ## Verification Checklist
 
-### Unit Tests
-- [ ] AAA pattern followed
-- [ ] Tests are isolated
-- [ ] Fast execution (<100ms each)
-- [ ] Meaningful names
+### Planning
+- [ ] Test plan documented
+- [ ] Risk assessment completed
+- [ ] Entry/exit criteria defined
+- [ ] Coverage targets set
 
-### Integration Tests
-- [ ] Real database used
-- [ ] Proper cleanup/rollback
-- [ ] Contract verification
-- [ ] Timeout handling
+### Design
+- [ ] Boundary values covered
+- [ ] Equivalence classes identified
+- [ ] Negative scenarios included
+- [ ] Non-functional requirements addressed
 
-### Coverage
-- [ ] Critical paths covered
-- [ ] Edge cases included
-- [ ] Error handling tested
-- [ ] Mutation testing considered
+### Execution
+- [ ] Automated regression suite
+- [ ] Environment parity ensured
+- [ ] Exploratory testing scheduled
+- [ ] Cross-browser/device testing
 
-### Maintenance
-- [ ] Factory patterns for data
-- [ ] Helper functions for common assertions
-- [ ] Clear folder structure
-- [ ] CI integration
+### Metrics
+- [ ] Defect metrics tracked
+- [ ] Coverage measured
+- [ ] Trends analyzed
+- [ ] Escaped defects monitored
 
 ---
 
 ## Code Patterns (Reference)
 
-### Unit Test (Jest)
-- **Structure**: `describe('UserService', () => { describe('create', () => { it('should...', () => {}); }); });`
-- **Mock**: `const mockRepo = { create: jest.fn().mockResolvedValue(user) };`
-- **Assert**: `expect(result).toMatchObject({ email: 'test@example.com' });`
-- **Sharding**: `--shard=1/3` for parallel CI
-- **Fake timers**: `jest.useFakeTimers({ advanceTimers: true })`
-- **ESM support**: Native ES modules without transform
-- **Browser mode**: Real browser testing
-- **Type checking**: `--typecheck` flag
-- **Benchmark API**: `bench()` for performance tests
-- **Workspace support**: Monorepo configurations
+### Test Plan Structure
+- **Scope**: In-scope features, out-of-scope items
+- **Approach**: Test levels, types, tools
+- **Criteria**: Entry (code complete), Exit (no P1/P2 open)
+- **Risks**: Probability, impact, mitigation
 
-### Integration Test
-- **Setup**: `beforeAll(async () => { db = await createTestDatabase(); });`
-- **Request**: `const response = await request(app).post('/users').send(userData).expect(201);`
-- **Cleanup**: `afterEach(async () => { await db.truncate(['users']); });`
+### Boundary Testing
+- **Pattern**: `@pytest.mark.parametrize("length,valid", [(1, False), (2, True), (100, True), (101, False)])`
+- **Parallel**: `pytest-xdist` with `--dist worksteal` for optimal load balancing
+- **Improved markers**: Better marker inheritance and collection
+- **Type hints**: Full type annotation support
 
-### Factory Pattern
-- **Builder**: `function buildUser(overrides = {}) { return { id: faker.string.uuid(), email: faker.internet.email(), ...overrides }; }`
+### Equivalence Partitioning
+- **Classes**: Valid standard, valid edge, invalid format, invalid empty
 
-### Helper
-- **Custom assertion**: `function expectValidationError(response, field) { expect(response.status).toBe(400); expect(response.body.details).toHaveProperty(field); }`
+### Test Case Format
+- **ID**: TC-FEAT-001
+- **Preconditions**: User logged in as admin
+- **Steps**: 1. Navigate, 2. Click, 3. Enter, 4. Submit
+- **Expected**: Success message, record created
+
+### Quality Dashboard
+- **Metrics**: Coverage %, defect density, MTTD, escaped defects
+- **Trends**: Week-over-week comparison
+- **Alerts**: Thresholds for action
 
 
 
@@ -1659,24 +1649,25 @@ Let's build something great! 🚀
 ## Current Task Assignment
 
 **SESSION:** bazinga_20251215_103357
-**GROUP:** PAT-VIP
+**GROUP:** NUR-E2E
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** Fix PAT-VIP selector mismatch
+**TASK:** Wire storageState into playwright.config.ts
 
 **REQUIREMENTS:**
-TECH LEAD GUIDANCE - Root cause identified (NOT dev server caching):
+QA FAIL: Mock auth states are being created by global-setup.ts but not applied to tests. The playwright.config.ts is missing storageState configuration.
 
-1. ISSUE 1 (Critical): In TierBenefitsCard.tsx line 71, the attribute is 'data-tier-id' but tests expect 'data-testid'. Change to data-testid='tier-card'.
+YOUR TASK:
+1. Update playwright.config.ts to use the storage states generated by global-setup.ts
+2. Each project should reference its role-specific storage state file
+3. Ensure tests can run with the pre-authenticated state
 
-2. ISSUE 2: Success alert not showing after signup. Add console.log to verify the flow, then check API mock timing.
+FILES TO MODIFY:
+- web/e2e/playwright.config.ts (add storageState to projects)
+- Reference: web/e2e/config/global-setup.ts (see where storage states are saved)
 
-FILES TO FIX:
-- web/src/apps/patient/features/vip/components/TierBenefitsCard.tsx (line 71)
-- web/src/apps/patient/features/vip/pages/VIPPortal.tsx (success alert logic)
-
-After fixes, run: npm run test:e2e -- vip-membership-journey.test.ts
+Test: MOCK_AUTH=true npm run test:e2e -- nurse-login-dashboard.spec.ts
 
 **TESTING MODE:** full
 **COMMIT TO:** main
@@ -1685,6 +1676,6 @@ After fixes, run: npm run test:e2e -- vip-membership-journey.test.ts
 
 
 
-## Tech Lead Feedback (ADDRESS THESE CONCERNS)
+## Previous QA Feedback (FIX THESE ISSUES)
 
-Root cause: selector mismatch. Change data-tier-id to data-testid in TierBenefitsCard.tsx line 71. Debug success alert flow.
+0/55 tests passed - mock auth states created but not applied. Playwright.config.ts missing storageState configuration.

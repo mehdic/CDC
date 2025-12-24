@@ -64,13 +64,16 @@ export const TierBenefitsCard: React.FC<TierBenefitsCardProps> = ({
 
   const tierName = membership.currentTier.toLowerCase();
 
+  console.log('[TierBenefitsCard] Rendering:', {
+    tier: membership.currentTier,
+    testIdGeneric,
+    testIdTier,
+  });
+
   return (
-    <div
-      style={{ width: '100%' }}
-      data-testid={testIdGeneric}
-      data-tier-id={testIdTier}
-    >
-      <Card
+    <div style={{ width: '100%' }} data-testid={testIdGeneric || 'tier-card'}>
+      <div data-testid={testIdTier || `tier-card-${tierName}`}>
+        <Card
         sx={{
           background: `linear-gradient(135deg, ${tierColor}33 0%, ${tierColor}11 100%)`,
           border: `2px solid ${tierColor}`,
@@ -209,7 +212,8 @@ export const TierBenefitsCard: React.FC<TierBenefitsCardProps> = ({
           </Button>
         )}
       </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };
