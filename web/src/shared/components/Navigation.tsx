@@ -199,7 +199,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             </StyledListItemButton>
           </ListItem>
           <Collapse in={isOpen} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
+            <List disablePadding>
               {item.children!.map((child) => renderNavigationItem(child, depth + 1))}
             </List>
           </Collapse>
@@ -222,8 +222,8 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <NavigationContainer>
-      <List component="nav" aria-label="navigation principale">
+    <NavigationContainer role="navigation" aria-label="navigation principale">
+      <List>
         {defaultNavigationItems.map((item) => renderNavigationItem(item))}
       </List>
     </NavigationContainer>

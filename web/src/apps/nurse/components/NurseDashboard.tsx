@@ -87,7 +87,7 @@ export const NurseDashboard: React.FC = () => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-        <CircularProgress />
+        <CircularProgress aria-label="Chargement du tableau de bord infirmière" />
       </Box>
     );
   }
@@ -263,7 +263,7 @@ export const NurseDashboard: React.FC = () => {
 
             {ordersLoading ? (
               <Box textAlign="center" py={3}>
-                <CircularProgress size={24} />
+                <CircularProgress size={24} aria-label="Chargement des commandes en attente" />
               </Box>
             ) : pendingOrders.length === 0 ? (
               <Typography color="text.secondary">Aucune commande en attente</Typography>

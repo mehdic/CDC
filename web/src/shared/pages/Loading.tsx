@@ -57,7 +57,7 @@ export const Loading: React.FC<LoadingProps> = ({
   if (variant === 'fullscreen') {
     return (
       <FullScreenContainer>
-        <CircularProgress size={60} thickness={4} />
+        <CircularProgress size={60} thickness={4} aria-label={message || 'Chargement'} />
         {message && (
           <Typography variant="h6" color="textSecondary">
             {message}
@@ -71,7 +71,7 @@ export const Loading: React.FC<LoadingProps> = ({
   if (variant === 'inline') {
     return (
       <InlineContainer>
-        <CircularProgress size={40} />
+        <CircularProgress size={40} aria-label={message || 'Chargement'} />
         {message && (
           <Typography variant="body1" color="textSecondary">
             {message}

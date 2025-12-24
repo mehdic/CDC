@@ -188,7 +188,7 @@ export const DeliveryDashboard: React.FC = () => {
 
           <Typography variant="body2" color="text.secondary">
             {deliveriesLoading ? (
-              <CircularProgress size={16} sx={{ mr: 1 }} />
+              <CircularProgress size={16} sx={{ mr: 1 }} aria-label="Chargement des livraisons" />
             ) : (
               `${deliveries.length} ${deliveries.length === 1 ? 'delivery' : 'deliveries'}`
             )}
@@ -200,7 +200,7 @@ export const DeliveryDashboard: React.FC = () => {
       <TableContainer component={Paper}>
         {deliveriesLoading && deliveries.length === 0 ? (
           <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}>
-            <CircularProgress />
+            <CircularProgress aria-label="Chargement de la liste des livraisons" />
           </Box>
         ) : deliveries.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>

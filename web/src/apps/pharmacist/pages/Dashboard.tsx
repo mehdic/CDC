@@ -166,7 +166,7 @@ export const Dashboard: React.FC = () => {
       {/* Loading State */}
       {isLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
+          <CircularProgress aria-label="Chargement du tableau de bord" />
         </Box>
       )}
 

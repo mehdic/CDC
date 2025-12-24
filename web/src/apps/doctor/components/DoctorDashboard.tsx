@@ -171,7 +171,7 @@ export const DoctorDashboard: React.FC = () => {
     return (
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
+          <CircularProgress aria-label="Chargement du tableau de bord médecin" />
         </Box>
       </Container>
     );
@@ -340,7 +340,7 @@ export const DoctorDashboard: React.FC = () => {
                 </Typography>
                 {consultationsLoading ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-                    <CircularProgress size={40} />
+                    <CircularProgress size={40} aria-label="Chargement des consultations récentes" />
                   </Box>
                 ) : consultations.length > 0 ? (
                   <Stack spacing={0}>
