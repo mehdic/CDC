@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-gateway-pdb
+  labels:
+    app: api-gateway
+spec:
+  minAvailable: 2  # Always keep at least 2 pods running during disruptions
+  selector:
+    matchLabels:
+      app: api-gateway

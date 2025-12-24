@@ -1,0 +1,55 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: metapharm-production
+
+bases:
+  - ../../base
+
+namespace: metapharm
+
+commonLabels:
+  environment: production
+  managed-by: kustomize
+
+commonAnnotations:
+  environment: production
+
+# Production uses stable release tags
+images:
+  - name: metapharm/api-gateway
+    newTag: v1.0.0
+  - name: metapharm/auth-service
+    newTag: v1.0.0
+  - name: metapharm/prescription-service
+    newTag: v1.0.0
+
+# High replicas for production HA
+replicas:
+  - name: api-gateway-deployment
+    count: 3
+  - name: auth-service-deployment
+    count: 3
+  - name: prescription-service-deployment
+    count: 3
+
+configMapGenerator:
+  - name: app-config
+    behavior: merge
+    literals:
+      - LOG_LEVEL=warn
+      - NODE_ENV=production
+      - JAEGER_ENABLED=true
+
+# Production-specific resources
+resources:
+  - pdb/api-gateway-pdb.yaml
+  - pdb/auth-service-pdb.yaml
+  - pdb/prescription-service-pdb.yaml
+
+patchesStrategicMerge:
+  - patches/resources-prod.yaml
+  - patches/hpa-prod.yaml
+  - patches/storage-prod.yaml
+  - patches/affinity-prod.yaml

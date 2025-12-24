@@ -1,0 +1,66 @@
+# Enhanced anti-affinity for production (spread across zones)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway-deployment
+spec:
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          # REQUIRED anti-affinity (hard constraint)
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - api-gateway
+            topologyKey: topology.kubernetes.io/zone  # Spread across zones
+        # Node affinity (prefer high-performance nodes)
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node.kubernetes.io/instance-type
+                operator: In
+                values:
+                - c5.xlarge
+                - c5.2xlarge
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service-deployment
+spec:
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - auth-service
+            topologyKey: topology.kubernetes.io/zone
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prescription-service-deployment
+spec:
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - prescription-service
+            topologyKey: topology.kubernetes.io/zone

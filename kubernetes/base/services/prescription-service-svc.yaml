@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prescription-service-svc
+  labels:
+    app: prescription-service
+spec:
+  type: ClusterIP
+  selector:
+    app: prescription-service
+  ports:
+  - name: http
+    port: 3009
+    targetPort: http
+    protocol: TCP

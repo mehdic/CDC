@@ -1,0 +1,98 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: metapharm-base
+  annotations:
+    config.kubernetes.io/local-config: "true"
+
+namespace: metapharm
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/part-of: metapharm-connect
+  app.kubernetes.io/managed-by: kustomize
+
+# Resources to include in base
+resources:
+  # Namespace
+  - ../namespaces/metapharm.yaml
+
+  # Deployments (critical services)
+  - deployments/api-gateway.yaml
+  - deployments/auth-service.yaml
+  - deployments/prescription-service.yaml
+  - deployments/postgres.yaml
+  - deployments/redis.yaml
+
+  # Services
+  - services/api-gateway-svc.yaml
+  - services/auth-service-svc.yaml
+  - services/prescription-service-svc.yaml
+  - services/postgres-svc.yaml
+  - services/redis-svc.yaml
+
+  # ServiceAccounts
+  - ../deployments/api-gateway-sa.yaml
+  - ../deployments/auth-service-sa.yaml
+  - ../deployments/prescription-service-sa.yaml
+
+  # ConfigMaps
+  - configmaps/common-config.yaml
+
+  # HPA (Horizontal Pod Autoscaler)
+  - hpa/api-gateway-hpa.yaml
+  - hpa/auth-service-hpa.yaml
+  - hpa/prescription-service-hpa.yaml
+
+  # Ingress
+  - ingress/metapharm-ingress.yaml
+
+# Images (version pinning - no :latest)
+images:
+  - name: metapharm/api-gateway
+    newTag: v1.0.0
+  - name: metapharm/auth-service
+    newTag: v1.0.0
+  - name: metapharm/prescription-service
+    newTag: v1.0.0
+  - name: postgres
+    newTag: "16-alpine"
+  - name: redis
+    newTag: "7-alpine"
+
+# ConfigMap generator for shared config
+configMapGenerator:
+  - name: app-config
+    literals:
+      - LOG_LEVEL=info
+      - NODE_ENV=production
+      - JAEGER_ENABLED=true
+
+# Secret generator (placeholder - use External Secrets in production)
+secretGenerator:
+  - name: db-credentials
+    type: Opaque
+    literals:
+      - POSTGRES_USER=metapharm
+      # NOTE: Use External Secrets Operator or sealed-secrets in production
+      # This is a placeholder for base config only
+
+  - name: jwt-secret
+    type: Opaque
+    literals:
+      - JWT_SECRET=changeme
+
+# Replicas (will be overridden by overlays)
+replicas:
+  - name: api-gateway-deployment
+    count: 2
+  - name: auth-service-deployment
+    count: 2
+  - name: prescription-service-deployment
+    count: 2
+
+# Common annotations
+commonAnnotations:
+  managed-by: kustomize
+  documentation: https://github.com/metapharm/cdc/tree/main/kubernetes

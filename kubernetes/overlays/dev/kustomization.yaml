@@ -1,0 +1,75 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: metapharm-dev
+
+# Inherit from base
+bases:
+  - ../../base
+
+namespace: metapharm-dev
+
+# Environment-specific labels
+commonLabels:
+  environment: dev
+  managed-by: kustomize
+
+# Dev-specific annotations
+commonAnnotations:
+  environment: development
+  auto-sync: "true"
+
+# Dev-specific image tags (or dev registry)
+images:
+  - name: metapharm/api-gateway
+    newTag: dev-latest
+  - name: metapharm/auth-service
+    newTag: dev-latest
+  - name: metapharm/prescription-service
+    newTag: dev-latest
+
+# Reduce replicas for dev
+replicas:
+  - name: api-gateway-deployment
+    count: 1
+  - name: auth-service-deployment
+    count: 1
+  - name: prescription-service-deployment
+    count: 1
+
+# ConfigMap overrides for dev
+configMapGenerator:
+  - name: app-config
+    behavior: merge
+    literals:
+      - LOG_LEVEL=debug
+      - NODE_ENV=development
+      - JAEGER_ENABLED=true
+
+# Secret overrides (use External Secrets in real environments)
+secretGenerator:
+  - name: db-credentials
+    behavior: replace
+    literals:
+      - POSTGRES_USER=dev_user
+      - POSTGRES_PASSWORD=dev_password
+      - POSTGRES_DB=metapharm_dev
+
+# Patches for dev environment
+patchesStrategicMerge:
+  - patches/resources-dev.yaml
+  - patches/hpa-dev.yaml
+  - patches/storage-dev.yaml
+
+# JSON patches (alternative to strategic merge)
+patchesJson6902:
+  # Disable TLS in dev
+  - target:
+      group: networking.k8s.io
+      version: v1
+      kind: Ingress
+      name: metapharm-ingress
+    patch: |-
+      - op: remove
+        path: /spec/tls
