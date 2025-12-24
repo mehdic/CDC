@@ -32,6 +32,7 @@ jobs:
   validate-rollback:
     name: Validate Rollback Request
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Validate inputs
@@ -58,6 +59,7 @@ jobs:
   get-previous-version:
     name: Get Previous Version
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: validate-rollback
     if: inputs.rollback_strategy == 'previous_version'
     outputs:
@@ -99,6 +101,7 @@ jobs:
   backup-current-state:
     name: Backup Current State
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: validate-rollback
     environment: ${{ inputs.environment }}
 
@@ -148,6 +151,7 @@ jobs:
   execute-rollback:
     name: Execute Rollback
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [backup-current-state, get-previous-version]
     if: always() && needs.backup-current-state.result == 'success'
     environment: ${{ inputs.environment }}
@@ -245,6 +249,7 @@ jobs:
   create-incident-report:
     name: Create Incident Report
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: execute-rollback
     if: always()
 
@@ -297,6 +302,7 @@ jobs:
   notify:
     name: Send Notifications
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [execute-rollback, create-incident-report]
     if: always()
 

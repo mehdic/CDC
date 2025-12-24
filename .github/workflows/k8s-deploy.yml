@@ -41,6 +41,7 @@ jobs:
   validate:
     name: Validate Deployment
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: ${{ inputs.environment }}
 
     steps:
@@ -66,6 +67,7 @@ jobs:
   deploy:
     name: Deploy to ${{ inputs.environment }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: validate
     environment: ${{ inputs.environment }}
 
@@ -152,6 +154,7 @@ jobs:
   rollback:
     name: Rollback on Failure
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: deploy
     if: failure()
     environment: ${{ inputs.environment }}
@@ -188,6 +191,7 @@ jobs:
   notify:
     name: Send Notifications
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [deploy]
     if: always()
 
