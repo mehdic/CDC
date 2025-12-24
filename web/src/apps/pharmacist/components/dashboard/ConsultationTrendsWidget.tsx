@@ -30,7 +30,7 @@ export const ConsultationTrendsWidget: React.FC = () => {
       <Card data-testid="consultation-trends">
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
+            <CircularProgress aria-label="Chargement des tendances de consultation" />
           </Box>
         </CardContent>
       </Card>

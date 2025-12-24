@@ -24,6 +24,9 @@ export type UserRole = keyof typeof ROLE_PERMISSIONS;
  * Lazy load pages for code splitting
  */
 const Dashboard = lazy(() => import('@apps/pharmacist/pages/Dashboard'));
+const PatientDashboard = lazy(() => import('@apps/patient/pages/Dashboard'));
+const DoctorDashboard = lazy(() => import('@apps/doctor/components/DoctorDashboard'));
+const DeliveryDashboard = lazy(() => import('@apps/driver/pages/DeliveryDashboard'));
 const PrescriptionDashboard = lazy(() => import('@apps/pharmacist/pages/PrescriptionDashboard'));
 const PrescriptionReview = lazy(() => import('@apps/pharmacist/pages/PrescriptionReview'));
 const InventoryManagement = lazy(() => import('@apps/pharmacist/pages/InventoryManagement'));
@@ -231,7 +234,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute requiredRoles={['patient', 'admin']}>
               <AppLayout>
-                <Dashboard />
+                <PatientDashboard />
               </AppLayout>
             </ProtectedRoute>
           }
@@ -242,7 +245,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute requiredRoles={['doctor', 'admin']}>
               <AppLayout>
-                <Dashboard />
+                <DoctorDashboard />
               </AppLayout>
             </ProtectedRoute>
           }
@@ -253,7 +256,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute requiredRoles={['delivery_person', 'admin']}>
               <AppLayout>
-                <Dashboard />
+                <DeliveryDashboard />
               </AppLayout>
             </ProtectedRoute>
           }

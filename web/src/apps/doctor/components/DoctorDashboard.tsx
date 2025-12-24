@@ -169,7 +169,7 @@ export const DoctorDashboard: React.FC = () => {
 
   if (dashboardLoading) {
     return (
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ py: 4 }} component="main" role="main">
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress aria-label="Chargement du tableau de bord médecin" />
         </Box>
@@ -178,7 +178,7 @@ export const DoctorDashboard: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }} data-testid="dashboard-view">
+    <Container maxWidth="xl" sx={{ py: 4 }} data-testid="dashboard-view" component="main" role="main">
       {/* Header */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>

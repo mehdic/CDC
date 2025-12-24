@@ -28,7 +28,7 @@ export const PopularMedicationsWidget: React.FC = () => {
       <Card data-testid="popular-medications-chart">
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
+            <CircularProgress aria-label="Chargement des médicaments populaires" />
           </Box>
         </CardContent>
       </Card>
@@ -83,6 +83,7 @@ export const PopularMedicationsWidget: React.FC = () => {
                       variant="determinate"
                       value={(medication.count / maxCount) * 100}
                       sx={{ height: 6, borderRadius: 1 }}
+                      aria-label={`Usage ${medication.name}: ${medication.count} prescriptions`}
                     />
                   }
                 />

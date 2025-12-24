@@ -106,7 +106,7 @@ export const NurseDashboard: React.FC = () => {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }} data-testid="dashboard-view">
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }} data-testid="dashboard-view" component="main" role="main">
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom>

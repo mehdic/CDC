@@ -60,7 +60,7 @@ export const PatientMetricsWidget: React.FC = () => {
       <Card data-testid="patient-metrics">
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
+            <CircularProgress aria-label="Chargement des métriques patients" />
           </Box>
         </CardContent>
       </Card>
