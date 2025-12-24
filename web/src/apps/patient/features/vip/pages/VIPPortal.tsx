@@ -325,6 +325,7 @@ export const VIPPortal: React.FC<VIPPortalProps> = ({
       >
         <Alert
           role="alert"
+          data-testid="vip-signup-success"
           onClose={() => setShowSuccessAlert(false)}
           severity="success"
           sx={{ width: '100%' }}
@@ -341,31 +342,36 @@ export const VIPPortal: React.FC<VIPPortalProps> = ({
         <Grid container spacing={3}>
           {Object.values(TIER_DATA).map((tierInfo) => (
             <Grid item xs={12} md={6} key={tierInfo.tier}>
-              <Box data-testid={`tier-card-${tierInfo.tier.toLowerCase()}`}>
-                <TierBenefitsCard
-                  membership={{
-                    id: 'demo',
-                    userId: 'demo',
-                    currentTier: tierInfo.tier,
-                    totalPoints: tierInfo.minPoints,
-                    pointsToNextTier: 0,
-                    currentTierPoints: 0,
-                    joinedAt: new Date(),
-                    lastActivityAt: new Date(),
-                    isActive: false,
-                    membershipStatus: 'inactive',
-                  }}
-                  tierInfo={tierInfo}
-                  nextTierInfo={
-                    tierInfo.tier !== VIPTier.PLATINUM
-                      ? Object.values(TIER_DATA).find(
-                          (t) =>
-                            t.minPoints > tierInfo.minPoints &&
-                            (!tierInfo.maxPoints || t.minPoints <= tierInfo.maxPoints)
-                        )
-                      : undefined
-                  }
-                />
+              <Box
+                data-testid="tier-card"
+                data-tier={tierInfo.tier.toLowerCase()}
+              >
+                <Box data-testid={`tier-card-${tierInfo.tier.toLowerCase()}`}>
+                  <TierBenefitsCard
+                    membership={{
+                      id: 'demo',
+                      userId: 'demo',
+                      currentTier: tierInfo.tier,
+                      totalPoints: tierInfo.minPoints,
+                      pointsToNextTier: 0,
+                      currentTierPoints: 0,
+                      joinedAt: new Date(),
+                      lastActivityAt: new Date(),
+                      isActive: false,
+                      membershipStatus: 'inactive',
+                    }}
+                    tierInfo={tierInfo}
+                    nextTierInfo={
+                      tierInfo.tier !== VIPTier.PLATINUM
+                        ? Object.values(TIER_DATA).find(
+                            (t) =>
+                              t.minPoints > tierInfo.minPoints &&
+                              (!tierInfo.maxPoints || t.minPoints <= tierInfo.maxPoints)
+                          )
+                        : undefined
+                    }
+                  />
+                </Box>
               </Box>
             </Grid>
           ))}

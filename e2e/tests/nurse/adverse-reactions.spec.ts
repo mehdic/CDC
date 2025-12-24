@@ -1,8 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/test-fixtures';
 import { LoginPage } from '../../pages/LoginPage';
 import { DashboardPage } from '../../pages/DashboardPage';
 import { NursePage } from '../../pages/NursePage';
 import { testUsers } from '../../fixtures/users';
+import { APIMocks } from '../../utils/api-mocks';
 import {
   adverseReactionData,
   patientData,
@@ -15,6 +16,10 @@ test.describe('Nurse Workflow - Adverse Reaction Reporting', () => {
   let nursePage: NursePage;
 
   test.beforeEach(async ({ page }) => {
+    // Setup API mocks for nurse workflows
+    await APIMocks.mockLoginEndpoint(page, true);
+    await APIMocks.mockAllNurseEndpoints(page);
+
     loginPage = new LoginPage(page);
     dashboardPage = new DashboardPage(page);
     nursePage = new NursePage(page);

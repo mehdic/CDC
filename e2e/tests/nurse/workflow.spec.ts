@@ -1,10 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/test-fixtures';
 import { LoginPage } from '../../pages/LoginPage';
 import { DashboardPage } from '../../pages/DashboardPage';
 import { NursePage } from '../../pages/NursePage';
 import { PharmacyPage } from '../../pages/PharmacyPage';
 import { DeliveryPage } from '../../pages/DeliveryPage';
 import { testUsers } from '../../fixtures/users';
+import { APIMocks } from '../../utils/api-mocks';
 import {
   medicationOrderData,
   patientData,
@@ -20,6 +21,12 @@ test.describe('Nurse Workflow - Complete Medication Order Flow', () => {
   let deliveryPage: DeliveryPage;
 
   test.beforeEach(async ({ page }) => {
+    // Setup API mocks for all roles in workflow
+    await APIMocks.mockLoginEndpoint(page, true);
+    await APIMocks.mockAllNurseEndpoints(page);
+    await APIMocks.mockInventoryEndpoint(page);
+    await APIMocks.mockDeliveryOrdersEndpoint(page);
+
     loginPage = new LoginPage(page);
     dashboardPage = new DashboardPage(page);
     nursePage = new NursePage(page);

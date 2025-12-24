@@ -12,8 +12,6 @@ export class APIMocks {
   static async mockLoginEndpoint(page: Page, shouldSucceed = true) {
     await page.route('**/api/auth/login', async (route: Route) => {
       if (shouldSucceed) {
-        await route.abort('failed');
-      } else {
         await route.fulfill({
           status: 200,
           body: JSON.stringify({
@@ -24,6 +22,14 @@ export class APIMocks {
               email: 'test@example.com',
               role: 'PATIENT',
             },
+          }),
+        });
+      } else {
+        await route.fulfill({
+          status: 401,
+          body: JSON.stringify({
+            error: 'Unauthorized',
+            message: 'Invalid credentials',
           }),
         });
       }
@@ -275,5 +281,100 @@ export class APIMocks {
         }
       }, inputSelector);
     }
+  }
+
+  /**
+   * Mock nurse patients endpoint
+   */
+  static async mockNursePatientsEndpoint(page: Page) {
+    await page.route('**/api/nurse/patients', async (route: Route) => {
+      await route.fulfill({
+        status: 200,
+        body: JSON.stringify({
+          patients: [
+            {
+              id: 'patient-001',
+              firstName: 'Jean',
+              lastName: 'Dupont',
+              age: 45,
+              room: '201A',
+              allergies: ['Penicillin', 'Peanuts'],
+              activeMedications: [
+                {
+                  id: 'med-001',
+                  name: 'Ibuprofen 400mg',
+                  dosage: '400mg',
+                  frequency: 'Twice daily',
+                  startDate: '2025-12-01',
+                },
+              ],
+            },
+            {
+              id: 'patient-002',
+              firstName: 'Marie',
+              lastName: 'Dubois',
+              age: 62,
+              room: '202B',
+              allergies: [],
+              activeMedications: [],
+            },
+          ],
+        }),
+      });
+    });
+  }
+
+  /**
+   * Mock nurse medication order endpoint
+   */
+  static async mockNurseMedicationOrderEndpoint(page: Page) {
+    await page.route('**/api/nurse/medications/order', async (route: Route) => {
+      await route.fulfill({
+        status: 201,
+        body: JSON.stringify({
+          orderId: 'order-new-001',
+          status: 'PENDING',
+          message: 'Medication order submitted successfully',
+        }),
+      });
+    });
+  }
+
+  /**
+   * Mock patient medical records endpoint
+   */
+  static async mockPatientMedicalRecordsEndpoint(page: Page) {
+    await page.route('**/api/nurse/patients/*/records', async (route: Route) => {
+      await route.fulfill({
+        status: 200,
+        body: JSON.stringify({
+          records: [
+            {
+              id: 'record-001',
+              date: '2025-12-01',
+              type: 'Consultation',
+              diagnosis: 'Hypertension',
+              notes: 'Patient presents with elevated blood pressure',
+            },
+            {
+              id: 'record-002',
+              date: '2025-11-15',
+              type: 'Lab Results',
+              diagnosis: 'Normal',
+              notes: 'All vitals within normal range',
+            },
+          ],
+        }),
+      });
+    });
+  }
+
+  /**
+   * Mock all nurse endpoints (convenience method)
+   */
+  static async mockAllNurseEndpoints(page: Page) {
+    await this.mockNursePatientsEndpoint(page);
+    await this.mockNurseMedicationOrderEndpoint(page);
+    await this.mockPatientMedicalRecordsEndpoint(page);
   }
 }
