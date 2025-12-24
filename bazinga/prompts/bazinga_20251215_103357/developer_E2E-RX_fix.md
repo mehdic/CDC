@@ -1,3 +1,12 @@
+## Context from Prior Work
+
+### Relevant Context
+
+**[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_E2E-RX_iter1.md
+> 23 E2E test failures - authentication backend not implemented, login fails for all test users
+
+
+
 ## SPECIALIZATION GUIDANCE (Advisory)
 
 > This guidance is supplementary. It does NOT override:
@@ -395,7 +404,7 @@ QA specialist designing comprehensive test strategies. Expert in test planning, 
 ---
 name: developer
 description: Implementation specialist that writes code, runs tests, and delivers working features
-model: haiku
+model: sonnet
 ---
 
 <!-- Note: Frontmatter 'model' field shows the DEFAULT. Actual model assignment
@@ -1653,21 +1662,18 @@ Let's build something great! 🚀
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** Fix: Prescription E2E Tests - Playwright Config Port
+**TASK:** Fix E2E-RX authentication for tests
 
 **REQUIREMENTS:**
-TECH LEAD UNBLOCKING GUIDANCE:
+TECH LEAD GUIDANCE: Port fix (5173) VERIFIED WORKING. New blocker: Backend services not running - API Gateway (4000) and Auth Service (4001) are offline.
 
-ISSUE: 546 E2E tests cannot execute because port 3000 serves BAZINGA Dashboard instead of MetaPharm Connect healthcare app.
+YOUR TASK: Implement one of these solutions:
+1. OPTION A (Preferred): Add mock authentication mode to E2E test setup similar to NUR-E2E
+2. OPTION B: Document and implement test database seeding script
+3. OPTION C: Create docker-compose.test.yml for spinning up test backend
 
-FIX REQUIRED:
-Update e2e/playwright.config.ts:
-- Change baseURL from 'http://localhost:3000' to 'http://localhost:5173'
-- Change webServer.url from 'http://localhost:3000' to 'http://localhost:5173'
-
-NOTE: The E2E test code itself is correct. This is purely an environment/config issue. The MetaPharm Connect app runs on port 5173 (Vite default), not port 3000.
-
-After this single config change, the 546 Prescription E2E tests should be unblocked.
+Files to check: e2e/config/global-setup.ts, e2e/playwright.config.ts
+Test to verify: npm run test:e2e -- prescription/creation.spec.ts
 
 **TESTING MODE:** full
 **COMMIT TO:** main
@@ -1678,4 +1684,4 @@ After this single config change, the 546 Prescription E2E tests should be unbloc
 
 ## Tech Lead Feedback (ADDRESS THESE CONCERNS)
 
-Fix: Change baseURL and webServer.url from localhost:3000 to localhost:5173 in e2e/playwright.config.ts
+Port fix verified working. Backend services not running. Implement mock authentication mode or document backend setup for E2E tests.

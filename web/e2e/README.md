@@ -25,7 +25,7 @@ cd web
 npx playwright install
 ```
 
-### Run All Tests
+### Run All Tests (Mock Authentication - Default)
 
 ```bash
 npm run test:e2e
@@ -44,6 +44,56 @@ npx playwright test --project=chromium
 npx playwright test --project=firefox
 npx playwright test --project=webkit
 ```
+
+## Authentication Modes
+
+The E2E test suite supports two authentication modes:
+
+### 1. Mock Authentication Mode (Default - Recommended)
+
+**Use for most development and CI scenarios. No backend required.**
+
+```bash
+# Default mode (mock auth automatically enabled)
+npm run test:e2e
+
+# Or explicitly
+MOCK_AUTH=true npm run test:e2e
+```
+
+**Features:**
+- ✅ No backend services required
+- ✅ Fast and reliable test execution
+- ✅ Works in CI/CD environments
+- ✅ Perfect for UI-focused testing
+
+**How it works:**
+- `global-setup.ts` generates mock authentication states for all roles
+- API routes for `/auth/login` are intercepted and mocked
+- Each test fixture (`pharmacistPage`, `doctorPage`, etc.) uses pre-generated mock tokens
+- No real authentication calls are made
+
+### 2. Real Backend Authentication Mode
+
+**Only use when testing actual authentication flows or backend integration.**
+
+```bash
+# Requires backend services running
+npm run test:e2e:backend
+
+# Or explicitly
+MOCK_AUTH=false npm run test:e2e
+```
+
+**Requirements:**
+- ✅ Backend API Gateway running on `localhost:4000`
+- ✅ Auth Service running on `localhost:4001`
+- ✅ Test users seeded in database
+
+**When to use:**
+- Testing authentication flows (login, logout, MFA)
+- Validating backend integration
+- Testing session management
 
 ## Directory Structure
 

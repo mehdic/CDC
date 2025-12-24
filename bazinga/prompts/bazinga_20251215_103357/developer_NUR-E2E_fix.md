@@ -395,7 +395,7 @@ QA specialist designing comprehensive test strategies. Expert in test planning, 
 ---
 name: developer
 description: Implementation specialist that writes code, runs tests, and delivers working features
-model: haiku
+model: sonnet
 ---
 
 <!-- Note: Frontmatter 'model' field shows the DEFAULT. Actual model assignment
@@ -1653,18 +1653,19 @@ Let's build something great! 🚀
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** Fix: T8-048 Nurse E2E Tests Navigation
+**TASK:** Implement mock-only mode for E2E tests
 
 **REQUIREMENTS:**
-TECH LEAD GUIDANCE:
+TECH LEAD GUIDANCE: Developer's nurse routes implementation is CORRECT. QA BLOCKED by environmental dependency - global-setup.ts requires real backend API Gateway for authentication.
 
-Root cause: waitForNavigation incompatible with React SPA - navigation happens client-side.
+YOUR TASK: Implement mock-only mode in global-setup.ts:
+1. Add MOCK_AUTH=true environment variable support
+2. When MOCK_AUTH=true, skip real backend authentication entirely
+3. Use existing mock fixtures for user sessions
+4. Ensure tests can run without backend services
 
-FIX REQUIRED:
-- Replace waitForNavigation with waitForURL in e2e/pages/LoginPage.ts line 45
-- React SPA navigation is client-side, waitForNavigation waits for server response
-
-Apply fix and ensure all E2E tests pass.
+Files to modify: web/e2e/config/global-setup.ts
+Test to verify: npm run test:e2e -- nurse-login-dashboard.spec.ts
 
 **TESTING MODE:** full
 **COMMIT TO:** main
@@ -1675,4 +1676,4 @@ Apply fix and ensure all E2E tests pass.
 
 ## Tech Lead Feedback (ADDRESS THESE CONCERNS)
 
-Replace waitForNavigation with waitForURL in LoginPage.ts line 45
+Developer code is CORRECT. Implement mock-only mode in global-setup.ts to bypass backend authentication dependency. Add MOCK_AUTH=true environment variable support.
