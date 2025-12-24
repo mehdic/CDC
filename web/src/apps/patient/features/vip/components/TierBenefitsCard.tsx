@@ -33,6 +33,8 @@ interface TierBenefitsCardProps {
   tierInfo: VIPTierInfo;
   nextTierInfo?: VIPTierInfo;
   onUpgradeClick?: () => void;
+  testIdTier?: string;
+  testIdGeneric?: string;
 }
 
 const TIER_COLORS: Record<string, string> = {
@@ -52,6 +54,8 @@ export const TierBenefitsCard: React.FC<TierBenefitsCardProps> = ({
   tierInfo,
   nextTierInfo,
   onUpgradeClick,
+  testIdTier,
+  testIdGeneric,
 }) => {
   const tierColor = TIER_COLORS[membership.currentTier] || '#999';
   const progressPercent = nextTierInfo
@@ -61,11 +65,15 @@ export const TierBenefitsCard: React.FC<TierBenefitsCardProps> = ({
   const tierName = membership.currentTier.toLowerCase();
 
   return (
-    <Box
-      data-testid="tier-card"
-      sx={{ width: '100%' }}
+    <div
+      data-testid={testIdGeneric}
+      data-tier-id={testIdTier}
+      style={{ width: '100%' }}
     >
-      <Card
+      <Box
+        sx={{ width: '100%' }}
+      >
+        <Card
         sx={{
           background: `linear-gradient(135deg, ${tierColor}33 0%, ${tierColor}11 100%)`,
           border: `2px solid ${tierColor}`,
@@ -204,8 +212,9 @@ export const TierBenefitsCard: React.FC<TierBenefitsCardProps> = ({
           </Button>
         )}
       </CardContent>
-    </Card>
-    </Box>
+        </Card>
+      </Box>
+    </div>
   );
 };
 

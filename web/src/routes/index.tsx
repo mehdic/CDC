@@ -39,6 +39,16 @@ const Checkout = lazy(() => import('@apps/patient/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@apps/patient/pages/checkout/OrderConfirmation'));
 const VIPPortal = lazy(() => import('@apps/patient/features/vip/pages/VIPPortal'));
 
+// Nurse components
+const NurseLayout = lazy(() => import('@apps/nurse/layouts/NurseLayout'));
+const NurseDashboard = lazy(() => import('@apps/nurse/components/NurseDashboard'));
+const PatientList = lazy(() => import('@apps/nurse/components/PatientList'));
+const PatientDetail = lazy(() => import('@apps/nurse/components/PatientDetail'));
+const MedicationOrderForm = lazy(() => import('@apps/nurse/components/MedicationOrderForm'));
+const OrderDetail = lazy(() => import('@apps/nurse/components/OrderDetail'));
+const OrderTracking = lazy(() => import('@apps/nurse/components/OrderTracking'));
+const NotificationPanel = lazy(() => import('@apps/nurse/components/NotificationPanel'));
+
 /**
  * Protected route component
  * Redirects to login if user is not authenticated
@@ -404,6 +414,25 @@ export const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+
+        {/* Nurse routes - uses NurseLayout with nested routing */}
+        <Route
+          path="/nurse"
+          element={
+            <ProtectedRoute requiredRoles={['nurse', 'admin']}>
+              <NurseLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<NurseDashboard />} />
+          <Route path="patients" element={<PatientList />} />
+          <Route path="patients/:patientId" element={<PatientDetail />} />
+          <Route path="orders" element={<MedicationOrderForm />} />
+          <Route path="orders/new" element={<MedicationOrderForm />} />
+          <Route path="orders/:orderId" element={<OrderDetail />} />
+          <Route path="tracking" element={<OrderTracking />} />
+          <Route path="notifications" element={<NotificationPanel />} />
+        </Route>
 
         {/* Messages route - All authenticated users */}
         <Route
