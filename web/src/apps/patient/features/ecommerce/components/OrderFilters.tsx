@@ -75,6 +75,11 @@ export function OrderFilters({
     });
   };
 
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    // Sort handling can be added here when implementing sort functionality
+    console.log('Sort changed to:', e.target.value);
+  };
+
   return (
     <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtres</h3>
@@ -143,6 +148,25 @@ export function OrderFilters({
             onChange={handleEndDateChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        {/* Sort */}
+        <div>
+          <label htmlFor="sort" className="block text-sm font-medium text-gray-700 mb-1">
+            Trier par
+          </label>
+          <select
+            id="sort"
+            data-testid="sort-dropdown"
+            onChange={handleSortChange}
+            defaultValue="date-desc"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="date-desc">Plus récent</option>
+            <option value="date-asc">Plus ancien</option>
+            <option value="total-desc">Total décroissant</option>
+            <option value="total-asc">Total croissant</option>
+          </select>
         </div>
 
         {/* Actions */}

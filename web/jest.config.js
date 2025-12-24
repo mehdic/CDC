@@ -54,6 +54,7 @@ module.exports = {
     '\\.(mp4|webm|wav|mp3|m4a|aac|oga)$': '<rootDir>/__mocks__/fileMock.js',
 
     // Path aliases for imports (matching tsconfig paths if configured)
+    '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',
     '^@components/(.*)$': '<rootDir>/src/shared/components/$1',
     '^@hooks/(.*)$': '<rootDir>/src/shared/hooks/$1',

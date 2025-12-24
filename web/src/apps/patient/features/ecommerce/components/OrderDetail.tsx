@@ -71,14 +71,25 @@ export function OrderDetail({
               Passée le {formatDate(order.created_at)}
             </p>
           </div>
-          <OrderStatusBadge status={order.status} />
+          <div data-testid="order-status">
+            <OrderStatusBadge status={order.status} />
+          </div>
         </div>
 
         {order.tracking_number && (
-          <div className="mt-4">
+          <div className="mt-4" data-testid="tracking-info">
             <p className="text-sm text-gray-600">
               <span className="font-medium">Numéro de suivi:</span> {order.tracking_number}
             </p>
+          </div>
+        )}
+
+        {/* Status Timeline */}
+        {(order.status === 'in_transit' || order.status === 'delivered') && (
+          <div className="mt-4 pt-4 border-t border-gray-200" data-testid="status-timeline">
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">Statut:</span> {order.status === 'in_transit' ? 'En transit' : 'Livré'}
+            </div>
           </div>
         )}
       </div>
