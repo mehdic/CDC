@@ -425,6 +425,7 @@ export const AppRoutes: React.FC = () => {
           }
         >
           <Route index element={<NurseDashboard />} />
+          <Route path="dashboard" element={<NurseDashboard />} />
           <Route path="patients" element={<PatientList />} />
           <Route path="patients/:patientId" element={<PatientDetail />} />
           <Route path="orders" element={<MedicationOrderForm />} />
