@@ -1,3 +1,15 @@
+## Context from Prior Work
+
+### Relevant Context
+
+**[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter2.md
+> 2 E2E test failures: missing generic tier-card test ID, signup success alert not appearing
+
+**[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter1.md
+> 3 E2E test failures: missing data-testid attributes on page title, success alert, and tier cards
+
+
+
 ## SPECIALIZATION GUIDANCE (Advisory)
 
 > This guidance is supplementary. It does NOT override:
@@ -1954,17 +1966,26 @@ You are NOT a code reviewer (that's Tech Lead's job). Focus on automated testing
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** QA: Patient VIP Program Portal
+**TASK:** QA Test: VIP Portal E2E Verification
 
 **REQUIREMENTS:**
-DEVELOPER COMPLETE: Implemented Patient VIP Program Portal (Golden MetaPharm).
+DEVELOPER COMPLETED:
 
-Implementation summary:
-- 14 new files: types, services, hooks, and 4 React components
-- 36/36 tests passing with 100% coverage
-- Location: web/src/apps/patient/features/vip/
+- Fixed missing data-testid attributes for VIP tier cards
+- Added testIdGeneric='tier-card' and testIdTier props to TierBenefitsCard
+- Added data-testid='vip-signup-success' to success Alert
+- 20/20 unit tests passing
+- Build: PASS
 
-Verify test coverage and run integration tests.
+Run VIP membership E2E tests:
+
+Location: web/e2e/tests/journey/vip-membership-journey.test.ts
+
+Key tests to verify:
+1. VIP tier benefits - should display tier cards with correct data-testid
+2. VIP signup success - should show success alert with data-testid
+
+Note: Developer observed 2 E2E test failures despite correct code. Investigate if this is a test environment issue.
 
 **TESTING MODE:** full
 **COMMIT TO:** main

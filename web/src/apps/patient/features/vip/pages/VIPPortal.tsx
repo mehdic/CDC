@@ -20,6 +20,7 @@ import {
 import { Loyalty as LoyaltyIcon } from '@mui/icons-material';
 import { TierBenefitsCard } from '../components/TierBenefitsCard';
 import { VIPTier, VIPMembership, VIPTierInfo } from '../types/vip.types';
+import { signup as vipSignup } from '../services/vipService';
 
 // Tier information data
 const TIER_DATA: Record<VIPTier, VIPTierInfo> = {
@@ -177,12 +178,17 @@ export const VIPPortal: React.FC<VIPPortalProps> = ({
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   const handleSignup = async () => {
-    if (!onSignup) return;
-
     try {
       setIsSigningUp(true);
       setSignupError(null);
-      await onSignup();
+
+      // Use provided onSignup prop if available (for testing), otherwise use vipSignup service
+      if (onSignup) {
+        await onSignup();
+      } else {
+        await vipSignup();
+      }
+
       setSignupSuccess(true);
       setShowSuccessAlert(true);
     } catch (error) {

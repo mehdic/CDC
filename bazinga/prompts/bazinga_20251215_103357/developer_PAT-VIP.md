@@ -1,3 +1,18 @@
+## Context from Prior Work
+
+### Relevant Context
+
+**[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter3.md
+> 2 E2E test failures (iteration 3): data-testid attributes not rendering, success alert not showing
+
+**[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter2.md
+> 2 E2E test failures: missing generic tier-card test ID, signup success alert not appearing
+
+**[HIGH]** bazinga/artifacts/bazinga_20251215_103357/failures_PAT-VIP_iter1.md
+> 3 E2E test failures: missing data-testid attributes on page title, success alert, and tier cards
+
+
+
 ## SPECIALIZATION GUIDANCE (Advisory)
 
 > This guidance is supplementary. It does NOT override:
@@ -390,7 +405,7 @@ Testing specialist implementing comprehensive test strategies. Expert in unit, i
 ---
 name: developer
 description: Implementation specialist that writes code, runs tests, and delivers working features
-model: haiku
+model: sonnet
 ---
 
 <!-- Note: Frontmatter 'model' field shows the DEFAULT. Actual model assignment
@@ -1648,20 +1663,13 @@ Let's build something great! 🚀
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** T8-044: Patient VIP Program Portal
+**TASK:** Fix PAT-VIP E2E test failures
 
 **REQUIREMENTS:**
-Implement Patient VIP Program Portal (Golden MetaPharm).
-
-Requirements:
-- VIP membership dashboard showing benefits and tier status
-- Points/rewards tracking and redemption
-- Exclusive offers and promotions section
-- Membership upgrade/downgrade flow
-
-Location: web/src/apps/patient/features/vip/
-
-Create components, hooks, services, and tests for the VIP portal feature.
+QA FAIL (iteration 3): 7/9 tests passing, 2 failing. ISSUES TO FIX:
+1. data-testid='tier-card' not rendering in DOM - wrapper div with test IDs not rendering. Move data-testid directly to Card component.
+2. Success alert with role='alert' not showing after signup button click - showSuccessAlert state never set to true. Verify onClick handler calls setShowSuccessAlert(true).
+FILES: TierBenefitsCard.tsx, VIPPortal.tsx. Test file: vip-membership-journey.test.ts
 
 **TESTING MODE:** full
 **COMMIT TO:** main

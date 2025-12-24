@@ -17,6 +17,7 @@ import {
   UpgradeDowngradeResponse,
   PointsHistoryResponse,
   VIPOffersResponse,
+  VIPSignupResponse,
 } from '../types/vip.types';
 
 const VIP_ENDPOINT = '/vip';
@@ -24,6 +25,22 @@ const MEMBERSHIP_ENDPOINT = `${VIP_ENDPOINT}/membership`;
 const REWARDS_ENDPOINT = `${VIP_ENDPOINT}/rewards`;
 const OFFERS_ENDPOINT = `${VIP_ENDPOINT}/offers`;
 const POINTS_ENDPOINT = `${VIP_ENDPOINT}/points`;
+
+/**
+ * Sign up for VIP membership
+ */
+export async function signup(): Promise<VIPSignupResponse> {
+  try {
+    const response = await apiClient.post<VIPSignupResponse>(
+      `${VIP_ENDPOINT}/signup`
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : 'Failed to sign up for VIP'
+    );
+  }
+}
 
 /**
  * Get VIP dashboard data including membership, rewards, offers, and points history

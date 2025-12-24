@@ -160,3 +160,12 @@ export interface VIPOffersResponse {
     total_pages: number;
   };
 }
+
+export interface VIPSignupResponse {
+  success: boolean;
+  memberId: string;
+  patientId: string;
+  signupDate: string;
+  currentTier: VIPTier;
+  initialBonus: number;
+}

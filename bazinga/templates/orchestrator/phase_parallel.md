@@ -2,9 +2,9 @@
 
 **Before any Bash command:** See §Policy-Gate and §Bash Command Allowlist in orchestrator.md
 
-### 🔴 FOREGROUND EXECUTION ONLY
+### 🔴 FOREGROUND EXECUTION ONLY (Concurrent OK, Background NOT OK)
 
-**All Task() calls MUST include `run_in_background: false`.** See orchestrator.md §FOREGROUND EXECUTION ONLY and §PRE-TASK VALIDATION.
+**All Task() calls MUST include `run_in_background: false`.** Multiple concurrent foreground spawns are fine. See orchestrator.md §FOREGROUND EXECUTION ONLY and §PRE-TASK VALIDATION.
 
 ### 🔴 POST-SPAWN TOKEN TRACKING (MANDATORY)
 
@@ -120,22 +120,26 @@ Orchestrator output:
 🔨 **Phase {N} starting** | Spawning {parallel_count} developers in parallel
 
 📋 **Developer Assignments:**
-• {group_id}: {tier_name} ({model}) - {task[:90]}
+• {group_id}: {tier_name} ({model}) [C:{complexity}] - {task[:90]}
 [repeat for each group]
 
 💡 For ≥3 developers, consider `/compact` first.
 ⏳ Continuing immediately... (Ctrl+C to pause. Resume via `/bazinga.orchestrate` after `/compact`)
 ```
 
+**Complexity notation:** `[C:N]` where N is 1-10. Levels: 1-3=Low (Dev), 4-6=Medium (SSE), 7-10=High (SSE)
+
+**Model source:** Read from `MODEL_CONFIG[agent_type]` (loaded from `bazinga/model_selection.json`)
+
 **Example output (4 developers):**
 ```
 🔨 **Phase 1 starting** | Spawning 4 developers in parallel
 
 📋 **Developer Assignments:**
-• P0-NURSE-FE: Senior Software Engineer (Sonnet) - Nurse App Frontend with auth integration
-• P0-NURSE-BE: Senior Software Engineer (Sonnet) - Nurse Backend Services with API endpoints
-• P0-MSG-BE: Senior Software Engineer (Sonnet) - Messaging Backend with WhatsApp channel
-• P1-DOCTOR-FE: Developer (Haiku) - Doctor Frontend basic components
+• P0-NURSE-FE: Senior Software Engineer ({MODEL_CONFIG["senior_software_engineer"]}) [C:7] - Nurse App Frontend with auth integration
+• P0-NURSE-BE: Senior Software Engineer ({MODEL_CONFIG["senior_software_engineer"]}) [C:6] - Nurse Backend Services with API endpoints
+• P0-MSG-BE: Senior Software Engineer ({MODEL_CONFIG["senior_software_engineer"]}) [C:8] - Messaging Backend with WhatsApp channel
+• P1-DOCTOR-FE: Developer ({MODEL_CONFIG["developer"]}) [C:3] - Doctor Frontend basic components
 
 💡 For ≥3 developers, consider `/compact` first.
 ⏳ Continuing immediately... (Ctrl+C to pause. Resume via `/bazinga.orchestrate` after `/compact`)
@@ -190,14 +194,76 @@ IF len(impl_groups) > 4: defer_excess_impl()  # spawn in batches
 
 This section handles spawning Developer, SSE, or RE for each group based on PM's `initial_tier` decision.
 
+**🔴🔴🔴 MANDATORY Step 0: Query Task Groups and Map Tiers to Agent Types 🔴🔴🔴**
+
+**BEFORE creating ANY params files, you MUST:**
+
+1. **Query task groups from database:**
+   ```bash
+   python3 .claude/skills/bazinga-db/scripts/bazinga_db.py --quiet get-task-groups "{session_id}"
+   ```
+
+   **Response format:** JSON array of task groups, each with `id`, `name`, `initial_tier`, `complexity`, etc.
+
+   **If query fails:** Output `❌ Failed to query task groups | {error}` → STOP
+
+2. **For EACH group, extract and map initial_tier to agent_type:**
+
+   | DB `initial_tier` Value | Maps To `agent_type` | Model Key |
+   |-------------------------|---------------------|-----------|
+   | `"Developer"` | `"developer"` | `MODEL_CONFIG["developer"]` |
+   | `"Senior Software Engineer"` | `"senior_software_engineer"` | `MODEL_CONFIG["senior_software_engineer"]` |
+   | `"Requirements Engineer"` | `"requirements_engineer"` | `MODEL_CONFIG["requirements_engineer"]` |
+   | `null` or missing | `"developer"` (default) | `MODEL_CONFIG["developer"]` |
+
+   **Also check task type:** If PM's description contains `**Type:** research`, use `requirements_engineer` regardless of initial_tier.
+
+3. **Build agent_type map keyed by group_id:**
+   ```python
+   # Pseudocode - build explicit map for Step 1
+   TIER_TO_AGENT = {
+       "Developer": "developer",
+       "Senior Software Engineer": "senior_software_engineer",
+       "Requirements Engineer": "requirements_engineer"
+   }
+
+   agent_type_map = {}  # group_id → agent_type
+   for group in task_groups:
+       # Normalize: strip whitespace, handle case variations
+       tier = (group.get("initial_tier") or "").strip()
+
+       # Research type override
+       if "**type:** research" in group.get("description", "").lower():
+           agent_type_map[group["id"]] = "requirements_engineer"
+       elif tier in TIER_TO_AGENT:
+           agent_type_map[group["id"]] = TIER_TO_AGENT[tier]
+       else:
+           # Unknown tier - warn and default
+           print(f"⚠️ Unknown tier '{tier}' for {group['id']}, defaulting to developer")
+           agent_type_map[group["id"]] = "developer"
+   ```
+
+**🔴 CRITICAL: If you skip this step, ALL groups will spawn as Developer regardless of PM's tier decision!**
+
+**🔴 SELF-CHECK before proceeding:**
+- ✅ Did I query task_groups from database successfully?
+- ✅ Did I read initial_tier for EACH group?
+- ✅ Did I check for research type override?
+- ✅ Did I build agent_type_map with correct mappings?
+- ✅ For security tasks, is agent_type = "senior_software_engineer"?
+- ✅ For research tasks, is agent_type = "requirements_engineer"?
+
 **Step 1: Write params files for EACH group**
 
-For EACH group, write a params JSON file:
+For EACH group, write a params JSON file using `agent_type_map[group_id]` from Step 0:
 
 Write to `bazinga/prompts/{session_id}/params_{agent_type}_{group_id}.json`:
+
+**⚠️ Path safety:** Ensure session_id and group_id contain only alphanumeric chars and underscores. Reject if they contain `../` or special characters.
+
 ```json
 {
-  "agent_type": "{task_groups[group_id][\"initial_tier\"]}",
+  "agent_type": "{agent_type_map[group_id]}",
   "session_id": "{session_id}",
   "group_id": "{group_id}",
   "task_title": "{task_groups[group_id][\"title\"]}",
@@ -285,9 +351,9 @@ FULL_PROMPT[group_id] =
 Use the Developer Response Parsing section from `bazinga/templates/response_parsing.md` (loaded at initialization) to extract status, files, tests, coverage, summary.
 
 **Step 2: Construct and output capsule** (same templates as Step 2A.2):
-- READY_FOR_QA/REVIEW: `🔨 Group {id} [{tier}/{model}] complete | {summary}, {files}, {tests}, {coverage} | {status} → {next}`
-- PARTIAL: `🔨 Group {id} [{tier}/{model}] implementing | {what's done} | {current_status}`
-- BLOCKED: `⚠️ Group {id} [{tier}/{model}] blocked | {blocker} | Investigating`
+- READY_FOR_QA/REVIEW: `🔨 Group {id} [{tier}/{model}] [C:{complexity}] complete | {summary}, {files}, {tests}, {coverage} | {status} → {next}`
+- PARTIAL: `🔨 Group {id} [{tier}/{model}] [C:{complexity}] implementing | {what's done} | {current_status}`
+- BLOCKED: `⚠️ Group {id} [{tier}/{model}] [C:{complexity}] blocked | {blocker} | Investigating`
 
 **Step 3: Output capsule to user**
 

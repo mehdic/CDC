@@ -66,14 +66,11 @@ export const TierBenefitsCard: React.FC<TierBenefitsCardProps> = ({
 
   return (
     <div
+      style={{ width: '100%' }}
       data-testid={testIdGeneric}
       data-tier-id={testIdTier}
-      style={{ width: '100%' }}
     >
-      <Box
-        sx={{ width: '100%' }}
-      >
-        <Card
+      <Card
         sx={{
           background: `linear-gradient(135deg, ${tierColor}33 0%, ${tierColor}11 100%)`,
           border: `2px solid ${tierColor}`,
@@ -212,8 +209,7 @@ export const TierBenefitsCard: React.FC<TierBenefitsCardProps> = ({
           </Button>
         )}
       </CardContent>
-        </Card>
-      </Box>
+      </Card>
     </div>
   );
 };

@@ -5,6 +5,20 @@
 **[developer] completion:** ## Completion Summary
 
 ### What Was Done
+1. Added lazy imports for all nurse components (NurseLayout, NurseDashboard, PatientList, PatientDetail, MedicationOrderForm, OrderDetail, OrderTracking, NotificationPanel)
+2. Implemented /nurse parent route with NurseLayout and ProtectedRoute (requiredRoles=
+
+**[developer] understanding:** ## Understanding
+
+### Task Interpretation
+Implement /nurse/* routes in web/src/routes/index.tsx to support the nurse role's navigation and E2E tests.
+
+### Key Requirements
+1. Add lazy imports for NurseLayout and all nurse components (NurseDashboard, PatientList, MedicationOrderForm, OrderTracking, e
+
+**[developer] completion:** ## Completion Summary
+
+### What Was Done
 - Created 4 comprehensive E2E test suites for nurse workflows
 - Implemented 425 tests total (75 per primary test, 5 browsers + mobile)
 - Followed Playwright Page Object Model pattern
@@ -29,19 +43,6 @@ Tests should be co
    - Vite requires esbuild and rollup as dependencies
    - These were not explicitly listed in web/package.json
    - Lock file corruption 
-
-**[developer] approach:** ## Approach - Fix Strategy Executed
-
-### Problem Identified
-- npm workspace hoisting bug in Vite 7.2.6 setup
-- Missing esbuild and rollup dependencies in web workspace
-- These are required by Vite but were not in package.json
-- Legacy npm peer deps issue with react-native-maps requiring react >= 18.
-
-**[developer] understanding:** ## Understanding - T8-048 Nurse E2E Environment Setup Fix
-
-### Task Interpretation
-Fix an npm workspace hoisting bug affecting the Nurse E2E test environment. The issue is that Vite 7.2.6 requires `rollup` as a dependency but the lockfile doesn't have an entry for it, causing the web server and E2E 
 
 
 
@@ -2006,18 +2007,27 @@ You are NOT a code reviewer (that's Tech Lead's job). Focus on automated testing
 **MODE:** Parallel
 **BRANCH:** main
 
-**TASK:** QA: Nurse Workflow E2E Tests
+**TASK:** QA Test: Nurse Routes E2E Verification
 
 **REQUIREMENTS:**
-DEVELOPER COMPLETE: Implemented Nurse Workflow E2E test suite.
+DEVELOPER COMPLETED:
 
-Implementation summary:
-- 425 E2E tests using Playwright
-- 4 test files: patient search, medication ordering, delivery tracking, shift handover
-- Cross-browser support (Chromium, Firefox, WebKit, mobile)
-- Location: e2e/tests/nurse/
+- Implemented /nurse/* routes in web/src/routes/index.tsx
+- Added 9 nested routes (dashboard, patients, orders, tracking, notifications)
+- Uses NurseLayout with Outlet pattern
+- ProtectedRoute with requiredRoles=['nurse', 'admin']
+- Lint: PASS, Build: PASS
 
-Verify E2E test quality and execution.
+Run nurse E2E tests to verify routes work correctly:
+
+Location: web/e2e/tests/nurse-login-dashboard.spec.ts
+
+Verify:
+1. Nurse can navigate to /nurse/dashboard
+2. Routes render correct components
+3. Role-based protection works
+
+Note: These tests may require API mocking (already added by previous developer iteration).
 
 **TESTING MODE:** full
 **COMMIT TO:** main
