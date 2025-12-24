@@ -4,7 +4,7 @@
  * Tests WCAG 2.1 AA compliance for pharmacist-specific workflows
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/api-mocks.fixture';
 import {
   runAccessibilityScan,
   checkKeyboardNavigation,
