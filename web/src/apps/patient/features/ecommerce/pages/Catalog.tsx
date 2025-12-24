@@ -277,3 +277,5 @@ export const Catalog: React.FC = () => {
     </div>
   );
 };
+
+export default Catalog;

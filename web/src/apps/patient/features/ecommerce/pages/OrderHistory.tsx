@@ -71,3 +71,5 @@ export function OrderHistory(): JSX.Element {
     </div>
   );
 }
+
+export default OrderHistory;

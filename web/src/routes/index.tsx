@@ -32,8 +32,10 @@ const PatientVideoCall = lazy(() => import('@apps/patient/pages/VideoCall'));
 const DoctorVideoCall = lazy(() => import('@apps/doctor/pages/VideoCall'));
 const PharmacyProfileManager = lazy(() => import('@apps/pharmacist/pages/pharmacy-profile/PharmacyProfileManager'));
 const MasterAccountPage = lazy(() => import('@apps/pharmacist/pages/MasterAccountPage'));
-const ProductCatalog = lazy(() => import('@apps/pharmacist/pages/ProductCatalog'));
-const OrderManagement = lazy(() => import('@apps/pharmacist/pages/OrderManagement'));
+const PharmacistProductCatalog = lazy(() => import('@apps/pharmacist/pages/ProductCatalog'));
+const PharmacistOrderManagement = lazy(() => import('@apps/pharmacist/pages/OrderManagement'));
+const PatientCatalog = lazy(() => import('@apps/patient/features/ecommerce/pages/Catalog'));
+const PatientOrderHistory = lazy(() => import('@apps/patient/features/ecommerce/pages/OrderHistory'));
 const DeliveryManagement = lazy(() => import('@apps/pharmacist/pages/DeliveryManagement'));
 const Checkout = lazy(() => import('@apps/patient/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@apps/patient/pages/checkout/OrderConfirmation'));
@@ -337,7 +339,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <AppLayout>
-                <ProductCatalog />
+                <PatientCatalog />
               </AppLayout>
             </ProtectedRoute>
           }
@@ -349,7 +351,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <AppLayout>
-                <OrderManagement />
+                <PatientOrderHistory />
               </AppLayout>
             </ProtectedRoute>
           }

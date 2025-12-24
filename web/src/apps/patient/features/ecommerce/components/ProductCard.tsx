@@ -33,7 +33,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       className={`product-card ${isOutOfStock ? 'product-card--out-of-stock' : ''}`}
-      data-testid={`product-card-${product.id}`}
+      data-testid={`product-${product.id}`}
     >
       <div className="product-card__image-container">
         {product.image_url && !imageLoadError ? (

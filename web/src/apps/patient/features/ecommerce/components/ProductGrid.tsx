@@ -98,7 +98,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           '--grid-columns': columns,
         } as React.CSSProperties & { '--grid-columns': number }
       }
-      data-testid="product-grid"
+      data-testid="product-list"
     >
       {products.map((product) => (
         <ProductCard
