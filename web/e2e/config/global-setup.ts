@@ -2,6 +2,7 @@ import { FullConfig, chromium } from '@playwright/test';
 import path from 'path';
 import { testUsers } from '../fixtures/auth.fixture';
 import { spawn, ChildProcess } from 'child_process';
+import fs from 'fs';
 
 let backendProcess: ChildProcess | null = null;
 
@@ -9,14 +10,82 @@ let backendProcess: ChildProcess | null = null;
  * Global Setup for Playwright Tests
  *
  * Runs once before all tests. Used for:
- * - Starting backend services (API Gateway)
+ * - Starting backend services (API Gateway) OR using mock-only mode
  * - Generating authentication states for each user role
  * - This prevents rate limiting by authenticating once and reusing tokens
+ *
+ * Environment Variables:
+ * - MOCK_AUTH=true: Skip backend startup, use mock authentication states only
+ * - CI=true: Skip backend startup (legacy behavior)
  *
  * Note: Frontend dev server availability is handled by Playwright's webServer config
  */
 async function globalSetup(config: FullConfig) {
   console.log('\n🚀 Starting Playwright E2E Test Suite Setup...\n');
+
+  const baseURL = config.projects[0].use.baseURL || 'http://localhost:5173';
+  const authDir = path.join(__dirname, '../../.auth');
+
+  // Ensure auth directory exists
+  if (!fs.existsSync(authDir)) {
+    fs.mkdirSync(authDir, { recursive: true });
+  }
+
+  // Check for mock-only mode
+  if (process.env.MOCK_AUTH === 'true') {
+    console.log('🧪 MOCK_AUTH mode enabled - using mock authentication only');
+    console.log('   Skipping backend startup and real authentication');
+    console.log('   Tests will use mock API responses\n');
+
+    console.log('📝 Generating mock authentication states for test users...\n');
+
+    // Generate mock auth states for each user role
+    for (const [role, user] of Object.entries(testUsers)) {
+      console.log(`  ↳ Creating mock auth state for ${role} (${user.email})...`);
+
+      // Create mock storage state with authentication tokens
+      const mockStorageState = {
+        cookies: [],
+        origins: [
+          {
+            origin: baseURL,
+            localStorage: [
+              {
+                name: 'auth_token',
+                value: `mock_access_token_${role}`,
+              },
+              {
+                name: 'refresh_token',
+                value: `mock_refresh_token_${role}`,
+              },
+              {
+                name: 'user',
+                value: JSON.stringify({
+                  id: user.email,
+                  email: user.email,
+                  role: user.role,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  pharmacyId: user.pharmacyId,
+                }),
+              },
+            ],
+          },
+        ],
+      };
+
+      // Write mock auth state to file
+      fs.writeFileSync(
+        path.join(authDir, `${role}.json`),
+        JSON.stringify(mockStorageState, null, 2)
+      );
+
+      console.log(`  ✅ Mock auth state created for ${role}`);
+    }
+
+    console.log('\n✅ Mock-only setup complete\n');
+    return;
+  }
 
   // Skip backend startup in CI environment
   // In CI, tests should use mocks or run against staging
@@ -81,9 +150,6 @@ async function globalSetup(config: FullConfig) {
       }
     }
   }
-
-  const baseURL = config.projects[0].use.baseURL || 'http://localhost:5173';
-  const authDir = path.join(__dirname, '../../.auth');
 
   console.log('📝 Generating authentication states for test users...\n');
 
