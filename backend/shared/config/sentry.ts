@@ -22,11 +22,8 @@ export const initSentry = (serviceName: string): void => {
       // Performance Monitoring
       tracesSampleRate: 0.1, // Capture 10% of transactions for performance monitoring
 
-      // Integrations
-      integrations: [
-        // Automatically instrument Node.js libraries
-        ...Sentry.autoDiscoverNodePerformanceMonitoringIntegrations(),
-      ],
+      // Integrations - Sentry v10+ uses getAutoPerformanceIntegrations()
+      integrations: Sentry.getAutoPerformanceIntegrations(),
 
       // Filter out sensitive data
       beforeSend(event) {
@@ -70,18 +67,12 @@ export const initSentry = (serviceName: string): void => {
 };
 
 /**
- * Express middleware to capture errors in Sentry
- * Add this BEFORE other error handlers
- */
-export const sentryRequestHandler = Sentry.Handlers.requestHandler();
-
-/**
- * Express middleware to trace requests in Sentry
- */
-export const sentryTracingHandler = Sentry.Handlers.tracingHandler();
-
-/**
- * Express error handler middleware for Sentry
+ * Express middleware to setup Sentry error handler
  * Add this AFTER all controllers but BEFORE other error handlers
+ *
+ * @example
+ * import { setupSentryErrorHandler } from './config/sentry';
+ * app.use(Sentry.expressIntegration());
+ * app.use(setupSentryErrorHandler());
  */
-export const sentryErrorHandler = Sentry.Handlers.errorHandler();
+export const setupSentryErrorHandler = Sentry.setupExpressErrorHandler;

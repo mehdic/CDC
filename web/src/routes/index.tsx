@@ -43,6 +43,7 @@ const DeliveryManagement = lazy(() => import('@apps/pharmacist/pages/DeliveryMan
 const Checkout = lazy(() => import('@apps/patient/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@apps/patient/pages/checkout/OrderConfirmation'));
 const VIPPortal = lazy(() => import('@apps/patient/features/vip/pages/VIPPortal'));
+const PatientMessagingPage = lazy(() => import('@apps/patient/features/messaging/pages/MessagingPage'));
 
 // Admin components
 const AdminDashboard = lazy(() => import('@apps/admin/pages/AdminDashboard'));
@@ -495,10 +496,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <AppLayout>
-                <div style={{ padding: '20px' }}>
-                  <h2>Messages</h2>
-                  <p>Page de messagerie - À implémenter</p>
-                </div>
+                <PatientMessagingPage />
               </AppLayout>
             </ProtectedRoute>
           }

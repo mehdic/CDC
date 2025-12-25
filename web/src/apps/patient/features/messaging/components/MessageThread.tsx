@@ -211,7 +211,9 @@ export function MessageThread({
   }, [conversationId, currentUserId, messages, onMarkRead]);
 
   function scrollToBottom(): void {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current && typeof messagesEndRef.current.scrollIntoView === 'function') {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }
 
   function handleLoadMore(): void {
