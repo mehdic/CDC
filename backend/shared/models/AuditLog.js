@@ -1,9 +1,4 @@
 "use strict";
-/**
- * AuditLog Entity
- * Tracks user actions for master account management
- * Separate from AuditTrailEntry (used for prescription/pharmacy audits)
- */
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -18,20 +13,21 @@ exports.AuditLog = void 0;
 const typeorm_1 = require("typeorm");
 const User_1 = require("./User");
 let AuditLog = class AuditLog {
-    // ============================================================================
-    // Helper Methods
-    // ============================================================================
-    /**
-     * Check if action is a security-related event
-     */
+    id;
+    user_id;
+    user;
+    action;
+    resource;
+    resource_id;
+    details;
+    ip_address;
+    user_agent;
+    created_at;
     isSecurityEvent() {
         return this.action.startsWith('mfa.') ||
             this.action.startsWith('login.') ||
             this.action.startsWith('permission.');
     }
-    /**
-     * Get human-readable action description
-     */
     getActionDescription() {
         const actionMap = {
             'user.created': 'User account created',
@@ -39,6 +35,7 @@ let AuditLog = class AuditLog {
             'user.deleted': 'User account deleted',
             'permission.granted': 'Permission granted',
             'permission.revoked': 'Permission revoked',
+            'permission.updated': 'Permission updated',
             'mfa.enabled': 'MFA enabled',
             'mfa.disabled': 'MFA disabled',
             'mfa.setup': 'MFA setup initiated',
@@ -71,11 +68,11 @@ __decorate([
 ], AuditLog.prototype, "action", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 255, nullable: true }),
-    __metadata("design:type", Object)
+    __metadata("design:type", String)
 ], AuditLog.prototype, "resource", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'uuid', nullable: true }),
-    __metadata("design:type", Object)
+    __metadata("design:type", String)
 ], AuditLog.prototype, "resource_id", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'jsonb', default: {} }),
@@ -83,11 +80,11 @@ __decorate([
 ], AuditLog.prototype, "details", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 45, nullable: true }),
-    __metadata("design:type", Object)
+    __metadata("design:type", String)
 ], AuditLog.prototype, "ip_address", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
-    __metadata("design:type", Object)
+    __metadata("design:type", String)
 ], AuditLog.prototype, "user_agent", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ type: 'timestamp' }),
