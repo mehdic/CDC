@@ -1,4 +1,9 @@
 "use strict";
+/**
+ * Cart Model
+ * Represents a shopping cart for e-commerce orders
+ * Batch 3 - E-commerce feature
+ */
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -14,22 +19,6 @@ const typeorm_1 = require("typeorm");
 const User_1 = require("./User");
 const CartItem_1 = require("./CartItem");
 let Cart = class Cart {
-    id;
-    user;
-    userId;
-    items;
-    subtotal;
-    tax;
-    discount;
-    discountCode;
-    total;
-    itemCount;
-    totalQuantity;
-    status;
-    metadata;
-    createdAt;
-    updatedAt;
-    abandonedAt;
 };
 exports.Cart = Cart;
 __decorate([

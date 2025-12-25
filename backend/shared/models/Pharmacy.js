@@ -1,4 +1,9 @@
 "use strict";
+/**
+ * Pharmacy Entity
+ * Pharmacy locations serving as multi-tenant root entities
+ * Based on: /specs/002-metapharm-platform/data-model.md
+ */
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -26,42 +31,45 @@ var SubscriptionStatus;
     SubscriptionStatus["CANCELLED"] = "cancelled";
 })(SubscriptionStatus || (exports.SubscriptionStatus = SubscriptionStatus = {}));
 let Pharmacy = class Pharmacy {
-    id;
-    name;
-    license_number;
-    address_encrypted;
-    city;
-    canton;
-    postal_code;
-    latitude;
-    longitude;
-    phone;
-    email;
-    operating_hours;
-    subscription_tier;
-    subscription_status;
-    users;
-    created_at;
-    updated_at;
-    deleted_at;
+    // ============================================================================
+    // Helper Methods
+    // ============================================================================
+    /**
+     * Check if pharmacy is soft deleted
+     */
     isDeleted() {
         return this.deleted_at !== null;
     }
+    /**
+     * Check if pharmacy subscription is active
+     */
     isActive() {
         return (this.subscription_status === SubscriptionStatus.ACTIVE && !this.isDeleted());
     }
+    /**
+     * Check if pharmacy is in trial period
+     */
     isTrial() {
         return this.subscription_status === SubscriptionStatus.TRIAL;
     }
+    /**
+     * Check if pharmacy has enterprise subscription
+     */
     isEnterprise() {
         return this.subscription_tier === SubscriptionTier.ENTERPRISE;
     }
+    /**
+     * Check if pharmacy is open on a given day
+     */
     isOpenOnDay(day) {
         if (!this.operating_hours)
             return false;
         const hours = this.operating_hours[day];
         return hours !== undefined && hours.open !== null && hours.close !== null;
     }
+    /**
+     * Get operating hours for a specific day
+     */
     getHoursForDay(day) {
         if (!this.operating_hours)
             return null;
@@ -70,16 +78,28 @@ let Pharmacy = class Pharmacy {
             return null;
         return { open: hours.open, close: hours.close };
     }
+    /**
+     * Check if pharmacy has GPS coordinates for delivery routing
+     */
     hasLocation() {
         return this.latitude !== null && this.longitude !== null;
     }
+    /**
+     * Soft delete pharmacy
+     */
     softDelete() {
         this.deleted_at = new Date();
         this.subscription_status = SubscriptionStatus.CANCELLED;
     }
+    /**
+     * Suspend pharmacy subscription
+     */
     suspend() {
         this.subscription_status = SubscriptionStatus.SUSPENDED;
     }
+    /**
+     * Activate pharmacy subscription
+     */
     activate() {
         this.subscription_status = SubscriptionStatus.ACTIVE;
     }
@@ -116,19 +136,19 @@ __decorate([
 ], Pharmacy.prototype, "postal_code", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 10, scale: 8, nullable: true }),
-    __metadata("design:type", Number)
+    __metadata("design:type", Object)
 ], Pharmacy.prototype, "latitude", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 11, scale: 8, nullable: true }),
-    __metadata("design:type", Number)
+    __metadata("design:type", Object)
 ], Pharmacy.prototype, "longitude", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 50, nullable: true }),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], Pharmacy.prototype, "phone", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 255, nullable: true }),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], Pharmacy.prototype, "email", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'simple-json', nullable: true }),
@@ -165,7 +185,7 @@ __decorate([
 ], Pharmacy.prototype, "updated_at", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
-    __metadata("design:type", Date)
+    __metadata("design:type", Object)
 ], Pharmacy.prototype, "deleted_at", void 0);
 exports.Pharmacy = Pharmacy = __decorate([
     (0, typeorm_1.Entity)('pharmacies')

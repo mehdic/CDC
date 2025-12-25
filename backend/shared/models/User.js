@@ -1,4 +1,9 @@
 "use strict";
+/**
+ * User Entity
+ * All platform users across 5 roles: Pharmacist, Doctor, Nurse, Delivery Personnel, Patient
+ * Based on: /specs/002-metapharm-platform/data-model.md
+ */
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -29,52 +34,51 @@ var UserStatus;
     UserStatus["SUSPENDED"] = "suspended";
 })(UserStatus || (exports.UserStatus = UserStatus = {}));
 let User = class User {
-    id;
-    email;
-    email_verified;
-    password_hash;
-    hin_id;
-    role;
-    status;
-    first_name_encrypted;
-    last_name_encrypted;
-    phone_encrypted;
-    mfa_enabled;
-    mfa_secret;
-    mfa_secret_encrypted;
-    primary_pharmacy_id;
-    primary_pharmacy;
-    master_account_id;
-    master_account;
-    permissions_override;
-    sub_accounts;
-    audit_trail_entries;
-    carts;
-    created_at;
-    updated_at;
-    last_login_at;
-    deleted_at;
+    // ============================================================================
+    // Helper Methods
+    // ============================================================================
+    /**
+     * Check if user is soft deleted
+     */
     isDeleted() {
         return this.deleted_at !== null;
     }
+    /**
+     * Check if user is active
+     */
     isActive() {
         return this.status === UserStatus.ACTIVE && !this.isDeleted();
     }
+    /**
+     * Check if user has MFA enabled
+     */
     hasMFA() {
         return this.mfa_enabled && (this.mfa_secret_encrypted !== null || this.mfa_secret !== null);
     }
+    /**
+     * Check if user is a healthcare professional (requires MFA)
+     */
     isHealthcareProfessional() {
         return (this.role === UserRole.PHARMACIST ||
             this.role === UserRole.DOCTOR ||
             this.role === UserRole.NURSE);
     }
+    /**
+     * Check if user has HIN e-ID authentication
+     */
     hasHINAuth() {
         return this.hin_id !== null;
     }
+    /**
+     * Soft delete user
+     */
     softDelete() {
         this.deleted_at = new Date();
         this.status = UserStatus.INACTIVE;
     }
+    /**
+     * Update last login timestamp
+     */
     updateLastLogin() {
         this.last_login_at = new Date();
     }
@@ -95,12 +99,12 @@ __decorate([
 ], User.prototype, "email_verified", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 255, nullable: true }),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], User.prototype, "password_hash", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 100, unique: true, nullable: true }),
     (0, typeorm_1.Index)('idx_users_hin_id'),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], User.prototype, "hin_id", void 0);
 __decorate([
     (0, typeorm_1.Column)({
@@ -128,7 +132,7 @@ __decorate([
 ], User.prototype, "last_name_encrypted", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'blob', nullable: true }),
-    __metadata("design:type", Buffer)
+    __metadata("design:type", Object)
 ], User.prototype, "phone_encrypted", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'boolean', default: false }),
@@ -136,16 +140,16 @@ __decorate([
 ], User.prototype, "mfa_enabled", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 255, nullable: true }),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], User.prototype, "mfa_secret", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'blob', nullable: true }),
-    __metadata("design:type", Buffer)
+    __metadata("design:type", Object)
 ], User.prototype, "mfa_secret_encrypted", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 36, nullable: true }),
     (0, typeorm_1.Index)('idx_users_pharmacy'),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], User.prototype, "primary_pharmacy_id", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => Pharmacy_1.Pharmacy, (pharmacy) => pharmacy.users, {
@@ -153,12 +157,12 @@ __decorate([
         nullable: true,
     }),
     (0, typeorm_1.JoinColumn)({ name: 'primary_pharmacy_id' }),
-    __metadata("design:type", Pharmacy_1.Pharmacy)
+    __metadata("design:type", Object)
 ], User.prototype, "primary_pharmacy", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 36, nullable: true }),
     (0, typeorm_1.Index)('idx_users_master_account'),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], User.prototype, "master_account_id", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => User, (user) => user.sub_accounts, {
@@ -166,7 +170,7 @@ __decorate([
         nullable: true,
     }),
     (0, typeorm_1.JoinColumn)({ name: 'master_account_id' }),
-    __metadata("design:type", User)
+    __metadata("design:type", Object)
 ], User.prototype, "master_account", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'simple-json', nullable: true }),
@@ -194,11 +198,11 @@ __decorate([
 ], User.prototype, "updated_at", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
-    __metadata("design:type", Date)
+    __metadata("design:type", Object)
 ], User.prototype, "last_login_at", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
-    __metadata("design:type", Date)
+    __metadata("design:type", Object)
 ], User.prototype, "deleted_at", void 0);
 exports.User = User = __decorate([
     (0, typeorm_1.Entity)('users')

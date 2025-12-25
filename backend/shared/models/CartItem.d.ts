@@ -1,3 +1,8 @@
+/**
+ * CartItem Model
+ * Represents an item in a shopping cart
+ * Batch 3 - E-commerce feature
+ */
 import { Cart } from './Cart';
 export declare class CartItem {
     id: string;

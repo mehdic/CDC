@@ -1,4 +1,11 @@
 "use strict";
+/**
+ * AuditTrailEntry Entity
+ * Immutable audit logs for compliance (HIPAA, GDPR, Swiss regulations)
+ * Based on: /specs/002-metapharm-platform/data-model.md
+ *
+ * IMPORTANT: This is an append-only table. No UPDATE or DELETE operations allowed.
+ */
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -22,44 +29,54 @@ var AuditAction;
     AuditAction["DELETE"] = "delete";
 })(AuditAction || (exports.AuditAction = AuditAction = {}));
 let AuditTrailEntry = AuditTrailEntry_1 = class AuditTrailEntry {
-    id;
-    pharmacy_id;
-    pharmacy;
-    user_id;
-    user;
-    event_type;
-    action;
-    resource_type;
-    resource_id;
-    changes;
-    ip_address;
-    user_agent;
-    device_info;
-    created_at;
+    // ============================================================================
+    // Helper Methods
+    // ============================================================================
+    /**
+     * Check if this is an UPDATE action with changes
+     */
     hasChanges() {
         return this.action === AuditAction.UPDATE && this.changes !== null;
     }
+    /**
+     * Get list of changed fields
+     */
     getChangedFields() {
         if (!this.hasChanges() || !this.changes)
             return [];
         return Object.keys(this.changes);
     }
+    /**
+     * Get old value for a specific field
+     */
     getOldValue(field) {
         if (!this.hasChanges() || !this.changes)
             return null;
         return this.changes[field]?.old;
     }
+    /**
+     * Get new value for a specific field
+     */
     getNewValue(field) {
         if (!this.hasChanges() || !this.changes)
             return null;
         return this.changes[field]?.new;
     }
+    /**
+     * Check if entry is from a specific pharmacy
+     */
     isFromPharmacy(pharmacyId) {
         return this.pharmacy_id === pharmacyId;
     }
+    /**
+     * Check if entry is a global event (no pharmacy context)
+     */
     isGlobalEvent() {
         return this.pharmacy_id === null;
     }
+    /**
+     * Get formatted event description
+     */
     getEventDescription() {
         const actionVerb = {
             [AuditAction.CREATE]: 'created',
@@ -69,12 +86,22 @@ let AuditTrailEntry = AuditTrailEntry_1 = class AuditTrailEntry {
         }[this.action];
         return `${this.resource_type} ${actionVerb}`;
     }
+    /**
+     * Get device platform from device_info
+     */
     getDevicePlatform() {
         return this.device_info?.platform || null;
     }
+    /**
+     * Get browser from device_info
+     */
     getBrowser() {
         return this.device_info?.browser || null;
     }
+    /**
+     * Static factory method for creating audit entries
+     * (Use this instead of direct instantiation for consistency)
+     */
     static create(params) {
         const entry = new AuditTrailEntry_1();
         entry.user_id = params.userId;
@@ -98,12 +125,12 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 36, nullable: true }),
     (0, typeorm_1.Index)('idx_audit_trail_pharmacy'),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], AuditTrailEntry.prototype, "pharmacy_id", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => Pharmacy_1.Pharmacy, { nullable: true }),
     (0, typeorm_1.JoinColumn)({ name: 'pharmacy_id' }),
-    __metadata("design:type", Pharmacy_1.Pharmacy)
+    __metadata("design:type", Object)
 ], AuditTrailEntry.prototype, "pharmacy", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 36 }),
@@ -141,11 +168,11 @@ __decorate([
 ], AuditTrailEntry.prototype, "changes", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 45, nullable: true }),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], AuditTrailEntry.prototype, "ip_address", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], AuditTrailEntry.prototype, "user_agent", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'simple-json', nullable: true }),

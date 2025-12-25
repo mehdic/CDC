@@ -1,3 +1,8 @@
+/**
+ * Cart Model
+ * Represents a shopping cart for e-commerce orders
+ * Batch 3 - E-commerce feature
+ */
 import { User } from './User';
 import { CartItem } from './CartItem';
 export declare class Cart {

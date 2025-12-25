@@ -1,3 +1,8 @@
+/**
+ * Pharmacy Entity
+ * Pharmacy locations serving as multi-tenant root entities
+ * Based on: /specs/002-metapharm-platform/data-model.md
+ */
 import { User } from './User';
 export declare enum SubscriptionTier {
     BASIC = "basic",
@@ -59,18 +64,48 @@ export declare class Pharmacy {
     created_at: Date;
     updated_at: Date;
     deleted_at: Date | null;
+    /**
+     * Check if pharmacy is soft deleted
+     */
     isDeleted(): boolean;
+    /**
+     * Check if pharmacy subscription is active
+     */
     isActive(): boolean;
+    /**
+     * Check if pharmacy is in trial period
+     */
     isTrial(): boolean;
+    /**
+     * Check if pharmacy has enterprise subscription
+     */
     isEnterprise(): boolean;
+    /**
+     * Check if pharmacy is open on a given day
+     */
     isOpenOnDay(day: keyof OperatingHours): boolean;
+    /**
+     * Get operating hours for a specific day
+     */
     getHoursForDay(day: keyof OperatingHours): {
         open: string;
         close: string;
     } | null;
+    /**
+     * Check if pharmacy has GPS coordinates for delivery routing
+     */
     hasLocation(): boolean;
+    /**
+     * Soft delete pharmacy
+     */
     softDelete(): void;
+    /**
+     * Suspend pharmacy subscription
+     */
     suspend(): void;
+    /**
+     * Activate pharmacy subscription
+     */
     activate(): void;
 }
 //# sourceMappingURL=Pharmacy.d.ts.map
