@@ -1,0 +1,196 @@
+name: UAT Bug Report
+description: Report a bug discovered during User Acceptance Testing
+title: "[UAT] "
+labels: ["uat-defect", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## UAT Bug Report
+        Thank you for reporting a bug found during UAT. Please fill out this form completely.
+
+  - type: input
+    id: reporter
+    attributes:
+      label: Reporter Name
+      description: Your name
+      placeholder: e.g., Jean Dupont
+    validations:
+      required: true
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: User Role Tested
+      description: Which user role were you testing?
+      options:
+        - Pharmacist
+        - Doctor
+        - Nurse
+        - Delivery Personnel
+        - Patient
+    validations:
+      required: true
+
+  - type: input
+    id: test-case
+    attributes:
+      label: Test Case ID
+      description: Related test case ID (if applicable)
+      placeholder: e.g., PH-AUTH-002, DR-RX-001
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - Critical - System crash, data loss, security issue
+        - High - Feature broken, no workaround
+        - Medium - Feature impacted, workaround exists
+        - Low - Minor issue, cosmetic
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: Frequency
+      description: How often does this occur?
+      options:
+        - Always reproducible (100%)
+        - Often reproducible (>50%)
+        - Sometimes reproducible (<50%)
+        - Happened once
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Bug Summary
+      description: A brief description of the bug
+      placeholder: Describe the bug in 1-2 sentences
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the issue
+      placeholder: |
+        1. Navigate to [URL/Page]
+        2. Click on [Button/Link]
+        3. Enter [Data]
+        4. Observe [Issue]
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Result
+      description: What should have happened?
+      placeholder: Describe the expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Result
+      description: What actually happened?
+      placeholder: Describe what actually occurred
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-messages
+    attributes:
+      label: Error Messages
+      description: Any error messages displayed (console, UI, etc.)
+      placeholder: Paste error messages here
+      render: shell
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Local UAT (localhost)
+        - Cloud UAT (uat.metapharm-connect.ch)
+        - Staging (staging.metapharm-connect.ch)
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser & Version
+      placeholder: e.g., Chrome 120.0.6099.129
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device
+    attributes:
+      label: Device Type
+      options:
+        - Desktop
+        - Tablet
+        - Mobile
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: e.g., Windows 11, macOS Sonoma, iOS 17
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots/Recordings
+      description: Drag and drop screenshots or provide links to recordings
+      placeholder: Attach screenshots here or paste image URLs
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround
+      description: Is there a workaround for this issue?
+      placeholder: Describe any workaround if available
+
+  - type: checkboxes
+    id: compliance
+    attributes:
+      label: Compliance Considerations
+      description: Does this bug involve any of the following?
+      options:
+        - label: Involves PHI/PII data
+        - label: Affects audit logging
+        - label: Impacts HIPAA compliance
+        - label: Impacts GDPR compliance
+        - label: Affects prescription handling
+        - label: Involves controlled substances
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other relevant information
+      placeholder: Add any other context about the problem here
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have checked that this is not a duplicate issue
+          required: true
+        - label: I have provided all necessary information to reproduce this bug
+          required: true

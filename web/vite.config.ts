@@ -2,9 +2,31 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+/**
+ * MetaPharm Connect - Vite Configuration
+ *
+ * Performance optimizations:
+ * - Code splitting with intelligent chunking
+ * - Asset versioning with content hashes
+ * - Image optimization pipeline
+ * - CDN-ready asset paths
+ * - Preload critical assets
+ * - Cache-optimized build output
+ *
+ * Target: PageSpeed >90, FCP <1.5s
+ */
+
+// CDN configuration (set via environment variables)
+const CDN_URL = process.env.VITE_CDN_URL || '';
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+  ],
+
+  // Base URL for CDN deployment
+  base: CDN_URL || '/',
 
   resolve: {
     alias: {
@@ -32,6 +54,15 @@ export default defineConfig({
     },
   },
 
+  // Preview server configuration
+  preview: {
+    port: 4173,
+    headers: {
+      // Cache-Control headers for preview (production-like)
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    },
+  },
+
   build: {
     outDir: 'dist',
     sourcemap: process.env.NODE_ENV === 'production' ? false : true,
@@ -39,11 +70,27 @@ export default defineConfig({
     target: 'es2020',
     cssCodeSplit: true,
     chunkSizeWarningLimit: 1000,
+    // Asset inlining threshold (4kb for images, icons)
+    assetsInlineLimit: 4096,
+    // Enable module preload polyfill for older browsers
+    modulePreload: {
+      polyfill: true,
+    },
     terserOptions: {
       compress: {
         drop_console: process.env.NODE_ENV === 'production',
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        // Additional optimizations
+        passes: 2,
+        unsafe_math: true,
+        unsafe_methods: true,
+      },
+      mangle: {
+        safari10: true,
+      },
+      format: {
+        comments: false,
       },
     },
     commonjsOptions: {
@@ -119,14 +166,41 @@ export default defineConfig({
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name?.split('.');
           const ext = info?.[info.length - 1];
-          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext || '')) {
+          // Images - organized by format for CDN optimization
+          if (/png|jpe?g|webp|avif/i.test(ext || '')) {
             return `assets/images/[name]-[hash][extname]`;
-          } else if (/woff2?|ttf|eot/i.test(ext || '')) {
+          }
+          // SVG icons and graphics
+          if (/svg/i.test(ext || '')) {
+            return `assets/icons/[name]-[hash][extname]`;
+          }
+          // Other image formats
+          if (/gif|tiff|bmp|ico/i.test(ext || '')) {
+            return `assets/images/[name]-[hash][extname]`;
+          }
+          // Fonts - separate for aggressive caching
+          if (/woff2?|ttf|eot|otf/i.test(ext || '')) {
             return `assets/fonts/[name]-[hash][extname]`;
           }
+          // CSS files
+          if (/css/i.test(ext || '')) {
+            return `assets/css/[name]-[hash][extname]`;
+          }
+          // Other assets
           return `assets/[name]-[hash][extname]`;
         },
-        chunkFileNames: 'js/[name]-[hash].js',
+        // JS chunks with semantic names
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId || '';
+          // Route-based chunks get descriptive names
+          if (facadeModuleId.includes('/apps/')) {
+            const match = facadeModuleId.match(/\/apps\/([^/]+)/);
+            if (match) {
+              return `js/${match[1]}/[name]-[hash].js`;
+            }
+          }
+          return 'js/[name]-[hash].js';
+        },
         entryFileNames: 'js/[name]-[hash].js',
       },
     },

@@ -1,0 +1,23 @@
+# MetaPharm Connect - Web Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: metapharm-web-svc
+  namespace: metapharm
+  labels:
+    app.kubernetes.io/name: metapharm-web
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: metapharm-connect
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "80"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: metapharm-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  sessionAffinity: None

@@ -178,19 +178,21 @@ describe('Catalog E2E Tests', () => {
 
       const searchInput = screen.getByTestId('search-input') as HTMLInputElement;
 
-      // Type search query
-      await userEvent.type(searchInput, 'aspirin');
-      jest.advanceTimersByTime(300);
+      // Trigger onChange event properly with fireEvent
+      fireEvent.change(searchInput, { target: { value: 'aspirin' } });
 
-      // Verify search was called
-      await waitFor(() => {
-        expect(ecommerceService.searchProducts).toHaveBeenCalledWith('aspirin', 20);
-      });
+      jest.advanceTimersByTime(300);
+      await jest.runAllTimersAsync();
+
+      // Verify search was called (limit is 50 in useSearch hook)
+      expect(ecommerceService.searchProducts).toHaveBeenCalledWith('aspirin', 50);
 
       // Verify search results message appears
-      expect(
-        screen.getByText('Search Results for "aspirin"')
-      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Found 1 product/)
+        ).toBeInTheDocument();
+      });
     });
 
     it('should filter products by price range', async () => {
@@ -299,9 +301,11 @@ describe('Catalog E2E Tests', () => {
         expect(screen.getByTestId('product-detail-1')).toBeInTheDocument();
       });
 
+      const modal = screen.getByTestId('product-detail-1');
+
       // Verify discount information
-      expect(screen.getByText('You save $2.00')).toBeInTheDocument();
-      expect(screen.getByText('25% OFF')).toBeInTheDocument();
+      expect(within(modal).getByText('You save $2.00')).toBeInTheDocument();
+      expect(within(modal).getByText('25% OFF')).toBeInTheDocument();
     });
 
     it('should add product to cart from detail view', async () => {
@@ -348,19 +352,21 @@ describe('Catalog E2E Tests', () => {
 
       // Search for product
       const searchInput = screen.getByTestId('search-input') as HTMLInputElement;
-      await userEvent.type(searchInput, 'vitamin');
-      jest.advanceTimersByTime(300);
 
-      await waitFor(() => {
-        expect(ecommerceService.searchProducts).toHaveBeenCalledWith('vitamin', 20);
-      });
+      // Trigger onChange event properly with fireEvent
+      fireEvent.change(searchInput, { target: { value: 'vitamin' } });
+
+      jest.advanceTimersByTime(300);
+      await jest.runAllTimersAsync();
+
+      expect(ecommerceService.searchProducts).toHaveBeenCalledWith('vitamin', 50);
 
       // Clear search
-      const clearSearchButton = screen.getByTestId('clear-search');
+      const clearSearchButton = await waitFor(() => screen.getByTestId('clear-search'));
       fireEvent.click(clearSearchButton);
 
       expect(searchInput.value).toBe('');
-      expect(screen.queryByText('Search Results for')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Found.*product/)).not.toBeInTheDocument();
     });
 
     it('should handle pagination workflow', async () => {
@@ -448,16 +454,18 @@ describe('Catalog E2E Tests', () => {
       });
 
       const searchInput = screen.getByTestId('search-input') as HTMLInputElement;
-      await userEvent.type(searchInput, 'aspirin');
+
+      // Trigger onChange event properly with fireEvent
+      fireEvent.change(searchInput, { target: { value: 'aspirin' } });
 
       performanceNowSpy.mockReturnValue(1300); // 300ms later
       jest.advanceTimersByTime(300);
 
       const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation();
 
-      await waitFor(() => {
-        expect(ecommerceService.searchProducts).toHaveBeenCalled();
-      });
+      await jest.runAllTimersAsync();
+
+      expect(ecommerceService.searchProducts).toHaveBeenCalled();
 
       performanceNowSpy.mockRestore();
       consoleInfoSpy.mockRestore();

@@ -292,6 +292,7 @@ export const NurseLayout: React.FC = () => {
       {/* Main Content */}
       <Box
         component="main"
+        role="main"
         sx={{
           flexGrow: 1,
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },

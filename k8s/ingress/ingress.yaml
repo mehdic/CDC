@@ -1,0 +1,202 @@
+# MetaPharm Connect - Ingress Configuration
+# NGINX Ingress Controller with TLS and advanced routing
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: metapharm-ingress
+  namespace: metapharm
+  labels:
+    app.kubernetes.io/name: metapharm
+    app.kubernetes.io/part-of: metapharm-connect
+  annotations:
+    # NGINX Ingress Controller annotations
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # TLS configuration
+    nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
+
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.metapharm.ch wss://api.metapharm.ch;" always;
+
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+
+    # Request body size (for file uploads)
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://metapharm.ch,https://www.metapharm.ch"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Authorization, Content-Type, Accept, Origin, X-Requested-With"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+
+    # Health checks
+    nginx.ingress.kubernetes.io/healthcheck-path: /health
+
+    # cert-manager for automatic TLS certificates
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - metapharm.ch
+        - www.metapharm.ch
+        - api.metapharm.ch
+      secretName: metapharm-tls
+  rules:
+    # Main web application
+    - host: metapharm.ch
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: metapharm-web-svc
+                port:
+                  number: 80
+    # www subdomain (same as main)
+    - host: www.metapharm.ch
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: metapharm-web-svc
+                port:
+                  number: 80
+    # API subdomain
+    - host: api.metapharm.ch
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: metapharm-api-svc
+                port:
+                  number: 4000
+---
+# Network Policy - Default deny all ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: metapharm
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# Network Policy - Allow ingress to web from ingress controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-web-ingress
+  namespace: metapharm
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: metapharm-web
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+---
+# Network Policy - Allow ingress to API from ingress controller and web
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-ingress
+  namespace: metapharm
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: metapharm-api
+  policyTypes:
+    - Ingress
+  ingress:
+    # From ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 4000
+    # From web pods within namespace
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: metapharm-web
+      ports:
+        - protocol: TCP
+          port: 4000
+---
+# Network Policy - Allow API to access databases
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-egress
+  namespace: metapharm
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: metapharm-api
+  policyTypes:
+    - Egress
+  egress:
+    # DNS resolution
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+    # PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Jaeger (tracing)
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: jaeger
+      ports:
+        - protocol: TCP
+          port: 4318

@@ -160,7 +160,7 @@ export const DeliveryDetailScreen: React.FC<DeliveryDetailScreenProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               {statusIcon}
               <Chip
-                label={delivery.status.replace(/_/g, ' ').toUpperCase()}
+                label={delivery.status.toUpperCase()}
                 color={statusColor}
                 variant="outlined"
                 data-testid={`delivery-detail-status-${delivery.id}`}

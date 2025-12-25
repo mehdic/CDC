@@ -82,7 +82,7 @@ export const NotificationPanel: React.FC = () => {
   return (
     <>
       {/* Notification Bell Icon */}
-      <IconButton color="inherit" onClick={handleToggleDrawer}>
+      <IconButton color="inherit" onClick={handleToggleDrawer} aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} non lues)` : ''}`}>
         <Badge badgeContent={unreadCount} color="error">
           <NotificationIcon />
         </Badge>
@@ -109,7 +109,7 @@ export const NotificationPanel: React.FC = () => {
           }}
         >
           <Typography variant="h6">Notifications</Typography>
-          <IconButton onClick={handleToggleDrawer}>
+          <IconButton onClick={handleToggleDrawer} aria-label="Fermer les notifications">
             <CloseIcon />
           </IconButton>
         </Box>

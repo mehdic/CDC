@@ -80,7 +80,7 @@ export const OrderDetail: React.FC = () => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-        <CircularProgress />
+        <CircularProgress aria-label="Chargement de la commande" />
       </Box>
     );
   }
@@ -101,7 +101,7 @@ export const OrderDetail: React.FC = () => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box display="flex" alignItems="center">
-          <IconButton onClick={() => navigate('/nurse/orders')} sx={{ mr: 2 }}>
+          <IconButton onClick={() => navigate('/nurse/orders')} sx={{ mr: 2 }} aria-label="Retour aux commandes">
             <BackIcon />
           </IconButton>
           <Box>

@@ -24,6 +24,7 @@ import { User } from '@models/User';
 import { Pharmacy } from '@models/Pharmacy';
 import { AuditTrailEntry } from '@models/AuditTrailEntry';
 import trackingRoutes from './routes/tracking';
+import routeRoutes from './routes/routes';
 
 // ============================================================================
 // Configuration
@@ -118,6 +119,9 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // Tracking routes
 app.use('/tracking', trackingRoutes);
+
+// Route optimization routes
+app.use('/route', routeRoutes);
 
 /**
  * POST /deliveries - Create new delivery

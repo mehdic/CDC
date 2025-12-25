@@ -251,7 +251,7 @@ export const AppShell: React.FC<AppShellProps> = ({
 
       <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: '100%' }}>
         <Toolbar /> {/* Spacer for fixed AppBar */}
-        <Main open={drawerOpen && !isMobile}>{children}</Main>
+        <Main open={drawerOpen && !isMobile} role="main">{children}</Main>
         <Footer>
           <Typography variant="body2" color="textSecondary">
             © {new Date().getFullYear()} MetaPharm Connect. Tous droits réservés.

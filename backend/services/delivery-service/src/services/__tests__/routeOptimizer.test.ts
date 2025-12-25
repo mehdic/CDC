@@ -3,8 +3,8 @@
  * Tests for TSP approximation, constraint validation, and route optimization
  */
 
-import { optimizeRoute, recalculateRoute, Waypoint, OptimizedRoute } from '../routeOptimizer';
-import { DeliveryRequest, Coordinates } from '../../types/delivery';
+import { optimizeRoute, recalculateRoute } from '../routeOptimizer';
+import { DeliveryRequest, Coordinates, Waypoint, OptimizedRoute } from '../../types/delivery';
 
 /**
  * Mock delivery creation helper

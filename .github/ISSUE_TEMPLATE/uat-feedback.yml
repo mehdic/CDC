@@ -1,0 +1,133 @@
+name: UAT Feature Feedback
+description: Provide feedback on a feature during User Acceptance Testing
+title: "[UAT Feedback] "
+labels: ["uat-feedback", "needs-review"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## UAT Feature Feedback
+        Use this form to provide feedback on features you tested during UAT.
+
+  - type: input
+    id: reporter
+    attributes:
+      label: Reporter Name
+      description: Your name
+      placeholder: e.g., Jean Dupont
+    validations:
+      required: true
+
+  - type: dropdown
+    id: role
+    attributes:
+      label: User Role
+      description: Which user role were you testing?
+      options:
+        - Pharmacist
+        - Doctor
+        - Nurse
+        - Delivery Personnel
+        - Patient
+    validations:
+      required: true
+
+  - type: input
+    id: feature
+    attributes:
+      label: Feature Name
+      description: Which feature are you providing feedback on?
+      placeholder: e.g., Prescription Management, Teleconsultation, Delivery Tracking
+    validations:
+      required: true
+
+  - type: dropdown
+    id: functionality-rating
+    attributes:
+      label: Functionality Rating
+      description: How well does this feature work?
+      options:
+        - 5 - Excellent (works perfectly)
+        - 4 - Good (works well, minor issues)
+        - 3 - Fair (works but needs improvement)
+        - 2 - Poor (barely functional)
+        - 1 - Not working
+    validations:
+      required: true
+
+  - type: dropdown
+    id: usability-rating
+    attributes:
+      label: Usability Rating
+      description: How easy is this feature to use?
+      options:
+        - 5 - Very easy (intuitive)
+        - 4 - Easy (straightforward)
+        - 3 - Neutral (some learning required)
+        - 2 - Difficult (confusing)
+        - 1 - Very difficult (unusable)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: meets-requirements
+    attributes:
+      label: Meets Requirements
+      description: Does this feature meet your business needs?
+      options:
+        - Yes, fully meets requirements
+        - Partially meets requirements
+        - Does not meet requirements
+    validations:
+      required: true
+
+  - type: textarea
+    id: likes
+    attributes:
+      label: What do you like about this feature?
+      placeholder: Describe what works well
+    validations:
+      required: true
+
+  - type: textarea
+    id: improvements
+    attributes:
+      label: What would you improve?
+      placeholder: Describe suggested improvements
+    validations:
+      required: true
+
+  - type: textarea
+    id: missing
+    attributes:
+      label: Missing Functionality
+      description: Is there anything missing that you expected?
+      placeholder: Describe any missing features or capabilities
+
+  - type: dropdown
+    id: acceptance
+    attributes:
+      label: Acceptance Recommendation
+      description: Your recommendation for this feature
+      options:
+        - Accept - Ready for production
+        - Accept with conditions - Ready after minor fixes
+        - Defer - Needs more work before acceptance
+        - Reject - Major issues prevent use
+    validations:
+      required: true
+
+  - type: textarea
+    id: conditions
+    attributes:
+      label: Conditions for Acceptance
+      description: If "Accept with conditions" or "Defer", what needs to be fixed?
+      placeholder: List required changes
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Comments
+      placeholder: Any other feedback

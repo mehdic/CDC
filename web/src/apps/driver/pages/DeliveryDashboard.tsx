@@ -140,7 +140,7 @@ export const DeliveryDashboard: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }} data-testid="dashboard-view" component="main" role="main">
+    <Box sx={{ p: 3 }} data-testid="dashboard-view">
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>

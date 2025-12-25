@@ -130,7 +130,7 @@ export const OrderTracking: React.FC = () => {
       {/* Loading State */}
       {loading && (
         <Box display="flex" justifyContent="center" py={4}>
-          <CircularProgress />
+          <CircularProgress aria-label="Chargement des commandes" />
         </Box>
       )}
 

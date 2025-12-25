@@ -111,7 +111,7 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }} data-testid="dashboard-view" component="main" role="main">
+    <Container maxWidth="xl" sx={{ py: 4 }} data-testid="dashboard-view">
       {/* Header */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>

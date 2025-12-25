@@ -144,7 +144,7 @@ export const MedicationOrderForm: React.FC = () => {
       <Paper sx={{ p: 3 }}>
         {/* Header */}
         <Box display="flex" alignItems="center" mb={3}>
-          <IconButton onClick={() => navigate('/nurse/orders')} sx={{ mr: 2 }}>
+          <IconButton onClick={() => navigate('/nurse/orders')} sx={{ mr: 2 }} aria-label="Retour aux commandes">
             <BackIcon />
           </IconButton>
           <Typography variant="h4">Nouvelle commande de médicaments</Typography>
@@ -242,6 +242,7 @@ export const MedicationOrderForm: React.FC = () => {
                         edge="end"
                         onClick={() => handleRemoveMedication(index)}
                         disabled={submitting}
+                        aria-label={`Supprimer ${med.drugName}`}
                       >
                         <DeleteIcon />
                       </IconButton>

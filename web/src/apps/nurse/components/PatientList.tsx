@@ -144,7 +144,7 @@ export const PatientList: React.FC = () => {
       {/* Loading State */}
       {loading && (
         <Box display="flex" justifyContent="center" py={4}>
-          <CircularProgress />
+          <CircularProgress aria-label="Chargement de la liste des patients" />
         </Box>
       )}
 

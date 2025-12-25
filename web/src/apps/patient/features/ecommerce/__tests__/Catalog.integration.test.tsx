@@ -193,13 +193,17 @@ describe('Catalog Integration Tests', () => {
     });
 
     const searchInput = screen.getByTestId('search-input') as HTMLInputElement;
-    await userEvent.type(searchInput, 'aspirin');
 
+    // Trigger onChange event properly with fireEvent
+    fireEvent.change(searchInput, { target: { value: 'aspirin' } });
+
+    // Advance timers to trigger debounced search
     jest.advanceTimersByTime(300);
 
-    await waitFor(() => {
-      expect(ecommerceService.searchProducts).toHaveBeenCalledWith('aspirin', 20);
-    });
+    // Use act to flush pending promises
+    await jest.runAllTimersAsync();
+
+    expect(ecommerceService.searchProducts).toHaveBeenCalledWith('aspirin', 50);
 
     jest.useRealTimers();
   });
@@ -280,8 +284,10 @@ describe('Catalog Integration Tests', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('product-detail-1')).toBeInTheDocument();
-      expect(screen.getByText('Aspirin 500mg')).toBeInTheDocument();
     });
+
+    const modal = screen.getByTestId('product-detail-1');
+    expect(within(modal).getByText('Aspirin 500mg')).toBeInTheDocument();
   });
 
   it('should close product detail modal', async () => {
@@ -352,9 +358,12 @@ describe('Catalog Integration Tests', () => {
     });
 
     const searchInput = screen.getByTestId('search-input') as HTMLInputElement;
-    await userEvent.type(searchInput, 'aspirin');
+
+    // Trigger onChange event properly with fireEvent
+    fireEvent.change(searchInput, { target: { value: 'aspirin' } });
 
     jest.advanceTimersByTime(300);
+    await jest.runAllTimersAsync();
 
     await waitFor(() => {
       expect(screen.getByTestId('clear-search')).toBeInTheDocument();

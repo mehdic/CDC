@@ -22,3 +22,9 @@ declare module '@mui/lab' {
   export const TimelineDot: FC<any>;
   export const TimelineOppositeContent: FC<any>;
 }
+
+// Leaflet image imports
+declare module '*.png' {
+  const value: string;
+  export default value;
+}

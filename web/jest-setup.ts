@@ -56,6 +56,13 @@ global.fetch = jest.fn().mockResolvedValue({
   url: '',
 }) as jest.Mock;
 
+// Mock window.scrollTo for pagination tests
+Object.defineProperty(window, 'scrollTo', {
+  writable: true,
+  configurable: true,
+  value: jest.fn(),
+});
+
 // Note: Ant Design ResponsiveObserver is mocked directly in test files that use Row/Col
 // This avoids test setup issues with dynamic imports
 
@@ -75,6 +82,7 @@ beforeAll(() => {
       typeof args[0] === 'string' &&
       (args[0].includes('Warning: ReactDOM.render') ||
         args[0].includes('Not implemented: HTMLFormElement.prototype.submit') ||
+        args[0].includes('Not implemented: window.scrollTo') ||
         args[0].includes('Warning: useLayoutEffect') ||
         args[0].includes('inside a test was not wrapped in act') ||
         args[0].includes('Cannot destructure property'))

@@ -4,8 +4,8 @@
  */
 
 import { Request, Response } from 'express';
-import { optimizeRoute, recalculateRoute, OptimizedRoute } from '../services/routeOptimizer';
-import { DeliveryRequest, Coordinates, ApiResponse } from '../types/delivery';
+import { optimizeRoute, recalculateRoute } from '../services/routeOptimizer';
+import { DeliveryRequest, Coordinates, ApiResponse, OptimizedRoute } from '../types/delivery';
 
 /**
  * POST /delivery/route/optimize

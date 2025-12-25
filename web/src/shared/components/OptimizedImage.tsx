@@ -1,15 +1,47 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import {
+  getOptimizedImageUrl,
+  generateSrcSet as cdnGenerateSrcSet,
+  generateSizes,
+  getWebPSupport,
+  cdnConfig,
+} from '../utils/cdnConfig';
 
 interface OptimizedImageProps {
+  /** Source URL of the image */
   src: string;
+  /** Alternative text for accessibility */
   alt: string;
+  /** CSS class name */
   className?: string;
+  /** Width of the image */
   width?: number;
+  /** Height of the image */
   height?: number;
+  /** Sizes attribute for responsive images */
   sizes?: string;
+  /** Priority loading for above-the-fold images */
   priority?: boolean;
+  /** Image quality (1-100) for CDN optimization */
+  quality?: number;
+  /** Whether to use CDN optimization */
+  useCDN?: boolean;
+  /** Placeholder type while loading */
+  placeholder?: 'skeleton' | 'blur' | 'empty';
+  /** Blur placeholder data URL */
+  blurDataURL?: string;
+  /** Fallback image on error */
+  fallbackSrc?: string;
+  /** Fetch priority hint */
+  fetchPriority?: 'high' | 'low' | 'auto';
+  /** Object fit style */
+  objectFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+  /** Callback when image loads */
   onLoad?: () => void;
+  /** Callback when image fails to load */
   onError?: () => void;
+  /** Data test id for testing */
+  'data-testid'?: string;
 }
 
 /**
@@ -21,8 +53,11 @@ interface OptimizedImageProps {
  * - Responsive images with srcset
  * - Loading placeholder/skeleton
  * - Priority loading for above-the-fold images
+ * - CDN integration with dynamic optimization
+ * - Blur-up placeholder effect
+ * - Error handling with fallback
  */
-export const OptimizedImage: React.FC<OptimizedImageProps> = ({
+export const OptimizedImage: React.FC<OptimizedImageProps> = memo(({
   src,
   alt,
   className = '',
@@ -30,13 +65,31 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   height,
   sizes = '100vw',
   priority = false,
+  quality = 85,
+  useCDN = true,
+  placeholder = 'skeleton',
+  blurDataURL,
+  fallbackSrc,
+  fetchPriority = 'auto',
+  objectFit = 'cover',
   onLoad,
   onError,
+  'data-testid': testId,
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(priority);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Generate CDN-optimized URL
+  const optimizedSrc = useCDN && cdnConfig.baseUrl
+    ? getOptimizedImageUrl(src, { width, height, quality, format: 'auto' })
+    : src;
+
+  // Generate responsive srcset with CDN
+  const responsiveSrcSet = useCDN && cdnConfig.baseUrl
+    ? cdnGenerateSrcSet(src, [320, 640, 960, 1280, 1920])
+    : undefined;
 
   // Intersection Observer for lazy loading
   useEffect(() => {
@@ -83,37 +136,84 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
             ${baseUrl}-1920w.${extension} 1920w`;
   };
 
-  const handleLoad = () => {
+  const handleLoad = useCallback(() => {
     setIsLoaded(true);
     onLoad?.();
-  };
+  }, [onLoad]);
 
-  const handleError = () => {
+  const handleError = useCallback(() => {
     setHasError(true);
     onError?.();
-  };
+  }, [onError]);
 
-  // Loading skeleton
-  if (!isInView) {
+  // Get current source (with fallback on error)
+  const currentSrc = hasError && fallbackSrc ? fallbackSrc : optimizedSrc;
+
+  // Loading skeleton placeholder
+  if (!isInView && placeholder === 'skeleton') {
     return (
       <div
         ref={imgRef}
         className={`${className} bg-gray-200 animate-pulse`}
-        style={{ width: width || '100%', height: height || 'auto' }}
+        style={{
+          width: width || '100%',
+          height: height || 'auto',
+          objectFit,
+        }}
         role="img"
         aria-label={`Loading ${alt}`}
+        data-testid={testId}
+      />
+    );
+  }
+
+  // Blur placeholder
+  if (!isInView && placeholder === 'blur' && blurDataURL) {
+    return (
+      <div
+        ref={imgRef}
+        className={className}
+        style={{
+          width: width || '100%',
+          height: height || 'auto',
+          backgroundImage: `url(${blurDataURL})`,
+          backgroundSize: objectFit,
+          backgroundPosition: 'center',
+          filter: 'blur(20px)',
+          transform: 'scale(1.1)',
+        }}
+        role="img"
+        aria-label={`Loading ${alt}`}
+        data-testid={testId}
+      />
+    );
+  }
+
+  // Empty placeholder (just reserves space)
+  if (!isInView && placeholder === 'empty') {
+    return (
+      <div
+        ref={imgRef}
+        style={{
+          width: width || '100%',
+          height: height || 'auto',
+        }}
+        role="img"
+        aria-label={`Loading ${alt}`}
+        data-testid={testId}
       />
     );
   }
 
   // Error fallback
-  if (hasError) {
+  if (hasError && !fallbackSrc) {
     return (
       <div
         className={`${className} bg-gray-100 flex items-center justify-center text-gray-400`}
         style={{ width: width || '100%', height: height || 'auto' }}
         role="img"
         aria-label={alt}
+        data-testid={testId}
       >
         <svg
           className="w-12 h-12"
@@ -121,6 +221,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
           stroke="currentColor"
           viewBox="0 0 24 24"
           xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -134,35 +235,44 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   }
 
   return (
-    <picture>
+    <picture data-testid={testId}>
       {/* WebP source for modern browsers */}
-      <source
-        type="image/webp"
-        srcSet={generateSrcSet(getWebPSource(src))}
-        sizes={sizes}
-      />
+      {getWebPSupport() && (
+        <source
+          type="image/webp"
+          srcSet={responsiveSrcSet || generateSrcSet(getWebPSource(src))}
+          sizes={sizes}
+        />
+      )}
 
       {/* Fallback for browsers that don't support WebP */}
       <source
         type={`image/${src.split('.').pop()}`}
-        srcSet={generateSrcSet(src)}
+        srcSet={responsiveSrcSet || generateSrcSet(src)}
         sizes={sizes}
       />
 
       {/* Fallback img tag */}
       <img
         ref={imgRef}
-        src={src}
+        src={currentSrc}
         alt={alt}
         className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+        style={{ objectFit }}
         width={width}
         height={height}
         loading={priority ? 'eager' : 'lazy'}
+        // @ts-expect-error - fetchPriority not yet in React types
+        fetchpriority={priority ? 'high' : fetchPriority}
+        decoding={priority ? 'sync' : 'async'}
         onLoad={handleLoad}
         onError={handleError}
       />
     </picture>
   );
-};
+});
+
+// Add display name for debugging
+OptimizedImage.displayName = 'OptimizedImage';
 
 export default OptimizedImage;

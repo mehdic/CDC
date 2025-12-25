@@ -1,0 +1,47 @@
+{
+  "name": "@metapharm/digital-twin-service",
+  "version": "1.0.0",
+  "description": "Digital Twin Patient Profile Service - AI-powered health insights and predictive analytics",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node -r tsconfig-paths/register src/index.ts",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "digital-twin",
+    "patient-profile",
+    "health-insights",
+    "predictive-analytics",
+    "healthcare"
+  ],
+  "author": "MetaPharm Connect",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.0.0",
+    "pg": "^8.11.3",
+    "typeorm": "^0.3.20",
+    "uuid": "^9.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.15",
+    "@types/express": "^4.17.17",
+    "@types/jest": "^29.5.4",
+    "@types/node": "^20.10.5",
+    "@types/supertest": "^2.0.12",
+    "@types/uuid": "^9.0.7",
+    "jest": "^29.6.1",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.3.3"
+  }
+}

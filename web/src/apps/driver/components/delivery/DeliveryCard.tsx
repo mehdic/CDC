@@ -106,7 +106,7 @@ export const DeliveryCard: React.FC<DeliveryCardProps> = ({
         {/* Status chip */}
         <Box sx={{ mb: 1 }}>
           <Chip
-            label={delivery.status.replace(/_/g, ' ').toUpperCase()}
+            label={delivery.status.toUpperCase()}
             color={statusColor}
             size="small"
             variant="outlined"

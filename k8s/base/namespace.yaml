@@ -1,0 +1,55 @@
+# MetaPharm Connect - Kubernetes Namespace
+# Provides isolation for all MetaPharm workloads
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metapharm
+  labels:
+    app.kubernetes.io/name: metapharm
+    app.kubernetes.io/part-of: metapharm-connect
+    environment: production
+  annotations:
+    description: "MetaPharm Connect healthcare platform namespace"
+---
+# Resource Quota for namespace-level limits
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: metapharm-quota
+  namespace: metapharm
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: 40Gi
+    limits.cpu: "40"
+    limits.memory: 80Gi
+    pods: "100"
+    services: "50"
+    secrets: "100"
+    configmaps: "100"
+---
+# LimitRange for default pod limits
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: metapharm-limits
+  namespace: metapharm
+spec:
+  limits:
+    - type: Pod
+      max:
+        cpu: "4"
+        memory: 4Gi
+    - type: Container
+      default:
+        cpu: 250m
+        memory: 256Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi
+      max:
+        cpu: "2"
+        memory: 2Gi
+      min:
+        cpu: 50m
+        memory: 64Mi

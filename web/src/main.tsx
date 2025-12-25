@@ -8,6 +8,16 @@ import { SnackbarProvider } from 'notistack';
 import App from './App';
 import { register as registerServiceWorker } from '@shared/utils/serviceWorkerRegistration';
 import { performanceMonitor } from '@shared/utils/performanceMonitor';
+import { initCDNConnections } from '@shared/utils/cdnConfig';
+import { initAssetPreloading } from '@shared/utils/assetPreloader';
+import { initSentry } from './config/sentry';
+
+// Initialize Sentry error tracking (before everything else)
+initSentry();
+
+// Initialize CDN connections early for faster asset loading
+initCDNConnections();
+initAssetPreloading();
 
 // Create Material-UI theme
 const theme = createTheme({

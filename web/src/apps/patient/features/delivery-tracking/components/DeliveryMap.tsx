@@ -7,7 +7,7 @@
 import React, { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import { Box, Paper, Typography, Chip } from '@mui/material';
-import L from 'leaflet';
+import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Coordinates } from '../types/tracking';
 

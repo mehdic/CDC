@@ -1,0 +1,83 @@
+# MetaPharm Connect - Kustomize Configuration
+# Use: kubectl apply -k k8s/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: metapharm-connect
+  annotations:
+    config.kubernetes.io/local-config: "true"
+
+# Namespace for all resources
+namespace: metapharm
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/part-of: metapharm-connect
+  app.kubernetes.io/managed-by: kustomize
+
+# Common annotations
+commonAnnotations:
+  app.kubernetes.io/version: "1.0.0"
+
+# Resources to include
+resources:
+  # Base resources
+  - base/namespace.yaml
+  - base/configmap.yaml
+
+  # Web frontend
+  - web/deployment.yaml
+  - web/service.yaml
+
+  # API backend
+  - api/deployment.yaml
+  - api/service.yaml
+
+  # Ingress and network policies
+  - ingress/ingress.yaml
+
+# Image configuration for easy updates
+images:
+  - name: ghcr.io/mehdic/cdc/web
+    newTag: latest
+  - name: ghcr.io/mehdic/cdc/api-gateway
+    newTag: latest
+
+# ConfigMap generator for runtime configuration
+configMapGenerator:
+  - name: metapharm-runtime-config
+    namespace: metapharm
+    literals:
+      - DEPLOY_TIMESTAMP=""
+      - DEPLOY_COMMIT=""
+
+# Patches for environment-specific overrides
+# Uncomment and modify for staging/production environments
+# patches:
+#   - target:
+#       kind: Deployment
+#       name: metapharm-web
+#     patch: |-
+#       - op: replace
+#         path: /spec/replicas
+#         value: 3
+#   - target:
+#       kind: Deployment
+#       name: metapharm-api
+#     patch: |-
+#       - op: replace
+#         path: /spec/replicas
+#         value: 3
+
+# Replacements for dynamic values
+# replacements:
+#   - source:
+#       kind: ConfigMap
+#       name: metapharm-runtime-config
+#       fieldPath: data.DEPLOY_TIMESTAMP
+#     targets:
+#       - select:
+#           kind: Deployment
+#         fieldPaths:
+#           - metadata.annotations.[deployment.kubernetes.io/timestamp]

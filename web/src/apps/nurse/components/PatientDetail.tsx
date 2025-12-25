@@ -63,7 +63,7 @@ export const PatientDetail: React.FC = () => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-        <CircularProgress />
+        <CircularProgress aria-label="Chargement du dossier patient" />
       </Box>
     );
   }
@@ -84,7 +84,7 @@ export const PatientDetail: React.FC = () => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box display="flex" alignItems="center">
-          <IconButton onClick={() => navigate('/nurse/patients')} sx={{ mr: 2 }}>
+          <IconButton onClick={() => navigate('/nurse/patients')} sx={{ mr: 2 }} aria-label="Retour à la liste des patients">
             <BackIcon />
           </IconButton>
           <Box>

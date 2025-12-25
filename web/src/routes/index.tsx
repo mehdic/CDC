@@ -44,6 +44,9 @@ const Checkout = lazy(() => import('@apps/patient/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@apps/patient/pages/checkout/OrderConfirmation'));
 const VIPPortal = lazy(() => import('@apps/patient/features/vip/pages/VIPPortal'));
 
+// Admin components
+const AdminDashboard = lazy(() => import('@apps/admin/pages/AdminDashboard'));
+
 // Nurse components
 const NurseLayout = lazy(() => import('@apps/nurse/layouts/NurseLayout'));
 const NurseDashboard = lazy(() => import('@apps/nurse/components/NurseDashboard'));
@@ -511,6 +514,68 @@ export const AppRoutes: React.FC = () => {
                   <h2>Paramètres</h2>
                   <p>Page de paramètres - À implémenter</p>
                 </div>
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin routes - Admin only */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AppLayout>
+                <AdminDashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AppLayout>
+                <AdminDashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AppLayout>
+                <AdminDashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/system"
+          element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AppLayout>
+                <AdminDashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/config"
+          element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AppLayout>
+                <AdminDashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/audit"
+          element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AppLayout>
+                <AdminDashboard />
               </AppLayout>
             </ProtectedRoute>
           }

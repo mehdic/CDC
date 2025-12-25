@@ -4,43 +4,7 @@
  * Supports multi-stop optimization with constraints (time windows, cold chain, controlled substances)
  */
 
-import { DeliveryRequest, Coordinates } from '../types/delivery';
-
-/**
- * Waypoint definition for optimized routes
- */
-export interface Waypoint {
-  deliveryId: string;
-  coordinates: Coordinates;
-  sequence: number;
-  estimatedArrival: string;
-  estimatedDuration: number;
-  completed: boolean;
-  constraints: {
-    timeWindow?: { start: string; end: string };
-    coldChain?: boolean;
-    controlledSubstance?: boolean;
-    idVerificationRequired?: boolean;
-  };
-}
-
-/**
- * Optimized route result
- */
-export interface OptimizedRoute {
-  id: string;
-  deliveryIds: string[];
-  waypoints: Waypoint[];
-  totalDistance: number;
-  totalDuration: number;
-  optimizedAt: string;
-  currentWaypointIndex: number;
-  routeDetails: {
-    priorityScore: number;
-    constraintsRespected: boolean;
-    timeEfficiency: number; // percentage
-  };
-}
+import { DeliveryRequest, Coordinates, Waypoint, OptimizedRoute } from '../types/delivery';
 
 /**
  * Haversine formula to calculate distance between two coordinates
