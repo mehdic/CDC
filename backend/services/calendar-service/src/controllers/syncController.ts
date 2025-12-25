@@ -11,15 +11,14 @@ import { CalendarIntegration } from '../entities/CalendarIntegration';
 import { CalendarEvent, SyncStatus } from '../entities/CalendarEvent';
 import { OAuthAuthorizationRequest, OAuthCallbackRequest } from '../types/calendar.types';
 
-// Extend Express Request to include user property
+// Import the shared authenticated user type
+import { AuthenticatedUser } from '../../../../shared/middleware/auth';
+
+// Extend Express Request to include user property (compatible with shared auth)
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: string;
-        role?: string;
-        [key: string]: any;
-      };
+      user?: AuthenticatedUser;
     }
   }
 }
@@ -39,7 +38,7 @@ export class SyncController {
   async initiateGoogleConnect(req: Request, res: Response): Promise<void> {
     try {
       // Validate user ID from JWT token
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         res.status(401).json({ error: 'User not authenticated' });
         return;
@@ -123,7 +122,8 @@ export class SyncController {
    */
   async triggerSync(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.user?.id;
+      // Validate user ID from JWT token
+      const userId = req.user?.userId;
       if (!userId) {
         res.status(401).json({ error: 'User not authenticated' });
         return;
@@ -174,7 +174,7 @@ export class SyncController {
    */
   async disconnectGoogle(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         res.status(401).json({ error: 'User not authenticated' });
         return;
@@ -220,7 +220,7 @@ export class SyncController {
    */
   async listIntegrations(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         res.status(401).json({ error: 'User not authenticated' });
         return;
@@ -265,7 +265,7 @@ export class SyncController {
    */
   async getSyncStatus(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         res.status(401).json({ error: 'User not authenticated' });
         return;
@@ -345,7 +345,7 @@ export class SyncController {
    */
   async updateSyncSettings(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.userId;
       if (!userId) {
         res.status(401).json({ error: 'User not authenticated' });
         return;

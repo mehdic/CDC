@@ -12,15 +12,14 @@ import { GoogleSyncService } from '../services/googleSyncService';
 import { CalendarIntegration } from '../entities/CalendarIntegration';
 import { CalendarEvent } from '../entities/CalendarEvent';
 
-// Extend Express Request to include user property
+// Import the shared authenticated user type
+import { AuthenticatedUser } from '../../../../shared/middleware/auth';
+
+// Extend Express Request to include user property (compatible with shared auth)
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: string;
-        role?: string;
-        [key: string]: any;
-      };
+      user?: AuthenticatedUser;
     }
   }
 }
@@ -53,11 +52,14 @@ const jwtAuthMiddleware = (req: Request, res: Response, next: NextFunction): voi
       // Verify JWT signature and decode payload
       const decoded = jwt.verify(token, JWT_SECRET) as any;
 
-      // Extract user ID and role from JWT claims
+      // Extract user data from JWT claims and create AuthenticatedUser
       req.user = {
-        id: decoded.sub || decoded.userId || decoded.id || '',
+        userId: decoded.sub || decoded.userId || decoded.id || '',
+        email: decoded.email || '',
         role: decoded.role || decoded.userRole || 'PATIENT', // Extract role from JWT
-      };
+        pharmacyId: decoded.pharmacyId || null,
+        tokenPayload: decoded,
+      } as AuthenticatedUser;
 
       next();
     } catch (err) {

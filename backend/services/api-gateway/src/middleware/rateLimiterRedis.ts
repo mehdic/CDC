@@ -81,8 +81,8 @@ async function createRedisStore(): Promise<RedisStore | undefined> {
   }
 
   return new RedisStore({
-    // @ts-expect-error - RedisStore types are outdated
-    client: client,
+    // Redis client connection for rate limiting
+    sendCommand: async (...args: string[]) => client.sendCommand(args),
     prefix: 'rl:', // Rate limit prefix
   });
 }

@@ -64,7 +64,9 @@
     "dist",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "**/__tests__/**"
+    "**/__tests__/**",
+    "**/examples/**",
+    "shared/db/migrate.ts"
   ],
   "ts-node": {
     "require": ["tsconfig-paths/register"],
