@@ -37,6 +37,30 @@ const mockOrders = [
 describe('NurseDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Mock fetch API calls
+    global.fetch = jest.fn((url) => {
+      if (url === '/api/nurse/dashboard/summary') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: mockStats }),
+        } as Response);
+      }
+      if (url === '/api/nurse/patients') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [] }),
+        } as Response);
+      }
+      if (url === '/api/nurse/deliveries/upcoming') {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: [] }),
+        } as Response);
+      }
+      return Promise.reject(new Error('Not found'));
+    }) as jest.Mock;
+
     (nurseApi.getDashboardStats as jest.Mock).mockResolvedValue(mockStats);
     (useOrdersHook.useOrders as jest.Mock).mockReturnValue({
       orders: mockOrders,
@@ -107,6 +131,14 @@ describe('NurseDashboard', () => {
   });
 
   it('handles error state', async () => {
+    // Mock fetch to fail so it falls back to getDashboardStats
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: false,
+        status: 500,
+      } as Response)
+    ) as jest.Mock;
+
     (nurseApi.getDashboardStats as jest.Mock).mockRejectedValue(new Error('Network error'));
 
     render(<NurseDashboard />, { withRouter: true });

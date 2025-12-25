@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { render as rtlRender, RenderOptions } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Create a theme for tests
@@ -45,7 +45,12 @@ const customRender = (
     return (
       <ThemeProvider theme={theme}>
         {withRouter ? (
-          <BrowserRouter>
+          <MemoryRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
             {queryClient ? (
               <QueryClientProvider client={queryClient}>
                 {children}
@@ -53,7 +58,7 @@ const customRender = (
             ) : (
               children
             )}
-          </BrowserRouter>
+          </MemoryRouter>
         ) : queryClient ? (
           <QueryClientProvider client={queryClient}>
             {children}
