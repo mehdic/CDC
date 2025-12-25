@@ -252,10 +252,10 @@ describe('DeliveryListScreen Component', () => {
     const user = userEvent.setup();
     render(<DeliveryListScreen />);
 
-    const select = screen.getByTestId('status-filter-select');
-    await user.click(select);
+    const selectButton = screen.getByRole('combobox');
+    await user.click(selectButton);
 
-    const inTransitOption = screen.getByText('In Transit');
+    const inTransitOption = await screen.findByRole('option', { name: /In Transit/i });
     await user.click(inTransitOption);
 
     await waitFor(() => {
@@ -330,10 +330,10 @@ describe('DeliveryListScreen Component', () => {
 
     render(<DeliveryListScreen />);
 
-    const select = screen.getByTestId('status-filter-select');
-    await user.click(select);
+    const selectButton = screen.getByRole('combobox');
+    await user.click(selectButton);
 
-    const assignedOption = screen.getByText('Assigned to Me');
+    const assignedOption = await screen.findByRole('option', { name: /Assigned to Me/i });
     await user.click(assignedOption);
 
     await waitFor(() => {

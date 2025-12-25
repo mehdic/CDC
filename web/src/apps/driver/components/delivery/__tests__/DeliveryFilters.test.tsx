@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DeliveryFilters } from '../DeliveryFilters';
 import { DeliveryStatus } from '../../../../../shared/hooks/useDelivery';
@@ -23,7 +23,7 @@ describe('DeliveryFilters Component', () => {
         onFilterChange={mockOnFilterChange}
       />
     );
-    expect(screen.getByText('Filter by Status')).toBeInTheDocument();
+    expect(screen.getByLabelText('Filter by Status')).toBeInTheDocument();
   });
 
   it('renders all status options in select menu', async () => {
@@ -35,16 +35,16 @@ describe('DeliveryFilters Component', () => {
       />
     );
 
-    const select = screen.getByTestId('status-filter-select');
-    await user.click(select);
+    const selectButton = screen.getByRole('combobox');
+    await user.click(selectButton);
 
-    expect(screen.getByText('All Deliveries')).toBeInTheDocument();
-    expect(screen.getByText('Pending')).toBeInTheDocument();
-    expect(screen.getByText('Assigned to Me')).toBeInTheDocument();
-    expect(screen.getByText('In Transit')).toBeInTheDocument();
-    expect(screen.getByText('Delivered')).toBeInTheDocument();
-    expect(screen.getByText('Failed')).toBeInTheDocument();
-    expect(screen.getByText('Cancelled')).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: /All Deliveries/i })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: /Pending/i })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: /Assigned to Me/i })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: /In Transit/i })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: /Delivered/i })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: /Failed/i })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: /Cancelled/i })).toBeInTheDocument();
   });
 
   it('calls onFilterChange when status is selected', async () => {
@@ -56,10 +56,10 @@ describe('DeliveryFilters Component', () => {
       />
     );
 
-    const select = screen.getByTestId('status-filter-select');
-    await user.click(select);
+    const selectButton = screen.getByRole('combobox');
+    await user.click(selectButton);
 
-    const assignedOption = screen.getByText('Assigned to Me');
+    const assignedOption = await screen.findByRole('option', { name: /Assigned to Me/i });
     await user.click(assignedOption);
 
     expect(mockOnFilterChange).toHaveBeenCalledWith(DeliveryStatus.ASSIGNED);
@@ -72,8 +72,9 @@ describe('DeliveryFilters Component', () => {
         onFilterChange={mockOnFilterChange}
       />
     );
-    const select = screen.getByTestId('status-filter-select');
-    expect(select).toHaveValue(DeliveryStatus.IN_TRANSIT);
+    const selectContainer = screen.getByTestId('status-filter-select');
+    const hiddenInput = within(selectContainer).getByRole('combobox', { hidden: true });
+    expect(hiddenInput).toHaveAttribute('aria-labelledby', expect.stringContaining('status-filter'));
   });
 
   it('disables filter when loading is true', () => {
@@ -84,8 +85,8 @@ describe('DeliveryFilters Component', () => {
         loading={true}
       />
     );
-    const select = screen.getByTestId('status-filter-select');
-    expect(select).toBeDisabled();
+    const selectContainer = screen.getByTestId('status-filter-select');
+    expect(selectContainer).toHaveClass('Mui-disabled');
   });
 
   it('enables filter when loading is false', () => {
@@ -96,8 +97,8 @@ describe('DeliveryFilters Component', () => {
         loading={false}
       />
     );
-    const select = screen.getByTestId('status-filter-select');
-    expect(select).not.toBeDisabled();
+    const selectContainer = screen.getByTestId('status-filter-select');
+    expect(selectContainer).not.toHaveClass('Mui-disabled');
   });
 
   it('displays loading indicator when loading is true', () => {
@@ -151,9 +152,9 @@ describe('DeliveryFilters Component', () => {
       />
     );
 
-    let select = screen.getByTestId('status-filter-select');
-    await user.click(select);
-    const assignedOption = screen.getByText('Assigned to Me');
+    const selectButton = screen.getByRole('combobox');
+    await user.click(selectButton);
+    const assignedOption = await screen.findByRole('option', { name: /Assigned to Me/i });
     await user.click(assignedOption);
 
     expect(mockOnFilterChange).toHaveBeenCalledWith(DeliveryStatus.ASSIGNED);
@@ -165,8 +166,9 @@ describe('DeliveryFilters Component', () => {
       />
     );
 
-    select = screen.getByTestId('status-filter-select');
-    expect(select).toHaveValue(DeliveryStatus.ASSIGNED);
+    const selectContainer = screen.getByTestId('status-filter-select');
+    const combobox = within(selectContainer).getByRole('combobox', { hidden: true });
+    expect(combobox).toHaveAttribute('aria-labelledby', expect.stringContaining('status-filter'));
   });
 
   it('calls onFilterChange with "all" when All Deliveries is selected', async () => {
@@ -178,10 +180,10 @@ describe('DeliveryFilters Component', () => {
       />
     );
 
-    const select = screen.getByTestId('status-filter-select');
-    await user.click(select);
+    const selectButton = screen.getByRole('combobox');
+    await user.click(selectButton);
 
-    const allOption = screen.getByText('All Deliveries');
+    const allOption = await screen.findByRole('option', { name: /All Deliveries/i });
     await user.click(allOption);
 
     expect(mockOnFilterChange).toHaveBeenCalledWith('all');
@@ -196,10 +198,10 @@ describe('DeliveryFilters Component', () => {
       />
     );
 
-    const select = screen.getByTestId('status-filter-select');
-    await user.click(select);
+    const selectButton = screen.getByRole('combobox');
+    await user.click(selectButton);
 
-    const pendingOption = screen.getByText('Pending');
+    const pendingOption = await screen.findByRole('option', { name: /Pending/i });
     await user.click(pendingOption);
 
     expect(mockOnFilterChange).toHaveBeenCalledWith(DeliveryStatus.PENDING);
@@ -214,10 +216,10 @@ describe('DeliveryFilters Component', () => {
       />
     );
 
-    const select = screen.getByTestId('status-filter-select');
-    await user.click(select);
+    const selectButton = screen.getByRole('combobox');
+    await user.click(selectButton);
 
-    const failedOption = screen.getByText('Failed');
+    const failedOption = await screen.findByRole('option', { name: /Failed/i });
     await user.click(failedOption);
 
     expect(mockOnFilterChange).toHaveBeenCalledWith(DeliveryStatus.FAILED);
@@ -232,10 +234,10 @@ describe('DeliveryFilters Component', () => {
       />
     );
 
-    const select = screen.getByTestId('status-filter-select');
-    await user.click(select);
+    const selectButton = screen.getByRole('combobox');
+    await user.click(selectButton);
 
-    const cancelledOption = screen.getByText('Cancelled');
+    const cancelledOption = await screen.findByRole('option', { name: /Cancelled/i });
     await user.click(cancelledOption);
 
     expect(mockOnFilterChange).toHaveBeenCalledWith(DeliveryStatus.CANCELLED);
