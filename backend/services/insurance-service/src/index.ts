@@ -11,13 +11,13 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import insuranceRoutes from './routes/insurance.routes';
-import { initializeDatabase } from './config/database';
+import { initializeDatabase, AppDataSource } from './config/database';
 
 // Load environment variables
 dotenv.config();
 
 const app: Application = express();
-const PORT = process.env.INSURANCE_SERVICE_PORT || 4014;
+const PORT = process.env.PORT || process.env.INSURANCE_SERVICE_PORT || 4014;
 const SERVICE_NAME = 'insurance-service';
 
 // ============================================================================
@@ -53,20 +53,50 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Health Check Endpoints
 // ============================================================================
 
-app.get('/health', (req: Request, res: Response) => {
-  const health = {
-    service: SERVICE_NAME,
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-    compliance: {
-      hipaa: true,
-      gdpr: true,
-    },
-  };
+app.get('/health', async (req: Request, res: Response) => {
+  try {
+    const isConnected = AppDataSource.isInitialized;
 
-  res.status(200).json(health);
+    if (!isConnected) {
+      // Return 200 with 'starting' status during initialization
+      return res.status(200).json({
+        status: 'starting',
+        service: SERVICE_NAME,
+        database: 'initializing',
+        timestamp: new Date().toISOString(),
+        compliance: {
+          hipaa: true,
+          gdpr: true,
+        },
+      });
+    }
+
+    // Test database connection
+    await AppDataSource.query('SELECT 1');
+
+    const health = {
+      service: SERVICE_NAME,
+      status: 'healthy',
+      database: 'connected',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      compliance: {
+        hipaa: true,
+        gdpr: true,
+      },
+    };
+
+    return res.status(200).json(health);
+  } catch (error) {
+    console.error('Health check failed:', error);
+    return res.status(503).json({
+      status: 'unhealthy',
+      service: SERVICE_NAME,
+      error: 'Database connection failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 app.get('/', (req: Request, res: Response) => {

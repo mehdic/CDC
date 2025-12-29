@@ -46,6 +46,12 @@ import { DataSource } from 'typeorm';
 import { Nurse } from './models/Nurse';
 import { NurseOrder } from './models/NurseOrder';
 import { User } from '@shared/models/User';
+import { Cart } from '@shared/models/Cart';
+import { CartItem } from '@shared/models/CartItem';
+import { Pharmacy } from '@shared/models/Pharmacy';
+import { AuditTrailEntry } from '@shared/models/AuditTrailEntry';
+import { VipMembership } from '@shared/models/VipMembership';
+import { PointsTransaction } from '@shared/models/PointsTransaction';
 import nurseRouter from './routes/nurses';
 import orderRouter from './routes/orders';
 import patientRouter from './routes/patients';
@@ -56,7 +62,7 @@ import { initializeSocketEvents } from './websocket/events';
 // Configuration
 // ============================================================================
 
-const PORT = process.env.NURSE_SERVICE_PORT || 4012;
+const PORT = process.env.PORT || process.env.NURSE_SERVICE_PORT || 4012;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const CORS_ORIGIN = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
@@ -73,7 +79,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || 'metapharm',
   password: process.env.DATABASE_PASSWORD || 'metapharm_dev_password',
   database: process.env.DATABASE_NAME || 'metapharm',
-  entities: [Nurse, NurseOrder, User],
+  entities: [Nurse, NurseOrder, User, Cart, CartItem, Pharmacy, AuditTrailEntry, VipMembership, PointsTransaction],
   synchronize: NODE_ENV === 'development', // Auto-sync in development only
   logging: NODE_ENV === 'development',
   ssl: NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
@@ -148,10 +154,11 @@ app.get('/health', async (req: Request, res: Response) => {
     const isConnected = AppDataSource.isInitialized;
 
     if (!isConnected) {
-      return res.status(503).json({
-        status: 'unhealthy',
+      // Return 200 with 'starting' status during initialization
+      return res.status(200).json({
+        status: 'starting',
         service: 'nurse-service',
-        database: 'disconnected',
+        database: 'initializing',
         websocket: 'active',
         timestamp: new Date().toISOString(),
       });

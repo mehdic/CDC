@@ -23,6 +23,10 @@ import { Delivery, DeliveryStatus } from '@models/Delivery';
 import { User } from '@models/User';
 import { Pharmacy } from '@models/Pharmacy';
 import { AuditTrailEntry } from '@models/AuditTrailEntry';
+import { Cart } from '@models/Cart';
+import { CartItem } from '@models/CartItem';
+import { VipMembership } from '@models/VipMembership';
+import { PointsTransaction } from '@models/PointsTransaction';
 import trackingRoutes from './routes/tracking';
 import routeRoutes from './routes/routes';
 
@@ -30,22 +34,27 @@ import routeRoutes from './routes/routes';
 // Configuration
 // ============================================================================
 
-const PORT = process.env.DELIVERY_SERVICE_PORT || 4005;
+const PORT = process.env.PORT || process.env.DELIVERY_SERVICE_PORT || 4005;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const CORS_ORIGIN = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
   : ['http://localhost:3000'];
 
 // ============================================================================
-// Database Configuration (TypeORM with SQLite)
+// Database Configuration (TypeORM with PostgreSQL)
 // ============================================================================
 
 export const dataSource = new DataSource({
-  type: 'better-sqlite3',
-  database: process.env.DATABASE_PATH || ':memory:', // Use in-memory for tests
-  entities: [Delivery, User, Pharmacy, AuditTrailEntry],
-  synchronize: true, // Auto-create schema in development/test
-  logging: process.env.NODE_ENV === 'development',
+  type: 'postgres',
+  host: process.env.DATABASE_HOST || process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DATABASE_PORT || process.env.DB_PORT || '5432', 10),
+  username: process.env.DATABASE_USER || process.env.DB_USER || 'metapharm',
+  password: process.env.DATABASE_PASSWORD || process.env.DB_PASSWORD || 'metapharm_dev_password',
+  database: process.env.DATABASE_NAME || process.env.DB_NAME || 'metapharm',
+  entities: [Delivery, User, Pharmacy, AuditTrailEntry, Cart, CartItem, VipMembership, PointsTransaction],
+  synchronize: NODE_ENV === 'development',
+  logging: NODE_ENV === 'development',
+  ssl: NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // ============================================================================
@@ -103,14 +112,40 @@ function isValidDeliveryStatus(status: string): status is DeliveryStatus {
 // Health Check
 // ============================================================================
 
-app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'healthy',
-    service: 'delivery-service',
-    port: typeof PORT === 'number' ? PORT : parseInt(PORT as string, 10),
-    timestamp: new Date().toISOString(),
-    version: '1.0.0',
-  });
+app.get('/health', async (_req: Request, res: Response) => {
+  try {
+    const isConnected = dataSource.isInitialized;
+
+    if (!isConnected) {
+      // Return 200 with 'starting' status during initialization
+      return res.status(200).json({
+        status: 'starting',
+        service: 'delivery-service',
+        database: 'initializing',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Test database connection
+    await dataSource.query('SELECT 1');
+
+    res.status(200).json({
+      status: 'healthy',
+      service: 'delivery-service',
+      database: 'connected',
+      port: typeof PORT === 'number' ? PORT : parseInt(PORT as string, 10),
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(503).json({
+      status: 'unhealthy',
+      service: 'delivery-service',
+      error: 'Database connection failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // ============================================================================

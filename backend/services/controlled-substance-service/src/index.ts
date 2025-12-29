@@ -16,7 +16,7 @@ dotenv.config();
  * Manages controlled substances and Swiss Swissmedic compliance
  */
 
-const PORT = process.env.CONTROLLED_SERVICE_PORT || 3008;
+const PORT = process.env.PORT || process.env.CONTROLLED_SERVICE_PORT || 3008;
 const DB_HOST = process.env.DB_HOST || 'localhost';
 const DB_PORT = parseInt(process.env.DB_PORT || '5432', 10);
 const DB_USER = process.env.DB_USER || 'postgres';
@@ -53,12 +53,39 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    service: 'controlled-substance-service',
-    timestamp: new Date().toISOString(),
-  });
+app.get('/health', async (req, res) => {
+  try {
+    const isConnected = AppDataSource.isInitialized;
+
+    if (!isConnected) {
+      // Return 200 with 'starting' status during initialization
+      return res.status(200).json({
+        status: 'starting',
+        service: 'controlled-substance-service',
+        database: 'initializing',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Test database connection
+    await AppDataSource.query('SELECT 1');
+
+    res.status(200).json({
+      status: 'healthy',
+      service: 'controlled-substance-service',
+      database: 'connected',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(503).json({
+      status: 'unhealthy',
+      service: 'controlled-substance-service',
+      error: 'Database connection failed',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // API Routes
