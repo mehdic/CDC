@@ -69,6 +69,11 @@ export const ProofOfDeliveryScreen: React.FC<ProofOfDeliveryScreenProps> = ({
   };
 
   const validateForm = (): boolean => {
+    if (!signatureUri) {
+      Alert.alert('Required Field', 'Signature is required for proof of delivery');
+      return false;
+    }
+
     if (!photoUri) {
       Alert.alert('Required Field', 'Please take a photo of the delivery');
       return false;
