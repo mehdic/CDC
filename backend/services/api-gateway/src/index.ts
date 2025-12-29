@@ -51,6 +51,8 @@ import {
   inventoryProxy,
   notificationProxy,
   orderProxy,
+  analyticsProxy,
+  dashboardProxy,
 } from './routes/proxy';
 
 // Configuration
@@ -205,6 +207,14 @@ app.use('/api/orders', authenticateJWT, orderProxy);
 app.use('/orders', authenticateJWT, orderProxy);
 app.use('/api/cart', authenticateJWT, orderProxy);
 app.use('/cart', authenticateJWT, orderProxy);
+
+// Analytics Service
+app.use('/api/analytics', authenticateJWT, analyticsProxy);
+app.use('/analytics', authenticateJWT, analyticsProxy);
+
+// Dashboard Service (routes to Analytics)
+app.use('/api/dashboard', authenticateJWT, dashboardProxy);
+app.use('/dashboard', authenticateJWT, dashboardProxy);
 
 // ============================================================================
 // Error Handling

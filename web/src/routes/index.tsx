@@ -35,8 +35,6 @@ const PatientVideoCall = lazy(() => import('@apps/patient/pages/VideoCall'));
 const DoctorVideoCall = lazy(() => import('@apps/doctor/pages/VideoCall'));
 const PharmacyProfileManager = lazy(() => import('@apps/pharmacist/pages/pharmacy-profile/PharmacyProfileManager'));
 const MasterAccountPage = lazy(() => import('@apps/pharmacist/pages/MasterAccountPage'));
-const PharmacistProductCatalog = lazy(() => import('@apps/pharmacist/pages/ProductCatalog'));
-const PharmacistOrderManagement = lazy(() => import('@apps/pharmacist/pages/OrderManagement'));
 const PatientCatalog = lazy(() => import('@apps/patient/features/ecommerce/pages/Catalog'));
 const PatientOrderHistory = lazy(() => import('@apps/patient/features/ecommerce/pages/OrderHistory'));
 const DeliveryManagement = lazy(() => import('@apps/pharmacist/pages/DeliveryManagement'));
@@ -44,6 +42,11 @@ const Checkout = lazy(() => import('@apps/patient/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@apps/patient/pages/checkout/OrderConfirmation'));
 const VIPPortal = lazy(() => import('@apps/patient/features/vip/pages/VIPPortal'));
 const PatientMessagingPage = lazy(() => import('@apps/patient/features/messaging/pages/MessagingPage'));
+const Analytics = lazy(() => import('@apps/pharmacist/pages/Analytics'));
+const MarketingManagement = lazy(() => import('@apps/pharmacist/pages/MarketingManagement'));
+const Settings = lazy(() => import('@apps/pharmacist/pages/Settings'));
+const ConsultationCalendar = lazy(() => import('@apps/pharmacist/pages/ConsultationCalendar'));
+const MedicalRecords = lazy(() => import('@apps/pharmacist/pages/MedicalRecords'));
 
 // Admin components
 const AdminDashboard = lazy(() => import('@apps/admin/pages/AdminDashboard'));
@@ -86,7 +89,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRoles
   // Check role-based access if required roles are specified
   if (requiredRoles && requiredRoles.length > 0) {
     const userData = getUserData();
-    const userRole = userData?.role as UserRole | undefined;
+    // Normalize role to lowercase for comparison (API may return uppercase)
+    const userRole = (userData?.role?.toLowerCase() || '') as UserRole;
 
     if (!userRole || !requiredRoles.includes(userRole)) {
       console.log('[ProtectedRoute] User does not have required role', {
@@ -277,15 +281,10 @@ export const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        {/* Redirect /prescriptions/review to dashboard - review requires an ID */}
         <Route
           path="/prescriptions/review"
-          element={
-            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
-              <AppLayout>
-                <PrescriptionReview />
-              </AppLayout>
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/prescriptions" replace />}
         />
         <Route
           path="/prescriptions/review/:id"
@@ -332,6 +331,30 @@ export const AppRoutes: React.FC = () => {
           }
         />
 
+        {/* Consultation Calendar - Pharmacist and Admin only */}
+        <Route
+          path="/consultation-calendar"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
+              <AppLayout>
+                <ConsultationCalendar />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Medical Records - Pharmacist and Admin only */}
+        <Route
+          path="/medical-records"
+          element={
+            <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
+              <AppLayout>
+                <MedicalRecords />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
         {/* Master Account Management - Pharmacist and Admin only */}
         <Route
           path="/account/master"
@@ -362,10 +385,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
               <AppLayout>
-                <div style={{ padding: '20px' }}>
-                  <h2>Analyses</h2>
-                  <p>Page d&apos;analyses - À implémenter</p>
-                </div>
+                <Analytics />
               </AppLayout>
             </ProtectedRoute>
           }
@@ -377,10 +397,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute requiredRoles={['pharmacist', 'admin']}>
               <AppLayout>
-                <div style={{ padding: '20px' }}>
-                  <h2>Marketing</h2>
-                  <p>Page marketing - À implémenter</p>
-                </div>
+                <MarketingManagement />
               </AppLayout>
             </ProtectedRoute>
           }
@@ -508,10 +525,7 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <AppLayout>
-                <div style={{ padding: '20px' }}>
-                  <h2>Paramètres</h2>
-                  <p>Page de paramètres - À implémenter</p>
-                </div>
+                <Settings />
               </AppLayout>
             </ProtectedRoute>
           }

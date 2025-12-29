@@ -126,7 +126,7 @@ export class PharmacyAccount {
   @Column({ type: 'text', nullable: true })
   suspension_reason: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   suspended_at: Date | null;
 
   @Column({ type: 'varchar', length: 36, nullable: true })
@@ -171,7 +171,7 @@ export class PharmacyAccount {
   @Column({ type: 'varchar', length: 36, nullable: true })
   pending_transfer_to_account_id: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   transfer_requested_at: Date | null;
 
   @Column({ type: 'varchar', length: 36, nullable: true })
@@ -181,13 +181,13 @@ export class PharmacyAccount {
   // Metadata
   // ============================================================================
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   deleted_at: Date | null; // Soft delete
 
   @Column({ type: 'varchar', length: 36, nullable: true })

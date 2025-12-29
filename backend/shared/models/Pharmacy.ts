@@ -57,7 +57,7 @@ export class Pharmacy {
   // Location (encrypted for privacy)
   // ============================================================================
 
-  @Column({ type: 'blob' })
+  @Column({ type: 'bytea' })
   address_encrypted: Buffer; // AWS KMS encrypted
 
   @Column({ type: 'varchar', length: 100 })
@@ -125,13 +125,13 @@ export class Pharmacy {
   // Metadata
   // ============================================================================
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   deleted_at: Date | null; // Soft delete
 
   // ============================================================================

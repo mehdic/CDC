@@ -15,8 +15,12 @@ import { Teleconsultation, TeleconsultationStatus } from '../../../../shared/mod
 import { User } from '../../../../shared/models/User';
 import { Pharmacy } from '../../../../shared/models/Pharmacy';
 import { Prescription } from '../../../../shared/models/Prescription';
+import { PrescriptionItem } from '../../../../shared/models/PrescriptionItem';
+import { TreatmentPlan } from '../../../../shared/models/TreatmentPlan';
 import { ConsultationNote } from '../../../../shared/models/ConsultationNote';
 import { AuditTrailEntry } from '../../../../shared/models/AuditTrailEntry';
+import { Cart } from '../../../../shared/models/Cart';
+import { CartItem } from '../../../../shared/models/CartItem';
 
 // Create a DataSource for the reminder worker
 export const ReminderDataSource = new DataSource({
@@ -26,7 +30,7 @@ export const ReminderDataSource = new DataSource({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'metapharm',
-  entities: [Teleconsultation, User, Pharmacy, Prescription, ConsultationNote, AuditTrailEntry],
+  entities: [Teleconsultation, User, Pharmacy, Prescription, PrescriptionItem, TreatmentPlan, ConsultationNote, AuditTrailEntry, Cart, CartItem],
   synchronize: false,
   logging: false,
 });

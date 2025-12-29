@@ -50,7 +50,7 @@ export class AuditTrailEntry {
   // Context
   // ============================================================================
 
-  @Column({ type: 'varchar', length: 36, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   @Index('idx_audit_trail_pharmacy')
   pharmacy_id: string | null; // Nullable for global events
 
@@ -58,7 +58,7 @@ export class AuditTrailEntry {
   @JoinColumn({ name: 'pharmacy_id' })
   pharmacy: Pharmacy | null;
 
-  @Column({ type: 'varchar', length: 36 })
+  @Column({ type: 'uuid' })
   @Index('idx_audit_trail_user')
   user_id: string;
 
@@ -83,7 +83,7 @@ export class AuditTrailEntry {
   @Column({ type: 'varchar', length: 100 })
   resource_type: string; // "prescription", "patient_medical_record", "inventory_item"
 
-  @Column({ type: 'varchar', length: 36 })
+  @Column({ type: 'uuid' })
   resource_id: string;
 
   // ============================================================================
@@ -110,7 +110,7 @@ export class AuditTrailEntry {
   // Timestamp (immutable)
   // ============================================================================
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamp' })
   @Index('idx_audit_trail_created')
   created_at: Date;
 

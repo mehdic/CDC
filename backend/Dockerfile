@@ -91,19 +91,21 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/shared ./shared
 COPY --from=builder --chown=nodejs:nodejs /app/config ./config
 
-# Create a startup script that loads the correct service
-RUN echo '#!/bin/sh\n\
-if [ -z "$SERVICE_NAME" ]; then\n\
-  SERVICE_NAME="'"${SERVICE_NAME}"'"\n\
-fi\n\
-SERVICE_PATH="dist/services/${SERVICE_NAME}/src/index.js"\n\
+# Copy tsconfig.runtime.json for tsconfig-paths runtime resolution (baseUrl points to dist/)
+COPY --from=builder --chown=nodejs:nodejs /app/tsconfig.runtime.json ./tsconfig.json
+
+# Create logs directory with correct permissions
+RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs
+
+# Create a startup script that loads the correct service with tsconfig-paths
+RUN printf '#!/bin/sh\n\
+SERVICE_PATH="dist/services/%s/src/index.js"\n\
 if [ ! -f "$SERVICE_PATH" ]; then\n\
   echo "Error: Service not found at $SERVICE_PATH"\n\
-  echo "Available services should be in dist/services/*/src/index.js"\n\
+  ls -la dist/services/ || true\n\
   exit 1\n\
 fi\n\
-exec node "$SERVICE_PATH"\n\
-' > /app/entrypoint.sh && \
+exec node -r tsconfig-paths/register "$SERVICE_PATH"\n' "${SERVICE_NAME}" > /app/entrypoint.sh && \
 chmod +x /app/entrypoint.sh
 
 # Security: Switch to non-root user

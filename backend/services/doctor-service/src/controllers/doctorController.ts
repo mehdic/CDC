@@ -10,12 +10,16 @@ import { User, UserRole } from '@shared/models/User';
 import { Repository } from 'typeorm';
 
 export class DoctorController {
-  private doctorRepository: Repository<Doctor>;
-  private userRepository: Repository<User>;
+  private get doctorRepository(): Repository<Doctor> {
+    return AppDataSource.getRepository(Doctor);
+  }
+
+  private get userRepository(): Repository<User> {
+    return AppDataSource.getRepository(User);
+  }
 
   constructor() {
-    this.doctorRepository = AppDataSource.getRepository(Doctor);
-    this.userRepository = AppDataSource.getRepository(User);
+    // Repositories are now accessed lazily via getters
   }
 
   /**

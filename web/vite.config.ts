@@ -100,68 +100,8 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Core React libraries
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-            return 'react-core';
-          }
-          // React Router
-          if (id.includes('node_modules/react-router-dom')) {
-            return 'react-router';
-          }
-          // Material-UI core components
-          if (id.includes('node_modules/@mui/material')) {
-            return 'mui-core';
-          }
-          // Material-UI icons (separate chunk - loaded on demand)
-          if (id.includes('node_modules/@mui/icons-material')) {
-            return 'mui-icons';
-          }
-          // Material-UI data grid (separate - only for tables)
-          if (id.includes('node_modules/@mui/x-data-grid')) {
-            return 'mui-datagrid';
-          }
-          // Emotion styling
-          if (id.includes('node_modules/@emotion')) {
-            return 'emotion';
-          }
-          // Redux and state management
-          if (id.includes('node_modules/@reduxjs/toolkit') || id.includes('node_modules/react-redux') || id.includes('node_modules/redux-persist')) {
-            return 'redux';
-          }
-          // Data fetching libraries
-          if (id.includes('node_modules/@tanstack/react-query') || id.includes('node_modules/axios')) {
-            return 'data-fetching';
-          }
-          // Charts and visualization (lazy loaded)
-          if (id.includes('node_modules/recharts')) {
-            return 'charts';
-          }
-          // Video calling (lazy loaded)
-          if (id.includes('node_modules/twilio-video')) {
-            return 'twilio-video';
-          }
-          // Form libraries
-          if (id.includes('node_modules/formik') || id.includes('node_modules/yup')) {
-            return 'forms';
-          }
-          // Date handling
-          if (id.includes('node_modules/date-fns')) {
-            return 'date-utils';
-          }
-          // Utilities
-          if (id.includes('node_modules/lodash')) {
-            return 'lodash';
-          }
-          // Socket.io for real-time features
-          if (id.includes('node_modules/socket.io-client')) {
-            return 'socketio';
-          }
-          // Other node_modules
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-        },
+        // Let Vite/Rollup handle chunking automatically to avoid circular dependency issues
+        // manualChunks disabled due to MUI/Emotion circular dependencies
         // Asset file naming with hash for cache busting
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name?.split('.');

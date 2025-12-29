@@ -13,7 +13,7 @@ import {
 } from 'typeorm';
 
 @Entity('patient_insurance')
-@Index(['patientId', 'insuranceProviderId'], { unique: true, where: 'is_active = true' })
+@Index(['patientId', 'insuranceProviderId'], { unique: true, where: '"isActive" = true' })
 @Index(['patientId'])
 @Index(['insuranceProviderId'])
 @Index(['isActive'])

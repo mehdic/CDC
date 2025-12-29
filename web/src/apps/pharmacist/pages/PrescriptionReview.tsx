@@ -99,7 +99,7 @@ export const PrescriptionReview: React.FC = () => {
     try {
       await approveMutation.mutateAsync({ prescriptionId: id, pharmacistId });
       alert('Prescription approved successfully!');
-      navigate('/pharmacist/prescriptions');
+      navigate('/prescriptions');
     } catch (error) {
       alert(`Approval failed: ${error}`);
     }
@@ -118,7 +118,7 @@ export const PrescriptionReview: React.FC = () => {
       await rejectMutation.mutateAsync({ prescriptionId: id, reason: rejectReason });
       alert('Prescription rejected successfully!');
       setRejectDialogOpen(false);
-      navigate('/pharmacist/prescriptions');
+      navigate('/prescriptions');
     } catch (error) {
       alert(`Rejection failed: ${error}`);
     }
@@ -128,7 +128,7 @@ export const PrescriptionReview: React.FC = () => {
    * Handle back navigation
    */
   const handleBack = () => {
-    navigate('/pharmacist/prescriptions');
+    navigate('/prescriptions');
   };
 
   // Loading state

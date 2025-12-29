@@ -33,15 +33,22 @@ const HIN_AUTHORIZATION_ENDPOINT = process.env.HIN_AUTHORIZATION_ENDPOINT || 'ht
 const HIN_TOKEN_ENDPOINT = process.env.HIN_TOKEN_ENDPOINT || 'https://oauth2.hin.ch/token';
 const HIN_USERINFO_ENDPOINT = process.env.HIN_USERINFO_ENDPOINT || 'https://oauth2.hin.ch/userinfo';
 
-// Initialize HIN Auth Service
-const hinAuthService = new HINAuthService(AppDataSource, {
-  clientId: HIN_CLIENT_ID,
-  clientSecret: HIN_CLIENT_SECRET,
-  redirectUri: HIN_REDIRECT_URI,
-  authorizationEndpoint: HIN_AUTHORIZATION_ENDPOINT,
-  tokenEndpoint: HIN_TOKEN_ENDPOINT,
-  userInfoEndpoint: HIN_USERINFO_ENDPOINT,
-});
+// Lazy initialization of HIN Auth Service (after TypeORM is ready)
+let hinAuthService: HINAuthService | null = null;
+
+function getHINAuthService(): HINAuthService {
+  if (!hinAuthService) {
+    hinAuthService = new HINAuthService(AppDataSource, {
+      clientId: HIN_CLIENT_ID,
+      clientSecret: HIN_CLIENT_SECRET,
+      redirectUri: HIN_REDIRECT_URI,
+      authorizationEndpoint: HIN_AUTHORIZATION_ENDPOINT,
+      tokenEndpoint: HIN_TOKEN_ENDPOINT,
+      userInfoEndpoint: HIN_USERINFO_ENDPOINT,
+    });
+  }
+  return hinAuthService;
+}
 
 // ============================================================================
 // GET /auth/hin/authorize
@@ -51,7 +58,7 @@ const hinAuthService = new HINAuthService(AppDataSource, {
 router.get('/authorize', (req: Request, res: Response) => {
   try {
     // Validate configuration
-    const config = hinAuthService.validateConfiguration();
+    const config = getHINAuthService().validateConfiguration();
     if (!config.valid) {
       console.error('HIN configuration errors:', config.errors);
       return res.status(500).json({
@@ -62,7 +69,7 @@ router.get('/authorize', (req: Request, res: Response) => {
     }
 
     // Initiate OAuth flow
-    const { url } = hinAuthService.initiateHINAuth();
+    const { url } = getHINAuthService().initiateHINAuth();
 
     console.log('Redirecting to HIN authorization');
 
@@ -122,7 +129,7 @@ router.get('/callback', async (req: Request, res: Response) => {
     // Handle HIN callback using HINAuthService
     // =========================================================================
 
-    const result = await hinAuthService.handleCallback(
+    const result = await getHINAuthService().handleCallback(
       code as string,
       state as string,
       ipAddress,

@@ -288,10 +288,10 @@ export class AccountRole {
   // Metadata
   // ============================================================================
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 
   @Column({ type: 'varchar', length: 36, nullable: true })

@@ -92,9 +92,92 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 // ============================================================================
+// Mock Data for Development
+// ============================================================================
+
+const isMockMode = process.env.USE_MOCK_DATA === 'true' || process.env.NODE_ENV === 'development';
+
+const MOCK_TELECONSULTATIONS = [
+  {
+    id: 'tc-001',
+    pharmacy_id: 'pharm-001',
+    patient_id: 'pat-001',
+    patient_name: 'Jean Dupont',
+    pharmacist_id: 'pharmacist-001',
+    pharmacist_name: 'Dr. Sophie Martin',
+    status: 'scheduled',
+    scheduled_at: new Date(Date.now() + 3600000).toISOString(),
+    type: 'medication_review',
+    notes: 'Consultation pour renouvellement d\'ordonnance',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc-002',
+    pharmacy_id: 'pharm-001',
+    patient_id: 'pat-002',
+    patient_name: 'Marie Bernard',
+    pharmacist_id: 'pharmacist-001',
+    pharmacist_name: 'Dr. Sophie Martin',
+    status: 'completed',
+    scheduled_at: new Date(Date.now() - 86400000).toISOString(),
+    completed_at: new Date(Date.now() - 82800000).toISOString(),
+    type: 'side_effects',
+    notes: 'Discussion sur les effets secondaires du traitement',
+    created_at: new Date(Date.now() - 172800000).toISOString(),
+  },
+  {
+    id: 'tc-003',
+    pharmacy_id: 'pharm-001',
+    patient_id: 'pat-003',
+    patient_name: 'Pierre Favre',
+    pharmacist_id: 'pharmacist-001',
+    pharmacist_name: 'Dr. Sophie Martin',
+    status: 'in_progress',
+    scheduled_at: new Date().toISOString(),
+    type: 'first_consultation',
+    notes: 'Première consultation pour nouveau traitement',
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+  },
+];
+
+// ============================================================================
 // API Routes
 // ============================================================================
 
+// Mock routes for development (before real routes)
+if (isMockMode) {
+  console.log('📹 Running in MOCK MODE - using sample teleconsultation data');
+
+  app.get('/api/teleconsultation/sessions', (_req: Request, res: Response) => {
+    const { status, limit = '50' } = _req.query;
+    let filtered = [...MOCK_TELECONSULTATIONS];
+
+    if (status) {
+      filtered = filtered.filter(t => t.status === status);
+    }
+
+    res.json({
+      sessions: filtered.slice(0, parseInt(limit as string)),
+      count: filtered.length,
+    });
+  });
+
+  app.get('/teleconsultations', (_req: Request, res: Response) => {
+    res.json({
+      sessions: MOCK_TELECONSULTATIONS,
+      count: MOCK_TELECONSULTATIONS.length,
+    });
+  });
+
+  app.get('/teleconsultations/sessions', (_req: Request, res: Response) => {
+    res.json({
+      sessions: MOCK_TELECONSULTATIONS,
+      count: MOCK_TELECONSULTATIONS.length,
+    });
+  });
+}
+
+// Real routes (only if not in mock mode, or for routes not covered by mock)
 app.use('/api/teleconsultation', teleconsultationRoutes);
 
 // ============================================================================

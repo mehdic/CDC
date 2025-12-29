@@ -78,13 +78,13 @@ export class User {
   // Profile (encrypted with AWS KMS)
   // ============================================================================
 
-  @Column({ type: 'blob' })
+  @Column({ type: 'bytea' })
   first_name_encrypted: Buffer; // AWS KMS encrypted PHI
 
-  @Column({ type: 'blob' })
+  @Column({ type: 'bytea' })
   last_name_encrypted: Buffer; // AWS KMS encrypted PHI
 
-  @Column({ type: 'blob', nullable: true })
+  @Column({ type: 'bytea', nullable: true })
   phone_encrypted: Buffer | null; // AWS KMS encrypted PHI
 
   // ============================================================================
@@ -97,14 +97,14 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   mfa_secret: string | null; // DEPRECATED: Use mfa_secret_encrypted instead
 
-  @Column({ type: 'blob', nullable: true })
+  @Column({ type: 'bytea', nullable: true })
   mfa_secret_encrypted: Buffer | null; // AWS KMS encrypted TOTP secret (FR-104)
 
   // ============================================================================
   // Affiliations
   // ============================================================================
 
-  @Column({ type: 'varchar', length: 36, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   @Index('idx_users_pharmacy')
   primary_pharmacy_id: string | null;
 
@@ -116,7 +116,7 @@ export class User {
   primary_pharmacy: Pharmacy | null;
 
   // Master Account Management (for sub-accounts)
-  @Column({ type: 'varchar', length: 36, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   @Index('idx_users_master_account')
   master_account_id: string | null; // Reference to master account user
 
@@ -149,16 +149,16 @@ export class User {
   // Metadata
   // ============================================================================
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   last_login_at: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   deleted_at: Date | null; // Soft delete
 
   // ============================================================================

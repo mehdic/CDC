@@ -23,6 +23,8 @@ import { InventoryAlert } from '../../../shared/models/InventoryAlert';
 import { Pharmacy } from '../../../shared/models/Pharmacy';
 import { User } from '../../../shared/models/User';
 import { AuditTrailEntry } from '../../../shared/models/AuditTrailEntry';
+import { Cart } from '../../../shared/models/Cart';
+import { CartItem } from '../../../shared/models/CartItem';
 
 // Routes
 import { scanRouter } from './routes/scan';
@@ -66,7 +68,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'metapharm',
-  entities: [InventoryItem, InventoryTransaction, InventoryAlert, Pharmacy, User, AuditTrailEntry],
+  entities: [InventoryItem, InventoryTransaction, InventoryAlert, Pharmacy, User, AuditTrailEntry, Cart, CartItem],
   synchronize: false, // Use migrations instead
   logging: process.env.NODE_ENV === 'development',
 });

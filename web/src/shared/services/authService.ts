@@ -110,7 +110,12 @@ const storeTokens = (
     localStorage.setItem('refresh_token', refreshToken);
   }
   if (user) {
-    localStorage.setItem('user_data', JSON.stringify(user));
+    // Normalize role to lowercase for frontend route matching
+    const normalizedUser = {
+      ...user,
+      role: user.role?.toLowerCase() || user.role,
+    };
+    localStorage.setItem('user_data', JSON.stringify(normalizedUser));
   }
 };
 

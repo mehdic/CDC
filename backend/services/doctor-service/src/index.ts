@@ -24,6 +24,12 @@ import helmet from 'helmet';
 import { DataSource } from 'typeorm';
 import { Doctor } from './models/Doctor';
 import { User } from '@shared/models/User';
+import { Cart } from '@shared/models/Cart';
+import { CartItem } from '@shared/models/CartItem';
+import { Pharmacy } from '@shared/models/Pharmacy';
+import { AuditTrailEntry } from '@shared/models/AuditTrailEntry';
+import { VipMembership } from '@shared/models/VipMembership';
+import { PointsTransaction } from '@shared/models/PointsTransaction';
 import doctorRouter from './routes/doctors';
 
 // ============================================================================
@@ -47,7 +53,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || 'metapharm',
   password: process.env.DATABASE_PASSWORD || 'metapharm_dev_password',
   database: process.env.DATABASE_NAME || 'metapharm',
-  entities: [Doctor, User],
+  entities: [Doctor, User, Cart, CartItem, Pharmacy, AuditTrailEntry, VipMembership, PointsTransaction],
   synchronize: false, // Never auto-sync - use migrations
   logging: NODE_ENV === 'development',
   ssl: NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,

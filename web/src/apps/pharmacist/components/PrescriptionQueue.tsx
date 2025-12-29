@@ -302,7 +302,7 @@ export const PrescriptionQueue: React.FC<PrescriptionQueueProps> = ({
       onRowClick(prescription);
     } else {
       // Default: navigate to review page
-      navigate(`/pharmacist/prescriptions/${prescription.id}`);
+      navigate(`/prescriptions/review/${prescription.id}`);
     }
   };
 

@@ -3,14 +3,21 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package.json ./
+COPY package-lock.json* ./
 
-# Install dependencies (npm workspace - no separate lock file)
-RUN npm install
+# Install dependencies fresh (ignoring local node_modules)
+RUN rm -rf node_modules && npm install --legacy-peer-deps && npm install terser --save-dev
 
-# Copy source code
+# Copy source code (exclude node_modules via .dockerignore)
 COPY . .
+
+# Ensure esbuild is rebuilt for the correct platform
+RUN npm rebuild esbuild
 
 # Build the React app
 RUN npm run build

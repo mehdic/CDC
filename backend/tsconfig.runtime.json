@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./dist",
+    "paths": {
+      "@shared/*": ["shared/*"],
+      "@services/*": ["services/*"],
+      "@models/*": ["shared/models/*"],
+      "@utils/*": ["shared/utils/*"]
+    }
+  }
+}

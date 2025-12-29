@@ -13,7 +13,8 @@ import cors from 'cors';
 import { Request } from 'express';
 
 // Parse allowed origins from environment
-const allowedOriginsString = process.env['ALLOWED_ORIGINS'] || 'http://localhost:3001,http://localhost:19006';
+// Default includes common development ports: 3000 (web), 3001 (alt web), 19006 (Expo mobile)
+const allowedOriginsString = process.env['ALLOWED_ORIGINS'] || 'http://localhost:3000,http://localhost:3001,http://localhost:19006';
 const allowedOrigins = allowedOriginsString.split(',').map(origin => origin.trim());
 
 console.info('CORS Configuration:', {

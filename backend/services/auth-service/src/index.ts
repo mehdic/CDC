@@ -27,6 +27,8 @@ import { DataSource } from 'typeorm';
 import { User } from '@models/User';
 import { Pharmacy } from '@models/Pharmacy';
 import { AuditTrailEntry } from '@models/AuditTrailEntry';
+import { Cart } from '@models/Cart';
+import { CartItem } from '@models/CartItem';
 import loginRouter from './routes/login';
 import mfaRouter from './routes/mfa';
 import sessionsRouter from './routes/sessions';
@@ -54,7 +56,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || 'metapharm',
   password: process.env.DATABASE_PASSWORD || 'metapharm_dev_password',
   database: process.env.DATABASE_NAME || 'metapharm',
-  entities: [User, Pharmacy, AuditTrailEntry],
+  entities: [User, Pharmacy, AuditTrailEntry, Cart, CartItem],
   synchronize: false, // Never auto-sync in production - use migrations
   logging: NODE_ENV === 'development',
   ssl: NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,

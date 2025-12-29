@@ -8,17 +8,21 @@ import { DataSource } from 'typeorm';
 import { VipMembership } from '../../../../shared/models/VipMembership';
 import { PointsTransaction } from '../../../../shared/models/PointsTransaction';
 import { User } from '../../../../shared/models/User';
+import { Pharmacy } from '../../../../shared/models/Pharmacy';
+import { Cart } from '../../../../shared/models/Cart';
+import { CartItem } from '../../../../shared/models/CartItem';
+import { AuditTrailEntry } from '../../../../shared/models/AuditTrailEntry';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  username: process.env.DB_USER || 'metapharm',
+  password: process.env.DB_PASSWORD || 'metapharm_dev_password',
   database: process.env.DB_NAME || 'metapharm',
   synchronize: process.env.NODE_ENV === 'development',
   logging: process.env.NODE_ENV === 'development',
-  entities: [VipMembership, PointsTransaction, User],
+  entities: [VipMembership, PointsTransaction, User, Pharmacy, Cart, CartItem, AuditTrailEntry],
   migrations: [],
   subscribers: [],
 });

@@ -248,6 +248,82 @@ itemsRouter.get('/reports/:type', async (req: Request, res: Response) => {
 // GET /inventory/items - List with filtering
 // ============================================================================
 
+// Mock inventory data for development
+const MOCK_INVENTORY_ITEMS = [
+  {
+    id: 'inv-001',
+    pharmacy_id: 'pharm-001',
+    medication_name: 'Paracétamol 500mg',
+    sku: 'PARA-500-100',
+    quantity: 250,
+    reorder_threshold: 50,
+    optimal_stock_level: 300,
+    unit_price: 5.50,
+    expiry_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+    is_controlled: false,
+    status: 'in_stock',
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'inv-002',
+    pharmacy_id: 'pharm-001',
+    medication_name: 'Ibuprofène 400mg',
+    sku: 'IBU-400-50',
+    quantity: 45,
+    reorder_threshold: 60,
+    optimal_stock_level: 150,
+    unit_price: 8.20,
+    expiry_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    is_controlled: false,
+    status: 'low_stock',
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'inv-003',
+    pharmacy_id: 'pharm-001',
+    medication_name: 'Amoxicilline 1g',
+    sku: 'AMOX-1G-14',
+    quantity: 120,
+    reorder_threshold: 30,
+    optimal_stock_level: 100,
+    unit_price: 12.50,
+    expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    is_controlled: false,
+    status: 'in_stock',
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'inv-004',
+    pharmacy_id: 'pharm-001',
+    medication_name: 'Morphine 10mg',
+    sku: 'MORPH-10-20',
+    quantity: 15,
+    reorder_threshold: 10,
+    optimal_stock_level: 30,
+    unit_price: 45.00,
+    expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    is_controlled: true,
+    status: 'in_stock',
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: 'inv-005',
+    pharmacy_id: 'pharm-001',
+    medication_name: 'Aspirine 100mg',
+    sku: 'ASP-100-30',
+    quantity: 0,
+    reorder_threshold: 20,
+    optimal_stock_level: 80,
+    unit_price: 3.20,
+    expiry_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+    is_controlled: false,
+    status: 'out_of_stock',
+    updated_at: new Date().toISOString(),
+  },
+];
+
+const isMockMode = process.env.USE_MOCK_DATA === 'true' || process.env.NODE_ENV === 'development';
+
 itemsRouter.get('/', async (req: Request, res: Response) => {
   try {
     const {
@@ -261,8 +337,29 @@ itemsRouter.get('/', async (req: Request, res: Response) => {
       offset = '0',
     } = req.query;
 
-    if (!pharmacy_id) {
-      return res.status(400).json({ error: 'pharmacy_id query parameter is required' });
+    // In mock mode or if no pharmacy_id, return mock data
+    if (!pharmacy_id || isMockMode) {
+      let items = [...MOCK_INVENTORY_ITEMS];
+
+      if (medication_name) {
+        items = items.filter(i => i.medication_name.toLowerCase().includes((medication_name as string).toLowerCase()));
+      }
+      if (low_stock === 'true') {
+        items = items.filter(i => i.quantity <= i.reorder_threshold);
+      }
+      if (is_controlled === 'true') {
+        items = items.filter(i => i.is_controlled);
+      }
+
+      return res.json({
+        items: items.slice(0, parseInt(limit as string)),
+        pagination: {
+          total: items.length,
+          limit: parseInt(limit as string),
+          offset: parseInt(offset as string),
+          has_more: false,
+        },
+      });
     }
 
     // Set RLS context (parameterized to prevent SQL injection)

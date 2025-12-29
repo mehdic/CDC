@@ -99,7 +99,7 @@ export class InventoryTransaction {
   // Metadata
   // ============================================================================
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamp' })
   @Index('idx_inventory_transactions_created')
   created_at: Date;
 

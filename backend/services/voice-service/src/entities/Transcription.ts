@@ -17,7 +17,7 @@ import { SupportedLanguage, TranscriptionStatus } from '../types/voice.types';
 @Index(['recordingId'])
 @Index(['userId', 'createdAt'])
 @Index(['status'])
-@Index(['language'])
+@Index(['requestedLanguage'])
 export class Transcription {
   @PrimaryGeneratedColumn('uuid')
   id: string;

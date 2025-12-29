@@ -35,7 +35,7 @@ export class Delivery {
   // Relationships
   // ============================================================================
 
-  @Column({ type: 'varchar', length: 36 })
+  @Column({ type: 'uuid' })
   @Index('idx_deliveries_user')
   user_id: string;
 
@@ -43,11 +43,11 @@ export class Delivery {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ type: 'varchar', length: 36, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   @Index('idx_deliveries_order')
   order_id: string | null;
 
-  @Column({ type: 'varchar', length: 36, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   @Index('idx_deliveries_delivery_personnel')
   delivery_personnel_id: string | null;
 
@@ -71,10 +71,10 @@ export class Delivery {
   // Delivery Information (HIPAA Compliant)
   // ============================================================================
 
-  @Column({ type: 'blob' })
+  @Column({ type: 'bytea' })
   delivery_address_encrypted: Buffer; // AWS KMS encrypted PHI
 
-  @Column({ type: 'blob', nullable: true })
+  @Column({ type: 'bytea', nullable: true })
   delivery_notes_encrypted: Buffer | null; // AWS KMS encrypted PHI
 
   @Column({ type: 'simple-json', nullable: true })
@@ -87,16 +87,16 @@ export class Delivery {
   // Timing
   // ============================================================================
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   scheduled_at: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   picked_up_at: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   delivered_at: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   failed_at: Date | null;
 
   @Column({ type: 'text', nullable: true })
@@ -118,7 +118,7 @@ export class Delivery {
   @Column({ type: 'integer', nullable: true })
   max_delivery_duration_minutes: number | null; // Max time between pickup and delivery
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   temperature_alert_sent_at: Date | null; // When temperature/time alert was triggered
 
   @Column({ type: 'text', nullable: true })
@@ -137,7 +137,7 @@ export class Delivery {
   @Column({ type: 'boolean', default: false })
   requires_signature: boolean; // Signature required on delivery
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   signature_obtained_at: Date | null; // When signature was obtained
 
   @Column({ type: 'varchar', length: 255, nullable: true })
@@ -146,7 +146,7 @@ export class Delivery {
   @Column({ type: 'boolean', default: false })
   age_verification_required: boolean; // Age verification needed (18+ medications)
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   age_verified_at: Date | null; // When age verification was completed
 
   @Column({ type: 'varchar', length: 50, nullable: true })
@@ -158,7 +158,7 @@ export class Delivery {
   @Column({ type: 'varchar', length: 255, nullable: true })
   id_scan_data_encrypted: string | null; // Encrypted ID scan results
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   id_scanned_at: Date | null; // When ID was scanned
 
   @Column({ type: 'text', nullable: true })
@@ -180,11 +180,11 @@ export class Delivery {
   // Metadata
   // ============================================================================
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamp' })
   @Index('idx_deliveries_created')
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 
   // ============================================================================

@@ -107,7 +107,6 @@ export interface Privacy {
 }
 
 @Entity('digital_twin_profiles')
-@Index(['patientId'])
 @Index(['lastComputed'])
 export class DigitalTwinProfile {
   @PrimaryGeneratedColumn('uuid')

@@ -21,32 +21,27 @@ app.get('/health', (req, res) => {
 // By default, the matched path is preserved (not stripped)
 app.use('/auth', createProxyMiddleware({
   target: 'http://localhost:4001',
-  changeOrigin: true,
-  logger: console
+  changeOrigin: true
 }));
 
 app.use('/prescriptions', createProxyMiddleware({
   target: 'http://localhost:4002',
-  changeOrigin: true,
-  logger: console
+  changeOrigin: true
 }));
 
 app.use('/teleconsultations', createProxyMiddleware({
   target: 'http://localhost:4003',
-  changeOrigin: true,
-  logger: console
+  changeOrigin: true
 }));
 
 app.use('/inventory', createProxyMiddleware({
   target: 'http://localhost:4004',
-  changeOrigin: true,
-  logger: console
+  changeOrigin: true
 }));
 
 app.use('/notifications', createProxyMiddleware({
   target: 'http://localhost:4005',
-  changeOrigin: true,
-  logger: console
+  changeOrigin: true
 }));
 
 // Return 404 for unmatched routes

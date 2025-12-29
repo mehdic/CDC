@@ -21,6 +21,7 @@ const TELECONSULTATION_SERVICE_URL = process.env['TELECONSULTATION_SERVICE_URL']
 const INVENTORY_SERVICE_URL = process.env['INVENTORY_SERVICE_URL'] || 'http://localhost:4004';
 const NOTIFICATION_SERVICE_URL = process.env['NOTIFICATION_SERVICE_URL'] || 'http://localhost:4005';
 const ORDER_SERVICE_URL = process.env['ORDER_SERVICE_URL'] || 'http://localhost:4007';
+const ANALYTICS_SERVICE_URL = process.env['ANALYTICS_SERVICE_URL'] || 'http://localhost:4006';
 
 console.info('Proxy Configuration:', {
   authService: AUTH_SERVICE_URL,
@@ -29,6 +30,7 @@ console.info('Proxy Configuration:', {
   inventoryService: INVENTORY_SERVICE_URL,
   notificationService: NOTIFICATION_SERVICE_URL,
   orderService: ORDER_SERVICE_URL,
+  analyticsService: ANALYTICS_SERVICE_URL,
 });
 
 /**
@@ -112,99 +114,115 @@ export const authProxy = createProxyMiddleware({
     console.log('[AUTH PROXY] Path rewrite:', path, '→', newPath);
     return newPath;
   },
-  on: {
-    proxyReq: (proxyReq: any, req: any) => {
-      console.log('[AUTH PROXY] Proxying:', req.method, req.url, '→', proxyReq.path);
-
-      // Forward authentication header
-      if (req.headers.authorization) {
-        proxyReq.setHeader('Authorization', req.headers.authorization);
-      }
-
-      // Forward user context headers
-      if (req.user) {
-        proxyReq.setHeader('X-User-ID', req.user.userId);
-        proxyReq.setHeader('X-User-Role', req.user.role);
-        if (req.user.pharmacyId) {
-          proxyReq.setHeader('X-Pharmacy-ID', req.user.pharmacyId);
-        }
-      }
-
-      // Forward request ID for tracing
-      if (req.headers['x-request-id']) {
-        proxyReq.setHeader('X-Request-ID', req.headers['x-request-id'] as string);
-      }
-    },
-    error: (err: Error, req: any, res: any) => {
-      console.error('[AUTH PROXY] Error:', err.message);
-      if (!res.headersSent) {
-        res.status(503).json({
-          error: 'Service Unavailable',
-          message: 'The auth service is temporarily unavailable',
-        });
-      }
-    },
-  },
-});
+} as any);
 
 /**
  * Prescription Service Proxy
  * Routes: /api/prescriptions/*
+ * Note: Express app.use strips the prefix, so we add /prescriptions back
  */
 export const prescriptionProxy = createProxyMiddleware({
   ...commonProxyOptions,
   target: PRESCRIPTION_SERVICE_URL,
-  pathRewrite: {
-    '^/api/prescriptions': '/prescriptions', // Strip /api, keep /prescriptions for backend
+  pathRewrite: (path: string) => {
+    const newPath = '/prescriptions' + path;
+    console.log('[PRESCRIPTION PROXY] Path rewrite:', path, '→', newPath);
+    return newPath;
   },
 });
 
 /**
  * Teleconsultation Service Proxy
  * Routes: /api/teleconsultations/*
+ * Note: Teleconsultation service uses /api/teleconsultation (singular) internally
  */
 export const teleconsultationProxy = createProxyMiddleware({
   ...commonProxyOptions,
   target: TELECONSULTATION_SERVICE_URL,
-  pathRewrite: {
-    '^/api/teleconsultations': '/teleconsultations', // Strip /api, keep /teleconsultations for backend
+  pathRewrite: (path: string) => {
+    // Service expects /api/teleconsultation/... (singular)
+    const newPath = '/api/teleconsultation' + path;
+    console.log('[TELECONSULTATION PROXY] Path rewrite:', path, '→', newPath);
+    return newPath;
   },
 });
 
 /**
  * Inventory Service Proxy
  * Routes: /api/inventory/*
+ * Note: Express app.use strips the prefix, so we add /inventory back
  */
 export const inventoryProxy = createProxyMiddleware({
   ...commonProxyOptions,
   target: INVENTORY_SERVICE_URL,
-  pathRewrite: {
-    '^/api/inventory': '/inventory', // Strip /api, keep /inventory for backend
+  pathRewrite: (path: string) => {
+    const newPath = '/inventory' + path;
+    console.log('[INVENTORY PROXY] Path rewrite:', path, '→', newPath);
+    return newPath;
   },
 });
 
 /**
  * Notification Service Proxy
  * Routes: /api/notifications/*
+ * Note: Express app.use strips the prefix, so we add /notifications back
  */
 export const notificationProxy = createProxyMiddleware({
   ...commonProxyOptions,
   target: NOTIFICATION_SERVICE_URL,
-  pathRewrite: {
-    '^/api/notifications': '/notifications', // Strip /api, keep /notifications for backend
+  pathRewrite: (path: string) => {
+    const newPath = '/notifications' + path;
+    console.log('[NOTIFICATION PROXY] Path rewrite:', path, '→', newPath);
+    return newPath;
   },
 });
 
 /**
  * Order & Cart Service Proxy
  * Routes: /api/orders/* and /api/cart/*
+ * Note: Express app.use strips the prefix, so we add it back
  */
 export const orderProxy = createProxyMiddleware({
   ...commonProxyOptions,
   target: ORDER_SERVICE_URL,
-  pathRewrite: {
-    '^/api/orders': '/orders', // Strip /api, keep /orders for backend
-    '^/api/cart': '/cart', // Strip /api, keep /cart for backend
+  pathRewrite: (path: string, req: any) => {
+    // Determine the base path from the original URL
+    const originalUrl = req.originalUrl || '';
+    const basePath = originalUrl.includes('/cart') ? '/cart' : '/orders';
+    const newPath = basePath + path;
+    console.log('[ORDER PROXY] Path rewrite:', path, '→', newPath);
+    return newPath;
+  },
+});
+
+/**
+ * Analytics Service Proxy
+ * Routes: /api/analytics/*
+ * Note: Express app.use strips the prefix, so we add /api/analytics back
+ */
+export const analyticsProxy = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: ANALYTICS_SERVICE_URL,
+  pathRewrite: (path: string) => {
+    const newPath = '/api/analytics' + path;
+    console.log('[ANALYTICS PROXY] Path rewrite:', path, '→', newPath);
+    return newPath;
+  },
+});
+
+/**
+ * Dashboard Proxy (routes to Analytics Service)
+ * Routes: /api/dashboard/*
+ * Note: Express app.use('/api/dashboard', ...) strips the /api/dashboard prefix
+ * So we need to add it back for the analytics service
+ */
+export const dashboardProxy = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: ANALYTICS_SERVICE_URL,
+  pathRewrite: (path: string) => {
+    const newPath = '/api/dashboard' + path;
+    console.log('[DASHBOARD PROXY] Path rewrite:', path, '→', newPath);
+    return newPath;
   },
 });
 
@@ -219,4 +237,5 @@ export const serviceEndpoints = [
   { name: 'inventory', url: INVENTORY_SERVICE_URL },
   { name: 'notification', url: NOTIFICATION_SERVICE_URL },
   { name: 'order', url: ORDER_SERVICE_URL },
+  { name: 'analytics', url: ANALYTICS_SERVICE_URL },
 ];

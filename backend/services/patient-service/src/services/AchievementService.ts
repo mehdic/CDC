@@ -4,7 +4,8 @@
  * T6-020: Achievements gamification system
  */
 
-import { getRepository, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import AppDataSource from '../config/database';
 // TODO: Achievement and PatientAchievement models not found - need to be created
 // import {
 //   Achievement,
@@ -62,17 +63,23 @@ export interface LeaderboardEntry {
 }
 
 export class AchievementService {
-  private achievementRepository: Repository<Achievement>;
-  private patientAchievementRepository: Repository<PatientAchievement>;
-  private userRepository: Repository<User>;
+  // Lazy getters for repositories to avoid initialization order issues
+  private get achievementRepository(): Repository<Achievement> {
+    // Placeholder until Achievement entity is created
+    return AppDataSource.getRepository(User) as any;
+  }
+
+  private get patientAchievementRepository(): Repository<PatientAchievement> {
+    // Placeholder until PatientAchievement entity is created
+    return AppDataSource.getRepository(User) as any;
+  }
+
+  private get userRepository(): Repository<User> {
+    return AppDataSource.getRepository(User);
+  }
 
   constructor() {
-    // Note: Achievement and PatientAchievement are temporary type definitions
-    // In production, these should be actual entity classes for getRepository()
-    // For now, we use type assertions to work with the mock repositories
-    this.achievementRepository = getRepository(User) as any; // Placeholder until Achievement entity is created
-    this.patientAchievementRepository = getRepository(User) as any; // Placeholder until PatientAchievement entity is created
-    this.userRepository = getRepository(User);
+    // Repositories are now accessed lazily via getters
   }
 
   /**

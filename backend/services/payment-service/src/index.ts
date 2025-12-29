@@ -18,7 +18,7 @@ import { createCODRoutes } from './routes/cod/codRoutes';
 dotenv.config();
 
 const app: Application = express();
-const PORT = process.env.PAYMENT_SERVICE_PORT || 4013;
+const PORT = process.env.PORT || process.env.PAYMENT_SERVICE_PORT || 4013;
 const SERVICE_NAME = 'payment-service';
 
 // ============================================================================

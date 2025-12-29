@@ -21,6 +21,7 @@
     "migrate:down": "node-pg-migrate down",
     "migrate:create": "node-pg-migrate create",
     "seed:dev": "ts-node shared/db/seeds/dev-seed.ts",
+    "seed:comprehensive": "ts-node shared/db/seeds/comprehensive-seed.ts",
     "clean": "rimraf dist"
   },
   "dependencies": {
@@ -90,7 +91,8 @@
     "uuid": "^9.0.1",
     "winston": "^3.11.0",
     "winston-cloudwatch": "^6.3.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

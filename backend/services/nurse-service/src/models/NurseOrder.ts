@@ -101,13 +101,13 @@ export class NurseOrder {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 
-  @Column({ type: 'datetime', name: 'approved_at', nullable: true })
+  @Column({ type: 'timestamp', name: 'approved_at', nullable: true })
   approvedAt?: Date;
 
-  @Column({ type: 'datetime', name: 'delivered_at', nullable: true })
+  @Column({ type: 'timestamp', name: 'delivered_at', nullable: true })
   deliveredAt?: Date;
 
-  @Column({ type: 'datetime', name: 'cancelled_at', nullable: true })
+  @Column({ type: 'timestamp', name: 'cancelled_at', nullable: true })
   cancelledAt?: Date;
 
   // Stock Validation

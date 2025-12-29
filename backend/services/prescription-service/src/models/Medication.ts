@@ -35,6 +35,6 @@ export class Medication {
   @JoinColumn({ name: 'prescriptionId' })
   prescription!: Prescription;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'uuid' })
   prescriptionId!: string;
 }

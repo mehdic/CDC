@@ -15,37 +15,60 @@ import { DispensationStatus, PrescriptionValidationRequest } from '../types/cont
  * Handles API requests for controlled substance management
  */
 export class ControlledController {
-  private controlledService: ControlledSubstanceService;
-  private validationService: ValidationService;
-  private alertService: AlertService;
-  private reportingService: ReportingService;
+  private _controlledService: ControlledSubstanceService | null = null;
+  private _validationService: ValidationService | null = null;
+  private _alertService: AlertService | null = null;
+  private _reportingService: ReportingService | null = null;
+
+  // Lazy getters for services to avoid initialization order issues
+  private get controlledService(): ControlledSubstanceService {
+    if (!this._controlledService) {
+      this._controlledService = new ControlledSubstanceService(
+        AppDataSource.getRepository(ControlledSubstance),
+        AppDataSource.getRepository(DispensationLog),
+        AppDataSource.getRepository(ControlledPrescription),
+        AppDataSource.getRepository(Alert)
+      );
+    }
+    return this._controlledService;
+  }
+
+  private get validationService(): ValidationService {
+    if (!this._validationService) {
+      this._validationService = new ValidationService(
+        AppDataSource.getRepository(ControlledSubstance),
+        AppDataSource.getRepository(DispensationLog),
+        AppDataSource.getRepository(ControlledPrescription),
+        AppDataSource.getRepository(Alert)
+      );
+    }
+    return this._validationService;
+  }
+
+  private get alertService(): AlertService {
+    if (!this._alertService) {
+      this._alertService = new AlertService(
+        AppDataSource.getRepository(Alert),
+        AppDataSource.getRepository(DispensationLog),
+        AppDataSource.getRepository(ControlledSubstance)
+      );
+    }
+    return this._alertService;
+  }
+
+  private get reportingService(): ReportingService {
+    if (!this._reportingService) {
+      this._reportingService = new ReportingService(
+        AppDataSource.getRepository(DispensationLog),
+        AppDataSource.getRepository(ControlledSubstance),
+        AppDataSource.getRepository(Alert)
+      );
+    }
+    return this._reportingService;
+  }
 
   constructor() {
-    this.controlledService = new ControlledSubstanceService(
-      AppDataSource.getRepository(ControlledSubstance),
-      AppDataSource.getRepository(DispensationLog),
-      AppDataSource.getRepository(ControlledPrescription),
-      AppDataSource.getRepository(Alert)
-    );
-
-    this.validationService = new ValidationService(
-      AppDataSource.getRepository(ControlledSubstance),
-      AppDataSource.getRepository(DispensationLog),
-      AppDataSource.getRepository(ControlledPrescription),
-      AppDataSource.getRepository(Alert)
-    );
-
-    this.alertService = new AlertService(
-      AppDataSource.getRepository(Alert),
-      AppDataSource.getRepository(DispensationLog),
-      AppDataSource.getRepository(ControlledSubstance)
-    );
-
-    this.reportingService = new ReportingService(
-      AppDataSource.getRepository(DispensationLog),
-      AppDataSource.getRepository(ControlledSubstance),
-      AppDataSource.getRepository(Alert)
-    );
+    // Services are now accessed lazily via getters
   }
 
   /**

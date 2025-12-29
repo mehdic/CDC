@@ -21,8 +21,9 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
 
   if (!authHeader) {
     res.status(401).json({
-      success: false,
-      error: 'Authorization header required',
+      error: 'Unauthorized',
+      message: 'No authentication token provided',
+      code: 'NO_TOKEN',
     });
     return;
   }
@@ -35,25 +36,30 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
 
   if (!token) {
     res.status(401).json({
-      success: false,
-      error: 'Token required',
+      error: 'Unauthorized',
+      message: 'Invalid authentication token',
+      code: 'INVALID_TOKEN',
     });
     return;
   }
 
   try {
-    // In production, would verify JWT with shared secret
-    // For now, we'll decode without verification (mock implementation)
-    // Real implementation would use jsonwebtoken library:
-    // const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Decode JWT token (base64) to extract payload
+    // The token format is: header.payload.signature
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid token format',
+        code: 'INVALID_TOKEN',
+      });
+      return;
+    }
 
-    // Mock decoded payload (replace with real JWT verification)
-    const decoded: JWTPayload = {
-      userId: 'mock-user-id', // Would be extracted from real JWT
-      email: 'mock@example.com',
-      role: 'pharmacist',
-      pharmacyId: 'mock-pharmacy-id',
-    };
+    // Decode the payload (second part)
+    const payloadBase64 = parts[1];
+    const payloadJson = Buffer.from(payloadBase64, 'base64').toString('utf8');
+    const decoded = JSON.parse(payloadJson) as JWTPayload;
 
     // Attach user info to request
     (req as any).user = decoded;
@@ -62,8 +68,9 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
   } catch (error) {
     console.error('Token verification error:', error);
     res.status(401).json({
-      success: false,
-      error: 'Invalid or expired token',
+      error: 'Unauthorized',
+      message: 'Invalid or expired token',
+      code: 'INVALID_TOKEN',
     });
   }
 }
@@ -73,22 +80,28 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
  */
 export function requireRole(roles: string | string[]) {
   const allowedRoles = Array.isArray(roles) ? roles : [roles];
+  // Normalize to lowercase for comparison
+  const normalizedAllowedRoles = allowedRoles.map(r => r.toLowerCase());
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const user = (req as any).user;
 
     if (!user) {
       res.status(401).json({
-        success: false,
         error: 'Unauthorized',
+        message: 'Authentication required',
+        code: 'UNAUTHORIZED',
       });
       return;
     }
 
-    if (!allowedRoles.includes(user.role)) {
+    // Normalize user role to lowercase for comparison
+    const userRole = (user.role || '').toLowerCase();
+    if (!normalizedAllowedRoles.includes(userRole)) {
       res.status(403).json({
-        success: false,
-        error: 'Forbidden: Insufficient permissions',
+        error: 'Forbidden',
+        message: 'Insufficient permissions',
+        code: 'FORBIDDEN',
       });
       return;
     }

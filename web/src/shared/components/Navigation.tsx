@@ -18,6 +18,8 @@ import {
   Campaign as MarketingIcon,
   LocalShipping as DeliveryIcon,
   Settings as SettingsIcon,
+  CalendarToday as CalendarIcon,
+  MedicalServices as MedicalRecordsIcon,
   ExpandLess,
   ExpandMore,
 } from '@mui/icons-material';
@@ -83,21 +85,8 @@ const defaultNavigationItems: NavigationItem[] = [
   {
     id: 'prescriptions',
     label: 'Prescriptions',
+    path: '/prescriptions',
     icon: <PrescriptionIcon />,
-    children: [
-      {
-        id: 'prescriptions-queue',
-        label: 'File d\'attente',
-        path: '/prescriptions',
-        icon: <PrescriptionIcon />,
-      },
-      {
-        id: 'prescriptions-review',
-        label: 'Vérification',
-        path: '/prescriptions/review',
-        icon: <PrescriptionIcon />,
-      },
-    ],
   },
   {
     id: 'inventory',
@@ -110,6 +99,20 @@ const defaultNavigationItems: NavigationItem[] = [
     label: 'Téléconsultation',
     path: '/teleconsultation',
     icon: <VideoCallIcon />,
+  },
+  {
+    id: 'consultation-calendar',
+    label: 'Calendrier Consultations',
+    path: '/consultation-calendar',
+    icon: <CalendarIcon />,
+    roles: ['pharmacist', 'admin'],
+  },
+  {
+    id: 'medical-records',
+    label: 'Dossiers Médicaux',
+    path: '/medical-records',
+    icon: <MedicalRecordsIcon />,
+    roles: ['pharmacist', 'admin'],
   },
   {
     id: 'analytics',
