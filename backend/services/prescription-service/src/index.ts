@@ -30,6 +30,7 @@ import rejectRoutes from './routes/reject';
 import transcribeRoutes from './routes/transcribe';
 import validateRoutes from './routes/validate';
 import clarificationRoutes from './routes/clarification';
+import productRoutes from './routes/products';
 
 // ============================================================================
 // Mock Data for Development
@@ -794,6 +795,9 @@ if (!isMockMode) {
   app.use('/prescriptions', validateRoutes);          // POST /prescriptions/:id/validate
   app.use('/prescriptions', clarificationRoutes);     // POST /prescriptions/:id/request-clarification
 }
+
+// Product routes (available in both mock and non-mock modes for medication autocomplete)
+app.use('/products', productRoutes);                  // GET /products/search, GET /products/:id
 
 // ============================================================================
 // Legacy API Routes (for backward compatibility)
