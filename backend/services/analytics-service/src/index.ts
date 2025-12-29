@@ -170,28 +170,27 @@ app.get(
       const rejectedPrescriptions = await count('SELECT COUNT(*) FROM prescriptions WHERE pharmacy_id = $1 AND status = $2', [pharmacyId, 'rejected']);
 
       // Consultations stats
-      const totalConsultations = await count('SELECT COUNT(*) FROM calendar_events WHERE event_type = $1', ['consultation']);
-      const upcomingConsultations = await count(`SELECT COUNT(*) FROM calendar_events WHERE event_type = $1 AND start_time > NOW()`, ['consultation']);
-      const completedConsultations = await count(`SELECT COUNT(*) FROM calendar_events WHERE event_type = $1 AND end_time < NOW()`, ['consultation']);
+      const totalConsultations = await count('SELECT COUNT(*) FROM calendar_events WHERE event_type = $1', ['teleconsultation']);
+      const upcomingConsultations = await count(`SELECT COUNT(*) FROM calendar_events WHERE event_type = $1 AND start_time > NOW()`, ['teleconsultation']);
+      const completedConsultations = await count(`SELECT COUNT(*) FROM calendar_events WHERE event_type = $1 AND end_time < NOW()`, ['teleconsultation']);
 
-      // Revenue from payments
-      const revenueTotal = await queryOne<{ total: string }>('SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE pharmacy_id = $1 AND status = $2', [pharmacyId, 'completed']);
+      // Revenue from payments (aggregated - payments table doesn't have pharmacy_id)
+      const revenueTotal = await queryOne<{ total: string }>('SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status = $1', ['completed']);
       const revenueThisMonth = await queryOne<{ total: string }>(
         `SELECT COALESCE(SUM(amount), 0) as total FROM payments
-         WHERE pharmacy_id = $1 AND status = 'completed'
-         AND DATE(created_at) >= DATE_TRUNC('month', CURRENT_DATE)`,
-        [pharmacyId]
+         WHERE status = 'completed'
+         AND DATE(created_at) >= DATE_TRUNC('month', CURRENT_DATE)`
       );
 
-      // Inventory stats
-      const totalProducts = await count('SELECT COUNT(*) FROM products WHERE pharmacy_id = $1', [pharmacyId]);
-      const lowStock = await count('SELECT COUNT(*) FROM products WHERE pharmacy_id = $1 AND stock < reorder_level', [pharmacyId]);
-      const expiringSoon = await count(`SELECT COUNT(*) FROM products WHERE pharmacy_id = $1 AND expiry_date IS NOT NULL AND expiry_date < NOW() + INTERVAL '30 days'`, [pharmacyId]);
+      // Inventory stats (aggregated - products table doesn't have pharmacy_id)
+      const totalProducts = await count('SELECT COUNT(*) FROM products');
+      const lowStock = await count('SELECT COUNT(*) FROM products WHERE stock <= low_stock_threshold AND stock > 0');
+      const expiringSoon = await count(`SELECT COUNT(*) FROM products WHERE expiry_date IS NOT NULL AND expiry_date < NOW() + INTERVAL '30 days'`);
 
-      // Deliveries stats
-      const totalDeliveries = await count('SELECT COUNT(*) FROM deliveries WHERE pharmacy_id = $1', [pharmacyId]);
-      const inTransitDeliveries = await count('SELECT COUNT(*) FROM deliveries WHERE pharmacy_id = $1 AND status = $2', [pharmacyId, 'in_transit']);
-      const completedDeliveries = await count('SELECT COUNT(*) FROM deliveries WHERE pharmacy_id = $1 AND status = $2', [pharmacyId, 'delivered']);
+      // Deliveries stats (aggregated - deliveries table doesn't have pharmacy_id)
+      const totalDeliveries = await count('SELECT COUNT(*) FROM deliveries');
+      const inTransitDeliveries = await count('SELECT COUNT(*) FROM deliveries WHERE status = $1', ['in_transit']);
+      const completedDeliveries = await count('SELECT COUNT(*) FROM deliveries WHERE status = $1', ['delivered']);
 
       res.json({
         success: true,
@@ -349,14 +348,14 @@ app.get(
       // This week's consultations
       const thisWeek = await count(
         `SELECT COUNT(*) FROM calendar_events
-         WHERE event_type = 'consultation'
+         WHERE event_type = 'teleconsultation'
          AND start_time >= DATE_TRUNC('week', CURRENT_DATE)`
       );
 
       // Last week's consultations
       const lastWeek = await count(
         `SELECT COUNT(*) FROM calendar_events
-         WHERE event_type = 'consultation'
+         WHERE event_type = 'teleconsultation'
          AND start_time >= DATE_TRUNC('week', CURRENT_DATE) - INTERVAL '7 days'
          AND start_time < DATE_TRUNC('week', CURRENT_DATE)`
       );
@@ -374,7 +373,7 @@ app.get(
           TO_CHAR(start_time, 'Day') as day_name,
           COUNT(*)::int as count
          FROM calendar_events
-         WHERE event_type = 'consultation'
+         WHERE event_type = 'teleconsultation'
            AND start_time >= NOW() - INTERVAL '30 days'
          GROUP BY TO_CHAR(start_time, 'Day'), EXTRACT(DOW FROM start_time)
          ORDER BY count DESC
