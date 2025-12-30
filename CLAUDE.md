@@ -144,6 +144,45 @@ test.describe('Feature Name', () => {
 
 **DO NOT skip this step.** UI changes without tests can introduce regressions that are only caught in production.
 
+### 🔴 CRITICAL: Test Coverage Rule (MANDATORY)
+
+**You must NOT just run existing tests and assume your fix works.**
+
+**MANDATORY TESTING WORKFLOW:**
+
+1. **Find existing test(s) that cover your change:**
+   - Search in `web/e2e/tests/` for test files related to the feature you modified
+   - Look for tests that exercise the specific functionality you changed
+   - Example: Changing inventory update? Look for tests in `inventory.spec.ts` or `stock-update.spec.ts`
+
+2. **If no relevant test exists, CREATE a new test:**
+   - Create a test file that specifically tests YOUR change
+   - Test the happy path (expected behavior)
+   - Test edge cases (empty input, invalid data, API errors)
+   - Use proper selectors (`data-testid` preferred)
+
+3. **Run the relevant tests:**
+   ```bash
+   npx playwright test e2e/tests/pharmacist/<relevant-test>.spec.ts --project=pharmacist --reporter=list
+   ```
+
+4. **Verify YOUR SPECIFIC CHANGE is tested:**
+   - Running all tests is NOT enough
+   - Your change must have a test that specifically exercises it
+   - If the test doesn't exist, you must create it
+
+**Example:**
+```
+Changed: Stock update dialog quantity handling
+Required: Test in stock-update.spec.ts that:
+  - Opens the dialog
+  - Changes the quantity
+  - Clicks Update
+  - Verifies success
+```
+
+**DO NOT proceed until your change is covered by a test that passes.**
+
 ### 🔴 REMINDER #1: Run Playwright Tests After Every Frontend Fix
 
 **After making ANY frontend fix, you MUST run Playwright tests:**

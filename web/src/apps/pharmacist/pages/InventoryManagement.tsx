@@ -113,6 +113,8 @@ export const InventoryManagement: React.FC = () => {
           label="Edit"
           onClick={() => handleEditItem(params.row)}
           showInMenu={false}
+          data-testid={`update-stock-btn-${params.row.id}`}
+          className="update-stock-btn"
         />,
         <GridActionsCellItem
           key={`delete-${params.row.id}`}
@@ -120,6 +122,7 @@ export const InventoryManagement: React.FC = () => {
           label="Delete"
           onClick={() => handleDeleteItem(params.row.id)}
           showInMenu={false}
+          data-testid={`delete-item-btn-${params.row.id}`}
         />,
       ],
     },
@@ -367,7 +370,13 @@ export const InventoryManagement: React.FC = () => {
 
       {/* Edit Item Dialog */}
       {editingItem && (
-        <Dialog open={true} onClose={() => setEditingItem(null)} maxWidth="sm" fullWidth>
+        <Dialog
+          open={true}
+          onClose={() => setEditingItem(null)}
+          maxWidth="sm"
+          fullWidth
+          data-testid="stock-update-form"
+        >
           <DialogTitle>Update Stock Level</DialogTitle>
           <DialogContent>
             <Box sx={{ pt: 2 }}>
@@ -376,20 +385,26 @@ export const InventoryManagement: React.FC = () => {
                 label="Quantity"
                 type="number"
                 value={editingItem.quantity ?? 0}
-                inputProps={{ 'aria-label': 'quantity', min: 0 }}
+                inputProps={{
+                  'aria-label': 'quantity',
+                  min: 0,
+                  'data-testid': 'quantity-input'
+                }}
                 onChange={(e) => {
                   const val = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
                   setEditingItem({ ...editingItem, quantity: isNaN(val) ? 0 : val });
                 }}
+                data-testid="quantity-field"
               />
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setEditingItem(null)}>Cancel</Button>
+            <Button onClick={() => setEditingItem(null)} data-testid="cancel-update-btn">Cancel</Button>
             <Button
               onClick={() => handleUpdateItem({ quantity: editingItem.quantity })}
               variant="contained"
               disabled={editingItem.quantity === undefined || isNaN(editingItem.quantity)}
+              data-testid="submit-update-btn"
             >
               Update
             </Button>
