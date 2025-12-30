@@ -23,19 +23,19 @@ export class ListPrescriptionsDto {
   status?: string; // Can be single status or comma-separated list
 
   @IsOptional()
-  @IsUUID('4', { message: 'patient_id must be a valid UUID' })
+  @IsUUID('all', { message: 'patient_id must be a valid UUID' })
   patient_id?: string;
 
   @IsOptional()
-  @IsUUID('4', { message: 'pharmacy_id must be a valid UUID' })
+  @IsUUID('all', { message: 'pharmacy_id must be a valid UUID' })
   pharmacy_id?: string;
 
   @IsOptional()
-  @IsUUID('4', { message: 'pharmacist_id must be a valid UUID' })
+  @IsUUID('all', { message: 'pharmacist_id must be a valid UUID' })
   pharmacist_id?: string;
 
   @IsOptional()
-  @IsUUID('4', { message: 'prescribing_doctor_id must be a valid UUID' })
+  @IsUUID('all', { message: 'prescribing_doctor_id must be a valid UUID' })
   prescribing_doctor_id?: string;
 
   @IsOptional()

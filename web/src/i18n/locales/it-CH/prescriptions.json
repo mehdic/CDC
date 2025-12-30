@@ -1,0 +1,67 @@
+{
+  "title": "Revisione ricetta",
+  "id_label": "ID",
+
+  "patient_info": {
+    "title": "Informazioni paziente",
+    "name": "Nome",
+    "patient_id": "ID Paziente"
+  },
+
+  "doctor_info": {
+    "title": "Medico prescrittore",
+    "name": "Nome",
+    "doctor_id": "ID Medico"
+  },
+
+  "details": {
+    "title": "Dettagli ricetta",
+    "source": "Fonte",
+    "prescribed_date": "Data prescrizione",
+    "expiry_date": "Data scadenza",
+    "submitted": "Inviato il"
+  },
+
+  "actions": {
+    "run_safety_checks": "Esegui controlli di sicurezza",
+    "validating": "Validazione in corso...",
+    "approve": "Approva ricetta",
+    "approving": "Approvazione in corso...",
+    "reject": "Rifiuta"
+  },
+
+  "reject_dialog": {
+    "title": "Rifiuta ricetta",
+    "description": "Fornisci un motivo per il rifiuto. Il paziente e il medico saranno notificati.",
+    "reason_label": "Motivo del rifiuto",
+    "reason_placeholder": "Es.: Ricetta illeggibile, informazioni sul dosaggio mancanti, problemi di interazione farmacologica...",
+    "cancel": "Annulla",
+    "confirm": "Conferma rifiuto",
+    "rejecting": "Rifiuto in corso..."
+  },
+
+  "messages": {
+    "validation_success": "Ricetta validata con successo! Controlli di sicurezza completati. Ora puoi approvare o rifiutare.",
+    "validation_failed": "Validazione fallita: {{error}}",
+    "approval_success": "Ricetta approvata con successo!",
+    "approval_failed": "Approvazione fallita: {{error}}",
+    "approval_needs_validation": "Esegui prima i controlli di sicurezza prima di approvare questa ricetta.",
+    "rejection_success": "Ricetta rifiutata con successo!",
+    "rejection_failed": "Rifiuto fallito: {{error}}",
+    "rejection_reason_required": "Fornisci un motivo per il rifiuto",
+    "unknown_patient": "Paziente sconosciuto",
+    "loading_error": "Errore nel caricamento della ricetta",
+    "not_found": "Ricetta non trovata",
+    "session_expired": "La sessione è scaduta. Effettua nuovamente l'accesso."
+  },
+
+  "status": {
+    "pending": "IN ATTESA",
+    "in_review": "IN REVISIONE",
+    "approved": "APPROVATA",
+    "rejected": "RIFIUTATA",
+    "dispensed": "DISPENSATA"
+  },
+
+  "back_to_dashboard": "Torna alla dashboard"
+}

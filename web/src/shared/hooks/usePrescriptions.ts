@@ -121,6 +121,7 @@ export interface ApproveRequest {
 
 export interface RejectRequest {
   prescriptionId: string;
+  pharmacistId: string;
   reason: string;
 }
 
@@ -128,7 +129,7 @@ export interface RejectRequest {
 // API Client Configuration
 // ============================================================================
 
-const API_BASE_URL = process.env.REACT_APP_API_GATEWAY_URL || 'http://localhost:4000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const PRESCRIPTION_SERVICE_URL = `${API_BASE_URL}/prescriptions`;
 
 // Configure axios with auth token from localStorage
@@ -147,6 +148,21 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Add response interceptor for 401 handling (token expired)
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear auth data and redirect to login
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user_data');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // ============================================================================
 // Query Keys
@@ -173,7 +189,8 @@ export const prescriptionApi = {
 
     if (filters.status) {
       if (Array.isArray(filters.status)) {
-        filters.status.forEach((s) => params.append('status', s));
+        // Backend expects comma-separated status values
+        params.append('status', filters.status.join(','));
       } else {
         params.append('status', filters.status);
       }
@@ -215,7 +232,7 @@ export const prescriptionApi = {
    */
   async approve(prescriptionId: string, pharmacistId: string): Promise<Prescription> {
     const response = await apiClient.put(`${PRESCRIPTION_SERVICE_URL}/${prescriptionId}/approve`, {
-      pharmacistId,
+      pharmacist_id: pharmacistId,
     });
     return response.data;
   },
@@ -223,9 +240,10 @@ export const prescriptionApi = {
   /**
    * Reject prescription
    */
-  async reject(prescriptionId: string, reason: string): Promise<Prescription> {
+  async reject(prescriptionId: string, pharmacistId: string, reason: string): Promise<Prescription> {
     const response = await apiClient.put(`${PRESCRIPTION_SERVICE_URL}/${prescriptionId}/reject`, {
-      reason,
+      pharmacist_id: pharmacistId,
+      rejection_reason: reason,
     });
     return response.data;
   },
@@ -299,8 +317,8 @@ export function useRejectPrescription() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ prescriptionId, reason }: RejectRequest) =>
-      prescriptionApi.reject(prescriptionId, reason),
+    mutationFn: ({ prescriptionId, pharmacistId, reason }: RejectRequest) =>
+      prescriptionApi.reject(prescriptionId, pharmacistId, reason),
     onSuccess: (data) => {
       // Invalidate prescription list and detail queries
       queryClient.invalidateQueries({ queryKey: prescriptionKeys.lists() });

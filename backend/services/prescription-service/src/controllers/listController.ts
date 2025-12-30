@@ -42,6 +42,46 @@ export interface ListResponse {
 }
 
 /**
+ * GET /prescriptions/:id
+ * Get a single prescription by ID
+ */
+export async function getPrescriptionById(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const dataSource: DataSource = req.app.locals.dataSource;
+
+    const prescriptionRepo = dataSource.getRepository(Prescription);
+    const prescription = await prescriptionRepo
+      .createQueryBuilder('prescription')
+      .leftJoinAndSelect('prescription.items', 'items')
+      .leftJoinAndSelect('prescription.patient', 'patient')
+      .leftJoinAndSelect('prescription.prescribing_doctor', 'prescribing_doctor')
+      .leftJoinAndSelect('prescription.pharmacist', 'pharmacist')
+      .leftJoinAndSelect('prescription.treatment_plan', 'treatment_plan')
+      .where('prescription.id = :id', { id })
+      .getOne();
+
+    if (!prescription) {
+      res.status(404).json({
+        error: 'Prescription not found',
+        code: 'NOT_FOUND',
+        message: `Prescription with ID ${id} not found`,
+      });
+      return;
+    }
+
+    res.json(sanitizePrescription(prescription));
+  } catch (error: any) {
+    console.error('[Get Prescription] Error:', error);
+    res.status(500).json({
+      error: 'Failed to get prescription',
+      code: 'GET_ERROR',
+      message: error.message,
+    });
+  }
+}
+
+/**
  * GET /prescriptions
  * List prescriptions with filtering and pagination
  */
@@ -241,10 +281,69 @@ function parseBooleanFilter(value: string | undefined): boolean | undefined {
 }
 
 /**
+ * Extract name from email address (development fallback)
+ * e.g., 'jean-pierre.muller@test.ch' -> { first_name: 'Jean-Pierre', last_name: 'Muller' }
+ */
+function extractNameFromEmail(email: string): { first_name: string; last_name: string } {
+  if (!email) {
+    return { first_name: 'Unknown', last_name: 'User' };
+  }
+
+  const localPart = email.split('@')[0];
+  const parts = localPart.split('.');
+
+  if (parts.length >= 2) {
+    // Handle cases like 'jean-pierre.muller' or 'marie.martin'
+    const firstName = parts[0]
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('-');
+    const lastName = parts.slice(1).join(' ')
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join('-');
+    return { first_name: firstName, last_name: lastName };
+  }
+
+  // Single part email
+  return {
+    first_name: localPart.charAt(0).toUpperCase() + localPart.slice(1).toLowerCase(),
+    last_name: ''
+  };
+}
+
+/**
+ * Get user display name, using email extraction as fallback for encrypted fields
+ */
+function getUserDisplayName(user: any): { first_name: string; last_name: string } {
+  // Check if we have readable first_name (TypeORM may return undefined for bytea columns accessed as strings)
+  if (user.first_name && typeof user.first_name === 'string' && user.first_name.length > 1) {
+    return { first_name: user.first_name, last_name: user.last_name || '' };
+  }
+
+  // Fallback to email extraction (development mode)
+  if (user.email) {
+    return extractNameFromEmail(user.email);
+  }
+
+  return { first_name: 'Unknown', last_name: 'User' };
+}
+
+/**
  * Sanitize prescription object for API response
  * Remove sensitive or unnecessary fields
  */
 function sanitizePrescription(prescription: Prescription): any {
+  // Get patient name (with email fallback for development)
+  const patientName = prescription.patient
+    ? getUserDisplayName(prescription.patient)
+    : null;
+
+  // Get doctor name (with email fallback for development)
+  const doctorName = prescription.prescribing_doctor
+    ? getUserDisplayName(prescription.prescribing_doctor)
+    : null;
+
   return {
     id: prescription.id,
     pharmacy_id: prescription.pharmacy_id,
@@ -267,6 +366,18 @@ function sanitizePrescription(prescription: Prescription): any {
     approved_at: prescription.approved_at,
     approved_by_pharmacist_id: prescription.approved_by_pharmacist_id,
     items: prescription.items,
+    // Include patient data for display (with email-derived names as fallback)
+    patient: prescription.patient ? {
+      id: prescription.patient.id,
+      first_name: patientName?.first_name || 'Unknown',
+      last_name: patientName?.last_name || 'Patient',
+    } : null,
+    // Include doctor data for display (with email-derived names as fallback)
+    prescribing_doctor: prescription.prescribing_doctor ? {
+      id: prescription.prescribing_doctor.id,
+      first_name: doctorName?.first_name || 'Dr.',
+      last_name: doctorName?.last_name || 'Unknown',
+    } : null,
     has_safety_warnings: prescription.hasSafetyWarnings(),
     has_low_confidence: prescription.hasLowConfidence(),
     can_be_edited: prescription.canBeEdited(),

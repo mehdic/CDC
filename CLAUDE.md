@@ -81,6 +81,80 @@ When this project moves to implementation phase:
 4. **Multi-Channel Communication**: Unified inbox aggregating email, WhatsApp, fax, in-app messaging
 5. **Healthcare Data Interoperability**: Integration with Swiss cantonal systems and insurance providers
 
+### 🚨 CRITICAL: NO MOCK MODE - EVER
+
+**NEVER enable mock mode for any service.** All services MUST use real database connections.
+
+**FORBIDDEN:**
+- ❌ Setting `USE_MOCK_DATA=true` in docker-compose.yml or environment
+- ❌ Using `isMockMode` to bypass database operations
+- ❌ Suggesting mock data as a workaround for database issues
+
+**REQUIRED:**
+- ✅ Fix database connection issues properly
+- ✅ Fix entity/schema issues in TypeORM models
+- ✅ Use real PostgreSQL database for all development and testing
+- ✅ Seed test data into the real database if needed
+
+**Why:** Mock mode hides real bugs, creates false positives in testing, and prevents proper integration testing. The app must work with real data at all times.
+
+### 🧪 MANDATORY: Playwright E2E Tests for UI Changes
+
+**Whenever you modify UI code or behavior, you MUST create a headless Playwright test to verify the functionality works as expected.**
+
+**This applies to:**
+- Any changes to React components (`.tsx` files in `web/src/`)
+- Changes to form handling, validation, or user interactions
+- Changes to API calls from frontend components
+- Changes to navigation or routing behavior
+- Bug fixes that affect user-visible behavior
+
+**Test Requirements:**
+1. **Create test file**: Place in `web/e2e/` directory with descriptive name (e.g., `prescription-approval.spec.ts`)
+2. **Test the happy path**: Verify the expected functionality works end-to-end
+3. **Test error cases**: If the change involves error handling, test that errors are displayed correctly
+4. **Run headless**: Tests must run in headless mode for CI compatibility
+5. **Self-contained**: Tests should handle their own setup (login, navigation, etc.)
+
+**Test Execution:**
+```bash
+# Run specific test
+cd web && npx playwright test e2e/<test-file>.spec.ts --headed
+
+# Run headless (CI mode)
+cd web && npx playwright test e2e/<test-file>.spec.ts
+```
+
+**Example Test Structure:**
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Feature Name', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login and navigate to the page
+  });
+
+  test('should perform expected action', async ({ page }) => {
+    // Arrange: Set up test state
+    // Act: Perform user actions
+    // Assert: Verify expected outcome
+  });
+});
+```
+
+**DO NOT skip this step.** UI changes without tests can introduce regressions that are only caught in production.
+
+### 🔴 REMINDER #1: Run Playwright Tests After Every Frontend Fix
+
+**After making ANY frontend fix, you MUST run Playwright tests:**
+```bash
+npx playwright test e2e/tests/pharmacist/<relevant-test>.spec.ts --reporter=list
+```
+
+Do NOT proceed without verifying the fix works via automated tests.
+
+---
+
 ## Design Philosophy
 
 - **Patient-Centric**: Reduce effort, anticipate needs, proactive recommendations
@@ -235,6 +309,14 @@ Complete orchestration workflow: `.claude/agents/orchestrator.md`
 4. **Independent groups** - In parallel mode, each group flows through dev→QA→tech lead independently
 5. **Orchestrator never implements** - This rule is absolute and inviolable
 
+### 🔴 REMINDER #2: Playwright Tests Are Non-Negotiable
+
+After completing any frontend task:
+1. Identify relevant test file in `web/e2e/tests/`
+2. Run: `npx playwright test e2e/tests/<test-file>.spec.ts --project=pharmacist`
+3. Fix any failing tests before proceeding
+4. All tests must pass before task is considered complete
+
 ---
 
 ## 🚨 MANDATORY: CI Pipeline Verification Before BAZINGA
@@ -288,6 +370,16 @@ curl -s -L -H "Authorization: Bearer $GITHUB_TOKEN" \
 - ✅ PM has reviewed final status and approved
 
 **This is NON-NEGOTIABLE. A BAZINGA with failing CI is INVALID.**
+
+### 🔴 REMINDER #3: Test Before Commit
+
+Before committing any frontend changes:
+```bash
+# Run all Playwright tests for the affected module
+npx playwright test e2e/tests/pharmacist/ --project=pharmacist --reporter=list
+```
+
+If tests fail, DO NOT commit. Fix the code first.
 
 ---
 
@@ -372,5 +464,51 @@ git push https://${GITHUB_TOKEN}@github.com/mehdic/CDC.git HEAD
 - SSH key permission denied errors
 - `git@github.com: Permission denied (publickey)` errors
 - When working in environments without SSH key access
+
+### 🔴 REMINDER #4: Playwright Test Locations
+
+Key test files for pharmacist features:
+- `web/e2e/tests/pharmacist/inventory.spec.ts` - Inventory management tests
+- `web/e2e/tests/pharmacist/prescriptions.spec.ts` - Prescription workflow tests
+- `web/e2e/tests/prescription-approval.spec.ts` - Prescription approval flow
+- `web/e2e/tests/auth.spec.ts` - Authentication tests
+
+Always find and run relevant tests after making changes.
+
+---
+
+## 🔴 REMINDER #5: Frontend Fix Checklist
+
+After EVERY frontend fix, follow this checklist:
+
+1. ☐ **Identify affected feature** (inventory, prescriptions, auth, etc.)
+2. ☐ **Find relevant test file** in `web/e2e/tests/`
+3. ☐ **Run tests**: `npx playwright test e2e/tests/<file>.spec.ts --project=pharmacist`
+4. ☐ **Verify tests pass** - If failing, fix the issue
+5. ☐ **Run full test suite** for the module
+6. ☐ **Commit only after all tests pass**
+
+**DO NOT SKIP THIS CHECKLIST. IT IS MANDATORY.**
+
+---
+
+## 🔴 REMINDER #6: End-of-Development Validation
+
+At the END of any development session, ALWAYS run:
+
+```bash
+# Run all Playwright tests
+npx playwright test --project=pharmacist --reporter=list
+
+# Check for any failures
+# If ANY test fails, the development is NOT complete
+```
+
+**The session is NOT complete until:**
+- ✅ All Playwright tests pass for affected modules
+- ✅ No regressions introduced by the changes
+- ✅ Test results show 0 failures
+
+**NEVER mark a task as done without running Playwright tests.**
 
 ---

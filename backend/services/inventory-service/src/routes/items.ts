@@ -539,6 +539,7 @@ itemsRouter.get('/:id', async (req: Request, res: Response) => {
 const updateItemSchema = z.object({
   pharmacy_id: z.string().uuid(),
   medication_name: z.string().optional(),
+  quantity: z.number().int().min(0).optional(),
   reorder_threshold: z.number().int().min(0).optional(),
   optimal_stock_level: z.number().int().min(0).optional(),
   storage_location: z.string().optional(),
@@ -566,6 +567,7 @@ itemsRouter.put('/:id', async (req: Request, res: Response) => {
 
     // Update fields
     if (validatedData.medication_name !== undefined) item.medication_name = validatedData.medication_name;
+    if (validatedData.quantity !== undefined) item.quantity = validatedData.quantity;
     if (validatedData.reorder_threshold !== undefined) item.reorder_threshold = validatedData.reorder_threshold;
     if (validatedData.optimal_stock_level !== undefined) item.optimal_stock_level = validatedData.optimal_stock_level;
     if (validatedData.storage_location !== undefined) item.storage_location = validatedData.storage_location;

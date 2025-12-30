@@ -1,19 +1,25 @@
 /**
  * Database Configuration
  * TypeORM DataSource setup
- *
- * Note: Using mock mode in development until full migrations are in place.
- * The shared models have complex interdependencies that require all entities
- * to be registered together.
  */
 
 import { DataSource } from 'typeorm';
+
+// Import only entities needed for prescription service (explicit to avoid schema issues)
+import { Prescription } from '../../../../shared/models/Prescription';
+import { PrescriptionItem } from '../../../../shared/models/PrescriptionItem';
+import { User } from '../../../../shared/models/User';
+import { Pharmacy } from '../../../../shared/models/Pharmacy';
+import { TreatmentPlan } from '../../../../shared/models/TreatmentPlan';
+import { AuditTrailEntry } from '../../../../shared/models/AuditTrailEntry';
+import { Cart } from '../../../../shared/models/Cart';
+import { CartItem } from '../../../../shared/models/CartItem';
 
 const isTest = process.env.NODE_ENV === 'test';
 // Only use mock data when explicitly enabled (USE_MOCK_DATA=true), not by default in development
 const useMock = process.env.USE_MOCK_DATA === 'true';
 
-// Minimal DataSource for health checks (entities loaded dynamically when needed)
+// DataSource with prescription-related entities only
 export const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
@@ -23,7 +29,16 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || 'metapharm',
   synchronize: false, // Never auto-sync in production
   logging: process.env.DB_LOGGING === 'true',
-  entities: [], // No entities - use mock data in development
+  entities: [
+    Prescription,
+    PrescriptionItem,
+    User,
+    Pharmacy,
+    TreatmentPlan,
+    AuditTrailEntry,
+    Cart,
+    CartItem,
+  ],
   migrations: [],
   subscribers: [],
 });

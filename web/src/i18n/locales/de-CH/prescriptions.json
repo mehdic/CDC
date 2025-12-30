@@ -1,0 +1,67 @@
+{
+  "title": "Rezeptprüfung",
+  "id_label": "ID",
+
+  "patient_info": {
+    "title": "Patienteninformationen",
+    "name": "Name",
+    "patient_id": "Patienten-ID"
+  },
+
+  "doctor_info": {
+    "title": "Verschreibender Arzt",
+    "name": "Name",
+    "doctor_id": "Arzt-ID"
+  },
+
+  "details": {
+    "title": "Rezeptdetails",
+    "source": "Quelle",
+    "prescribed_date": "Verschreibungsdatum",
+    "expiry_date": "Ablaufdatum",
+    "submitted": "Eingereicht am"
+  },
+
+  "actions": {
+    "run_safety_checks": "Sicherheitsprüfung durchführen",
+    "validating": "Validierung läuft...",
+    "approve": "Rezept genehmigen",
+    "approving": "Genehmigung läuft...",
+    "reject": "Ablehnen"
+  },
+
+  "reject_dialog": {
+    "title": "Rezept ablehnen",
+    "description": "Bitte geben Sie einen Ablehnungsgrund an. Der Patient und der Arzt werden benachrichtigt.",
+    "reason_label": "Ablehnungsgrund",
+    "reason_placeholder": "Z.B.: Unleserliches Rezept, fehlende Dosierungsangaben, Bedenken wegen Medikamenteninteraktionen...",
+    "cancel": "Abbrechen",
+    "confirm": "Ablehnung bestätigen",
+    "rejecting": "Ablehnung läuft..."
+  },
+
+  "messages": {
+    "validation_success": "Rezept erfolgreich validiert! Sicherheitsprüfungen abgeschlossen. Sie können jetzt genehmigen oder ablehnen.",
+    "validation_failed": "Validierung fehlgeschlagen: {{error}}",
+    "approval_success": "Rezept erfolgreich genehmigt!",
+    "approval_failed": "Genehmigung fehlgeschlagen: {{error}}",
+    "approval_needs_validation": "Bitte führen Sie zuerst die Sicherheitsprüfung durch, bevor Sie dieses Rezept genehmigen.",
+    "rejection_success": "Rezept erfolgreich abgelehnt!",
+    "rejection_failed": "Ablehnung fehlgeschlagen: {{error}}",
+    "rejection_reason_required": "Bitte geben Sie einen Ablehnungsgrund an",
+    "unknown_patient": "Unbekannter Patient",
+    "loading_error": "Fehler beim Laden des Rezepts",
+    "not_found": "Rezept nicht gefunden",
+    "session_expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
+  },
+
+  "status": {
+    "pending": "AUSSTEHEND",
+    "in_review": "IN PRÜFUNG",
+    "approved": "GENEHMIGT",
+    "rejected": "ABGELEHNT",
+    "dispensed": "ABGEGEBEN"
+  },
+
+  "back_to_dashboard": "Zurück zum Dashboard"
+}

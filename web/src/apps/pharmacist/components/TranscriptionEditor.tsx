@@ -480,6 +480,11 @@ export const TranscriptionEditor: React.FC<TranscriptionEditorProps> = ({
     items.map((item) => ({ ...item, selected_product: null }))
   );
 
+  // Sync localItems when items prop changes (e.g., when API data loads)
+  React.useEffect(() => {
+    setLocalItems(items.map((item) => ({ ...item, selected_product: null })));
+  }, [items]);
+
   /**
    * Update item at index
    */

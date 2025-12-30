@@ -8,7 +8,7 @@ import { IsString, IsNotEmpty, IsEnum, IsOptional, IsUUID } from 'class-validato
 export class UploadPrescriptionDto {
   @IsString()
   @IsNotEmpty({ message: 'patient_id is required' })
-  @IsUUID('4', { message: 'patient_id must be a valid UUID' })
+  @IsUUID('all', { message: 'patient_id must be a valid UUID' })
   patient_id: string;
 
   @IsString()
@@ -20,11 +20,11 @@ export class UploadPrescriptionDto {
 
   @IsString()
   @IsNotEmpty({ message: 'uploaded_by_id is required' })
-  @IsUUID('4', { message: 'uploaded_by_id must be a valid UUID' })
+  @IsUUID('all', { message: 'uploaded_by_id must be a valid UUID' })
   uploaded_by_id: string;
 
   @IsOptional()
   @IsString()
-  @IsUUID('4', { message: 'pharmacy_id must be a valid UUID' })
+  @IsUUID('all', { message: 'pharmacy_id must be a valid UUID' })
   pharmacy_id?: string;
 }

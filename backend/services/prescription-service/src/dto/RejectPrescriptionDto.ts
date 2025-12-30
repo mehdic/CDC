@@ -8,7 +8,7 @@ import { IsString, IsNotEmpty, IsUUID, MaxLength, MinLength } from 'class-valida
 export class RejectPrescriptionDto {
   @IsString()
   @IsNotEmpty({ message: 'pharmacist_id is required' })
-  @IsUUID('4', { message: 'pharmacist_id must be a valid UUID' })
+  @IsUUID('all', { message: 'pharmacist_id must be a valid UUID' })
   pharmacist_id: string;
 
   @IsString()

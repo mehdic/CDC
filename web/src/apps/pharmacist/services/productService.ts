@@ -37,8 +37,8 @@ export interface ProductDetailResponse {
 // Configuration
 // ============================================================================
 
+// Use API Gateway for all requests (handles routing to prescription service internally)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-const PRESCRIPTION_SERVICE_URL = import.meta.env.VITE_PRESCRIPTION_SERVICE_URL || 'http://localhost:4003';
 
 // ============================================================================
 // Helper Functions
@@ -99,7 +99,7 @@ export async function searchProducts(
 
   try {
     const response = await fetch(
-      `${PRESCRIPTION_SERVICE_URL}/products/search?${params.toString()}`,
+      `${API_BASE_URL}/products/search?${params.toString()}`,
       {
         method: 'GET',
         headers: getAuthHeaders(),
@@ -134,7 +134,7 @@ export async function getProductById(id: string): Promise<ProductSearchResult> {
 
   try {
     const response = await fetch(
-      `${PRESCRIPTION_SERVICE_URL}/products/${id}`,
+      `${API_BASE_URL}/products/${id}`,
       {
         method: 'GET',
         headers: getAuthHeaders(),

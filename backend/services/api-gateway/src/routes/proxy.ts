@@ -227,6 +227,21 @@ export const dashboardProxy = createProxyMiddleware({
 });
 
 /**
+ * Products Proxy (routes to Prescription Service for medication autocomplete)
+ * Routes: /products/*
+ * Note: Express app.use strips the prefix, so we add /products back
+ */
+export const productsProxy = createProxyMiddleware({
+  ...commonProxyOptions,
+  target: PRESCRIPTION_SERVICE_URL,
+  pathRewrite: (path: string) => {
+    const newPath = '/products' + path;
+    console.log('[PRODUCTS PROXY] Path rewrite:', path, '→', newPath);
+    return newPath;
+  },
+});
+
+/**
  * Service health status cache
  * Used by health check endpoint
  */

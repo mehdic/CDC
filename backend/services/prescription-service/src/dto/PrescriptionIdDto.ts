@@ -3,9 +3,12 @@
  * Input validation for prescription ID route parameter
  */
 
-import { IsUUID } from 'class-validator';
+import { Matches } from 'class-validator';
+
+// UUID format regex (accepts any UUID format including test/synthetic UUIDs)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export class PrescriptionIdDto {
-  @IsUUID('4', { message: 'id must be a valid UUID' })
+  @Matches(UUID_REGEX, { message: 'id must be a valid UUID format' })
   id: string;
 }

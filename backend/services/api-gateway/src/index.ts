@@ -53,6 +53,7 @@ import {
   orderProxy,
   analyticsProxy,
   dashboardProxy,
+  productsProxy,
 } from './routes/proxy';
 
 // Configuration
@@ -186,9 +187,58 @@ app.use('/auth', authForwardHandler);
 
 // Apply JWT authentication middleware ONLY to protected routes
 // Support both /api/X and /X patterns for backward compatibility
-// Prescription Service
-app.use('/api/prescriptions', authenticateJWT, prescriptionProxy);
-app.use('/prescriptions', authenticateJWT, prescriptionProxy);
+
+// Prescription Service - Direct forwarding for PUT/POST requests (body parsing issue with http-proxy-middleware)
+const PRESCRIPTION_SERVICE_URL = process.env['PRESCRIPTION_SERVICE_URL'] || 'http://localhost:4002';
+const prescriptionForwardHandler = async (req: Request, res: Response, next: NextFunction) => {
+  // Only handle PUT and POST requests with body - proxy works fine for GET
+  if (req.method !== 'PUT' && req.method !== 'POST') {
+    return next();
+  }
+
+  try {
+    const axios = require('axios');
+    const targetUrl = `${PRESCRIPTION_SERVICE_URL}/prescriptions${req.path}`;
+    console.log('[PRESCRIPTION FORWARD] Forwarding', req.method, req.url, 'to', targetUrl);
+
+    const response = await axios({
+      method: req.method,
+      url: targetUrl,
+      data: req.body,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': req.headers.authorization,
+        'X-User-ID': (req as any).user?.userId,
+        'X-User-Role': (req as any).user?.role,
+        'X-Pharmacy-ID': (req as any).user?.pharmacyId,
+      },
+      timeout: 30000, // 30 second timeout
+    });
+
+    res.status(response.status).json(response.data);
+  } catch (error: any) {
+    if (error.response) {
+      console.log('[PRESCRIPTION FORWARD] Error response:', error.response.status, error.response.data);
+      res.status(error.response.status).json(error.response.data);
+    } else if (error.code === 'ECONNABORTED') {
+      console.error('[PRESCRIPTION FORWARD] Timeout:', error.message);
+      res.status(504).json({
+        error: 'Gateway Timeout',
+        message: 'The prescription service did not respond in time',
+      });
+    } else {
+      console.error('[PRESCRIPTION FORWARD] Error:', error.message);
+      res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'The prescription service is temporarily unavailable',
+      });
+    }
+  }
+};
+
+// Prescription routes - use forwarding for PUT/POST, proxy for GET
+app.use('/api/prescriptions', authenticateJWT, prescriptionForwardHandler, prescriptionProxy);
+app.use('/prescriptions', authenticateJWT, prescriptionForwardHandler, prescriptionProxy);
 
 // Teleconsultation Service
 app.use('/api/teleconsultations', authenticateJWT, teleconsultationProxy);
@@ -215,6 +265,10 @@ app.use('/analytics', authenticateJWT, analyticsProxy);
 // Dashboard Service (routes to Analytics)
 app.use('/api/dashboard', authenticateJWT, dashboardProxy);
 app.use('/dashboard', authenticateJWT, dashboardProxy);
+
+// Products Service (routes to Prescription Service for medication autocomplete)
+app.use('/api/products', authenticateJWT, productsProxy);
+app.use('/products', authenticateJWT, productsProxy);
 
 // ============================================================================
 // Error Handling

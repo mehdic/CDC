@@ -17,17 +17,27 @@ customTest.describe('Pharmacist - Inventory Management', () => {
 
   customTest.describe('View Inventory', () => {
     customTest('should display inventory items with stock levels', async ({ pharmacistPage }) => {
-      // Verify inventory page loads
-      await expect(pharmacistPage.getByRole('heading', { name: /inventory|stock|stock levels/i })).toBeVisible();
+      // Wait for page to be ready
+      await pharmacistPage.waitForLoadState('networkidle');
 
-      // Verify inventory list
+      // Verify inventory page loads - "Inventory Management" heading
+      await expect(pharmacistPage.getByRole('heading', { name: /inventory management/i })).toBeVisible({ timeout: 10000 });
+
+      // Verify inventory list - MUI DataGrid or inventory container is visible
+      // The DataGrid renders inside a Paper with data-testid="inventory-list"
       const inventoryList = pharmacistPage.locator('[data-testid="inventory-list"]');
+      const dataGrid = pharmacistPage.locator('.MuiDataGrid-root');
       const emptyState = pharmacistPage.locator('[data-testid="empty-inventory"]');
 
-      const hasItems = await inventoryList.isVisible().catch(() => false);
+      // Wait for either DataGrid, inventory list, or empty state to appear
+      await pharmacistPage.waitForTimeout(2000);
+
+      const hasDataGrid = await dataGrid.isVisible().catch(() => false);
+      const hasInventoryList = await inventoryList.isVisible().catch(() => false);
       const isEmpty = await emptyState.isVisible().catch(() => false);
 
-      expect(hasItems || isEmpty).toBeTruthy();
+      // Accept any valid inventory state
+      expect(hasDataGrid || hasInventoryList || isEmpty).toBeTruthy();
     });
 
     customTest('should show item details (name, SKU, quantity, price)', async ({ pharmacistPage }) => {

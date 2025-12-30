@@ -216,7 +216,16 @@ VALUES
 ('bbbbbbbb-0001-0001-0001-000000000022'::uuid, 'aaaaaaaa-0001-0001-0001-000000000020'::uuid, 'Ventolin 100µg', '2 bouffées', 'si besoin', 'selon besoin', 1, 98.0, 96.0, 95.0),
 ('bbbbbbbb-0001-0001-0001-000000000023'::uuid, 'aaaaaaaa-0001-0001-0001-000000000020'::uuid, 'Sérétide 250', '2 bouffées', '2x/jour', '30 jours', 1, 97.0, 95.0, 94.0),
 -- Prescription 21 items
-('bbbbbbbb-0001-0001-0001-000000000024'::uuid, 'aaaaaaaa-0001-0001-0001-000000000021'::uuid, 'Citalopram 20mg', '20mg', 'le matin', '30 jours', 30, 96.0, 94.0, 93.0)
+('bbbbbbbb-0001-0001-0001-000000000024'::uuid, 'aaaaaaaa-0001-0001-0001-000000000021'::uuid, 'Citalopram 20mg', '20mg', 'le matin', '30 jours', 30, 96.0, 94.0, 93.0),
+-- Prescription 12 items (clarification_needed - low confidence transcription)
+('bbbbbbbb-0001-0001-0001-000000000025'::uuid, 'aaaaaaaa-0001-0001-0001-000000000012'::uuid, 'Aspirine (dosage illisible)', '', '', '7 jours', 20, 45.0, 30.0, 55.0),
+-- Prescription 13 items (clarification_needed - very low confidence)
+('bbbbbbbb-0001-0001-0001-000000000026'::uuid, 'aaaaaaaa-0001-0001-0001-000000000013'::uuid, 'Médicament illisible', '??', 'matin', '14 jours', 14, 35.0, 25.0, 50.0),
+-- Prescription 14 items (clarification_needed - partial transcription)
+('bbbbbbbb-0001-0001-0001-000000000027'::uuid, 'aaaaaaaa-0001-0001-0001-000000000014'::uuid, 'Enalapril', '10mg?', 'le matin', '30 jours', 30, 55.0, 40.0, 60.0),
+('bbbbbbbb-0001-0001-0001-000000000028'::uuid, 'aaaaaaaa-0001-0001-0001-000000000014'::uuid, 'Hydrochlorothiazide', '12.5mg ou 25mg?', 'le matin', '30 jours', 30, 50.0, 35.0, 55.0),
+-- Prescription 15 items (clarification_needed - unclear medication name)
+('bbbbbbbb-0001-0001-0001-000000000029'::uuid, 'aaaaaaaa-0001-0001-0001-000000000015'::uuid, 'Antibiotique (nom partiel)', '500mg', '3x/jour', '10 jours', 30, 40.0, 65.0, 60.0)
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
@@ -226,4 +235,4 @@ ON CONFLICT (id) DO NOTHING;
 -- Patients: 25
 -- Doctors: 4
 -- Prescriptions: 25 (6 pending, 5 in_review, 4 clarification_needed, 6 approved, 4 rejected)
--- Prescription Items: 24
+-- Prescription Items: 29 (all prescriptions except rejected have medications)

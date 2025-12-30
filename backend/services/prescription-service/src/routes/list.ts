@@ -1,11 +1,12 @@
 /**
  * List Routes
  * GET /prescriptions - List prescriptions with filtering and pagination
+ * GET /prescriptions/:id - Get single prescription by ID
  * T092 - User Story 1: Prescription Processing & Validation
  */
 
 import { Router } from 'express';
-import { listPrescriptions } from '../controllers/listController';
+import { listPrescriptions, getPrescriptionById } from '../controllers/listController';
 import { validateQuery } from '../middleware/validation.middleware';
 import { ListPrescriptionsDto } from '../dto/ListPrescriptionsDto';
 
@@ -49,5 +50,11 @@ const router = Router();
  * }
  */
 router.get('/', validateQuery(ListPrescriptionsDto), listPrescriptions);
+
+/**
+ * GET /prescriptions/:id
+ * Get a single prescription by ID
+ */
+router.get('/:id', getPrescriptionById);
 
 export default router;

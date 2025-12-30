@@ -49,7 +49,7 @@ interface Product {
   description: string;
 }
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4003';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 

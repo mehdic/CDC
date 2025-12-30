@@ -278,6 +278,7 @@ services:
       REDIS_URL: redis://redis:6379
       LOG_LEVEL: info
       OTLP_EXPORTER_URL: http://jaeger:4318/v1/traces
+      NOTIFICATION_SERVICE_URL: http://notification-service:4005
       AWS_KMS_KEY_ID: local-dev-kms-key-id
       AWS_ACCESS_KEY_ID: local-dev-access-key
       AWS_SECRET_ACCESS_KEY: local-dev-secret-key

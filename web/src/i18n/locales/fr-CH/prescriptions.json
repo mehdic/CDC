@@ -1,0 +1,67 @@
+{
+  "title": "Révision d'ordonnance",
+  "id_label": "ID",
+
+  "patient_info": {
+    "title": "Informations patient",
+    "name": "Nom",
+    "patient_id": "ID Patient"
+  },
+
+  "doctor_info": {
+    "title": "Médecin prescripteur",
+    "name": "Nom",
+    "doctor_id": "ID Médecin"
+  },
+
+  "details": {
+    "title": "Détails de l'ordonnance",
+    "source": "Source",
+    "prescribed_date": "Date de prescription",
+    "expiry_date": "Date d'expiration",
+    "submitted": "Soumis le"
+  },
+
+  "actions": {
+    "run_safety_checks": "Vérifier la sécurité",
+    "validating": "Validation en cours...",
+    "approve": "Approuver l'ordonnance",
+    "approving": "Approbation en cours...",
+    "reject": "Rejeter"
+  },
+
+  "reject_dialog": {
+    "title": "Rejeter l'ordonnance",
+    "description": "Veuillez indiquer la raison du rejet. Le patient et le médecin seront notifiés.",
+    "reason_label": "Raison du rejet",
+    "reason_placeholder": "Ex: Ordonnance illisible, informations de dosage manquantes, problèmes d'interaction médicamenteuse...",
+    "cancel": "Annuler",
+    "confirm": "Confirmer le rejet",
+    "rejecting": "Rejet en cours..."
+  },
+
+  "messages": {
+    "validation_success": "Ordonnance validée avec succès ! Vérifications de sécurité effectuées. Vous pouvez maintenant approuver ou rejeter.",
+    "validation_failed": "Échec de la validation : {{error}}",
+    "approval_success": "Ordonnance approuvée avec succès !",
+    "approval_failed": "Échec de l'approbation : {{error}}",
+    "approval_needs_validation": "Veuillez d'abord effectuer les vérifications de sécurité avant d'approuver cette ordonnance.",
+    "rejection_success": "Ordonnance rejetée avec succès !",
+    "rejection_failed": "Échec du rejet : {{error}}",
+    "rejection_reason_required": "Veuillez fournir une raison de rejet",
+    "unknown_patient": "Patient inconnu",
+    "loading_error": "Erreur de chargement de l'ordonnance",
+    "not_found": "Ordonnance introuvable",
+    "session_expired": "Votre session a expiré. Veuillez vous reconnecter."
+  },
+
+  "status": {
+    "pending": "EN ATTENTE",
+    "in_review": "EN RÉVISION",
+    "approved": "APPROUVÉE",
+    "rejected": "REJETÉE",
+    "dispensed": "DÉLIVRÉE"
+  },
+
+  "back_to_dashboard": "Retour au tableau de bord"
+}

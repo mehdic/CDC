@@ -5,8 +5,10 @@
  * Task: T116 - Create Prescription Review page
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { getUserData } from '../../../shared/services/authService';
 import {
   Container,
   Grid,
@@ -54,6 +56,7 @@ import { SafetyWarnings } from '../components/SafetyWarnings';
 export const PrescriptionReview: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('prescriptions');
 
   // State
   const [editedItems, setEditedItems] = useState<PrescriptionItem[]>([]);
@@ -81,9 +84,17 @@ export const PrescriptionReview: React.FC = () => {
 
     try {
       await validateMutation.mutateAsync(id);
-      alert('Prescription validated successfully! Safety checks updated.');
-    } catch (error) {
-      alert(`Validation failed: ${error}`);
+      alert(t('messages.validation_success'));
+    } catch (error: unknown) {
+      // Parse the error response to show user-friendly messages
+      const axiosError = error as { response?: { data?: { error?: string; code?: string } } };
+      const errorData = axiosError?.response?.data;
+
+      if (errorData?.error) {
+        alert(t('messages.validation_failed', { error: errorData.error }));
+      } else {
+        alert(t('messages.validation_failed', { error: String(error) }));
+      }
     }
   };
 
@@ -93,15 +104,40 @@ export const PrescriptionReview: React.FC = () => {
   const handleApprove = async () => {
     if (!id) return;
 
-    // Get pharmacist ID from auth context (hardcoded for demo)
-    const pharmacistId = localStorage.getItem('user_id') || 'pharmacist-123';
+    // Get pharmacist ID from stored user data
+    const userData = getUserData();
+    const pharmacistId = userData?.id;
+
+    if (!pharmacistId) {
+      alert(t('messages.session_expired'));
+      navigate('/login');
+      return;
+    }
 
     try {
       await approveMutation.mutateAsync({ prescriptionId: id, pharmacistId });
-      alert('Prescription approved successfully!');
+      alert(t('messages.approval_success'));
       navigate('/prescriptions');
-    } catch (error) {
-      alert(`Approval failed: ${error}`);
+    } catch (error: unknown) {
+      // Parse the error response to show user-friendly messages
+      const axiosError = error as { response?: { data?: { error?: string; code?: string }; status?: number } };
+      const errorData = axiosError?.response?.data;
+      const status = axiosError?.response?.status;
+
+      // Handle token expiration - redirect to login
+      if (status === 401 || errorData?.code === 'TOKEN_EXPIRED') {
+        alert(t('messages.session_expired'));
+        navigate('/login');
+        return;
+      }
+
+      if (errorData?.code === 'CANNOT_APPROVE' || errorData?.error?.includes('in_review')) {
+        alert(t('messages.approval_needs_validation'));
+      } else if (errorData?.error) {
+        alert(t('messages.approval_failed', { error: errorData.error }));
+      } else {
+        alert(t('messages.approval_failed', { error: String(error) }));
+      }
     }
   };
 
@@ -110,17 +146,35 @@ export const PrescriptionReview: React.FC = () => {
    */
   const handleReject = async () => {
     if (!id || !rejectReason.trim()) {
-      alert('Please provide a rejection reason');
+      alert(t('messages.rejection_reason_required'));
+      return;
+    }
+
+    // Get pharmacist ID from stored user data
+    const userData = getUserData();
+    const pharmacistId = userData?.id;
+
+    if (!pharmacistId) {
+      alert(t('messages.session_expired'));
+      navigate('/login');
       return;
     }
 
     try {
-      await rejectMutation.mutateAsync({ prescriptionId: id, reason: rejectReason });
-      alert('Prescription rejected successfully!');
+      await rejectMutation.mutateAsync({ prescriptionId: id, pharmacistId, reason: rejectReason });
+      alert(t('messages.rejection_success'));
       setRejectDialogOpen(false);
       navigate('/prescriptions');
-    } catch (error) {
-      alert(`Rejection failed: ${error}`);
+    } catch (error: unknown) {
+      // Parse the error response to show user-friendly messages
+      const axiosError = error as { response?: { data?: { error?: string; code?: string } } };
+      const errorData = axiosError?.response?.data;
+
+      if (errorData?.error) {
+        alert(t('messages.rejection_failed', { error: errorData.error }));
+      } else {
+        alert(t('messages.rejection_failed', { error: String(error) }));
+      }
     }
   };
 
@@ -129,6 +183,14 @@ export const PrescriptionReview: React.FC = () => {
    */
   const handleBack = () => {
     navigate('/prescriptions');
+  };
+
+  /**
+   * Get translated status label
+   */
+  const getStatusLabel = (status: string): string => {
+    const statusKey = status.toLowerCase().replace('_', '_');
+    return t(`status.${statusKey}`, { defaultValue: status.replace('_', ' ').toUpperCase() });
   };
 
   // Loading state
@@ -148,11 +210,11 @@ export const PrescriptionReview: React.FC = () => {
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Alert severity="error">
           <Typography variant="body2">
-            Error loading prescription: {error?.message || 'Prescription not found'}
+            {t('messages.loading_error')}: {error?.message || t('messages.not_found')}
           </Typography>
         </Alert>
         <Button startIcon={<BackIcon />} onClick={handleBack} sx={{ mt: 2 }}>
-          Back to Dashboard
+          {t('back_to_dashboard')}
         </Button>
       </Container>
     );
@@ -176,14 +238,14 @@ export const PrescriptionReview: React.FC = () => {
           </IconButton>
           <Box sx={{ flex: 1 }}>
             <Typography variant="h4" fontWeight="bold">
-              Prescription Review
+              {t('title')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              ID: {prescription.id}
+              {t('id_label')}: {prescription.id}
             </Typography>
           </Box>
           <Chip
-            label={prescription.status.replace('_', ' ').toUpperCase()}
+            label={getStatusLabel(prescription.status)}
             color={
               prescription.status === PrescriptionStatus.APPROVED
                 ? 'success'
@@ -203,24 +265,24 @@ export const PrescriptionReview: React.FC = () => {
             <Stack direction="row" spacing={1} alignItems="center" mb={2}>
               <PersonIcon color="primary" />
               <Typography variant="h6" fontWeight="bold">
-                Patient Information
+                {t('patient_info.title')}
               </Typography>
             </Stack>
             <Divider sx={{ mb: 2 }} />
             <Stack spacing={1.5}>
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Name
+                  {t('patient_info.name')}
                 </Typography>
                 <Typography variant="body1" fontWeight="medium">
                   {prescription.patient
                     ? `${prescription.patient.first_name} ${prescription.patient.last_name}`
-                    : 'Unknown Patient'}
+                    : t('messages.unknown_patient')}
                 </Typography>
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Patient ID
+                  {t('patient_info.patient_id')}
                 </Typography>
                 <Typography variant="body2">{prescription.patient_id}</Typography>
               </Box>
@@ -233,14 +295,14 @@ export const PrescriptionReview: React.FC = () => {
               <Stack direction="row" spacing={1} alignItems="center" mb={2}>
                 <DoctorIcon color="primary" />
                 <Typography variant="h6" fontWeight="bold">
-                  Prescribing Doctor
+                  {t('doctor_info.title')}
                 </Typography>
               </Stack>
               <Divider sx={{ mb: 2 }} />
               <Stack spacing={1.5}>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Name
+                    {t('doctor_info.name')}
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
                     {`${prescription.prescribing_doctor.first_name} ${prescription.prescribing_doctor.last_name}`}
@@ -248,7 +310,7 @@ export const PrescriptionReview: React.FC = () => {
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Doctor ID
+                    {t('doctor_info.doctor_id')}
                   </Typography>
                   <Typography variant="body2">{prescription.prescribing_doctor_id}</Typography>
                 </Box>
@@ -261,20 +323,20 @@ export const PrescriptionReview: React.FC = () => {
             <Stack direction="row" spacing={1} alignItems="center" mb={2}>
               <CalendarIcon color="primary" />
               <Typography variant="h6" fontWeight="bold">
-                Prescription Details
+                {t('details.title')}
               </Typography>
             </Stack>
             <Divider sx={{ mb: 2 }} />
             <Stack spacing={1.5}>
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Source
+                  {t('details.source')}
                 </Typography>
                 <Typography variant="body2">{prescription.source}</Typography>
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Prescribed Date
+                  {t('details.prescribed_date')}
                 </Typography>
                 <Typography variant="body2">
                   {prescription.prescribed_date
@@ -284,7 +346,7 @@ export const PrescriptionReview: React.FC = () => {
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Expiry Date
+                  {t('details.expiry_date')}
                 </Typography>
                 <Typography variant="body2">
                   {prescription.expiry_date
@@ -294,7 +356,7 @@ export const PrescriptionReview: React.FC = () => {
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Submitted
+                  {t('details.submitted')}
                 </Typography>
                 <Typography variant="body2">
                   {new Date(prescription.created_at).toLocaleString()}
@@ -335,7 +397,7 @@ export const PrescriptionReview: React.FC = () => {
                 onClick={handleValidate}
                 disabled={validateMutation.isPending}
               >
-                {validateMutation.isPending ? 'Validating...' : 'Run Safety Checks'}
+                {validateMutation.isPending ? t('actions.validating') : t('actions.run_safety_checks')}
               </Button>
 
               <Stack direction="row" spacing={2}>
@@ -347,7 +409,7 @@ export const PrescriptionReview: React.FC = () => {
                     onClick={() => setRejectDialogOpen(true)}
                     disabled={rejectMutation.isPending}
                   >
-                    Reject
+                    {t('actions.reject')}
                   </Button>
                 )}
 
@@ -359,7 +421,7 @@ export const PrescriptionReview: React.FC = () => {
                     onClick={handleApprove}
                     disabled={approveMutation.isPending}
                   >
-                    {approveMutation.isPending ? 'Approving...' : 'Approve Prescription'}
+                    {approveMutation.isPending ? t('actions.approving') : t('actions.approve')}
                   </Button>
                 )}
               </Stack>
@@ -370,32 +432,31 @@ export const PrescriptionReview: React.FC = () => {
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Reject Prescription</DialogTitle>
+        <DialogTitle>{t('reject_dialog.title')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            Please provide a reason for rejecting this prescription. The patient and doctor will be
-            notified.
+            {t('reject_dialog.description')}
           </Typography>
           <TextField
             fullWidth
             multiline
             rows={4}
-            label="Rejection Reason"
+            label={t('reject_dialog.reason_label')}
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
-            placeholder="e.g., Illegible prescription, missing dosage information, drug interaction concerns..."
+            placeholder={t('reject_dialog.reason_placeholder')}
             required
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setRejectDialogOpen(false)}>{t('reject_dialog.cancel')}</Button>
           <Button
             variant="contained"
             color="error"
             onClick={handleReject}
             disabled={!rejectReason.trim() || rejectMutation.isPending}
           >
-            {rejectMutation.isPending ? 'Rejecting...' : 'Confirm Rejection'}
+            {rejectMutation.isPending ? t('reject_dialog.rejecting') : t('reject_dialog.confirm')}
           </Button>
         </DialogActions>
       </Dialog>

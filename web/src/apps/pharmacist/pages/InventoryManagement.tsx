@@ -174,14 +174,14 @@ export const InventoryManagement: React.FC = () => {
       const response = await fetch(
         `${
           import.meta.env?.VITE_API_BASE_URL || 'http://localhost:4000'
-        }/api/inventory/items/${editingItem.id}?pharmacy_id=${pharmacyId}`,
+        }/api/inventory/items/${editingItem.id}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             Authorization: token ? `Bearer ${token}` : '',
           },
-          body: JSON.stringify(updatedData),
+          body: JSON.stringify({ ...updatedData, pharmacy_id: pharmacyId }),
         }
       );
 
@@ -189,6 +189,9 @@ export const InventoryManagement: React.FC = () => {
         setEditingItem(null);
         fetchItems({ filter });
         setSuccessToastOpen(true);
+      } else {
+        const errorData = await response.json();
+        console.error('Error updating item:', errorData);
       }
     } catch (error) {
       console.error('Error updating item:', error);

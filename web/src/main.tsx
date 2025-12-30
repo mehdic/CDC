@@ -1,16 +1,21 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SnackbarProvider } from 'notistack';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 import App from './App';
 import { register as registerServiceWorker } from '@shared/utils/serviceWorkerRegistration';
 import { performanceMonitor } from '@shared/utils/performanceMonitor';
 import { initCDNConnections } from '@shared/utils/cdnConfig';
 import { initAssetPreloading } from '@shared/utils/assetPreloader';
 import { initSentry } from './config/sentry';
+
+// Initialize i18n (must be imported before App)
+import './i18n/config';
 
 // Initialize Sentry error tracking (before everything else)
 initSentry();
@@ -104,18 +109,27 @@ if (!rootElement) {
   throw new Error('Failed to find the root element');
 }
 
+// Loading fallback for i18n Suspense
+const I18nLoadingFallback = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <CircularProgress />
+  </Box>
+);
+
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-          <CssBaseline />
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </SnackbarProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <Suspense fallback={<I18nLoadingFallback />}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={theme}>
+          <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+            <CssBaseline />
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </SnackbarProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </Suspense>
   </React.StrictMode>
 );
 
