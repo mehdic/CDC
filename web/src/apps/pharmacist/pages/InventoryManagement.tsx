@@ -165,7 +165,11 @@ export const InventoryManagement: React.FC = () => {
   };
 
   const handleEditItem = (item: any) => {
-    setEditingItem(item);
+    // Ensure quantity is a valid number when opening dialog
+    setEditingItem({
+      ...item,
+      quantity: typeof item.quantity === 'number' ? item.quantity : 0,
+    });
   };
 
   const handleUpdateItem = async (updatedData: any) => {
@@ -371,17 +375,22 @@ export const InventoryManagement: React.FC = () => {
                 fullWidth
                 label="Quantity"
                 type="number"
-                defaultValue={editingItem.quantity}
-                inputProps={{ 'aria-label': 'quantity' }}
+                value={editingItem.quantity ?? 0}
+                inputProps={{ 'aria-label': 'quantity', min: 0 }}
                 onChange={(e) => {
-                  setEditingItem({ ...editingItem, quantity: parseInt(e.target.value) });
+                  const val = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
+                  setEditingItem({ ...editingItem, quantity: isNaN(val) ? 0 : val });
                 }}
               />
             </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setEditingItem(null)}>Cancel</Button>
-            <Button onClick={() => handleUpdateItem({ quantity: editingItem.quantity })} variant="contained">
+            <Button
+              onClick={() => handleUpdateItem({ quantity: editingItem.quantity })}
+              variant="contained"
+              disabled={editingItem.quantity === undefined || isNaN(editingItem.quantity)}
+            >
               Update
             </Button>
           </DialogActions>
