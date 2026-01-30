@@ -70,7 +70,7 @@
   "dependencies": {
     "@redis/client": "^1.6.1",
     "expo-haptics": "^15.0.8",
-    "fast-xml-parser": "^5.3.1",
+    "fast-xml-parser": "^5.3.4",
     "i18next": "^25.7.0",
     "i18next-browser-languagedetector": "^8.2.0",
     "react": "^18.2.0",
