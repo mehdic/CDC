@@ -16,7 +16,7 @@
     "typeorm": "^0.3.28",
     "pg": "^8.11.3",
     "redis": "^4.6.13",
-    "axios": "^1.6.7",
+    "axios": "^1.13.5",
     "class-validator": "^0.14.1",
     "class-transformer": "^0.5.1",
     "dotenv": "^16.4.4"
