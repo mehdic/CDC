@@ -20,8 +20,8 @@
   "author": "MetaPharm Connect",
   "license": "UNLICENSED",
   "dependencies": {
-    "@aws-sdk/client-forecast": "^3.400.0",
-    "@aws-sdk/client-forecastquery": "^3.400.0",
+    "@aws-sdk/client-forecast": "^3.987.0",
+    "@aws-sdk/client-forecastquery": "^3.987.0",
     "bull": "^4.11.5",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
