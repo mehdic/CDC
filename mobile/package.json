@@ -34,7 +34,7 @@
     "date-fns": "^3.3.1",
     "formik": "^2.4.5",
     "react": "18.2.0",
-    "react-native": "^0.73.11",
+    "react-native": "^0.84.1",
     "react-native-camera": "^4.2.1",
     "react-native-config": "^1.5.1",
     "react-native-device-info": "^10.13.1",
